@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   HandHelping, 
-  Plus, 
   Search, 
   Clock, 
   CheckCircle2, 
@@ -10,30 +8,21 @@ import {
   X, 
   RotateCcw,
   Check,
-  Building,
-  AlertCircle,
   User,
   GraduationCap,
-  Sparkles,
-  Edit3,
   PenTool,
-  FileText,
-  QrCode,
   Download
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
-import SignatureModal from './SignatureModal';
+import SignatureCanvas from './SignatureCanvas';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
-const DEFAULT_BASE_ITEMS = [
-  { label: '🖊️ Plumones y Mota', val: 'PLUMONES', name: 'PLUMONES / MATERIALES', defaultDesc: 'Préstamo de plumones y mota acrílica' },
-  { label: '🔌 Cable HDMI', val: 'CABLES', name: 'CABLES Y ADAPTADORES', defaultDesc: 'Préstamo de cable HDMI' },
-  { label: '⚡ Adaptador Video', val: 'ADAPTADOR', name: 'CABLES Y ADAPTADORES', defaultDesc: 'Préstamo de adaptador Tipo C / VGA / HDMI' },
-  { label: '🖱️ Mouse / Puntero', val: 'PC', name: 'PC / PERIFÉRICOS', defaultDesc: 'Préstamo de mouse o puntero inalámbrico' },
-  { label: '🚪 Llave / Apertura', val: 'APERTURA', name: 'APERTURA DE AMBIENTE', defaultDesc: 'Apertura y desbloqueo de ambiente' },
-  { label: '📽️ Control Proyector', val: 'PROYECCIÓN', name: 'PROYECCIÓN / AUDIO', defaultDesc: 'Control remoto y encendido de proyector' },
-  { label: '🔊 Audio / Micrófono', val: 'AUDIO', name: 'PROYECCIÓN / AUDIO', defaultDesc: 'Préstamo de micrófono o parlante' },
-  { label: '✏️ Otro (Manual)', val: 'MANUAL', name: 'MATERIAL / GENERAL', defaultDesc: '' }
+const CORE_MATERIALS = [
+  { id: 'PLUMONES', label: '🖊️ Plumones y Mota', desc: 'Préstamo de plumones y mota acrílica' },
+  { id: 'CABLES', label: '🔌 Cable HDMI', desc: 'Préstamo de cable HDMI' },
+  { id: 'ADAPTADOR', label: '⚡ Adaptador', desc: 'Préstamo de adaptador Tipo C / HDMI' },
+  { id: 'LLAVE', label: '🚪 Llave de Aula', desc: 'Llave de ambiente' },
+  { id: 'MANUAL', label: '✏️ Otro', desc: '' }
 ];
 
 export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }) {
@@ -41,64 +30,25 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   const [loading, setLoading] = useState(true);
   const [activeViewTab, setActiveViewTab] = useState('ACTIVOS'); // 'ACTIVOS' | 'CONCLUIDOS'
 
-  // Custom User Saved Items (Persisted in localStorage)
-  const [customItems, setCustomItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('upn_custom_loan_items');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
-  // Unified New Loan Form State
+  // Form State
   const [beneficiaryType, setBeneficiaryType] = useState('DOCENTE'); // 'DOCENTE' | 'ALUMNO'
-  const [roomInput, setRoomInput] = useState('');
   const [personName, setPersonName] = useState('');
+  const [roomInput, setRoomInput] = useState('');
   const [selectedMaterialVal, setSelectedMaterialVal] = useState('PLUMONES');
   const [manualItemText, setManualItemText] = useState('');
-  const [saveAsQuickItem, setSaveAsQuickItem] = useState(false);
-  const [customNote, setCustomNote] = useState('');
   const [submittingLoan, setSubmittingLoan] = useState(false);
-
-  // Filters
-  const [search, setSearch] = useState('');
-  const [filterTipo, setFilterTipo] = useState('');
-  const [filterBeneficiary, setFilterBeneficiary] = useState(''); // '' | 'DOCENTE' | 'ALUMNO'
-
-  // Modals & Feedback
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [signingTicket, setSigningTicket] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Detailed Modal Form State
-  const [formData, setFormData] = useState({
-    ambiente: '',
-    piso: '1ER PISO',
-    pabellon: 'A',
-    tipoSolicitud: 'PLUMONES / MATERIALES',
-    responsable: 'OPERACIONES SEDE',
-    estado: 'EN PROCESO',
-    descripcionSolucion: '[👨‍🏫 DOCENTE] Préstamo de plumones y mota acrílica',
-    rango: ''
-  });
+  // Inline Card Signing (Zero popups!)
+  const [inlineSignTicketId, setInlineSignTicketId] = useState(null);
 
-  // Merged items list: Base items + user-created custom items
-  const allMaterialItems = useMemo(() => {
-    const list = [...DEFAULT_BASE_ITEMS];
-    if (customItems.length > 0) {
-      // Insert custom items right before "Otro (Manual)"
-      const manualIdx = list.findIndex(i => i.val === 'MANUAL');
-      if (manualIdx !== -1) {
-        list.splice(manualIdx, 0, ...customItems);
-      } else {
-        list.push(...customItems);
-      }
-    }
-    return list;
-  }, [customItems]);
+  // Signature canvas refs
+  const formSignCanvasRef = useRef(null);
+  const cardSignCanvasRef = useRef(null);
 
-  // Helper to deduce floor from room code (e.g., A201 -> 2DO PISO, A508 -> 5TO PISO)
+  // Search filter
+  const [search, setSearch] = useState('');
+
   const deduceFloor = (roomStr) => {
     const num = roomStr.replace(/\D/g, '');
     if (!num) return '1ER PISO';
@@ -114,16 +64,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     return floors[firstDigit] || '1ER PISO';
   };
 
-  // Helper to parse Beneficiary (Docente vs Alumno) from description
   const parseBeneficiary = (desc = '') => {
-    const d = desc.toUpperCase();
     const matchAlumno = desc.match(/\[🎓?\s*ALUMNO(?::\s*([^\]]+))?\]/i);
     if (matchAlumno) {
       return {
         type: 'ALUMNO',
         label: 'Alumno',
-        name: matchAlumno[1] ? matchAlumno[1].trim() : '',
-        badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60'
+        name: matchAlumno[1] ? matchAlumno[1].trim() : ''
       };
     }
     const matchDocente = desc.match(/\[👨‍🏫?\s*DOCENTE(?::\s*([^\]]+))?\]/i);
@@ -131,28 +78,15 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       return {
         type: 'DOCENTE',
         label: 'Docente',
-        name: matchDocente[1] ? matchDocente[1].trim() : '',
-        badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+        name: matchDocente[1] ? matchDocente[1].trim() : ''
       };
     }
-    if (d.includes('ALUMNO')) {
-      return { type: 'ALUMNO', label: 'Alumno', name: '', badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' };
+    if (desc.toUpperCase().includes('ALUMNO')) {
+      return { type: 'ALUMNO', label: 'Alumno', name: '' };
     }
-    return { type: 'DOCENTE', label: 'Docente', name: '', badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' };
+    return { type: 'DOCENTE', label: 'Docente', name: '' };
   };
 
-  const getCleanNote = (desc = '') => {
-    return desc.replace(/\[(🎓|👨‍🏫)?\s*(ALUMNO|DOCENTE)(?::[^\]]+)?\]/gi, '').trim();
-  };
-
-  const getCleanRoom = (amb) => {
-    if (!amb || amb.trim() === '' || amb.trim() === '-' || amb.trim() === '--') {
-      return 'GENERAL';
-    }
-    return amb.trim();
-  };
-
-  // Garantiza que las firmas guardadas localmente nunca se pierdan al refrescar
   const mergeWithLocalSignatures = (serverTickets) => {
     if (!Array.isArray(serverTickets)) return [];
     return serverTickets.map(t => {
@@ -189,7 +123,6 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     }
   };
 
-  // Multi-user silent background sync
   const silentRefreshTickets = async () => {
     try {
       const res = await fetch('/api/tickets');
@@ -197,146 +130,88 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       if (json.success && Array.isArray(json.data)) {
         setTickets(mergeWithLocalSignatures(json.data));
       }
-    } catch (err) {
-      // silent
-    }
+    } catch (err) {}
   };
 
-  // Descarga directa del Acta de Cargo en PDF con 1 solo toque
+  useEffect(() => {
+    loadTickets();
+    const interval = setInterval(silentRefreshTickets, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Prefill from external views directly into inline form inputs (NO WINDOW OPENS!)
+  useEffect(() => {
+    if (initialNewTicket) {
+      if (initialNewTicket.ambiente) {
+        setRoomInput(initialNewTicket.ambiente);
+      }
+      if (initialNewTicket.descripcionSolucion) {
+        const ben = parseBeneficiary(initialNewTicket.descripcionSolucion);
+        setBeneficiaryType(ben.type);
+        if (ben.name) setPersonName(ben.name);
+      }
+      if (initialNewTicket.tipoSolicitud) {
+        const found = CORE_MATERIALS.find(m => initialNewTicket.tipoSolicitud.toUpperCase().includes(m.id));
+        if (found) setSelectedMaterialVal(found.id);
+      }
+      if (onClearInitialTicket) onClearInitialTicket();
+    }
+  }, [initialNewTicket]);
+
+  // 1-Tap PDF download (directly downloads official slip voucher, NO MODAL!)
   const handleQuickDownloadPdf = (e, ticket) => {
     e.stopPropagation();
     generateCargoPdf({
       ticket,
-      entregadoPor: ticket.entregadoPor || ticket.responsable || 'Operaciones Sede',
-      recibidoPor: ticket.recibidoPor || 'Solicitante',
+      entregadoPor: ticket.entregadoPor || ticket.responsable || 'OPERACIONES SEDE',
+      recibidoPor: ticket.recibidoPor || parseBeneficiary(ticket.descripcionSolucion).name || 'Docente / Solicitante',
       firmaEntrega: ticket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${ticket.id}`) : null),
       firmaRecepcion: ticket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${ticket.id}`) : null)
     });
   };
 
-  useEffect(() => {
-    loadTickets();
-    const interval = setInterval(silentRefreshTickets, 3500);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isModalOpen) {
-        setIsModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen]);
-
-  useEffect(() => {
-    if (initialNewTicket) {
-      const room = initialNewTicket.ambiente || '';
-      setFormData(prev => ({
-        ...prev,
-        ...initialNewTicket,
-        ambiente: room,
-        pabellon: initialNewTicket.pabellon || (room.toUpperCase().startsWith('B') ? 'B' : 'A'),
-        piso: initialNewTicket.piso || deduceFloor(room),
-        tipoSolicitud: initialNewTicket.tipoSolicitud || 'PLUMONES / MATERIALES',
-        descripcionSolucion: initialNewTicket.descripcionSolucion || '[👨‍🏫 DOCENTE] Préstamo de plumones y mota acrílica'
-      }));
-      setIsModalOpen(true);
-      if (onClearInitialTicket) onClearInitialTicket();
-    }
-  }, [initialNewTicket]);
-
-  // Handle saving new custom quick button
-  const handleAddCustomSavedItem = (name) => {
-    const clean = name.trim();
-    if (!clean) return;
-    const exists = customItems.some(i => i.label.toLowerCase() === clean.toLowerCase());
-    if (exists) return;
-
-    const newItem = {
-      label: `📦 ${clean}`,
-      val: `CUSTOM_${Date.now()}`,
-      name: 'MATERIAL / GENERAL',
-      defaultDesc: `Préstamo de ${clean}`,
-      isCustom: true
-    };
-
-    const updated = [...customItems, newItem];
-    setCustomItems(updated);
-    try {
-      localStorage.setItem('upn_custom_loan_items', JSON.stringify(updated));
-    } catch (e) {}
-  };
-
-  const handleDeleteCustomItem = (val, e) => {
-    e.stopPropagation();
-    const updated = customItems.filter(i => i.val !== val);
-    setCustomItems(updated);
-    try {
-      localStorage.setItem('upn_custom_loan_items', JSON.stringify(updated));
-    } catch (e) {}
-    if (selectedMaterialVal === val) {
-      setSelectedMaterialVal('PLUMONES');
-    }
-  };
-
-  // =========================================================================
-  // SUBMIT LOAN (Symmetrical, Supports Manual Item and Preset Chips)
-  // shouldOpenSignModal: Si es true, registra y abre de inmediato el Acta de Cargo
-  // =========================================================================
-  const handleRegisterLoan = async (e, shouldOpenSignModal = false) => {
+  // Direct 1-Tap Loan Registration
+  const handleRegisterLoan = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    
-    // El Aula es opcional (no se exige obligatoriedad al prestar a docentes o personal)
-    const rawRoom = roomInput.trim().toUpperCase();
-    const cleanRoom = rawRoom || (beneficiaryType === 'DOCENTE' ? 'DOCENCIA' : 'SEDE');
 
-    // Material validation
+    // Material
     let matName = '';
     let matDesc = '';
-    let matType = 'MATERIAL / GENERAL';
-
     if (selectedMaterialVal === 'MANUAL') {
-      const manualClean = manualItemText.trim();
-      if (!manualClean) {
-        setToastMessage('⚠️ Escribe el nombre del material a prestar');
+      const cleanManual = manualItemText.trim();
+      if (!cleanManual) {
+        setToastMessage('⚠️ Escribe el material que estás prestando');
         setTimeout(() => setToastMessage(''), 2500);
-        const el = document.getElementById('manual-item-input');
-        if (el) el.focus();
         return;
       }
-      matName = `📦 ${manualClean}`;
-      matDesc = `Préstamo de ${manualClean}`;
-      if (saveAsQuickItem) {
-        handleAddCustomSavedItem(manualClean);
-      }
+      matName = cleanManual.toUpperCase();
+      matDesc = `Préstamo de ${cleanManual}`;
     } else {
-      const selectedObj = allMaterialItems.find(t => t.val === selectedMaterialVal) || allMaterialItems[0];
-      matName = selectedObj.name;
-      matDesc = selectedObj.defaultDesc;
+      const item = CORE_MATERIALS.find(m => m.id === selectedMaterialVal) || CORE_MATERIALS[0];
+      matName = item.label.replace(/^[^\w\s]+/, '').trim().toUpperCase();
+      matDesc = item.desc;
     }
 
-    setSubmittingLoan(true);
+    const rawRoom = roomInput.trim().toUpperCase();
+    const cleanRoom = rawRoom || (beneficiaryType === 'DOCENTE' ? 'DOCENCIA' : 'SEDE');
     const pab = cleanRoom.startsWith('B') ? 'B' : (cleanRoom.startsWith('A') ? 'A' : 'SEDE');
     const floor = (cleanRoom === 'DOCENCIA' || cleanRoom === 'SEDE' || cleanRoom === 'GENERAL')
       ? 'Sede'
       : deduceFloor(cleanRoom);
 
     const personTag = personName.trim() ? `: ${personName.trim().toUpperCase()}` : '';
-    const prefix = beneficiaryType === 'ALUMNO' 
-      ? `[🎓 ALUMNO${personTag}]` 
-      : `[👨‍🏫 DOCENTE${personTag}]`;
-    
-    const noteText = customNote.trim() ? ` - ${customNote.trim()}` : '';
-    const finalDesc = `${prefix} ${matDesc}${noteText}`;
+    const prefix = beneficiaryType === 'ALUMNO' ? `[🎓 ALUMNO${personTag}]` : `[👨‍🏫 DOCENTE${personTag}]`;
+    const finalDesc = `${prefix} ${matDesc}`;
 
-    // Auto-vincular firma de operaciones si ya existe guardada en este equipo
-    let initialFirmaEntrega = null;
-    let initialEntregadoPor = 'OPERACIONES SEDE';
+    // Get inline signature if drawn
+    const drawnSignature = formSignCanvasRef.current ? formSignCanvasRef.current.getDataUrl() : null;
+
+    // Auto-attach staff signature if saved locally
+    let staffSignature = null;
+    let staffName = 'OPERACIONES SEDE';
     try {
-      initialFirmaEntrega = localStorage.getItem('upn_staff_signature') || null;
-      initialEntregadoPor = localStorage.getItem('upn_staff_name') || 'OPERACIONES SEDE';
+      staffSignature = localStorage.getItem('upn_staff_signature') || null;
+      staffName = localStorage.getItem('upn_staff_name') || 'OPERACIONES SEDE';
     } catch (err) {}
 
     const payload = {
@@ -348,11 +223,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       estado: 'EN PROCESO',
       descripcionSolucion: finalDesc,
       rango: '',
-      firmaEntrega: initialFirmaEntrega,
-      entregadoPor: initialEntregadoPor,
+      firmaEntrega: staffSignature,
+      entregadoPor: staffName,
+      firmaRecepcion: drawnSignature,
       recibidoPor: personName.trim() ? personName.trim().toUpperCase() : ''
     };
 
+    setSubmittingLoan(true);
     try {
       const res = await fetch('/api/tickets', {
         method: 'POST',
@@ -362,75 +239,54 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       const json = await res.json();
       if (json.success) {
         const createdTicket = json.data;
-        if (initialFirmaEntrega && !createdTicket.firmaEntrega) {
-          createdTicket.firmaEntrega = initialFirmaEntrega;
-          createdTicket.entregadoPor = initialEntregadoPor;
+        if (drawnSignature) {
+          try {
+            localStorage.setItem(`upn_sign_recepcion_${createdTicket.id}`, drawnSignature);
+          } catch (e) {}
         }
-
         setTickets(prev => [createdTicket, ...prev]);
-        const locLabel = rawRoom ? `en Aula ${rawRoom}` : `(${cleanRoom})`;
-        setToastMessage(`✅ Préstamo a ${beneficiaryType === 'ALUMNO' ? 'Alumno' : 'Docente'} ${locLabel} registrado`);
-        setRoomInput('');
+        setToastMessage(`✅ Préstamo registrado correctamente`);
+        
+        // Reset form
         setPersonName('');
+        setRoomInput('');
         setManualItemText('');
-        setCustomNote('');
-        setActiveViewTab('ACTIVOS');
-        setTimeout(() => setToastMessage(''), 3000);
-
-        if (shouldOpenSignModal) {
-          setSigningTicket(createdTicket);
+        setSelectedMaterialVal('PLUMONES');
+        if (formSignCanvasRef.current) {
+          formSignCanvasRef.current.clear();
         }
+        setActiveViewTab('ACTIVOS');
+        setTimeout(() => setToastMessage(''), 2500);
       }
     } catch (err) {
       console.error(err);
       setToastMessage('❌ Error al guardar el préstamo');
-      setTimeout(() => setToastMessage(''), 3000);
+      setTimeout(() => setToastMessage(''), 2500);
     } finally {
       setSubmittingLoan(false);
     }
   };
 
-  // Detailed Modal Submit
-  const handleSaveModalTicket = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const json = await res.json();
-      if (json.success) {
-        setTickets(prev => [json.data, ...prev]);
-        setToastMessage(`✅ Préstamo registrado en Aula ${formData.ambiente}`);
-        setActiveViewTab('ACTIVOS');
-        setTimeout(() => setToastMessage(''), 3000);
-      }
-      setIsModalOpen(false);
-    } catch (err) {
-      console.error(err);
+  // Save inline signature on an active loan card (NO MODAL!)
+  const handleSaveCardSignature = async (ticketId) => {
+    const drawnSignature = cardSignCanvasRef.current ? cardSignCanvasRef.current.getDataUrl() : null;
+    if (!drawnSignature) {
+      setInlineSignTicketId(null);
+      return;
     }
-  };
-
-  // 1-Tap Return
-  const handleMarkReturned = async (ticket) => {
-    const isLoan = ticket.tipoSolicitud.includes('PLUMONES') || ticket.tipoSolicitud.includes('CABLES') || ticket.tipoSolicitud.includes('PC') || ticket.tipoSolicitud.includes('MATERIAL');
-    const suffix = isLoan ? ' [DEVUELTO]' : ' [ATENDIDO]';
-    const newDesc = ticket.descripcionSolucion.includes('DEVUELTO') || ticket.descripcionSolucion.includes('ATENDIDO')
-      ? ticket.descripcionSolucion
-      : `${ticket.descripcionSolucion}${suffix}`;
-
-    const updates = { 
-      estado: 'ATENDIDO',
-      descripcionSolucion: newDesc
-    };
-
-    setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
-    setToastMessage(`✅ Aula ${ticket.ambiente}: Material devuelto y archivado`);
-    setTimeout(() => setToastMessage(''), 3000);
 
     try {
-      await fetch(`/api/tickets/${ticket.id}`, {
+      localStorage.setItem(`upn_sign_recepcion_${ticketId}`, drawnSignature);
+    } catch (e) {}
+
+    const updates = { firmaRecepcion: drawnSignature };
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...updates } : t));
+    setInlineSignTicketId(null);
+    setToastMessage('✅ Firma guardada en el comprobante');
+    setTimeout(() => setToastMessage(''), 2500);
+
+    try {
+      await fetch(`/api/tickets/${ticketId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -440,10 +296,17 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     }
   };
 
-  const handleStartAttending = async (ticket) => {
-    const updates = { estado: 'EN PROCESO' };
+  // 1-Tap Return
+  const handleMarkReturned = async (ticket) => {
+    const updates = { 
+      estado: 'ATENDIDO',
+      descripcionSolucion: ticket.descripcionSolucion.includes('DEVUELTO') 
+        ? ticket.descripcionSolucion 
+        : `${ticket.descripcionSolucion} [DEVUELTO]`
+    };
+
     setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
-    setToastMessage(`🏃 Aula ${ticket.ambiente}: En atención`);
+    setToastMessage(`✅ Material devuelto y archivado`);
     setTimeout(() => setToastMessage(''), 2500);
 
     try {
@@ -460,8 +323,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   const handleReopen = async (ticket) => {
     const updates = { estado: 'EN PROCESO' };
     setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
-    setToastMessage(`↺ Aula ${ticket.ambiente}: Préstamo reactivado en Activos`);
-    setTimeout(() => setToastMessage(''), 2500);
+    setToastMessage(`↺ Préstamo reactivado en Activos`);
+    setTimeout(() => setToastMessage(''), 2000);
 
     try {
       await fetch(`/api/tickets/${ticket.id}`, {
@@ -475,51 +338,21 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('¿Deseas eliminar este registro de préstamo?')) return;
+    if (!confirm('¿Eliminar este registro de préstamo?')) return;
     setTickets(prev => prev.filter(t => t.id !== id));
     await fetch(`/api/tickets/${id}`, { method: 'DELETE' });
   };
 
-  const handleSaveSignatures = async (ticketId, signaturePayload) => {
-    // 1. Optimistic update
-    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...signaturePayload } : t));
-    setToastMessage('✅ Firmas registradas exitosamente en el Acta de Cargo');
-    setTimeout(() => setToastMessage(''), 3000);
-
-    // 2. Persist to API
-    try {
-      await fetch(`/api/tickets/${ticketId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(signaturePayload)
-      });
-    } catch (err) {
-      console.error('Error saving signatures to API', err);
-    }
-  };
-
-  // Filtered tickets
+  // Filtered lists
   const filteredTickets = useMemo(() => {
-    return tickets.filter(t => {
-      if (filterTipo && !t.tipoSolicitud.toUpperCase().includes(filterTipo.toUpperCase())) return false;
-      
-      if (filterBeneficiary) {
-        const ben = parseBeneficiary(t.descripcionSolucion);
-        if (ben.type !== filterBeneficiary) return false;
-      }
-
-      if (search) {
-        const s = search.toLowerCase();
-        return (
-          (t.ambiente || '').toLowerCase().includes(s) ||
-          (t.tipoSolicitud || '').toLowerCase().includes(s) ||
-          (t.descripcionSolucion || '').toLowerCase().includes(s) ||
-          (t.responsable || '').toLowerCase().includes(s)
-        );
-      }
-      return true;
-    });
-  }, [tickets, search, filterTipo, filterBeneficiary]);
+    if (!search.trim()) return tickets;
+    const s = search.toLowerCase();
+    return tickets.filter(t => 
+      (t.ambiente || '').toLowerCase().includes(s) ||
+      (t.tipoSolicitud || '').toLowerCase().includes(s) ||
+      (t.descripcionSolucion || '').toLowerCase().includes(s)
+    );
+  }, [tickets, search]);
 
   const activeLoans = useMemo(() => {
     return filteredTickets.filter(t => t.estado === 'PENDIENTE' || t.estado === 'EN PROCESO');
@@ -530,8 +363,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   }, [filteredTickets]);
 
   return (
-    <div className="space-y-4 pb-36 md:pb-12 w-full max-w-7xl mx-auto">
-      {/* Toast Alert - Portaled to viewport body so it never scrolls out of view */}
+    <div className="space-y-3 pb-32 md:pb-12 w-full max-w-4xl mx-auto">
+      {/* Toast Alert */}
       {toastMessage && (
         <ToastBanner
           message={toastMessage}
@@ -540,68 +373,62 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       )}
 
       {/* =========================================================================
-          PANEL DE CONTROL ÁGIL, LIMPIO Y RÁPIDO
+          CABECERA Y PESTAÑAS (ACTIVOS / DEVUELTOS)
           ========================================================================= */}
-      <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-xs space-y-3">
-        {/* Cabecera Compacta */}
-        <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-zinc-800">
-          <div className="flex items-center gap-2">
-            <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4]" />
-            <h1 className="text-base font-black text-slate-950 dark:text-white tracking-tight">
-              Préstamos de Material
-            </h1>
-          </div>
-
-          {/* Conmutador de Pestañas Activos vs Devueltos */}
-          <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800">
-            <button
-              onClick={() => setActiveViewTab('ACTIVOS')}
-              className={`h-8 px-2.5 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
-                activeViewTab === 'ACTIVOS'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <span>Activos</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeViewTab === 'ACTIVOS' ? 'bg-[#FDBA30] text-slate-950' : 'bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200'
-              }`}>
-                {activeLoans.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveViewTab('CONCLUIDOS')}
-              className={`h-8 px-2.5 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
-                activeViewTab === 'CONCLUIDOS'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 stroke-[2.4]" />
-              <span>Devueltos</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeViewTab === 'CONCLUIDOS' ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200'
-              }`}>
-                {concludedLoans.length}
-              </span>
-            </button>
-          </div>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2">
+          <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4]" />
+          <h1 className="text-base font-black text-slate-950 dark:text-white tracking-tight">
+            Préstamos de Material
+          </h1>
         </div>
 
-        {/* Formulario Rápido y Práctico */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
+          <button
+            onClick={() => setActiveViewTab('ACTIVOS')}
+            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
+              activeViewTab === 'ACTIVOS'
+                ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span>Activos</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-[#FDBA30] text-slate-950">
+              {activeLoans.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveViewTab('CONCLUIDOS')}
+            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
+              activeViewTab === 'CONCLUIDOS'
+                ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span>Devueltos</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-white">
+              {concludedLoans.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          FORMULARIO ÁGIL Y DIRECTO (1 SOLO BLOQUE INLINE, CERO VENTANAS)
+          ========================================================================= */}
+      <div className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-xs">
         <form onSubmit={handleRegisterLoan} className="space-y-2.5">
-          {/* Fila 1: Beneficiario + Aula + Nombre */}
+          {/* Fila 1: Beneficiario + Nombre + Aula */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-            <div className="sm:col-span-3 grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-800">
+            <div className="sm:col-span-4 grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setBeneficiaryType('DOCENTE')}
                 className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
                   beneficiaryType === 'DOCENTE'
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                    : 'text-slate-500 dark:text-zinc-400'
                 }`}
               >
                 <User className="w-3.5 h-3.5 stroke-[2.4]" />
@@ -613,8 +440,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 onClick={() => setBeneficiaryType('ALUMNO')}
                 className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
                   beneficiaryType === 'ALUMNO'
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                    : 'text-slate-500 dark:text-zinc-400'
                 }`}
               >
                 <GraduationCap className="w-3.5 h-3.5 stroke-[2.4]" />
@@ -622,328 +449,227 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               </button>
             </div>
 
-            <div className="sm:col-span-4">
-              <input
-                id="unified-room-input"
-                type="text"
-                value={roomInput}
-                onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                placeholder="Aula / Espacio (Opcional)"
-                className="w-full h-10 px-3 font-mono font-bold text-xs sm:text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
-              />
-            </div>
-
             <div className="sm:col-span-5">
               <input
                 type="text"
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
-                placeholder={beneficiaryType === 'ALUMNO' ? 'Nombre o Código (Opcional)' : 'Nombre del Docente (Opcional)'}
-                className="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 transition font-bold"
+                placeholder={beneficiaryType === 'DOCENTE' ? 'Nombre del Docente' : 'Nombre o Código del Alumno'}
+                className="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:border-[#FDBA30]"
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <input
+                type="text"
+                value={roomInput}
+                onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                placeholder="Aula (Opcional)"
+                className="w-full h-10 px-3 text-xs font-mono font-bold bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-center uppercase focus:outline-none focus:border-[#FDBA30]"
               />
             </div>
           </div>
 
-          {/* Fila 2: Chips de Material Rápidos y Flexibles */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            {allMaterialItems.map(t => {
-              const isSelected = selectedMaterialVal === t.val;
+          {/* Fila 2: Materiales Rápidos */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {CORE_MATERIALS.map(item => {
+              const isSelected = selectedMaterialVal === item.id;
               return (
                 <button
-                  key={t.val}
+                  key={item.id}
                   type="button"
-                  onClick={() => setSelectedMaterialVal(t.val)}
-                  className={`h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 border ${
+                  onClick={() => setSelectedMaterialVal(item.id)}
+                  className={`h-8 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 border ${
                     isSelected
                       ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
-                      : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200/90 dark:border-zinc-800'
+                      : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
                   }`}
                 >
-                  <span>{t.label}</span>
+                  <span>{item.label}</span>
                   {isSelected && <Check className="w-3 h-3 stroke-[3] text-amber-400 shrink-0" />}
                 </button>
               );
             })}
           </div>
 
-          {/* Campo Manual si seleccionó "Otro" */}
+          {/* Campo de Material Manual si seleccionó "Otro" */}
           {selectedMaterialVal === 'MANUAL' && (
-            <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-2.5 space-y-1.5 animate-scale-up">
-              <input
-                id="manual-item-input"
-                type="text"
-                required
-                autoFocus
-                value={manualItemText}
-                onChange={(e) => setManualItemText(e.target.value)}
-                placeholder="Escribe el material: Extensión, Parlante, Puntero, Adaptador..."
-                className="w-full h-9 px-3 text-xs font-bold bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-800 rounded-lg text-slate-950 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
-              />
-            </div>
-          )}
-
-          {/* Botones de Acción Directos: 1 Toque */}
-          <div className="pt-1 flex items-center gap-2">
-            <button
-              type="button"
-              disabled={submittingLoan}
-              onClick={(e) => handleRegisterLoan(e, true)}
-              className="flex-1 h-11 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
-              title="Crea el préstamo y abre inmediatamente el Acta de Cargo para firmar"
-            >
-              <PenTool className="w-4 h-4 stroke-[2.4]" />
-              <span>✍️ Registrar y Firmar Cargo</span>
-            </button>
-
-            <button
-              type="submit"
-              disabled={submittingLoan}
-              className="h-11 px-4 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-zinc-700 transition flex items-center justify-center gap-1.5 active:scale-98 shrink-0"
-              title="Registrar préstamo rápido sin abrir firma"
-            >
-              <span>⚡ Solo Registrar</span>
-            </button>
-          </div>
-        </form>
-
-        {/* Buscador y Filtros Rápidos */}
-        <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2">
-          <div className="relative w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 stroke-[2.2]" />
             <input
               type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por aula (A201), material (plumón, HDMI) o beneficiario..."
-              className="w-full pl-10 pr-9 py-2 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161c] focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
+              required
+              autoFocus
+              value={manualItemText}
+              onChange={(e) => setManualItemText(e.target.value)}
+              placeholder="Escribe el material a prestar: Extensión, Parlante, Puntero..."
+              className="w-full h-9 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
             />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
-                title="Limpiar búsqueda"
-              >
-                <X className="w-3.5 h-3.5 stroke-[2.2]" />
-              </button>
-            )}
+          )}
+
+          {/* Fila 3: Firma Digital Directa en Pantalla (INLINE, Cero Ventanas) */}
+          <div className="pt-0.5">
+            <SignatureCanvas
+              ref={formSignCanvasRef}
+              title="Firma del Solicitante"
+              subtitle="Firme aquí con el dedo para el Acta de Cargo (Opcional)"
+              height={100}
+              compact={true}
+            />
           </div>
 
-          {/* Chips de filtro por material y beneficiario - Wrap limpio y simétrico */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <button
-              onClick={() => { setFilterTipo(''); setFilterBeneficiary(''); }}
-              className={`h-7 px-3 rounded-lg font-bold transition active:scale-95 ${
-                !filterTipo && !filterBeneficiary 
-                  ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black' 
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
-              }`}
-            >
-              Todos ({filteredTickets.length})
-            </button>
-
-            <button
-              onClick={() => setFilterBeneficiary(filterBeneficiary === 'DOCENTE' ? '' : 'DOCENTE')}
-              className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
-                filterBeneficiary === 'DOCENTE'
-                  ? 'bg-amber-400 text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800'
-              }`}
-            >
-              👨‍🏫 Docentes
-            </button>
-
-            <button
-              onClick={() => setFilterBeneficiary(filterBeneficiary === 'ALUMNO' ? '' : 'ALUMNO')}
-              className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
-                filterBeneficiary === 'ALUMNO'
-                  ? 'bg-indigo-600 text-white font-black shadow-2xs'
-                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800'
-              }`}
-            >
-              🎓 Alumnos
-            </button>
-
-            {allMaterialItems.slice(0, 8).map(t => (
-              <button
-                key={t.val}
-                onClick={() => setFilterTipo(filterTipo === t.val ? '' : t.val)}
-                className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
-                  filterTipo === t.val
-                    ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/70 dark:border-zinc-800'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+          {/* Botón Único de Registro (1 Toque) */}
+          <button
+            type="submit"
+            disabled={submittingLoan}
+            className="w-full h-11 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
+          >
+            <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+            <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo'}</span>
+          </button>
+        </form>
       </div>
 
       {/* =========================================================================
-          LISTADO DE PRÉSTAMOS ACTIVOS / HISTORIAL
+          BUSCADOR RÁPIDO (SIN BOTONES REDUNDANTES)
+          ========================================================================= */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 stroke-[2.2]" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar préstamo por aula, persona o material..."
+          className="w-full pl-10 pr-9 py-2 text-xs bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30]"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 p-0.5"
+          >
+            <X className="w-3.5 h-3.5 stroke-[2.2]" />
+          </button>
+        )}
+      </div>
+
+      {/* =========================================================================
+          LISTADO DE PRÉSTAMOS (ACTIVOS O DEVUELTOS)
           ========================================================================= */}
       {loading ? (
-        <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
-          <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Cargando préstamos...</p>
+        <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200 dark:border-zinc-800">
+          <div className="w-7 h-7 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <p className="text-xs text-slate-500 dark:text-zinc-400">Cargando...</p>
         </div>
       ) : activeViewTab === 'ACTIVOS' ? (
-        /* ================= TAB 1: PRÉSTAMOS ACTIVOS ================= */
         activeLoans.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center mb-2.5">
-              <CheckCircle2 className="w-6 h-6 stroke-[2.2]" />
-            </div>
-            <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">
-              No hay préstamos activos pendientes de devolución
-            </p>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-              Todos los materiales prestados a alumnos y docentes han sido recibidos.
+          <div className="text-center py-12 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200 dark:border-zinc-800 px-4">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-1.5 stroke-[2.2]" />
+            <p className="text-xs font-bold text-slate-700 dark:text-zinc-300">
+              No hay préstamos activos pendientes
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {activeLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
-              const cleanNote = getCleanNote(ticket.descripcionSolucion);
-              const isPending = ticket.estado === 'PENDIENTE';
+              const isSigningInline = inlineSignTicketId === ticket.id;
 
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between"
                 >
                   <div>
-                    {/* Header de la tarjeta */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                    {/* Header */}
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-xl shadow-xs">
-                          {ticket.ambiente || 'AULA'}
+                        <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg">
+                          {ticket.ambiente || 'DOCENCIA'}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2 py-0.5 rounded-lg">
-                          Pab. {ticket.pabellon || 'A'} · {ticket.piso || 'Sede'}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${ben.badgeClass}`}>
-                          <span>{ben.type === 'ALUMNO' ? '🎓 Alumno' : '👨‍🏫 Docente'}</span>
-                          {ben.name && <strong className="font-black break-words">: {ben.name}</strong>}
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          {ben.type === 'ALUMNO' ? '🎓 Alumno' : '👨‍🏫 Docente'}{ben.name ? `: ${ben.name}` : ''}
                         </span>
                       </div>
-                    </div>
-
-                    {/* Material Prestado */}
-                    <div className="mb-2.5">
-                      <div className="text-xs font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-1">
-                        <span>{ticket.tipoSolicitud}</span>
-                      </div>
-                      {cleanNote && (
-                        <p className="text-xs text-slate-600 dark:text-zinc-300 font-medium leading-relaxed mt-1 bg-slate-50 dark:bg-[#121216] p-2 rounded-xl border border-slate-100 dark:border-zinc-800">
-                          {cleanNote}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Meta info: hora de entrega */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500 mb-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
-                      <span className="flex items-center gap-1 text-slate-500 dark:text-zinc-400">
+                      <span className="text-[11px] font-mono text-slate-400 dark:text-zinc-500 flex items-center gap-1">
                         <Clock className="w-3 h-3 stroke-[2.2]" />
-                        <span>Entregado: {ticket.horaReporte || '--:--'}</span>
+                        <span>{ticket.horaReporte || '--:--'}</span>
                       </span>
-                      <span className="font-mono text-slate-400 dark:text-zinc-500">{ticket.fecha}</span>
                     </div>
 
-                    {/* Estado del Acta de Cargo y Firmas con Celular */}
-                    <div className="mb-2">
+                    {/* Material */}
+                    <p className="text-xs text-slate-700 dark:text-zinc-300 font-medium mb-2">
+                      {ticket.tipoSolicitud}
+                    </p>
+
+                    {/* Estado de Firma Inline */}
+                    {ticket.firmaRecepcion ? (
+                      <div className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60 mb-2">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                        <span>Cargo firmado</span>
+                      </div>
+                    ) : isSigningInline ? (
+                      <div className="my-2 p-2 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-2">
+                        <SignatureCanvas
+                          ref={cardSignCanvasRef}
+                          title="Firma del Solicitante"
+                          height={90}
+                          compact={true}
+                        />
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveCardSignature(ticket.id)}
+                            className="flex-1 h-8 bg-[#FDBA30] hover:bg-amber-400 text-slate-950 font-black text-xs rounded-lg transition"
+                          >
+                            Guardar Firma
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInlineSignTicketId(null)}
+                            className="h-8 px-3 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-lg transition"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setSigningTicket(ticket)}
-                        className={`w-full py-1.5 px-2.5 rounded-xl border text-[11px] font-bold transition inline-flex items-center justify-between active:scale-98 ${
-                          ticket.firmaEntrega && ticket.firmaRecepcion
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
-                            : ticket.firmaEntrega || ticket.firmaRecepcion
-                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
-                            : 'bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-800'
-                        }`}
-                        title="Ver o completar Acta de Cargo con firmas móviles"
+                        onClick={() => setInlineSignTicketId(ticket.id)}
+                        className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60 transition inline-flex items-center gap-1 mb-2 active:scale-95"
                       >
-                        <span className="inline-flex items-center gap-1.5">
-                          <PenTool className="w-3.5 h-3.5 text-amber-500" />
-                          <span>
-                            {ticket.firmaEntrega && ticket.firmaRecepcion
-                              ? '✍️ Cargo con 2 firmas listas'
-                              : ticket.firmaEntrega
-                              ? '✍️ Entregué firmado (falta receptor)'
-                              : ticket.firmaRecepcion
-                              ? '✍️ Recibí firmado (falta entrega)'
-                              : '✍️ Firmar Cargo con celular'}
-                          </span>
-                        </span>
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">
-                          Ver / PDF &rarr;
-                        </span>
+                        <PenTool className="w-3 h-3 text-amber-500" />
+                        <span>✍️ Agregar Firma</span>
                       </button>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Botón de 1 Toque para Recibir Devolución + Botón Cargo */}
-                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800">
-                    {ticket.firmaEntrega || ticket.firmaRecepcion ? (
-                      <button
-                        type="button"
-                        onClick={(e) => handleQuickDownloadPdf(e, ticket)}
-                        className="h-11 px-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 border border-emerald-200/80 dark:border-emerald-800/80 active:scale-95 shrink-0"
-                        title="Descargar Acta de Cargo oficial en PDF directamente"
-                      >
-                        <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.4]" />
-                        <span className="hidden sm:inline">PDF</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setSigningTicket(ticket)}
-                        className="h-11 px-3 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 border border-slate-200/80 dark:border-zinc-800 active:scale-95 shrink-0"
-                        title="Abrir comprobante para firmar"
-                      >
-                        <PenTool className="w-4 h-4 text-amber-500 stroke-[2.2]" />
-                        <span className="hidden sm:inline">Firmar</span>
-                      </button>
-                    )}
-
-                    {isPending ? (
-                      <>
-                        <button
-                          onClick={() => handleStartAttending(ticket)}
-                          className="flex-1 h-11 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
-                        >
-                          <span>🏃 Atender</span>
-                        </button>
-                        <button
-                          onClick={() => handleMarkReturned(ticket)}
-                          className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
-                        >
-                          <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                          <span>Concluir</span>
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleMarkReturned(ticket)}
-                        className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-2 active:scale-95"
-                      >
-                        <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                        <span>Recibir y Marcar Devuelto</span>
-                      </button>
-                    )}
+                  {/* Acciones de la Tarjeta (Solo 3 botones esenciales) */}
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={(e) => handleQuickDownloadPdf(e, ticket)}
+                      className="h-9 px-3 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 active:scale-95"
+                      title="Descargar Acta de Cargo en PDF directamente"
+                    >
+                      <Download className="w-3.5 h-3.5 text-slate-600 dark:text-zinc-300 stroke-[2.2]" />
+                      <span>PDF</span>
+                    </button>
 
                     <button
-                      onClick={() => handleDelete(ticket.id)}
-                      className="w-11 h-11 rounded-xl text-slate-400 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200/80 dark:border-zinc-800 active:scale-95 shrink-0"
-                      title="Eliminar registro"
+                      type="button"
+                      onClick={() => handleMarkReturned(ticket)}
+                      className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
                     >
-                      <Trash2 className="w-4 h-4 stroke-[2.2]" />
+                      <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.4]" />
+                      <span>Recibir Devolución</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(ticket.id)}
+                      className="w-9 h-9 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95 shrink-0"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
                     </button>
                   </div>
                 </div>
@@ -952,99 +678,66 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           </div>
         )
       ) : (
-        /* ================= TAB 2: HISTORIAL DE DEVUELTOS (AMOLED PURE BLACK) ================= */
         concludedLoans.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
-            <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">No hay préstamos concluidos con este filtro</p>
+          <div className="text-center py-12 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200 dark:border-zinc-800 px-4">
+            <p className="text-xs text-slate-500 dark:text-zinc-400">No hay préstamos concluidos</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {concludedLoans.slice(0, 50).map(ticket => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {concludedLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
-              const cleanNote = getCleanNote(ticket.descripcionSolucion);
 
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all opacity-95"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between opacity-90"
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 px-2 py-0.5 rounded-lg">
-                          {ticket.ambiente || 'AULA'}
+                        <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-zinc-700">
+                          {ticket.ambiente || 'DOCENCIA'}
                         </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${ben.badgeClass}`}>
-                          {ben.type === 'ALUMNO' ? '🎓 Alumno' : '👨‍🏫 Docente'} {ben.name && `: ${ben.name}`}
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          {ben.type === 'ALUMNO' ? '🎓 Alumno' : '👨‍🏫 Docente'}{ben.name ? `: ${ben.name}` : ''}
                         </span>
                       </div>
-
-                      <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 inline-flex items-center gap-1">
+                        <Check className="w-3 h-3 stroke-[3]" />
                         DEVUELTO
                       </span>
                     </div>
 
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white mb-1">{ticket.tipoSolicitud}</h3>
-                    {cleanNote && (
-                      <p className="text-xs text-slate-600 dark:text-zinc-400 mb-2 leading-tight">{cleanNote}</p>
-                    )}
-
-                    {/* Estado del Acta de Cargo */}
-                    <div className="mb-2">
-                      <button
-                        type="button"
-                        onClick={() => setSigningTicket(ticket)}
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border inline-flex items-center gap-1.5 transition ${
-                          ticket.firmaEntrega && ticket.firmaRecepcion
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
-                        }`}
-                        title="Ver comprobante oficial de cargo"
-                      >
-                        <FileText className="w-3 h-3 text-amber-500" />
-                        <span>
-                          {ticket.firmaEntrega && ticket.firmaRecepcion
-                            ? 'Acta con 2 firmas (Descargar PDF)'
-                            : 'Ver / Completar Acta de Cargo'}
-                        </span>
-                      </button>
-                    </div>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400 mb-2">
+                      {ticket.tipoSolicitud}
+                    </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-[11px]">
-                    <span className="text-slate-400 dark:text-zinc-500 font-mono">{ticket.fecha} · {ticket.horaReporte}</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs">
+                    <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-mono">
+                      {ticket.fecha} · {ticket.horaReporte}
+                    </span>
                     <div className="flex items-center gap-1.5">
-                      {ticket.firmaEntrega || ticket.firmaRecepcion ? (
-                        <button
-                          onClick={(e) => handleQuickDownloadPdf(e, ticket)}
-                          className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 dark:hover:text-emerald-200 font-bold inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-2.5 py-1 rounded-lg border border-emerald-200/80 dark:border-emerald-800/80 transition active:scale-95"
-                          title="Descargar Acta de Cargo en PDF directamente"
-                        >
-                          <Download className="w-3.5 h-3.5 stroke-[2.2]" />
-                          <span>PDF</span>
-                        </button>
-                      ) : null}
                       <button
-                        onClick={() => setSigningTicket(ticket)}
-                        className="text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white font-bold inline-flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-zinc-700 transition active:scale-95"
-                        title="Ver o completar Acta de Cargo"
+                        type="button"
+                        onClick={(e) => handleQuickDownloadPdf(e, ticket)}
+                        className="h-8 px-2.5 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 border border-slate-200 dark:border-zinc-800 active:scale-95"
                       >
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>Ver Cargo</span>
+                        <Download className="w-3 h-3 stroke-[2.2]" />
+                        <span>PDF</span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleReopen(ticket)}
-                        className="text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-200 font-bold inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 px-2.5 py-1 rounded-lg border border-amber-200/80 dark:border-amber-800/80 transition active:scale-95"
-                        title="Reabrir a Préstamos Activos"
+                        className="h-8 px-2.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 border border-amber-200/80 dark:border-amber-800/80 active:scale-95"
                       >
-                        <RotateCcw className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <RotateCcw className="w-3 h-3 stroke-[2.2]" />
                         <span>Reabrir</span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(ticket.id)}
-                        className="p-1 text-slate-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition active:scale-90"
-                        title="Eliminar registro"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1055,108 +748,6 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             })}
           </div>
         )
-      )}
-
-      {/* Modal Detallado (Solo si se requiere configuración especial) - Full AMOLED Dark Mode */}
-      {isModalOpen && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div 
-            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800 mb-4">
-              <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 inline-flex items-center justify-center shadow-xs shrink-0">
-                  <HandHelping className="w-5 h-5 stroke-[2.2]" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-                    Préstamo de Material Detallado
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                    Registro de entrega con especificaciones
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
-                title="Cerrar ventana"
-              >
-                <X className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveModalTicket} className="space-y-3.5">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase mb-1">
-                  Aula * (Ej: A201)
-                </label>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={formData.ambiente}
-                  onChange={(e) => {
-                    const room = e.target.value.toUpperCase();
-                    setFormData({ 
-                      ...formData, 
-                      ambiente: room,
-                      pabellon: room.startsWith('B') ? 'B' : 'A',
-                      piso: deduceFloor(room)
-                    });
-                  }}
-                  placeholder="Ej: A201"
-                  className="w-full text-sm font-mono font-bold px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase mb-1">
-                  Detalle / Solicitante (Docente o Alumno)
-                </label>
-                <input
-                  type="text"
-                  value={formData.descripcionSolucion}
-                  onChange={(e) => setFormData({ ...formData, descripcionSolucion: e.target.value })}
-                  placeholder="Ej: [ALUMNO: Juan Pérez] Cable HDMI"
-                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="h-11 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95"
-                >
-                  Guardar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Signature & Official Cargo Voucher Modal */}
-      {signingTicket && (
-        <SignatureModal
-          ticket={signingTicket}
-          isOpen={!!signingTicket}
-          onClose={() => setSigningTicket(null)}
-          onSaveSignatures={handleSaveSignatures}
-        />
       )}
     </div>
   );

@@ -9,6 +9,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     strokeColor = '#0f172a',
     backgroundColor = '#ffffff',
     lineWidth = 2.8,
+    height = 120,
+    compact = false,
     onSignChange
   }, 
   ref
@@ -27,8 +29,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
     const rect = container.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const width = Math.floor(rect.width);
-    const height = 180; // standard comfortable height for mobile signing
+    const width = Math.floor(rect.width) || 300;
+    const canvasHeight = height;
 
     // Preserve existing content if resizing
     let existingData = null;
@@ -77,7 +79,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     const handleResize = () => setupCanvas();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [initialImage, strokeColor, backgroundColor]);
+  }, [initialImage, strokeColor, backgroundColor, height]);
 
   // Coordinates helper
   const getCoordinates = (e) => {
@@ -170,13 +172,15 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
             <PenTool className="w-3.5 h-3.5 text-amber-500" />
             <span>{title}</span>
           </label>
-          <p className="text-[10px] text-slate-500 dark:text-zinc-400">{subtitle}</p>
+          {!compact && subtitle && (
+            <p className="text-[10px] text-slate-500 dark:text-zinc-400">{subtitle}</p>
+          )}
         </div>
         {hasContent && (
           <button
             type="button"
             onClick={clear}
-            className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800/80 transition inline-flex items-center gap-1 active:scale-95"
+            className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-800/80 transition inline-flex items-center gap-1 active:scale-95"
             title="Borrar y volver a firmar"
           >
             <RotateCcw className="w-3 h-3 stroke-[2.5]" />

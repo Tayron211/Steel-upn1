@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  Search, 
-  CheckCircle2, 
-  Clock, 
-  XCircle, 
-  UserCheck, 
-  AlertTriangle, 
-  HandHelping, 
-  CheckCheck, 
-  FileText, 
-  X, 
-  CalendarClock, 
-  Building, 
-  RotateCcw, 
-  Sparkles, 
+import {
+  Search,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  UserCheck,
+  AlertTriangle,
+  HandHelping,
+  CheckCheck,
+  FileText,
+  X,
+  CalendarClock,
+  Building,
+  RotateCcw,
+  Sparkles,
   Check,
   DoorOpen,
   Users,
@@ -127,7 +127,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       if (selectedDia) params.append('dia', selectedDia);
       if (selectedPabellon) params.append('pabellon', selectedPabellon);
       if (selectedPiso) params.append('piso', selectedPiso);
-      
+
       if (blockMode === 'CURRENT') {
         params.append('hora', getCurrentHourBlock());
       } else if (blockMode === 'NEXT') {
@@ -158,7 +158,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       if (selectedDia) params.append('dia', selectedDia);
       if (selectedPabellon) params.append('pabellon', selectedPabellon);
       if (selectedPiso) params.append('piso', selectedPiso);
-      
+
       if (blockMode === 'CURRENT') {
         params.append('hora', getCurrentHourBlock());
       } else if (blockMode === 'NEXT') {
@@ -221,7 +221,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   // 1-Tap Toggle Status Handler (If already active, resets to PENDIENTE for instant undo!)
   const handleQuickStatus = async (item, targetStatus) => {
-    const isCurrentlyActive = 
+    const isCurrentlyActive =
       (targetStatus === 'PUNTUAL' && item.puntualidad === 'PUNTUAL') ||
       (targetStatus === 'TARDE' && item.puntualidad === 'TARDE') ||
       (targetStatus === 'FALTA' && item.asistencia === 'NO');
@@ -279,8 +279,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     if (e) e.preventDefault();
     if (!quickAttentionItem) return;
 
-    const personTag = quickAttentionBeneficiary === 'ALUMNO' 
-      ? '[🎓 ALUMNO]' 
+    const personTag = quickAttentionBeneficiary === 'ALUMNO'
+      ? '[🎓 ALUMNO]'
       : `[👨‍🏫 DOCENTE: ${quickAttentionItem.docente}]`;
 
     const payload = {
@@ -394,11 +394,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 key={d}
                 type="button"
                 onClick={() => setSelectedDia(d)}
-                className={`h-7 sm:h-8 text-[11px] sm:text-xs font-bold rounded-lg transition-all inline-flex items-center justify-center active:scale-95 ${
-                  isSelected
+                className={`h-7 sm:h-8 text-[11px] sm:text-xs font-bold rounded-lg transition-all inline-flex items-center justify-center active:scale-95 ${isSelected
                     ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
                     : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 <span>{d === 'MIERCOLES' ? 'MIÉ' : d === 'SABADO' ? 'SÁB' : d === 'DOMINGO' ? 'DOM' : d.slice(0, 3)}</span>
               </button>
@@ -431,11 +430,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 key={pab || 'ALL'}
                 type="button"
                 onClick={() => setSelectedPabellon(pab)}
-                className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${
-                  selectedPabellon === pab
+                className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
                     ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
                     : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 {pab ? `Pab. ${pab}` : 'Ambos'}
               </button>
@@ -449,11 +447,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 key={p.label}
                 type="button"
                 onClick={() => setSelectedPiso(p.val)}
-                className={`h-7 px-2 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 ${
-                  selectedPiso === p.val
+                className={`h-7 px-2 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 ${selectedPiso === p.val
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                     : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 {p.short}
               </button>
@@ -469,11 +466,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
                 setSelectedHora('');
               }}
-              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
-                blockMode === 'CURRENT'
+              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${blockMode === 'CURRENT'
                   ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                   : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-              }`}
+                }`}
             >
               <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
               <span>Actual ({getCurrentHourBlock()})</span>
@@ -484,22 +480,20 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setBlockMode(blockMode === 'NEXT' ? 'ALL' : 'NEXT');
                 setSelectedHora('');
               }}
-              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
-                blockMode === 'NEXT'
+              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${blockMode === 'NEXT'
                   ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
                   : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span>Sig.</span>
             </button>
 
             <button
               onClick={() => setViewMode(viewMode === 'FREE_ROOMS' ? 'CLASSES' : 'FREE_ROOMS')}
-              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
-                viewMode === 'FREE_ROOMS'
+              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${viewMode === 'FREE_ROOMS'
                   ? 'bg-emerald-600 text-white font-black shadow-2xs'
                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
-              }`}
+                }`}
             >
               <DoorOpen className="w-3 h-3" />
               <span>Libres ({freeRooms.length})</span>
@@ -513,11 +507,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
-                statusFilter === 'PUNTUAL'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'PUNTUAL'
                   ? 'bg-emerald-600 text-white font-black'
                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
-              }`}
+                }`}
             >
               ✓ {countPuntual}
             </button>
@@ -527,11 +520,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
-                statusFilter === 'TARDE'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'TARDE'
                   ? 'bg-amber-500 text-slate-950 font-black'
                   : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
-              }`}
+                }`}
             >
               🕒 {countTarde}
             </button>
@@ -541,11 +533,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
-                statusFilter === 'FALTA'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'FALTA'
                   ? 'bg-rose-600 text-white font-black'
                   : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
-              }`}
+                }`}
             >
               ✕ {countFalta}
             </button>
@@ -555,11 +546,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
-                statusFilter === 'PENDIENTE'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'PENDIENTE'
                   ? 'bg-slate-900 text-white dark:bg-zinc-700 font-black'
                   : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
-              }`}
+                }`}
             >
               Pend: {countPendiente}
             </button>
@@ -573,11 +563,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               setBlockMode('ALL');
               setSelectedHora('');
             }}
-            className={`h-6 px-2 rounded-md font-bold transition whitespace-nowrap active:scale-95 ${
-              blockMode === 'ALL' && !selectedHora
+            className={`h-6 px-2 rounded-md font-bold transition whitespace-nowrap active:scale-95 ${blockMode === 'ALL' && !selectedHora
                 ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
                 : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400'
-            }`}
+              }`}
           >
             Todo
           </button>
@@ -596,638 +585,637 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     setSelectedHora(b.start);
                   }
                 }}
-                className={`h-6 px-2 rounded-md font-mono font-bold transition whitespace-nowrap active:scale-95 ${
-                  isSelected
+                className={`h-6 px-2 rounded-md font-mono font-bold transition whitespace-nowrap active:scale-95 ${isSelected
                     ? 'bg-[#FDBA30] text-slate-950 font-black'
                     : isCurrent
-                    ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300'
-                    : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400'
-                }`}
+                      ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300'
+                      : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400'
+                  }`}
               >
                 {b.start}
               </button>
             );
           })}
         </div>
-
-        {/* Active Filter Pill indicator if statusFilter != 'ALL' */}
-        {statusFilter !== 'ALL' && viewMode === 'CLASSES' && (
-          <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800">
-            <span className="text-slate-600 dark:text-zinc-300 font-medium">
-              Filtrando por estado: <strong className="text-slate-900 dark:text-white font-bold uppercase">{statusFilter}</strong>
-            </span>
-            <button
-              onClick={() => setStatusFilter('ALL')}
-              className="text-amber-700 dark:text-amber-400 hover:text-amber-800 text-[11px] font-bold inline-flex items-center gap-1"
-            >
-              <span>Ver todas ({countTotal})</span>
-              <X className="w-3 h-3 stroke-[2.2]" />
-            </button>
-          </div>
-        )}
-
-        {/* Active Schedule Mode Indicator if blockMode != 'ALL' */}
-        {blockMode !== 'ALL' && viewMode === 'CLASSES' && (
-          <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60">
-            <span className="text-amber-950 dark:text-amber-200 font-medium">
-              Horario: <strong className="font-bold">
-                {blockMode === 'RESTO' 
-                  ? `Próximas horas / Resto del día (desde las ${getCurrentHourBlock()})` 
-                  : blockMode === 'CURRENT' 
-                    ? `Bloque actual (${getCurrentHourBlock()})` 
-                    : blockMode === 'NEXT' 
-                      ? `Bloque siguiente (${getNextHourBlock()})` 
-                      : `Bloque ${selectedHora}`}
-              </strong>
-            </span>
-            <button
-              onClick={() => {
-                setBlockMode('ALL');
-                setSelectedHora('');
-              }}
-              className="text-amber-800 dark:text-amber-300 hover:underline text-[11px] font-bold inline-flex items-center gap-1"
-            >
-              <span>Ver todo el día</span>
-              <X className="w-3 h-3 stroke-[2.2]" />
-            </button>
-          </div>
-        )}
       </div>
 
+      {/* Active Filter Pill indicator if statusFilter != 'ALL' */}
+      {statusFilter !== 'ALL' && viewMode === 'CLASSES' && (
+        <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800">
+          <span className="text-slate-600 dark:text-zinc-300 font-medium">
+            Filtrando por estado: <strong className="text-slate-900 dark:text-white font-bold uppercase">{statusFilter}</strong>
+          </span>
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className="text-amber-700 dark:text-amber-400 hover:text-amber-800 text-[11px] font-bold inline-flex items-center gap-1"
+          >
+            <span>Ver todas ({countTotal})</span>
+            <X className="w-3 h-3 stroke-[2.2]" />
+          </button>
+        </div>
+      )}
+
+      {/* Active Schedule Mode Indicator if blockMode != 'ALL' */}
+      {blockMode !== 'ALL' && viewMode === 'CLASSES' && (
+        <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60">
+          <span className="text-amber-950 dark:text-amber-200 font-medium">
+            Horario: <strong className="font-bold">
+              {blockMode === 'RESTO'
+                ? `Próximas horas / Resto del día (desde las ${getCurrentHourBlock()})`
+                : blockMode === 'CURRENT'
+                  ? `Bloque actual (${getCurrentHourBlock()})`
+                  : blockMode === 'NEXT'
+                    ? `Bloque siguiente (${getNextHourBlock()})`
+                    : `Bloque ${selectedHora}`}
+            </strong>
+          </span>
+          <button
+            onClick={() => {
+              setBlockMode('ALL');
+              setSelectedHora('');
+            }}
+            className="text-amber-800 dark:text-amber-300 hover:underline text-[11px] font-bold inline-flex items-center gap-1"
+          >
+            <span>Ver todo el día</span>
+            <X className="w-3 h-3 stroke-[2.2]" />
+          </button>
+        </div>
+      )}
+
       {/* VIEW MODE 1: FREE ROOMS (Aulas Disponibles / Libres Ahora) */}
-      {viewMode === 'FREE_ROOMS' ? (
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200/80 p-3 rounded-2xl">
-            <div className="flex items-center gap-2">
-              <DoorOpen className="w-5 h-5 text-emerald-700 stroke-[2.2]" />
+  {
+    viewMode === 'FREE_ROOMS' ? (
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200/80 p-3 rounded-2xl">
+          <div className="flex items-center gap-2">
+            <DoorOpen className="w-5 h-5 text-emerald-700 stroke-[2.2]" />
+            <div>
+              <h3 className="text-xs font-bold text-emerald-950">Aulas Disponibles / Libres en este Horario</h3>
+              <p className="text-[11px] text-emerald-700">Espacios sin clase programada listos para préstamo o talleres</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setViewMode('CLASSES')}
+            className="text-xs font-bold bg-white dark:bg-zinc-800 text-emerald-900 dark:text-emerald-300 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xs"
+          >
+            Volver a Clases
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+          {freeRooms.map(room => (
+            <div
+              key={room.abrv}
+              className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between"
+            >
               <div>
-                <h3 className="text-xs font-bold text-emerald-950">Aulas Disponibles / Libres en este Horario</h3>
-                <p className="text-[11px] text-emerald-700">Espacios sin clase programada listos para préstamo o talleres</p>
+                <div className="flex items-start justify-between gap-1.5 mb-2">
+                  <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-xl">
+                    {room.abrv}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/70 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                    LIBRE
+                  </span>
+                </div>
+
+                <h4 className="text-xs font-bold text-slate-800 dark:text-white break-words mb-1">{room.nombre}</h4>
+                <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md mb-2.5 border border-blue-200/60 dark:border-blue-800/60">
+                  {room.tipo} · Pab. {room.pabellon} ({room.piso})
+                </span>
+
+                <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 p-2 rounded-xl border border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400">
+                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Capacidad: <strong className="text-slate-900 dark:text-white">{room.aforo} pers.</strong></span>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">
+                    {room.abrv}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : (
+    /* VIEW MODE 2: CLASS ATTENDANCE CARDS */
+    loading ? (
+      <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
+        <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
+        <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Cargando programación de aulas...</p>
+      </div>
+    ) : displayedItems.length === 0 ? (
+      <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
+        <Building className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-2 stroke-[1.8]" />
+        <p className="text-sm font-bold text-slate-800 dark:text-white">
+          {statusFilter === 'PENDING' ? '¡Excelente trabajo! No hay aulas pendientes' : 'No se encontraron clases'}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+          {statusFilter !== 'ALL'
+            ? 'Todas las clases de este bloque han sido verificadas con éxito.'
+            : 'Prueba cambiando el piso, pabellón o filtro de búsqueda.'}
+        </p>
+        {statusFilter !== 'ALL' && (
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className="mt-3 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition"
+          >
+            Restablecer Filtro
+          </button>
+        )}
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        {displayedItems.map(item => {
+          const isPuntual = item.puntualidad === 'PUNTUAL';
+          const isTarde = item.puntualidad === 'TARDE';
+          const isFalta = item.asistencia === 'NO';
+          const isReemplazo = item.asistencia && item.asistencia.includes('REEMPLAZO');
+          const isPendiente = !isPuntual && !isTarde && !isFalta && !isReemplazo;
+
+          return (
+            <div
+              key={item.id}
+              className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
+            >
+              <div>
+                {/* Top Bar: Aula, Pabellón, Estado y Menú 3 puntos */}
+                <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {item.aula && item.aula.trim() ? (
+                      <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
+                        {item.aula}
+                      </span>
+                    ) : (
+                      <span className="font-mono font-bold text-xs bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
+                        S/A
+                      </span>
+                    )}
+                    <span className="font-mono font-bold text-[10px] text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800/80 px-1.5 py-0.5 rounded-md shadow-2xs">
+                      {item.horaInicioProg}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md">
+                      {item.pisoPabellon || 'Campus'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isPuntual && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/70">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 stroke-[2.4] shrink-0" />
+                        <span>PUNTUAL</span>
+                      </span>
+                    )}
+                    {isTarde && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/70">
+                        <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.4] shrink-0" />
+                        <span>TARDE</span>
+                      </span>
+                    )}
+                    {isFalta && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800/70">
+                        <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400 stroke-[2.4] shrink-0" />
+                        <span>FALTA</span>
+                      </span>
+                    )}
+                    {isReemplazo && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800/70">
+                        <UserCheck className="w-3 h-3 text-purple-600 dark:text-purple-400 stroke-[2.4] shrink-0" />
+                        <span>REEMPLAZO</span>
+                      </span>
+                    )}
+                    {isPendiente && (
+                      <span className="text-[10px] font-bold bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-800">
+                        PENDIENTE
+                      </span>
+                    )}
+
+                    {/* Menú de Acciones Rápidas (Observación / Hoja / Préstamo) */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClassOptions(item)}
+                      className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition inline-flex items-center justify-center active:scale-90"
+                      title="Más opciones de aula"
+                    >
+                      <MoreVertical className="w-4 h-4 stroke-[2]" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Docente, Curso y Horario (Líneas legibles sin cortes) */}
+                <div className="mb-2">
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words leading-snug" title={item.docente}>
+                    {item.docente}
+                  </h3>
+                  <div className="flex items-start justify-between gap-1 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
+                    <span className="break-words leading-tight" title={item.curso}>{item.curso}</span>
+                    <span className="font-mono text-[10px] bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 px-1 py-0.2 rounded border border-slate-200 dark:border-zinc-800 shrink-0 font-bold">
+                      NRC {item.nrc}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" />
+                      <span className="text-slate-600 dark:text-zinc-300 font-medium">{item.horaInicioProg} - {item.horaFinalProg}</span>
+                    </span>
+                    <span className={item.horaInicioReal ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-400 dark:text-zinc-400 font-medium'}>
+                      Real: {item.horaInicioReal || '--:--'}
+                    </span>
+                  </div>
+
+                  {/* Observación Compacta (Clic para editar) */}
+                  {item.observacion && (
+                    <div
+                      onClick={() => {
+                        setActiveModalItem(item);
+                        setObservationText(item.observacion || '');
+                        setReplaceTeacherName('');
+                      }}
+                      className="mt-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100/80 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 rounded-lg text-[10px] font-semibold flex items-start gap-1 cursor-pointer transition active:scale-98"
+                      title="Toca para editar observación"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <span className="break-words leading-snug">{item.observacion}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila Única y Simétrica de Toma de Asistencia */}
+              <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
+                <button
+                  onClick={() => handleQuickStatus(item, 'PUNTUAL')}
+                  className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${isPuntual
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/70'
+                    }`}
+                  title={isPuntual ? 'Toca para desmarcar' : 'Marcar puntual'}
+                >
+                  <CheckCircle2 className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isPuntual ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                  <span>Puntual</span>
+                </button>
+
+                <button
+                  onClick={() => handleQuickStatus(item, 'TARDE')}
+                  className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${isTarde
+                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                      : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-800/70'
+                    }`}
+                  title={isTarde ? 'Toca para desmarcar' : 'Marcar tardanza'}
+                >
+                  <Clock className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isTarde ? 'text-slate-950' : 'text-amber-600 dark:text-amber-400'}`} />
+                  <span>Tarde</span>
+                </button>
+
+                <button
+                  onClick={() => handleQuickStatus(item, 'FALTA')}
+                  className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${isFalta
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-800/70'
+                    }`}
+                  title={isFalta ? 'Toca para desmarcar' : 'Marcar falta'}
+                >
+                  <XCircle className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isFalta ? 'text-white' : 'text-rose-600 dark:text-rose-400'}`} />
+                  <span>Falta</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )
+  )
+  }
+
+  {/* SECONDARY CLASSROOM ACTIONS SHEET (3-Dots Menu) */ }
+  {
+    selectedClassOptions && typeof document !== 'undefined' && createPortal(
+      <div
+        className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+        onClick={() => setSelectedClassOptions(null)}
+      >
+        <div
+          className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up space-y-4 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-1 rounded-xl shadow-xs shrink-0">
+                {selectedClassOptions.aula || 'S/A'}
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{selectedClassOptions.docente}</div>
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}</div>
               </div>
             </div>
             <button
-              onClick={() => setViewMode('CLASSES')}
-              className="text-xs font-bold bg-white dark:bg-zinc-800 text-emerald-900 dark:text-emerald-300 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xs"
+              type="button"
+              onClick={() => setSelectedClassOptions(null)}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
             >
-              Volver a Clases
+              <X className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
-            {freeRooms.map(room => (
-              <div 
-                key={room.abrv}
-                className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-1.5 mb-2">
-                    <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-xl">
-                      {room.abrv}
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/70 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                      LIBRE
-                    </span>
-                  </div>
-
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-white break-words mb-1">{room.nombre}</h4>
-                  <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md mb-2.5 border border-blue-200/60 dark:border-blue-800/60">
-                    {room.tipo} · Pab. {room.pabellon} ({room.piso})
-                  </span>
-
-                  <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 p-2 rounded-xl border border-slate-100 dark:border-zinc-800">
-                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Capacidad: <strong className="text-slate-900 dark:text-white">{room.aforo} pers.</strong></span>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">
-                      {room.abrv}
-                    </span>
-                  </div>
-                </div>
+          <div className="space-y-2 pt-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                const item = selectedClassOptions;
+                setSelectedClassOptions(null);
+                setActiveModalItem(item);
+                setObservationText(item.observacion || '');
+                setReplaceTeacherName('');
+              }}
+              className="w-full p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/90 dark:border-zinc-800 text-left flex items-center gap-3 transition active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 stroke-[2.2]" />
               </div>
-            ))}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-slate-900 dark:text-white">Añadir Observación o Suplente</div>
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const item = selectedClassOptions;
+                setSelectedClassOptions(null);
+                if (onEmitManualSheet) {
+                  onEmitManualSheet(item);
+                }
+              }}
+              className="w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/70 border border-indigo-200/90 dark:border-indigo-800/80 text-left flex items-center gap-3 transition active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 stroke-[2.2]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200">Ir a Hoja de Asistencia Manual</div>
+                <div className="text-[10px] text-indigo-600 dark:text-indigo-300 break-words leading-tight mt-0.5">Generar boleta prellenada en su apartado</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const item = selectedClassOptions;
+                setSelectedClassOptions(null);
+                if (onOpenNewTicket) {
+                  onOpenNewTicket({
+                    ambiente: item.aula,
+                    pabellon: item.aula?.startsWith('B') ? 'B' : 'A',
+                    tipo: 'PLUMONES / MATERIALES',
+                    descripcion: `[👨‍🏫 DOCENTE: ${item.docente}] Préstamo en aula ${item.aula}`
+                  });
+                }
+              }}
+              className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <HandHelping className="w-4 h-4 stroke-[2.2]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-amber-950 dark:text-amber-200">Registrar Préstamo de Material</div>
+                <div className="text-[10px] text-amber-700 dark:text-amber-300 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
+              </div>
+            </button>
           </div>
         </div>
-      ) : (
-        /* VIEW MODE 2: CLASS ATTENDANCE CARDS */
-        loading ? (
-          <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
-            <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Cargando programación de aulas...</p>
-          </div>
-        ) : displayedItems.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
-            <Building className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-2 stroke-[1.8]" />
-            <p className="text-sm font-bold text-slate-800 dark:text-white">
-              {statusFilter === 'PENDING' ? '¡Excelente trabajo! No hay aulas pendientes' : 'No se encontraron clases'}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-              {statusFilter !== 'ALL' 
-                ? 'Todas las clases de este bloque han sido verificadas con éxito.' 
-                : 'Prueba cambiando el piso, pabellón o filtro de búsqueda.'}
-            </p>
-            {statusFilter !== 'ALL' && (
-              <button
-                onClick={() => setStatusFilter('ALL')}
-                className="mt-3 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition"
-              >
-                Restablecer Filtro
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {displayedItems.map(item => {
-              const isPuntual = item.puntualidad === 'PUNTUAL';
-              const isTarde = item.puntualidad === 'TARDE';
-              const isFalta = item.asistencia === 'NO';
-              const isReemplazo = item.asistencia && item.asistencia.includes('REEMPLAZO');
-              const isPendiente = !isPuntual && !isTarde && !isFalta && !isReemplazo;
+      </div>,
+      document.body
+    )
+  }
 
-              return (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Top Bar: Aula, Pabellón, Estado y Menú 3 puntos */}
-                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {item.aula && item.aula.trim() ? (
-                          <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
-                            {item.aula}
-                          </span>
-                        ) : (
-                          <span className="font-mono font-bold text-xs bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
-                            S/A
-                          </span>
-                        )}
-                        <span className="font-mono font-bold text-[10px] text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800/80 px-1.5 py-0.5 rounded-md shadow-2xs">
-                          {item.horaInicioProg}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md">
-                          {item.pisoPabellon || 'Campus'}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        {isPuntual && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/70">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 stroke-[2.4] shrink-0" />
-                            <span>PUNTUAL</span>
-                          </span>
-                        )}
-                        {isTarde && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/70">
-                            <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.4] shrink-0" />
-                            <span>TARDE</span>
-                          </span>
-                        )}
-                        {isFalta && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800/70">
-                            <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400 stroke-[2.4] shrink-0" />
-                            <span>FALTA</span>
-                          </span>
-                        )}
-                        {isReemplazo && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800/70">
-                            <UserCheck className="w-3 h-3 text-purple-600 dark:text-purple-400 stroke-[2.4] shrink-0" />
-                            <span>REEMPLAZO</span>
-                          </span>
-                        )}
-                        {isPendiente && (
-                          <span className="text-[10px] font-bold bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-800">
-                            PENDIENTE
-                          </span>
-                        )}
-
-                        {/* Menú de Acciones Rápidas (Observación / Hoja / Préstamo) */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedClassOptions(item)}
-                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition inline-flex items-center justify-center active:scale-90"
-                          title="Más opciones de aula"
-                        >
-                          <MoreVertical className="w-4 h-4 stroke-[2]" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Docente, Curso y Horario (Líneas legibles sin cortes) */}
-                    <div className="mb-2">
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words leading-snug" title={item.docente}>
-                        {item.docente}
-                      </h3>
-                      <div className="flex items-start justify-between gap-1 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
-                        <span className="break-words leading-tight" title={item.curso}>{item.curso}</span>
-                        <span className="font-mono text-[10px] bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 px-1 py-0.2 rounded border border-slate-200 dark:border-zinc-800 shrink-0 font-bold">
-                          NRC {item.nrc}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" />
-                          <span className="text-slate-600 dark:text-zinc-300 font-medium">{item.horaInicioProg} - {item.horaFinalProg}</span>
-                        </span>
-                        <span className={item.horaInicioReal ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-400 dark:text-zinc-400 font-medium'}>
-                          Real: {item.horaInicioReal || '--:--'}
-                        </span>
-                      </div>
-
-                      {/* Observación Compacta (Clic para editar) */}
-                      {item.observacion && (
-                        <div 
-                          onClick={() => {
-                            setActiveModalItem(item);
-                            setObservationText(item.observacion || '');
-                            setReplaceTeacherName('');
-                          }}
-                          className="mt-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100/80 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 rounded-lg text-[10px] font-semibold flex items-start gap-1 cursor-pointer transition active:scale-98"
-                          title="Toca para editar observación"
-                        >
-                          <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                          <span className="break-words leading-snug">{item.observacion}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Fila Única y Simétrica de Toma de Asistencia */}
-                  <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
-                    <button
-                      onClick={() => handleQuickStatus(item, 'PUNTUAL')}
-                      className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${
-                        isPuntual
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/70'
-                      }`}
-                      title={isPuntual ? 'Toca para desmarcar' : 'Marcar puntual'}
-                    >
-                      <CheckCircle2 className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isPuntual ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'}`} />
-                      <span>Puntual</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleQuickStatus(item, 'TARDE')}
-                      className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${
-                        isTarde
-                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                          : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-800/70'
-                      }`}
-                      title={isTarde ? 'Toca para desmarcar' : 'Marcar tardanza'}
-                    >
-                      <Clock className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isTarde ? 'text-slate-950' : 'text-amber-600 dark:text-amber-400'}`} />
-                      <span>Tarde</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleQuickStatus(item, 'FALTA')}
-                      className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${
-                        isFalta
-                          ? 'bg-rose-600 text-white shadow-xs'
-                          : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-800/70'
-                      }`}
-                      title={isFalta ? 'Toca para desmarcar' : 'Marcar falta'}
-                    >
-                      <XCircle className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isFalta ? 'text-white' : 'text-rose-600 dark:text-rose-400'}`} />
-                      <span>Falta</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )
-      )}
-
-      {/* SECONDARY CLASSROOM ACTIONS SHEET (3-Dots Menu) */}
-      {selectedClassOptions && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-          onClick={() => setSelectedClassOptions(null)}
+  {/* IN-SITU QUICK ATTENTION DRAWER (Apple-Style Liquid Glass Bottom Sheet) */ }
+  {
+    quickAttentionItem && typeof document !== 'undefined' && createPortal(
+      <div
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 animate-backdrop-fade"
+        onClick={() => setQuickAttentionItem(null)}
+      >
+        <div
+          className="apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto animate-spring-up"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div 
-            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up space-y-4 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-              <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-1 rounded-xl shadow-xs shrink-0">
-                  {selectedClassOptions.aula || 'S/A'}
-                </span>
-                <div className="min-w-0">
-                  <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{selectedClassOptions.docente}</div>
-                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}</div>
-                </div>
+          <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
+
+          <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 inline-flex items-center justify-center shadow-2xs">
+                <HandHelping className="w-4 h-4 stroke-[2.2]" />
               </div>
-              <button 
-                type="button"
-                onClick={() => setSelectedClassOptions(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
-              >
-                <X className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            </div>
-
-            <div className="space-y-2 pt-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  const item = selectedClassOptions;
-                  setSelectedClassOptions(null);
-                  setActiveModalItem(item);
-                  setObservationText(item.observacion || '');
-                  setReplaceTeacherName('');
-                }}
-                className="w-full p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/90 dark:border-zinc-800 text-left flex items-center gap-3 transition active:scale-98"
-              >
-                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">Añadir Observación o Suplente</div>
-                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const item = selectedClassOptions;
-                  setSelectedClassOptions(null);
-                  if (onEmitManualSheet) {
-                    onEmitManualSheet(item);
-                  }
-                }}
-                className="w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/70 border border-indigo-200/90 dark:border-indigo-800/80 text-left flex items-center gap-3 transition active:scale-98"
-              >
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0">
-                  <FileText className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200">Ir a Hoja de Asistencia Manual</div>
-                  <div className="text-[10px] text-indigo-600 dark:text-indigo-300 break-words leading-tight mt-0.5">Generar boleta prellenada en su apartado</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const item = selectedClassOptions;
-                  setSelectedClassOptions(null);
-                  if (onOpenNewTicket) {
-                    onOpenNewTicket({
-                      ambiente: item.aula,
-                      pabellon: item.aula?.startsWith('B') ? 'B' : 'A',
-                      tipo: 'PLUMONES / MATERIALES',
-                      descripcion: `[👨‍🏫 DOCENTE: ${item.docente}] Préstamo en aula ${item.aula}`
-                    });
-                  }
-                }}
-                className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
-              >
-                <div className="w-9 h-9 rounded-xl bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-300 flex items-center justify-center shrink-0">
-                  <HandHelping className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-amber-950 dark:text-amber-200">Registrar Préstamo de Material</div>
-                  <div className="text-[10px] text-amber-700 dark:text-amber-300 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* IN-SITU QUICK ATTENTION DRAWER (Apple-Style Liquid Glass Bottom Sheet) */}
-      {quickAttentionItem && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 animate-backdrop-fade"
-          onClick={() => setQuickAttentionItem(null)}
-        >
-          <div 
-            className="apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto animate-spring-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
-
-            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3.5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 inline-flex items-center justify-center shadow-2xs">
-                  <HandHelping className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                    Atención Rápida en Aula
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Aula <strong className="text-slate-800 font-mono">{quickAttentionItem.aula}</strong> · {quickAttentionItem.docente}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setQuickAttentionItem(null)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition inline-flex items-center justify-center active:scale-90"
-              >
-                <X className="w-4 h-4 stroke-[2.2]" />
-              </button>
-            </div>
-
-            {/* Beneficiario Toggle: Docente vs Alumno */}
-            <div className="flex items-center justify-between bg-slate-100/90 p-1.5 rounded-2xl mb-3 border border-slate-200/80">
-              <span className="text-[11px] font-bold text-slate-600 pl-1">Entregar a:</span>
-              <div className="inline-flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setQuickAttentionBeneficiary('DOCENTE')}
-                  className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
-                    quickAttentionBeneficiary === 'DOCENTE'
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <span>👨‍🏫 Docente</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickAttentionBeneficiary('ALUMNO')}
-                  className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
-                    quickAttentionBeneficiary === 'ALUMNO'
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <span>🎓 Alumno</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick 1-Tap Preset Material Chips */}
-            <div className="space-y-1.5 mb-3.5">
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-                Selecciona requerimiento en 1 toque:
-              </label>
-              <div className="grid grid-cols-1 gap-1.5">
-                {commonLoanChips.map(chip => (
-                  <button
-                    key={chip.label}
-                    type="button"
-                    onClick={() => {
-                      setQuickAttentionTipo(chip.tipo);
-                      setQuickAttentionNotes(chip.desc);
-                    }}
-                    className={`text-left text-xs font-bold px-3.5 py-2.5 rounded-2xl border transition-all duration-200 flex items-center justify-between active:scale-95 ${
-                      quickAttentionNotes === chip.desc
-                        ? 'bg-[#FDBA30] text-slate-950 border-amber-400 shadow-[0_2px_12px_rgba(253,186,48,0.35)] scale-[1.01]'
-                        : 'bg-white/80 text-slate-700 border-slate-200/80 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{chip.label}</span>
-                    {quickAttentionNotes === chip.desc && <Check className="w-3.5 h-3.5 stroke-[2.8]" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Detail notes */}
-            <div className="space-y-2.5 mb-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
-                  Detalle / Observación
-                </label>
-                <input
-                  type="text"
-                  value={quickAttentionNotes}
-                  onChange={(e) => setQuickAttentionNotes(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/30 focus:border-[#FDBA30] transition"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-600">Estado:</span>
-                <button
-                  type="button"
-                  onClick={() => setQuickAttentionStatus('EN PROCESO')}
-                  className={`px-3 py-1 text-xs font-bold rounded-full border transition-all active:scale-95 ${
-                    quickAttentionStatus === 'EN PROCESO' ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' : 'bg-slate-50 text-slate-600'
-                  }`}
-                >
-                  En Préstamo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickAttentionStatus('ATENDIDO')}
-                  className={`px-3 py-1 text-xs font-bold rounded-full border transition-all active:scale-95 ${
-                    quickAttentionStatus === 'ATENDIDO' ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-slate-50 text-slate-600'
-                  }`}
-                >
-                  Concluido
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => setQuickAttentionItem(null)}
-                className="h-11 rounded-2xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center active:scale-95"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveQuickAttention}
-                className="h-11 rounded-2xl text-xs font-bold bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-[0_4px_16px_rgba(253,186,48,0.35)] transition inline-flex items-center justify-center active:scale-95"
-              >
-                Registrar Atención
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Observation / Suplente Modal - 100% Symmetrical with Full AMOLED Dark Mode */}
-      {activeModalItem && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-          onClick={() => setActiveModalItem(null)}
-        >
-          <div 
-            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
-              <div className="min-w-0 pr-2">
-                <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-                  Observación o Suplente
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Atención Rápida en Aula
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 break-words mt-0.5">
-                  Aula <strong className="text-slate-900 dark:text-amber-400 font-mono">{activeModalItem.aula || 'S/A'}</strong> · {activeModalItem.docente}
+                <p className="text-xs text-slate-500">
+                  Aula <strong className="text-slate-800 font-mono">{quickAttentionItem.aula}</strong> · {quickAttentionItem.docente}
                 </p>
               </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setQuickAttentionItem(null)}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition inline-flex items-center justify-center active:scale-90"
+            >
+              <X className="w-4 h-4 stroke-[2.2]" />
+            </button>
+          </div>
+
+          {/* Beneficiario Toggle: Docente vs Alumno */}
+          <div className="flex items-center justify-between bg-slate-100/90 p-1.5 rounded-2xl mb-3 border border-slate-200/80">
+            <span className="text-[11px] font-bold text-slate-600 pl-1">Entregar a:</span>
+            <div className="inline-flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setActiveModalItem(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
-                title="Cerrar ventana"
+                onClick={() => setQuickAttentionBeneficiary('DOCENTE')}
+                className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 ${quickAttentionBeneficiary === 'DOCENTE'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
-                <X className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            </div>
-
-            <div className="space-y-3.5 mb-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
-                  Docente de Reemplazo (Opcional)
-                </label>
-                <input
-                  type="text"
-                  value={replaceTeacherName}
-                  onChange={(e) => setReplaceTeacherName(e.target.value)}
-                  placeholder="Ej: JUAN PEREZ GOMEZ"
-                  className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
-                  Motivo o Detalle de Observación
-                </label>
-                <textarea
-                  rows="3"
-                  value={observationText}
-                  onChange={(e) => setObservationText(e.target.value)}
-                  placeholder="Ej: Licencia médica, tráfico, adelanto de clase..."
-                  className="w-full p-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setActiveModalItem(null)}
-                className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
-              >
-                Cancelar
+                <span>👨‍🏫 Docente</span>
               </button>
               <button
                 type="button"
-                onClick={handleSaveObservation}
-                className="h-11 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95"
+                onClick={() => setQuickAttentionBeneficiary('ALUMNO')}
+                className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 ${quickAttentionBeneficiary === 'ALUMNO'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
-                Guardar
+                <span>🎓 Alumno</span>
               </button>
             </div>
           </div>
-        </div>,
-        document.body
-      )}
-    </div>
+
+          {/* Quick 1-Tap Preset Material Chips */}
+          <div className="space-y-1.5 mb-3.5">
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight">
+              Selecciona requerimiento en 1 toque:
+            </label>
+            <div className="grid grid-cols-1 gap-1.5">
+              {commonLoanChips.map(chip => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => {
+                    setQuickAttentionTipo(chip.tipo);
+                    setQuickAttentionNotes(chip.desc);
+                  }}
+                  className={`text-left text-xs font-bold px-3.5 py-2.5 rounded-2xl border transition-all duration-200 flex items-center justify-between active:scale-95 ${quickAttentionNotes === chip.desc
+                      ? 'bg-[#FDBA30] text-slate-950 border-amber-400 shadow-[0_2px_12px_rgba(253,186,48,0.35)] scale-[1.01]'
+                      : 'bg-white/80 text-slate-700 border-slate-200/80 hover:bg-slate-50'
+                    }`}
+                >
+                  <span>{chip.label}</span>
+                  {quickAttentionNotes === chip.desc && <Check className="w-3.5 h-3.5 stroke-[2.8]" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Detail notes */}
+          <div className="space-y-2.5 mb-4">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
+                Detalle / Observación
+              </label>
+              <input
+                type="text"
+                value={quickAttentionNotes}
+                onChange={(e) => setQuickAttentionNotes(e.target.value)}
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/30 focus:border-[#FDBA30] transition"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-600">Estado:</span>
+              <button
+                type="button"
+                onClick={() => setQuickAttentionStatus('EN PROCESO')}
+                className={`px-3 py-1 text-xs font-bold rounded-full border transition-all active:scale-95 ${quickAttentionStatus === 'EN PROCESO' ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' : 'bg-slate-50 text-slate-600'
+                  }`}
+              >
+                En Préstamo
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickAttentionStatus('ATENDIDO')}
+                className={`px-3 py-1 text-xs font-bold rounded-full border transition-all active:scale-95 ${quickAttentionStatus === 'ATENDIDO' ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-slate-50 text-slate-600'
+                  }`}
+              >
+                Concluido
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setQuickAttentionItem(null)}
+              className="h-11 rounded-2xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center active:scale-95"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveQuickAttention}
+              className="h-11 rounded-2xl text-xs font-bold bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-[0_4px_16px_rgba(253,186,48,0.35)] transition inline-flex items-center justify-center active:scale-95"
+            >
+              Registrar Atención
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )
+  }
+
+  {/* Observation / Suplente Modal - 100% Symmetrical with Full AMOLED Dark Mode */ }
+  {
+    activeModalItem && typeof document !== 'undefined' && createPortal(
+      <div
+        className="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+        onClick={() => setActiveModalItem(null)}
+      >
+        <div
+          className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
+            <div className="min-w-0 pr-2">
+              <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+                Observación o Suplente
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 break-words mt-0.5">
+                Aula <strong className="text-slate-900 dark:text-amber-400 font-mono">{activeModalItem.aula || 'S/A'}</strong> · {activeModalItem.docente}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveModalItem(null)}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+              title="Cerrar ventana"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+
+          <div className="space-y-3.5 mb-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
+                Docente de Reemplazo (Opcional)
+              </label>
+              <input
+                type="text"
+                value={replaceTeacherName}
+                onChange={(e) => setReplaceTeacherName(e.target.value)}
+                placeholder="Ej: JUAN PEREZ GOMEZ"
+                className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
+                Motivo o Detalle de Observación
+              </label>
+              <textarea
+                rows="3"
+                value={observationText}
+                onChange={(e) => setObservationText(e.target.value)}
+                placeholder="Ej: Licencia médica, tráfico, adelanto de clase..."
+                className="w-full p-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition resize-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setActiveModalItem(null)}
+              className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveObservation}
+              className="h-11 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )
+  }
+    </div >
   );
 }
