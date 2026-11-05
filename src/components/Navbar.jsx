@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ClipboardCheck, 
   HandHelping, 
@@ -100,62 +101,65 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         </div>
       </header>
 
-      {/* Hyper-Realistic Apple Liquid Glass Floating Bottom App Dock */}
-      <div className="fixed bottom-4 sm:bottom-6 inset-x-4 z-50 max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
-        <nav className="relative pointer-events-auto apple-liquid-glass-27 rounded-[28px] p-1.5 grid grid-cols-4 shadow-2xl overflow-hidden select-none">
-          {/* Botón deslizante activo con efecto Gota Ámbar Líquida */}
-          <div
-            className="apple-liquid-slider absolute top-1.5 bottom-1.5 rounded-[22px] pointer-events-none z-0"
-            style={{
-              width: 'calc((100% - 12px) / 4)',
-              left: '6px',
-              transform: `translateX(${activeIndex * 100}%)`,
-            }}
-          />
+      {/* Clean 2D Frosted Glass Floating Bottom App Dock (Portaled to document.body for genuine blur diffusion) */}
+      {typeof document !== 'undefined' && createPortal(
+        <div className="fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
+          <nav className="relative pointer-events-auto apple-liquid-glass-27 rounded-[28px] p-1.5 grid grid-cols-4 shadow-2xl overflow-hidden select-none">
+            {/* Botón deslizante activo con efecto Gota Ámbar Líquida */}
+            <div
+              className="apple-liquid-slider absolute top-1.5 bottom-1.5 rounded-[22px] pointer-events-none z-0"
+              style={{
+                width: 'calc((100% - 12px) / 4)',
+                left: '6px',
+                transform: `translateX(${activeIndex * 100}%)`,
+              }}
+            />
 
-          {/* Interactive Navigation Tabs */}
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
-              >
-                <Icon 
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isActive 
-                      ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs' 
-                      : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white stroke-[2]'
-                  }`} 
-                />
-                <span 
-                  className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
-                    isActive 
-                      ? 'font-black text-slate-950' 
-                      : 'font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+            {/* Interactive Navigation Tabs */}
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
                 >
-                  {item.label}
-                </span>
-
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span 
-                    className={`absolute top-0.5 right-2 min-w-4 h-4 px-1 flex items-center justify-center rounded-full text-[9px] font-black transition-all duration-200 shadow-xs ring-1 ring-white/70 ${
+                  <Icon 
+                    className={`w-5 h-5 transition-transform duration-200 ${
                       isActive 
-                        ? 'bg-slate-950 text-[#FDBA30]' 
-                        : 'bg-rose-500 text-white animate-pulse'
+                        ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs' 
+                        : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white stroke-[2]'
+                    }`} 
+                  />
+                  <span 
+                    className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
+                      isActive 
+                        ? 'font-black text-slate-950' 
+                        : 'font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    {item.badge}
+                    {item.label}
                   </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span 
+                      className={`absolute top-0.5 right-2 min-w-4 h-4 px-1 flex items-center justify-center rounded-full text-[9px] font-black transition-all duration-200 shadow-xs ring-1 ring-white/70 ${
+                        isActive 
+                          ? 'bg-slate-950 text-[#FDBA30]' 
+                          : 'bg-rose-500 text-white animate-pulse'
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

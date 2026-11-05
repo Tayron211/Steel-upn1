@@ -383,10 +383,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         />
       )}
 
-      {/* High-Resolution Smart Campus Controller - Spacious & Mobile Ergonomic */}
-      <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5 transition-colors">
-        {/* Row 1: Day Selector Symmetrical 7-Column Grid (LUN - DOM 100% Visible) */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-1.5 w-full">
+      {/* Controlador Compacto, Ágil y Rápido */}
+      <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-2.5 sm:p-3.5 shadow-xs space-y-2 transition-colors">
+        {/* Fila 1: Selector de Día LUN - DOM (Ultra compacto y directo) */}
+        <div className="grid grid-cols-7 gap-1 w-full">
           {['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'].map((d) => {
             const isSelected = selectedDia === d;
             return (
@@ -394,10 +394,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 key={d}
                 type="button"
                 onClick={() => setSelectedDia(d)}
-                className={`h-9 text-xs font-bold rounded-xl transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center justify-center active:scale-95 ${
+                className={`h-7 sm:h-8 text-[11px] sm:text-xs font-bold rounded-lg transition-all inline-flex items-center justify-center active:scale-95 ${
                   isSelected
-                    ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 shadow-xs font-black'
-                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:bg-slate-200/80 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
+                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <span>{d === 'MIERCOLES' ? 'MIÉ' : d === 'SABADO' ? 'SÁB' : d === 'DOMINGO' ? 'DOM' : d.slice(0, 3)}</span>
@@ -406,174 +406,184 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           })}
         </div>
 
-        {/* Row 2: Symmetrical Pavilion Switcher & 100% Visible Floor Grid */}
-        <div className="flex flex-col lg:flex-row items-stretch gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800">
-          {/* Pavilion Toggle */}
-          <div className="grid grid-cols-3 gap-1 bg-slate-100/90 dark:bg-zinc-900/90 p-1 rounded-2xl shrink-0 lg:w-72 border border-slate-200/60 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={() => setSelectedPabellon('')}
-              className={`h-8 sm:h-9 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center active:scale-95 ${
-                !selectedPabellon ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-2xs font-black' : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              Ambos
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedPabellon('A')}
-              className={`h-8 sm:h-9 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center active:scale-95 ${
-                selectedPabellon === 'A' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-2xs font-black' : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              Pab. A
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedPabellon('B')}
-              className={`h-8 sm:h-9 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center active:scale-95 ${
-                selectedPabellon === 'B' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-2xs font-black' : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              Pab. B
-            </button>
+        {/* Fila 2: Buscador + Pabellón + Pisos integrados */}
+        <div className="flex flex-col sm:flex-row items-center gap-1.5">
+          <div className="relative flex-1 w-full">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 stroke-[2.2]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar aula (A201), docente..."
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30] transition font-bold"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 p-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
-          {/* Floor Grid: 7 Symmetrical Columns - ALL FLOORS 100% VISIBLE (No Horizontal Scroll / No Clipping) */}
-          <div className="grid grid-cols-7 gap-1 bg-slate-100/90 dark:bg-zinc-900/90 p-1 rounded-2xl flex-1 w-full border border-slate-200/60 dark:border-zinc-800">
-            {pisosDisponibles.map((p) => {
-              const isSelected = selectedPiso === p.val;
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => setSelectedPiso(p.val)}
-                  className={`h-8 sm:h-9 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center text-center active:scale-95 px-0.5 ${
-                    isSelected
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-zinc-800/60'
-                  }`}
-                  title={`Filtrar por ${p.label}`}
-                >
-                  <span className="sm:hidden font-bold">{p.short}</span>
-                  <span className="hidden sm:inline">{p.label}</span>
-                </button>
-              );
-            })}
+          {/* Pabellón Pills */}
+          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto">
+            {['', 'A', 'B'].map((pab) => (
+              <button
+                key={pab || 'ALL'}
+                type="button"
+                onClick={() => setSelectedPabellon(pab)}
+                className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${
+                  selectedPabellon === pab
+                    ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                {pab ? `Pab. ${pab}` : 'Ambos'}
+              </button>
+            ))}
+          </div>
+
+          {/* Pisos Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
+            {pisosDisponibles.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => setSelectedPiso(p.val)}
+                className={`h-7 px-2 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 ${
+                  selectedPiso === p.val
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                {p.short}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Row 3: Full-Width Search Input */}
-        <div className="relative w-full pt-1">
-          <Search className="w-4 h-4 text-slate-400 dark:text-zinc-400 absolute left-3.5 top-3.5 stroke-[2.2]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar aula (A201), docente, NRC o curso..."
-            className="w-full pl-10 pr-9 py-2.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161c] focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
-          />
-          {search && (
+        {/* Fila 3: Modos Rápidos + Contadores KPI de Estado en 1 Sola Línea */}
+        <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
-              title="Limpiar búsqueda"
+              onClick={() => {
+                setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
+                setSelectedHora('');
+              }}
+              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
+                blockMode === 'CURRENT'
+                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+              }`}
             >
-              <X className="w-3.5 h-3.5 stroke-[2.2]" />
+              <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
+              <span>Actual ({getCurrentHourBlock()})</span>
             </button>
-          )}
+
+            <button
+              onClick={() => {
+                setBlockMode(blockMode === 'NEXT' ? 'ALL' : 'NEXT');
+                setSelectedHora('');
+              }}
+              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
+                blockMode === 'NEXT'
+                  ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
+                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+              }`}
+            >
+              <span>Sig.</span>
+            </button>
+
+            <button
+              onClick={() => setViewMode(viewMode === 'FREE_ROOMS' ? 'CLASSES' : 'FREE_ROOMS')}
+              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${
+                viewMode === 'FREE_ROOMS'
+                  ? 'bg-emerald-600 text-white font-black shadow-2xs'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+              }`}
+            >
+              <DoorOpen className="w-3 h-3" />
+              <span>Libres ({freeRooms.length})</span>
+            </button>
+          </div>
+
+          {/* Pastillas KPI para filtrar con 1 toque */}
+          <div className="flex items-center gap-1 text-[11px]">
+            <button
+              onClick={() => {
+                setViewMode('CLASSES');
+                setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL');
+              }}
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
+                statusFilter === 'PUNTUAL'
+                  ? 'bg-emerald-600 text-white font-black'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+              }`}
+            >
+              ✓ {countPuntual}
+            </button>
+
+            <button
+              onClick={() => {
+                setViewMode('CLASSES');
+                setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE');
+              }}
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
+                statusFilter === 'TARDE'
+                  ? 'bg-amber-500 text-slate-950 font-black'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+              }`}
+            >
+              🕒 {countTarde}
+            </button>
+
+            <button
+              onClick={() => {
+                setViewMode('CLASSES');
+                setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA');
+              }}
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
+                statusFilter === 'FALTA'
+                  ? 'bg-rose-600 text-white font-black'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
+              }`}
+            >
+              ✕ {countFalta}
+            </button>
+
+            <button
+              onClick={() => {
+                setViewMode('CLASSES');
+                setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE');
+              }}
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${
+                statusFilter === 'PENDIENTE'
+                  ? 'bg-slate-900 text-white dark:bg-zinc-700 font-black'
+                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
+              }`}
+            >
+              Pend: {countPendiente}
+            </button>
+          </div>
         </div>
 
-        {/* Row 4: Dedicated 4-Column Mode Selectors (Actual, Sig., Resto del Día, Libres) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
-          <button
-            onClick={() => {
-              const newMode = blockMode === 'CURRENT' ? 'ALL' : 'CURRENT';
-              setBlockMode(newMode);
-              setSelectedHora('');
-            }}
-            className={`h-10 px-2 rounded-2xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-              blockMode === 'CURRENT'
-                ? 'bg-[#FDBA30] text-slate-950 border-[#FDBA30] shadow-sm font-black'
-                : 'bg-slate-50 dark:bg-zinc-900/90 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
-            }`}
-            title="Ver clases del bloque actual"
-          >
-            <Clock className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${blockMode === 'CURRENT' ? 'text-slate-950 stroke-[2.6]' : 'text-amber-600 dark:text-amber-400'}`} />
-            <span className="break-words text-center leading-tight">Actual ({getCurrentHourBlock()})</span>
-          </button>
-
-          <button
-            onClick={() => {
-              const newMode = blockMode === 'NEXT' ? 'ALL' : 'NEXT';
-              setBlockMode(newMode);
-              setSelectedHora('');
-            }}
-            className={`h-10 px-2 rounded-2xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-              blockMode === 'NEXT'
-                ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 border-slate-900 dark:border-[#FDBA30] shadow-sm font-black'
-                : 'bg-slate-50 dark:bg-zinc-900/90 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
-            }`}
-            title="Ver clases del siguiente bloque"
-          >
-            <CalendarClock className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${blockMode === 'NEXT' ? 'text-white dark:text-slate-950' : 'text-slate-600 dark:text-zinc-400'}`} />
-            <span className="break-words text-center leading-tight">Sig. ({getNextHourBlock()})</span>
-          </button>
-
-          <button
-            onClick={() => {
-              const newMode = blockMode === 'RESTO' ? 'ALL' : 'RESTO';
-              setBlockMode(newMode);
-              setSelectedHora('');
-            }}
-            className={`h-10 px-2 rounded-2xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-              blockMode === 'RESTO'
-                ? 'bg-[#FDBA30] text-slate-950 border-[#FDBA30] shadow-sm font-black'
-                : 'bg-slate-50 dark:bg-zinc-900/90 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
-            }`}
-            title="Ver todas las clases programadas desde ahora hasta el final del día"
-          >
-            <Sparkles className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${blockMode === 'RESTO' ? 'text-slate-950 stroke-[2.6]' : 'text-amber-600 dark:text-amber-400'}`} />
-            <span className="break-words text-center leading-tight">Resto del Día</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode(viewMode === 'FREE_ROOMS' ? 'CLASSES' : 'FREE_ROOMS')}
-            className={`h-10 px-2 rounded-2xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-              viewMode === 'FREE_ROOMS'
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm font-black'
-                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
-            }`}
-            title="Ver aulas libres en este momento"
-          >
-            <DoorOpen className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
-            <span className="break-words text-center leading-tight">Libres ({freeRooms.length})</span>
-          </button>
-        </div>
-
-        {/* Row 4.5: Quick Specific Hour Blocks Selector (1-Tap Any Block) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none text-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 shrink-0 pr-1">
-            Bloques:
-          </span>
+        {/* Fila 4: Bloques de hora horizontales (Discretos) */}
+        <div className="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-none text-[11px]">
           <button
             onClick={() => {
               setBlockMode('ALL');
               setSelectedHora('');
             }}
-            className={`h-7 px-2.5 rounded-lg text-xs font-bold transition whitespace-nowrap active:scale-95 ${
+            className={`h-6 px-2 rounded-md font-bold transition whitespace-nowrap active:scale-95 ${
               blockMode === 'ALL' && !selectedHora
                 ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400'
             }`}
           >
-            Todo el Día
+            Todo
           </button>
-
           {REAL_BLOCKS.map(b => {
             const isSelected = blockMode === 'CUSTOM' && selectedHora === b.start;
             const isCurrent = b.start === getCurrentHourBlock();
-
             return (
               <button
                 key={b.start}
@@ -586,83 +596,18 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     setSelectedHora(b.start);
                   }
                 }}
-                className={`h-7 px-2.5 rounded-lg text-xs font-mono font-bold transition whitespace-nowrap active:scale-95 flex items-center gap-1 ${
+                className={`h-6 px-2 rounded-md font-mono font-bold transition whitespace-nowrap active:scale-95 ${
                   isSelected
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black'
                     : isCurrent
-                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80'
-                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                    ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300'
+                    : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400'
                 }`}
-                title={`Ver clases de ${b.start} a ${b.end}`}
               >
-                <span>{b.start}</span>
-                {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>}
+                {b.start}
               </button>
             );
           })}
-        </div>
-
-        {/* Row 5: KPI Status Filter Cards */}
-        <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800 text-center">
-          <button
-            onClick={() => {
-              setViewMode('CLASSES');
-              setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL');
-            }}
-            className={`py-2 px-1 rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 ${
-              statusFilter === 'PUNTUAL' && viewMode === 'CLASSES'
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm scale-[1.02]'
-                : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
-            }`}
-          >
-            <span className="block text-[9px] font-bold uppercase tracking-tight">PUNTUAL</span>
-            <span className="text-xs sm:text-sm font-black">{countPuntual}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setViewMode('CLASSES');
-              setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE');
-            }}
-            className={`py-2 px-1 rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 ${
-              statusFilter === 'TARDE' && viewMode === 'CLASSES'
-                ? 'bg-[#FDBA30] text-slate-950 border-amber-500 shadow-sm font-black scale-[1.02]'
-                : 'bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 border-amber-200/70 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40'
-            }`}
-          >
-            <span className="block text-[9px] font-bold uppercase tracking-tight">TARDE</span>
-            <span className="text-xs sm:text-sm font-black">{countTarde}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setViewMode('CLASSES');
-              setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA');
-            }}
-            className={`py-2 px-1 rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 ${
-              statusFilter === 'FALTA' && viewMode === 'CLASSES'
-                ? 'bg-rose-600 text-white border-rose-600 shadow-sm scale-[1.02]'
-                : 'bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-300 border-rose-200/70 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40'
-            }`}
-          >
-            <span className="block text-[9px] font-bold uppercase tracking-tight">FALTA</span>
-            <span className="text-xs sm:text-sm font-black">{countFalta}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setViewMode('CLASSES');
-              setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING');
-            }}
-            className={`py-2 px-1 rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 ${
-              statusFilter === 'PENDING' && viewMode === 'CLASSES'
-                ? 'bg-slate-900 text-white dark:bg-zinc-800 dark:text-white border-slate-900 dark:border-zinc-700 shadow-sm scale-[1.02]'
-                : 'bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <span className="block text-[9px] font-bold uppercase tracking-tight">PENDIENTES</span>
-            <span className="text-xs sm:text-sm font-black">{countPendientes}</span>
-          </button>
         </div>
 
         {/* Active Filter Pill indicator if statusFilter != 'ALL' */}

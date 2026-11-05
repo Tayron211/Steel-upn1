@@ -540,29 +540,25 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       )}
 
       {/* =========================================================================
-          PANEL DE CONTROL UNIFICADO Y CENTRADO
-          (Botones 100% centrados y soporte para items manuales)
+          PANEL DE CONTROL ÁGIL, LIMPIO Y RÁPIDO
           ========================================================================= */}
-      <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
-        {/* Cabecera + Conmutador Simétrico */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
-          <div>
-            <h1 className="text-base sm:text-lg font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-2">
-              <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4]" />
-              <span>Control de Préstamos de Material</span>
+      <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-xs space-y-3">
+        {/* Cabecera Compacta */}
+        <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4]" />
+            <h1 className="text-base font-black text-slate-950 dark:text-white tracking-tight">
+              Préstamos de Material
             </h1>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-              Entrega y devolución de materiales (plumones, HDMI, llaves, adaptadores) para <strong>Docentes</strong> y <strong>Alumnos</strong>
-            </p>
           </div>
 
-          {/* Selector de Pestañas Activos vs Concluidos */}
-          <div className="grid grid-cols-2 gap-1.5 bg-slate-100/90 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800 p-1 rounded-2xl sm:w-80 shrink-0">
+          {/* Conmutador de Pestañas Activos vs Devueltos */}
+          <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800">
             <button
               onClick={() => setActiveViewTab('ACTIVOS')}
-              className={`h-9 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 active:scale-95 ${
+              className={`h-8 px-2.5 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
                 activeViewTab === 'ACTIVOS'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
                   : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -577,9 +573,9 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
             <button
               onClick={() => setActiveViewTab('CONCLUIDOS')}
-              className={`h-9 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 active:scale-95 ${
+              className={`h-8 px-2.5 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
                 activeViewTab === 'CONCLUIDOS'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
                   : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -594,19 +590,15 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           </div>
         </div>
 
-        {/* Formulario Rápido de Entrega */}
-        <form onSubmit={handleRegisterLoan} className="space-y-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-              Registrar Nueva Entrega
-            </span>
-
-            {/* Beneficiario Toggle: Docente vs Alumno (Simetría 50/50 y Centrado) */}
-            <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-2xl border border-slate-200/70 dark:border-zinc-800 w-full sm:w-64">
+        {/* Formulario Rápido y Práctico */}
+        <form onSubmit={handleRegisterLoan} className="space-y-2.5">
+          {/* Fila 1: Beneficiario + Aula + Nombre */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <div className="sm:col-span-3 grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setBeneficiaryType('DOCENTE')}
-                className={`h-8 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
+                className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
                   beneficiaryType === 'DOCENTE'
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -619,89 +611,64 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               <button
                 type="button"
                 onClick={() => setBeneficiaryType('ALUMNO')}
-                className={`h-8 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
+                className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
                   beneficiaryType === 'ALUMNO'
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <GraduationCap className="w-4 h-4 stroke-[2.4]" />
+                <GraduationCap className="w-3.5 h-3.5 stroke-[2.4]" />
                 <span>Alumno</span>
               </button>
             </div>
-          </div>
 
-          {/* Fila de Inputs: Aula + Nombre / Código */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
             <div className="sm:col-span-4">
               <input
                 id="unified-room-input"
                 type="text"
                 value={roomInput}
                 onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                placeholder="Aula / Espacio (Opcional, ej: A202)"
-                className="w-full h-11 px-3 font-mono font-bold text-xs sm:text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
+                placeholder="Aula / Espacio (Opcional)"
+                className="w-full h-10 px-3 font-mono font-bold text-xs sm:text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
               />
             </div>
 
-            <div className="sm:col-span-8">
+            <div className="sm:col-span-5">
               <input
                 type="text"
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
-                placeholder={beneficiaryType === 'ALUMNO' ? 'Nombre o Código del Alumno (Opcional)' : 'Nombre del Docente (Opcional)'}
-                className="w-full h-11 px-3.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 transition"
+                placeholder={beneficiaryType === 'ALUMNO' ? 'Nombre o Código (Opcional)' : 'Nombre del Docente (Opcional)'}
+                className="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 transition font-bold"
               />
             </div>
           </div>
 
-          {/* Botones de Material (100% Centrados y Simétricos) */}
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-tight mb-1.5">
-              Material a entregar (Selecciona o escribe manualmente):
-            </div>
-
-            {/* Grid Simétrico Centrado y Flexible: Sin cortes ni truncamientos */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {allMaterialItems.map(t => {
-                const isSelected = selectedMaterialVal === t.val;
-                return (
-                  <button
-                    key={t.val}
-                    type="button"
-                    onClick={() => setSelectedMaterialVal(t.val)}
-                    className={`min-h-[44px] py-2 px-2.5 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border text-center relative w-full min-w-0 ${
-                      isSelected
-                        ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
-                        : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200/90 dark:border-zinc-800'
-                    }`}
-                  >
-                    <span className="break-words leading-tight text-center">{t.label}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.8] text-amber-400 shrink-0" />}
-
-                    {t.isCustom && (
-                      <span
-                        onClick={(e) => handleDeleteCustomItem(t.val, e)}
-                        className="absolute right-1.5 top-1.5 p-1 text-slate-400 hover:text-rose-500 rounded-full"
-                        title="Eliminar botón rápido"
-                      >
-                        <X className="w-3 h-3" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Fila 2: Chips de Material Rápidos y Flexibles */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            {allMaterialItems.map(t => {
+              const isSelected = selectedMaterialVal === t.val;
+              return (
+                <button
+                  key={t.val}
+                  type="button"
+                  onClick={() => setSelectedMaterialVal(t.val)}
+                  className={`h-8 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 border ${
+                    isSelected
+                      ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
+                      : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200/90 dark:border-zinc-800'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  {isSelected && <Check className="w-3 h-3 stroke-[3] text-amber-400 shrink-0" />}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Campo de Entrada Manual si seleccionó "Otro (Manual)" */}
+          {/* Campo Manual si seleccionó "Otro" */}
           {selectedMaterialVal === 'MANUAL' && (
-            <div className="bg-amber-50/80 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800 rounded-2xl p-3.5 space-y-2 animate-scale-up">
-              <label className="block text-[11px] font-black uppercase text-amber-950 dark:text-amber-300 flex items-center gap-1.5">
-                <Edit3 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                <span>Especificar Material Manualmente:</span>
-              </label>
-
+            <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-2.5 space-y-1.5 animate-scale-up">
               <input
                 id="manual-item-input"
                 type="text"
@@ -709,31 +676,19 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 autoFocus
                 value={manualItemText}
                 onChange={(e) => setManualItemText(e.target.value)}
-                placeholder="Ej: Extensión eléctrica, Parlante Bluetooth, Puntero láser, Adaptador Apple..."
-                className="w-full h-11 px-3.5 text-xs font-bold bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-800 rounded-xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                placeholder="Escribe el material: Extensión, Parlante, Puntero, Adaptador..."
+                className="w-full h-9 px-3 text-xs font-bold bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-800 rounded-lg text-slate-950 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
-
-              <div className="flex items-center gap-2 pt-0.5">
-                <label className="inline-flex items-center gap-2 text-xs font-bold text-amber-950 dark:text-amber-300 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={saveAsQuickItem}
-                    onChange={(e) => setSaveAsQuickItem(e.target.checked)}
-                    className="w-4 h-4 text-amber-500 rounded border-slate-300 dark:border-zinc-700 focus:ring-amber-400"
-                  />
-                  <span>Guardar como botón rápido permanente</span>
-                </label>
-              </div>
             </div>
           )}
 
-          {/* Botones de Acción Directos: 1 Toque para Registrar y Firmar o Solo Registrar */}
-          <div className="pt-1.5 flex flex-col sm:flex-row items-center gap-2 pb-1">
+          {/* Botones de Acción Directos: 1 Toque */}
+          <div className="pt-1 flex items-center gap-2">
             <button
               type="button"
               disabled={submittingLoan}
               onClick={(e) => handleRegisterLoan(e, true)}
-              className="w-full sm:flex-1 h-12 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-2xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
+              className="flex-1 h-11 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
               title="Crea el préstamo y abre inmediatamente el Acta de Cargo para firmar"
             >
               <PenTool className="w-4 h-4 stroke-[2.4]" />
@@ -743,7 +698,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             <button
               type="submit"
               disabled={submittingLoan}
-              className="w-full sm:w-auto h-12 px-5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-bold text-xs sm:text-sm rounded-2xl border border-slate-300 dark:border-zinc-700 transition flex items-center justify-center gap-2 active:scale-98 shrink-0"
+              className="h-11 px-4 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-zinc-700 transition flex items-center justify-center gap-1.5 active:scale-98 shrink-0"
               title="Registrar préstamo rápido sin abrir firma"
             >
               <span>⚡ Solo Registrar</span>

@@ -78,18 +78,19 @@ input, textarea, select {
    ========================================================= */
 
 /* =========================================================
-   CLEAN FLAT 2D FROSTED BLUR DOCK (Pure 2D Glass, Zero 3D)
+   CLEAN FLAT 2D FROSTED BLUR DOCK (Pure 2D Glass, Real Blur)
    ========================================================= */
 
-/* Flat 2D Frosted Floating Dock with smooth blur and thin translucent border */
+/* Flat 2D Frosted Floating Dock with smooth blur and dense milky opacity */
 .apple-liquid-glass-27 {
   position: relative;
-  background-color: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(30px) saturate(190%);
-  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  background-color: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 26px;
-  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.12);
+  transform: translateZ(0);
 }
 
 .apple-liquid-glass-27::before {
@@ -97,11 +98,12 @@ input, textarea, select {
 }
 
 .dark .apple-liquid-glass-27 {
-  background-color: rgba(14, 14, 18, 0.68);
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6);
+  background-color: rgba(18, 18, 24, 0.88);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 14px 40px -4px rgba(0, 0, 0, 0.75);
+  transform: translateZ(0);
 }
 
 .dark .apple-liquid-glass-27::before {
