@@ -251,8 +251,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
             )}
           </div>
 
-          {/* Reason Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-xs">
+          {/* Reason Filter Chips - Wrap cleanly without horizontal cutting */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <button
               onClick={() => setFilterMotivo('')}
               className={`h-7 px-3 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
@@ -482,10 +482,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                   <FileCheck2 className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base font-black text-slate-950 tracking-tight leading-tight truncate">
+                  <h3 className="text-base font-black text-slate-950 tracking-tight leading-tight">
                     Emitir Hoja de Asistencia
                   </h3>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Búsqueda predictiva por NRC o docente
                   </p>
                 </div>

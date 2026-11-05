@@ -582,8 +582,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               Material a entregar (Selecciona o escribe manualmente):
             </div>
 
-            {/* Grid Simétrico Centrado: 2 cols en móvil / 4 cols en escritorio */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Grid Simétrico Centrado y Flexible: Sin cortes ni truncamientos */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               {allMaterialItems.map(t => {
                 const isSelected = selectedMaterialVal === t.val;
                 return (
@@ -591,19 +591,19 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     key={t.val}
                     type="button"
                     onClick={() => setSelectedMaterialVal(t.val)}
-                    className={`h-11 px-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border text-center relative ${
+                    className={`min-h-[44px] py-2 px-2.5 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border text-center relative w-full min-w-0 ${
                       isSelected
                         ? 'bg-slate-950 text-white border-slate-950 font-black shadow-xs ring-2 ring-amber-400/40'
                         : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200/90'
                     }`}
                   >
-                    <span className="truncate">{t.label}</span>
+                    <span className="break-words leading-tight text-center">{t.label}</span>
                     {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.8] text-amber-400 shrink-0" />}
 
                     {t.isCustom && (
                       <span
                         onClick={(e) => handleDeleteCustomItem(t.val, e)}
-                        className="absolute right-1.5 top-2 p-1 text-slate-400 hover:text-rose-500 rounded-full"
+                        className="absolute right-1.5 top-1.5 p-1 text-slate-400 hover:text-rose-500 rounded-full"
                         title="Eliminar botón rápido"
                       >
                         <X className="w-3 h-3" />
@@ -682,11 +682,11 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             )}
           </div>
 
-          {/* Chips de filtro por material y beneficiario */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-xs">
+          {/* Chips de filtro por material y beneficiario - Wrap limpio y simétrico */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <button
               onClick={() => { setFilterTipo(''); setFilterBeneficiary(''); }}
-              className={`h-7 px-3 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
+              className={`h-7 px-3 rounded-lg font-bold transition active:scale-95 ${
                 !filterTipo && !filterBeneficiary 
                   ? 'bg-slate-900 text-white font-black' 
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -697,7 +697,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
             <button
               onClick={() => setFilterBeneficiary(filterBeneficiary === 'DOCENTE' ? '' : 'DOCENTE')}
-              className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
+              className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                 filterBeneficiary === 'DOCENTE'
                   ? 'bg-amber-400 text-slate-950 font-black shadow-2xs'
                   : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
@@ -708,7 +708,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
             <button
               onClick={() => setFilterBeneficiary(filterBeneficiary === 'ALUMNO' ? '' : 'ALUMNO')}
-              className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
+              className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                 filterBeneficiary === 'ALUMNO'
                   ? 'bg-indigo-600 text-white font-black shadow-2xs'
                   : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
@@ -717,11 +717,11 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               🎓 Alumnos
             </button>
 
-            {allMaterialItems.slice(0, 6).map(t => (
+            {allMaterialItems.slice(0, 8).map(t => (
               <button
                 key={t.val}
                 onClick={() => setFilterTipo(filterTipo === t.val ? '' : t.val)}
-                className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
+                className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                   filterTipo === t.val
                     ? 'bg-slate-900 text-white font-black'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70'

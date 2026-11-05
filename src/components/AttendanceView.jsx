@@ -494,7 +494,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             }`}
           >
             <Clock className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${blockMode === 'CURRENT' ? 'text-slate-950 stroke-[2.6]' : 'text-amber-600'}`} />
-            <span className="truncate">Actual ({getCurrentHourBlock()})</span>
+            <span className="break-words text-center leading-tight">Actual ({getCurrentHourBlock()})</span>
           </button>
 
           <button
@@ -510,7 +510,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             }`}
           >
             <CalendarClock className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${blockMode === 'NEXT' ? 'text-white' : 'text-slate-600'}`} />
-            <span className="truncate">Sig. ({getNextHourBlock()})</span>
+            <span className="break-words text-center leading-tight">Sig. ({getNextHourBlock()})</span>
           </button>
 
           <button
@@ -522,7 +522,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             }`}
           >
             <DoorOpen className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
-            <span className="truncate">Libres ({freeRooms.length})</span>
+            <span className="break-words text-center leading-tight">Libres ({freeRooms.length})</span>
           </button>
         </div>
 
@@ -891,7 +891,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-slate-900">Añadir Observación o Suplente</div>
-                  <div className="text-[10px] text-slate-500 truncate">Registrar motivo, licencia o docente de reemplazo</div>
+                  <div className="text-[10px] text-slate-500 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
                 </div>
               </button>
 
@@ -911,7 +911,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-indigo-950">Ir a Hoja de Asistencia Manual</div>
-                  <div className="text-[10px] text-indigo-600 truncate">Generar boleta prellenada en su apartado</div>
+                  <div className="text-[10px] text-indigo-600 break-words leading-tight mt-0.5">Generar boleta prellenada en su apartado</div>
                 </div>
               </button>
 
@@ -936,7 +936,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-amber-950">Registrar Préstamo de Material</div>
-                  <div className="text-[10px] text-amber-700 truncate">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
+                  <div className="text-[10px] text-amber-700 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
                 </div>
               </button>
             </div>
