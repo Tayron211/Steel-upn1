@@ -77,92 +77,165 @@ input, textarea, select {
    (AMOLED True Black & Crystal White support)
    ========================================================= */
 
-/* Apple Liquid Glass Dock Bar */
+/* =========================================================
+   HYPER-REALISTIC APPLE LIQUID GLASS (Frosted Luminous Edge)
+   Reference: Pure crystal frosted refraction with specular rim
+   ========================================================= */
+
+/* Apple Liquid Glass Dock Bar (Signature Floating Dock) */
 .apple-liquid-glass-27 {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(28px) saturate(200%) brightness(102%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(102%);
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
-  border-radius: 22px;
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.22) 45%,
+    rgba(255, 255, 255, 0.40) 100%
+  );
+  backdrop-filter: blur(28px) saturate(220%) contrast(102%) brightness(106%);
+  -webkit-backdrop-filter: blur(28px) saturate(220%) contrast(102%) brightness(106%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 28px;
   box-shadow: 
-    0 20px 48px -8px rgba(15, 23, 42, 0.18),
-    0 6px 18px -2px rgba(15, 23, 42, 0.08),
+    0 24px 48px -10px rgba(15, 23, 42, 0.18),
+    0 8px 24px -4px rgba(15, 23, 42, 0.08),
     inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.03);
+    inset 0 -1.5px 2px 0 rgba(255, 255, 255, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.apple-liquid-glass-27::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.08) 45%,
+    transparent 75%
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
 .dark .apple-liquid-glass-27 {
-  background: rgba(10, 10, 14, 0.85);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(24, 24, 32, 0.52) 40%,
+    rgba(10, 10, 14, 0.70) 100%
+  );
+  backdrop-filter: blur(32px) saturate(210%) brightness(115%);
+  -webkit-backdrop-filter: blur(32px) saturate(210%) brightness(115%);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
   box-shadow: 
-    0 20px 48px -8px rgba(0, 0, 0, 0.9),
-    0 6px 18px -2px rgba(0, 0, 0, 0.6),
-    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.07);
+    0 24px 56px -10px rgba(0, 0, 0, 0.95),
+    0 8px 24px -4px rgba(0, 0, 0, 0.75),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1.5px 2px 0 rgba(255, 255, 255, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
-/* Botón deslizante activo: PLANO (2D) */
+.dark .apple-liquid-glass-27::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    transparent 75%
+  );
+}
+
+/* Botón deslizante activo con efecto Gota Ámbar Líquida */
 .apple-liquid-slider {
-  background: linear-gradient(180deg, #FFCA36 0%, #FDBA30 100%);
-  border-radius: 16px;
+  background: linear-gradient(180deg, #FFCA36 0%, #FDBA30 55%, #F59E0B 100%);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
   box-shadow: 
-    0 4px 18px rgba(253, 186, 48, 0.5),
-    inset 0 1px 1px rgba(255, 255, 255, 0.7);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    0 4px 20px -2px rgba(253, 186, 48, 0.6),
+    0 2px 8px -1px rgba(253, 186, 48, 0.4),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12);
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
+}
+
+.dark .apple-liquid-slider {
+  background: linear-gradient(180deg, #FFCA36 0%, #FDBA30 55%, #F59E0B 100%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 4px 24px -2px rgba(253, 186, 48, 0.75),
+    0 2px 10px -1px rgba(253, 186, 48, 0.5),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.9),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Apple-style translucent liquid glass panel */
 .apple-liquid-glass {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
   box-shadow: 
     0 20px 48px -8px rgba(15, 23, 42, 0.16),
     0 4px 16px -2px rgba(15, 23, 42, 0.06),
-    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .dark .apple-liquid-glass {
-  background: rgba(12, 12, 16, 0.8);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(14, 14, 18, 0.65) 100%
+  );
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
   box-shadow: 
     0 20px 48px -8px rgba(0, 0, 0, 0.8),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.06);
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* Apple-style floating menu / speed-dial pill */
 .apple-liquid-pill {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.65) 0%,
+    rgba(255, 255, 255, 0.35) 100%
+  );
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
   box-shadow: 
     0 12px 32px -4px rgba(15, 23, 42, 0.12),
     0 2px 8px -1px rgba(15, 23, 42, 0.04),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95);
 }
 
 .dark .apple-liquid-pill {
-  background: rgba(14, 14, 18, 0.85);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(18, 18, 24, 0.7) 100%
+  );
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   box-shadow: 
     0 12px 32px -4px rgba(0, 0, 0, 0.7),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* Apple-style modals and bottom sheets */
 .apple-liquid-modal {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
   box-shadow: 
     0 32px 72px -16px rgba(15, 23, 42, 0.22),
     0 12px 28px -6px rgba(15, 23, 42, 0.1),
@@ -170,13 +243,13 @@ input, textarea, select {
 }
 
 .dark .apple-liquid-modal {
-  background: rgba(12, 12, 16, 0.96);
+  background: rgba(12, 12, 16, 0.92);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
   box-shadow: 
     0 32px 72px -16px rgba(0, 0, 0, 0.9),
-    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.06);
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.15);
 }
 
 /* Fluid Keyframe Animations with Apple Easing (cubic-bezier(0.16, 1, 0.3, 1)) */

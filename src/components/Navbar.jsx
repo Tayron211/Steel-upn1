@@ -100,12 +100,12 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         </div>
       </header>
 
-      {/* iOS Liquid Glass Floating Bottom App Dock - Simetría Squircle (Menos Redondeada) */}
-      <div className="md:hidden fixed bottom-4 inset-x-4 z-50 max-w-sm mx-auto pointer-events-none safe-bottom">
-        <nav className="relative pointer-events-auto apple-liquid-glass-27 rounded-[22px] p-1.5 grid grid-cols-4 ring-1 ring-slate-900/5 dark:ring-white/10 shadow-2xl overflow-hidden select-none">
-          {/* Botón deslizante activo plano: esquinas simétricas menos redondeadas */}
+      {/* Hyper-Realistic Apple Liquid Glass Floating Bottom App Dock */}
+      <div className="fixed bottom-4 sm:bottom-6 inset-x-4 z-50 max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
+        <nav className="relative pointer-events-auto apple-liquid-glass-27 rounded-[28px] p-1.5 grid grid-cols-4 shadow-2xl overflow-hidden select-none">
+          {/* Botón deslizante activo con efecto Gota Ámbar Líquida */}
           <div
-            className="apple-liquid-slider absolute top-1.5 bottom-1.5 rounded-[16px] pointer-events-none z-0"
+            className="apple-liquid-slider absolute top-1.5 bottom-1.5 rounded-[22px] pointer-events-none z-0"
             style={{
               width: 'calc((100% - 12px) / 4)',
               left: '6px',
@@ -121,20 +121,20 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[16px] transition-all duration-200 active:scale-95"
+                className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
               >
                 <Icon 
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isActive 
-                      ? 'text-slate-950 stroke-[2.6] scale-110' 
-                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white stroke-[1.9]'
+                      ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs' 
+                      : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white stroke-[2]'
                   }`} 
                 />
                 <span 
                   className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
                     isActive 
                       ? 'font-black text-slate-950' 
-                      : 'font-semibold text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white'
+                      : 'font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {item.label}
@@ -142,7 +142,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
                 {item.badge !== undefined && item.badge > 0 && (
                   <span 
-                    className={`absolute top-0.5 right-2 min-w-4 h-4 px-1 flex items-center justify-center rounded-full text-[9px] font-black transition-all duration-200 shadow-xs ${
+                    className={`absolute top-0.5 right-2 min-w-4 h-4 px-1 flex items-center justify-center rounded-full text-[9px] font-black transition-all duration-200 shadow-xs ring-1 ring-white/70 ${
                       isActive 
                         ? 'bg-slate-950 text-[#FDBA30]' 
                         : 'bg-rose-500 text-white animate-pulse'

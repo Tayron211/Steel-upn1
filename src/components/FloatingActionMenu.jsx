@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  Plus, 
-  X, 
-  FileText, 
-  HandHelping, 
+import {
+  Plus,
+  X,
+  FileText,
+  HandHelping,
   Calendar
 } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
     <>
       {/* Backdrop rendered at root body to prevent any coordinate or clipping trap */}
       {isOpen && typeof document !== 'undefined' && createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[9990] animate-backdrop-fade transition-all cursor-pointer"
           onClick={() => setIsOpen(false)}
         />,
@@ -91,11 +91,10 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Acciones Rápidas"
-          className={`w-14 h-14 rounded-full shadow-2xl inline-flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 ${
-            isOpen
+          className={`w-14 h-14 rounded-full shadow-2xl inline-flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 ${isOpen
               ? 'bg-slate-900 text-white rotate-45 scale-105 shadow-slate-900/40 ring-4 ring-slate-900/20'
               : 'bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-[0_8px_28px_rgba(253,186,48,0.55)] ring-4 ring-[#FDBA30]/35 hover:scale-105'
-          }`}
+            }`}
         >
           <Plus className="w-6 h-6 stroke-[2.8] transition-transform duration-300" />
         </button>
