@@ -84,11 +84,11 @@ input, textarea, select {
 /* Flat 2D Frosted Floating Dock with smooth blur and dense milky opacity */
 .apple-liquid-glass-27 {
   position: relative;
-  background-color: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+  backdrop-filter: blur(32px) saturate(190%) !important;
   border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  border-radius: 26px;
+  border-radius: 28px;
   box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -97,10 +97,10 @@ input, textarea, select {
 }
 
 .dark .apple-liquid-glass-27 {
-  background-color: rgba(12, 12, 16, 0.72) !important;
-  backdrop-filter: blur(32px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(12, 12, 16, 0.88) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(190%) !important;
+  backdrop-filter: blur(36px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
   box-shadow: 0 14px 40px -4px rgba(0, 0, 0, 0.85) !important;
 }
 
