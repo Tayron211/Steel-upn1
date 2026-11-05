@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name=steel-upn1",
+    "deploy": "vite build && wrangler pages deploy dist --project-name=steel-upn1 --branch=main",
+    "sync": "vite build && git add . && git commit -m \"chore: actualizacion de sistema\" && git push origin main && wrangler pages deploy dist --project-name=steel-upn1 --branch=main",
     "server": "node server/index.js",
     "start": "node server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
