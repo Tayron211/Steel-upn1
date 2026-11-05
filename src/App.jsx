@@ -6,6 +6,7 @@ import OperationsHub from './components/OperationsHub';
 import DashboardView from './components/DashboardView';
 import FloatingActionMenu from './components/FloatingActionMenu';
 import MobileSignView from './components/MobileSignView';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const TABS = ['attendance', 'tickets', 'operations', 'dashboard'];
 
@@ -275,38 +276,46 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5 pb-28 sm:pb-32">
         {activeTab === 'attendance' && (
           <div key="attendance" className="animate-tab-view">
-            <AttendanceView
-              initialSearch={attendanceSearchPrefill}
-              onClearInitialSearch={() => setAttendanceSearchPrefill('')}
-              onOpenNewTicket={handleOpenTicketFromClass}
-              onEmitManualSheet={handleEmitManualSheetFromClass}
-            />
+            <ErrorBoundary>
+              <AttendanceView
+                initialSearch={attendanceSearchPrefill}
+                onClearInitialSearch={() => setAttendanceSearchPrefill('')}
+                onOpenNewTicket={handleOpenTicketFromClass}
+                onEmitManualSheet={handleEmitManualSheetFromClass}
+              />
+            </ErrorBoundary>
           </div>
         )}
 
         {activeTab === 'tickets' && (
           <div key="tickets" className="animate-tab-view">
-            <TicketsKanban
-              initialNewTicket={newTicketPrefill}
-              onClearInitialTicket={() => setNewTicketPrefill(null)}
-            />
+            <ErrorBoundary>
+              <TicketsKanban
+                initialNewTicket={newTicketPrefill}
+                onClearInitialTicket={() => setNewTicketPrefill(null)}
+              />
+            </ErrorBoundary>
           </div>
         )}
 
         {activeTab === 'operations' && (
           <div key="operations" className="animate-tab-view">
-            <OperationsHub
-              initialClassData={manualSheetPrefill}
-              onClearInitialClass={() => setManualSheetPrefill(null)}
-              onSelectRoomForSchedule={handleSelectRoomForSchedule}
-              defaultSubTab={operationsSubTab}
-            />
+            <ErrorBoundary>
+              <OperationsHub
+                initialClassData={manualSheetPrefill}
+                onClearInitialClass={() => setManualSheetPrefill(null)}
+                onSelectRoomForSchedule={handleSelectRoomForSchedule}
+                defaultSubTab={operationsSubTab}
+              />
+            </ErrorBoundary>
           </div>
         )}
 
         {activeTab === 'dashboard' && (
           <div key="dashboard" className="animate-tab-view">
-            <DashboardView />
+            <ErrorBoundary>
+              <DashboardView />
+            </ErrorBoundary>
           </div>
         )}
       </main>

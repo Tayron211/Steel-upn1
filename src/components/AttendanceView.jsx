@@ -350,12 +350,15 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const countFalta = data.filter(c => c.asistencia === 'NO').length;
   const countReemplazo = data.filter(c => c.asistencia && c.asistencia.includes('REEMPLAZO')).length;
   const countPendientes = data.filter(c => c.asistencia === 'PENDIENTE' || (!c.asistencia && !c.puntualidad)).length;
+  const countPendiente = countPendientes;
 
   // Filter items by statusFilter when user clicks on counter pills
   const displayedItems = useMemo(() => {
     return data.filter(c => {
       if (statusFilter === 'ALL') return true;
-      if (statusFilter === 'PENDING') return c.asistencia === 'PENDIENTE' || (!c.asistencia && !c.puntualidad);
+      if (statusFilter === 'PENDING' || statusFilter === 'PENDIENTE') {
+        return c.asistencia === 'PENDIENTE' || (!c.asistencia && !c.puntualidad);
+      }
       if (statusFilter === 'PUNTUAL') return c.puntualidad === 'PUNTUAL';
       if (statusFilter === 'TARDE') return c.puntualidad === 'TARDE';
       if (statusFilter === 'FALTA') return c.asistencia === 'NO';
@@ -709,7 +712,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
         <Building className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-2 stroke-[1.8]" />
         <p className="text-sm font-bold text-slate-800 dark:text-white">
-          {statusFilter === 'PENDING' ? '¡Excelente trabajo! No hay aulas pendientes' : 'No se encontraron clases'}
+          {(statusFilter === 'PENDING' || statusFilter === 'PENDIENTE') ? '¡Excelente trabajo! No hay aulas pendientes' : 'No se encontraron clases'}
         </p>
         <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
           {statusFilter !== 'ALL'
