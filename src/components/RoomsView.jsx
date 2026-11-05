@@ -139,7 +139,7 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
                   </span>
                 </div>
 
-                <h3 className="text-xs font-bold text-slate-900 mb-1 truncate" title={room.nombre}>
+                <h3 className="text-xs font-bold text-slate-900 mb-1 break-words leading-snug" title={room.nombre}>
                   {room.nombre}
                 </h3>
 

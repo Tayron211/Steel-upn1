@@ -185,7 +185,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   }, [validSheets, search, filterMotivo]);
 
   return (
-    <div className="space-y-4 pb-36 md:pb-12 max-w-5xl mx-auto">
+    <div className="space-y-4 pb-36 md:pb-12 w-full mx-auto">
       {/* Toast Alert */}
       {copiedSuccess && (
         <div className="fixed top-16 inset-x-4 max-w-sm mx-auto z-50 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-200">
@@ -296,15 +296,15 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       ) : (
         <>
           {/* Mobile Card List (visible on screens < 768px) */}
-          <div className="grid grid-cols-1 gap-2.5 md:hidden">
+          <div className="grid grid-cols-1 gap-3 md:hidden">
             {filtered.map(item => (
               <div
                 key={item.id}
-                className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3"
+                className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-black text-xs bg-amber-100/80 text-amber-950 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs whitespace-nowrap">
+                    <span className="font-mono font-black text-xs bg-amber-100/90 text-amber-950 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs whitespace-nowrap">
                       {item.codigo}
                     </span>
                     <span className="text-xs font-mono font-semibold text-slate-600 whitespace-nowrap">
@@ -317,116 +317,129 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-extrabold text-slate-950 mb-0.5">
+                  <h3 className="text-sm font-extrabold text-slate-950 mb-1 break-words">
                     {item.docente}
                   </h3>
-                  <p className="text-[11px] text-slate-700 font-semibold line-clamp-1">
+                  <p className="text-xs text-slate-800 font-bold leading-snug break-words">
                     {item.curso}
                   </p>
                   {item.carrera && (
-                    <p className="text-[10px] text-slate-400 truncate">
+                    <p className="text-[11px] text-slate-500 font-medium mt-0.5 break-words">
                       {item.carrera}
                     </p>
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 truncate max-w-[170px]">
-                    {item.motivo}
-                  </span>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => handleCopyVoucherText(item)}
-                      className="h-8 px-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95"
-                      title="Copiar texto para WhatsApp"
-                    >
-                      <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                      <span>Copiar</span>
-                    </button>
-
-                    <button
-                      onClick={() => setSelectedForPrint(item)}
-                      className="h-8 px-3 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shadow-2xs"
-                    >
-                      <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
-                      <span>Boleta</span>
-                    </button>
+                <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Motivo:</span>
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 break-words">
+                      {item.motivo}
+                    </span>
                   </div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 shrink-0">Asistente:</span>
+                    <span className="font-bold text-slate-900 break-words leading-tight">
+                      {item.asistente || 'Operaciones Sede'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => handleCopyVoucherText(item)}
+                    className="h-8 px-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95"
+                    title="Copiar texto para WhatsApp"
+                  >
+                    <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span>Copiar</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedForPrint(item)}
+                    className="h-8 px-3.5 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
+                  >
+                    <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span>Boleta Digital</span>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Desktop Table (Strictly Orderly & Legible - No awkward wrapping!) */}
+          {/* Desktop Table (Optimized Layout - Zero Truncation, Full Assistants and Courses) */}
           <div className="hidden md:block bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[860px]">
                 <thead className="bg-slate-50 text-slate-600 uppercase font-black text-[10px] tracking-wider border-b border-slate-200/90">
                   <tr>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[95px]">Código</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[95px]">Fecha</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[70px]">NRC</th>
-                    <th className="py-3.5 px-4 min-w-[200px]">Docente</th>
-                    <th className="py-3.5 px-4 min-w-[220px]">Curso / Carrera</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Motivo</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Asistente Emisor</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap text-right">Acciones</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[120px]">Hoja / Fecha</th>
+                    <th className="py-3.5 px-4 min-w-[240px]">NRC · Curso / Carrera</th>
+                    <th className="py-3.5 px-4 min-w-[180px]">Docente</th>
+                    <th className="py-3.5 px-4 min-w-[160px]">Motivo</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Asistente Emisor</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap text-right min-w-[150px]">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filtered.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      {/* Código: Never wraps */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-mono font-black text-xs bg-amber-100/80 text-amber-950 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs inline-block tracking-tight">
+                      {/* Hoja y Fecha */}
+                      <td className="py-3.5 px-4 whitespace-nowrap align-top">
+                        <span className="font-mono font-black text-xs bg-amber-100/90 text-amber-950 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs inline-block tracking-tight">
                           {item.codigo}
                         </span>
+                        <div className="font-mono text-[11px] text-slate-500 font-semibold mt-1.5">
+                          {item.fecha}
+                        </div>
                       </td>
 
-                      {/* Fecha: Never wraps */}
-                      <td className="py-3.5 px-4 whitespace-nowrap font-mono text-xs text-slate-700 font-semibold">
-                        {item.fecha}
+                      {/* NRC, Curso y Carrera: 100% visible, no truncations! */}
+                      <td className="py-3.5 px-4 align-top">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="font-mono font-black text-[10px] text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80 inline-block">
+                            NRC {item.nrc}
+                          </span>
+                        </div>
+                        <div className="font-bold text-slate-900 text-xs leading-snug break-words">
+                          {item.curso}
+                        </div>
+                        {item.carrera && (
+                          <div className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5 break-words">
+                            {item.carrera}
+                          </div>
+                        )}
                       </td>
 
-                      {/* NRC: Never wraps */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-mono font-black text-xs text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/80 inline-block">
-                          {item.nrc}
-                        </span>
-                      </td>
-
-                      {/* Docente */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-extrabold text-slate-950 text-xs leading-snug">
+                      {/* Docente: 100% visible */}
+                      <td className="py-3.5 px-4 align-top">
+                        <div className="font-extrabold text-slate-950 text-xs leading-snug break-words">
                           {item.docente}
                         </div>
                       </td>
 
-                      {/* Curso / Carrera */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-800 text-xs line-clamp-1">
-                          {item.curso}
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate">
-                          {item.carrera || 'Pregrado'}
-                        </div>
-                      </td>
-
-                      {/* Motivo: Never wraps */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-amber-50 text-amber-900 border border-amber-200">
+                      {/* Motivo: 100% visible */}
+                      <td className="py-3.5 px-4 align-top">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-amber-50 text-amber-900 border border-amber-200 break-words leading-tight">
                           {item.motivo}
                         </span>
                       </td>
 
-                      {/* Asistente: Never wraps */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-xs text-slate-600 font-medium">
-                        {item.asistente || '—'}
+                      {/* Asistente Emisor: 100% visible, NEVER cut off! */}
+                      <td className="py-3.5 px-4 align-top">
+                        <div className="flex items-start gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-amber-100 border border-amber-200 text-amber-900 flex items-center justify-center shrink-0 font-black text-[10px] mt-0.5">
+                            {(item.asistente || 'A').charAt(0)}
+                          </div>
+                          <div className="font-bold text-slate-900 text-xs leading-snug break-words">
+                            {item.asistente || 'Operaciones Sede'}
+                          </div>
+                        </div>
                       </td>
 
-                      {/* Acciones: Never wraps */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-right space-x-1.5">
+                      {/* Acciones */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-right align-top space-x-1.5">
                         <button
                           onClick={() => handleCopyVoucherText(item)}
                           className="h-8 px-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95"
@@ -626,21 +639,21 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Docente:</span>
-                <span className="font-bold text-slate-900 block truncate">{selectedForPrint.docente}</span>
+                <span className="font-bold text-slate-900 block break-words">{selectedForPrint.docente}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Curso:</span>
-                <span className="font-medium text-slate-700 block truncate">{selectedForPrint.curso}</span>
+                <span className="font-medium text-slate-700 block break-words">{selectedForPrint.curso}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Motivo:</span>
-                <span className="font-semibold text-amber-900 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg inline-block mt-1 text-[11px]">
+                <span className="font-semibold text-amber-900 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg inline-block mt-1 text-[11px] break-words">
                   {selectedForPrint.motivo}
                 </span>
               </div>
-              <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
-                <span>Asistente:</span>
-                <span className="font-medium text-slate-600 truncate max-w-[170px]">{selectedForPrint.asistente}</span>
+              <div className="pt-2 border-t border-slate-100 flex justify-between items-start text-xs text-slate-400 gap-2">
+                <span className="shrink-0 text-[10px] uppercase font-bold">Asistente:</span>
+                <span className="font-bold text-slate-900 text-right break-words">{selectedForPrint.asistente || 'Operaciones Sede'}</span>
               </div>
             </div>
 

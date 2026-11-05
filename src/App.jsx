@@ -204,7 +204,7 @@ export default function App() {
       />
 
       {/* Main Fluid App Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5">
         {activeTab === 'attendance' && (
           <div key="attendance" className="animate-tab-view">
             <AttendanceView

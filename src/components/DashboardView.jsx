@@ -259,7 +259,7 @@ export default function DashboardView() {
             return (
               <div key={catName}>
                 <div className="flex justify-between text-xs font-medium text-slate-700 mb-1">
-                  <span className="truncate pr-2 font-semibold text-slate-800">{catName}</span>
+                  <span className="pr-2 font-semibold text-slate-800 break-words leading-tight">{catName}</span>
                   <span className="text-slate-500 font-mono text-[11px] shrink-0 font-semibold">{count} préstamos</span>
                 </div>
                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200">

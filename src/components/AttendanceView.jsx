@@ -642,7 +642,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     </span>
                   </div>
 
-                  <h4 className="text-xs font-bold text-slate-800 truncate mb-1">{room.nombre}</h4>
+                  <h4 className="text-xs font-bold text-slate-800 break-words mb-1">{room.nombre}</h4>
                   <span className="inline-block text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md mb-2.5">
                     {room.tipo} · Pab. {room.pabellon} ({room.piso})
                   </span>
@@ -757,19 +757,19 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                       </div>
                     </div>
 
-                    {/* Docente, Curso y Horario (Líneas compactas) */}
+                    {/* Docente, Curso y Horario (Líneas legibles sin cortes) */}
                     <div className="mb-2">
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 truncate leading-snug" title={item.docente}>
+                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 break-words leading-snug" title={item.docente}>
                         {item.docente}
                       </h3>
-                      <div className="flex items-center justify-between gap-1 text-[11px] text-slate-500 mt-0.5">
-                        <span className="truncate" title={item.curso}>{item.curso}</span>
+                      <div className="flex items-start justify-between gap-1 text-[11px] text-slate-500 mt-1">
+                        <span className="break-words leading-tight" title={item.curso}>{item.curso}</span>
                         <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-1 py-0.2 rounded border border-slate-200 shrink-0">
                           NRC {item.nrc}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 mt-1 pt-1 border-t border-slate-100">
+                      <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 mt-1.5 pt-1.5 border-t border-slate-100">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                           <span>{item.horaInicioProg} - {item.horaFinalProg}</span>
@@ -787,11 +787,11 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                             setObservationText(item.observacion || '');
                             setReplaceTeacherName('');
                           }}
-                          className="mt-1.5 px-2 py-0.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-900 rounded-lg text-[10px] font-semibold flex items-center gap-1 cursor-pointer transition active:scale-98"
+                          className="mt-1.5 px-2 py-1 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-900 rounded-lg text-[10px] font-semibold flex items-start gap-1 cursor-pointer transition active:scale-98"
                           title="Toca para editar observación"
                         >
-                          <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-                          <span className="truncate">{item.observacion}</span>
+                          <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0 mt-0.5" />
+                          <span className="break-words leading-snug">{item.observacion}</span>
                         </div>
                       )}
                     </div>
@@ -860,9 +860,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 <span className="font-mono font-black text-xs bg-slate-900 text-white px-2.5 py-1 rounded-xl shadow-xs shrink-0">
                   {selectedClassOptions.aula}
                 </span>
-                <div className="truncate">
-                  <div className="text-xs font-black text-slate-900 truncate">{selectedClassOptions.docente}</div>
-                  <div className="text-[10px] text-slate-500 font-mono truncate">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}</div>
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-slate-900 break-words leading-tight">{selectedClassOptions.docente}</div>
+                  <div className="text-[10px] text-slate-500 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}</div>
                 </div>
               </div>
               <button 
@@ -1109,7 +1109,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 <h3 className="text-base font-black text-slate-950 tracking-tight leading-tight">
                   Observación o Suplente
                 </h3>
-                <p className="text-xs text-slate-500 truncate mt-0.5">
+                <p className="text-xs text-slate-500 break-words mt-0.5">
                   Aula <strong className="text-slate-900 font-mono">{activeModalItem.aula}</strong> · {activeModalItem.docente}
                 </p>
               </div>

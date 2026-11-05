@@ -220,11 +220,11 @@ export default function ReservationsView() {
                   </div>
 
                   <div className="space-y-1 mb-3">
-                    <div className="text-xs font-bold text-slate-900 inline-flex items-center gap-1.5 w-full">
-                      <User className="w-3.5 h-3.5 text-slate-400 stroke-[2.2] shrink-0" />
-                      <span className="truncate">{r.docente || 'Solicitante no especificado'}</span>
+                    <div className="text-xs font-bold text-slate-900 inline-flex items-start gap-1.5 w-full">
+                      <User className="w-3.5 h-3.5 text-slate-400 stroke-[2.2] shrink-0 mt-0.5" />
+                      <span className="break-words leading-tight">{r.docente || 'Solicitante no especificado'}</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 line-clamp-2 pl-5 font-medium leading-relaxed" title={r.detalle}>
+                    <p className="text-[11px] text-slate-600 pl-5 font-medium leading-relaxed break-words" title={r.detalle}>
                       {r.detalle || 'Sin detalle de actividad.'}
                     </p>
                   </div>
@@ -262,10 +262,10 @@ export default function ReservationsView() {
                   <Calendar className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base font-black text-slate-950 tracking-tight leading-tight truncate">
+                  <h3 className="text-base font-black text-slate-950 tracking-tight leading-tight">
                     Nueva Reserva de Ambiente
                   </h3>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Préstamo de aula o laboratorio con horario definido
                   </p>
                 </div>

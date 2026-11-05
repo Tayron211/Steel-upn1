@@ -33,7 +33,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount })
     <>
       {/* Native App Top Bar with Official Clean UPN Branding */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 safe-top">
-        <div className="max-w-5xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between">
           {/* Official UPN Identity Brand */}
           <div className="flex items-center min-w-0">
             <UpnLogo variant="horizontal" />
@@ -51,7 +51,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount })
         </div>
 
         {/* Desktop / Tablet Navigation Strip */}
-        <div className="hidden md:block max-w-5xl mx-auto px-6 pb-2.5 pt-1 border-t border-slate-100">
+        <div className="hidden md:block max-w-7xl mx-auto px-6 pb-2.5 pt-1 border-t border-slate-100">
           <div className="flex items-center space-x-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;

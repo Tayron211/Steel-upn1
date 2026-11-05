@@ -783,7 +783,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       <div className="flex items-center gap-1">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${ben.badgeClass}`}>
                           <span>{ben.type === 'ALUMNO' ? '🎓 Alumno' : '👨‍🏫 Docente'}</span>
-                          {ben.name && <strong className="font-black truncate max-w-[120px]">: {ben.name}</strong>}
+                          {ben.name && <strong className="font-black break-words">: {ben.name}</strong>}
                         </span>
                       </div>
                     </div>
@@ -934,10 +934,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                   <HandHelping className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-black text-slate-950 tracking-tight leading-tight truncate">
+                  <h2 className="text-base font-black text-slate-950 tracking-tight leading-tight">
                     Préstamo de Material Detallado
                   </h2>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Registro de entrega con especificaciones
                   </p>
                 </div>
