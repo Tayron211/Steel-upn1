@@ -243,7 +243,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         }
 
         setTickets(prev => [createdTicket, ...prev]);
-        setToastMessage(`✅ Préstamo registrado (Firma de Recibí guardada)`);
+        setToastMessage('✅ Préstamo registrado con éxito');
         
         // Reset form
         setPersonName('');
@@ -289,7 +289,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
     setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
     setInlineReceiveTicketId(null);
-    setToastMessage('✅ Material devuelto y firmado (Entregué) con éxito');
+    setToastMessage('✅ Material devuelto con éxito');
     setTimeout(() => setToastMessage(''), 2500);
 
     try {
@@ -542,12 +542,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             />
           )}
 
-          {/* Fila 3: Firma 1 (El Solicitante firma que RECIBE el objeto) */}
+          {/* Fila 3: Firma del Solicitante */}
           <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-1">
             <SignatureCanvas
               ref={solicitanteFormSignRef}
-              title="Firma del Solicitante (Recibí conforme)"
-              subtitle="El docente o alumno firma con el dedo certificando que recibe el material"
+              title="Firma del Solicitante"
+              subtitle="Firma directamente con el dedo en pantalla"
               height={100}
               compact={true}
             />
@@ -560,7 +560,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             className="w-full h-11 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
           >
             <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-            <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo (Firmado: Recibí)'}</span>
+            <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo'}</span>
           </button>
         </form>
       </div>
@@ -637,12 +637,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       {ticket.tipoSolicitud}
                     </p>
 
-                    {/* Estado de Firma Inicial (Recibí) */}
+                    {/* Estado de Firma Inicial */}
                     <div className="flex items-center gap-1.5 flex-wrap mb-2">
                       {ticket.firmaRecepcion ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
                           <Check className="w-3 h-3 stroke-[3]" />
-                          <span>Recibí firmado por solicitante</span>
+                          <span>Firma registrada</span>
                         </span>
                       ) : isSigningInline ? null : (
                         <button
@@ -651,17 +651,17 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                           className="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60 transition inline-flex items-center gap-1 active:scale-95"
                         >
                           <PenTool className="w-3 h-3 text-amber-500" />
-                          <span>✍️ Firmar Recibí pendiente</span>
+                          <span>✍️ Firmar pendiente</span>
                         </button>
                       )}
                     </div>
 
-                    {/* Panel de Firma Inicial si faltaba firmar el Recibí */}
+                    {/* Panel de Firma Inicial si faltaba firmar */}
                     {isSigningInline && (
                       <div className="my-2 p-2 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-2">
                         <SignatureCanvas
                           ref={cardSignCanvasRef}
-                          title="Firma del Solicitante (Recibí conforme)"
+                          title="Firma del Solicitante"
                           height={90}
                           compact={true}
                         />
@@ -684,13 +684,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       </div>
                     )}
 
-                    {/* PASO 2: Panel de Devolución (El solicitante firma que ENTREGÓ de vuelta el material) */}
+                    {/* PASO 2: Panel de Devolución */}
                     {isReceivingInline && (
                       <div className="my-2 p-2.5 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-2">
                         <SignatureCanvas
                           ref={returnSignCanvasRef}
-                          title="Firma de Devolución (Entregué)"
-                          subtitle="El docente o alumno firma aquí certificando que entregó el material"
+                          title="Firma de Devolución"
+                          subtitle="Firma directamente con el dedo en pantalla"
                           height={95}
                           compact={true}
                         />
@@ -701,7 +701,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                             className="flex-1 h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-xs"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
-                            <span>Confirmar Devolución (Firmado: Entregué)</span>
+                            <span>Confirmar Devolución</span>
                           </button>
                           <button
                             type="button"
@@ -739,10 +739,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       type="button"
                       onClick={() => setInlineReceiveTicketId(ticket.id)}
                       className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
-                      title="Registrar devolución: el docente o alumno vuelve a firmar en Entregué"
+                      title="Registrar devolución con firma"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.4]" />
-                      <span>Recibir Devolución (Firmar: Entregué)</span>
+                      <span>Recibir Devolución</span>
                     </button>
 
                     <button
@@ -794,16 +794,16 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       {ticket.tipoSolicitud}
                     </p>
 
-                    {/* Doble firma completada */}
+                    {/* Firmas registradas */}
                     <div className="flex items-center gap-1 flex-wrap mb-2">
                       {ticket.firmaRecepcion && (
                         <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
-                          ✓ Recibí firmado
+                          ✓ Préstamo firmado
                         </span>
                       )}
                       {ticket.firmaEntrega && (
                         <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/60">
-                          ✓ Entregué firmado
+                          ✓ Devolución firmada
                         </span>
                       )}
                       {ticket.firmaRecepcion && ticket.firmaEntrega && (
