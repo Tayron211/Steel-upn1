@@ -51,6 +51,7 @@ export async function onRequest(context) {
       const hora = url.searchParams.get('hora');
       const horaDesde = url.searchParams.get('hora_desde');
       const search = url.searchParams.get('search');
+      const nrc = url.searchParams.get('nrc');
 
       let query = 'SELECT * FROM asistencia WHERE 1=1';
       const params = [];
@@ -64,12 +65,29 @@ export async function onRequest(context) {
         params.push(`%- ${pabellon.toUpperCase()}%`, `${pabellon.toUpperCase()}%`);
       }
       if (piso) {
-        const pUpper = piso.toUpperCase();
-        if (pUpper.includes('SOT')) {
-          query += " AND (UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')";
-        } else {
-          query += ' AND UPPER(piso_pabellon) LIKE ?';
-          params.push(`%${pUpper}%`);
+        const pisoItems = piso.split(',').map(p => p.trim()).filter(Boolean);
+        if (pisoItems.length === 1) {
+          const pUpper = pisoItems[0].toUpperCase();
+          if (pUpper.includes('SOT')) {
+            query += " AND (UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')";
+          } else {
+            query += ' AND UPPER(piso_pabellon) LIKE ?';
+            params.push(`%${pUpper}%`);
+          }
+        } else if (pisoItems.length > 1) {
+          const orClauses = [];
+          for (const item of pisoItems) {
+            const pUpper = item.toUpperCase();
+            if (pUpper.includes('SOT')) {
+              orClauses.push("(UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')");
+            } else {
+              orClauses.push('UPPER(piso_pabellon) LIKE ?');
+              params.push(`%${pUpper}%`);
+            }
+          }
+          if (orClauses.length > 0) {
+            query += ` AND (${orClauses.join(' OR ')})`;
+          }
         }
       }
       if (hora) {
@@ -79,8 +97,12 @@ export async function onRequest(context) {
         query += ' AND hora_inicio_prog >= ?';
         params.push(horaDesde);
       }
+      if (nrc) {
+        query += ' AND (nrc = ? OR CAST(nrc AS TEXT) = ? OR CAST(nrc AS TEXT) LIKE ?)';
+        params.push(nrc, nrc, `%${nrc}%`);
+      }
       if (search) {
-        query += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR nrc LIKE ?)';
+        query += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR CAST(nrc AS TEXT) LIKE ?)';
         const s = `%${search.toLowerCase()}%`;
         params.push(s, s, s, s);
       }

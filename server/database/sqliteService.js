@@ -301,7 +301,7 @@ function mapTicketRow(r) {
 }
 
 // Queries
-async function getAsistencia({ dia, pabellon, piso, hora, search }) {
+async function getAsistencia({ dia, pabellon, piso, hora, search, nrc }) {
   let sql = 'SELECT * FROM asistencia WHERE 1=1';
   const params = [];
 
@@ -316,8 +316,32 @@ async function getAsistencia({ dia, pabellon, piso, hora, search }) {
   }
 
   if (piso) {
-    sql += ' AND UPPER(piso_pabellon) LIKE ?';
-    params.push(`%${piso.toUpperCase()}%`);
+    const pisoItems = (Array.isArray(piso) ? piso : String(piso).split(','))
+      .map(p => p.trim())
+      .filter(Boolean);
+    if (pisoItems.length === 1) {
+      const pUpper = pisoItems[0].toUpperCase();
+      if (pUpper.includes('SOT')) {
+        sql += " AND (UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')";
+      } else {
+        sql += ' AND UPPER(piso_pabellon) LIKE ?';
+        params.push(`%${pUpper}%`);
+      }
+    } else if (pisoItems.length > 1) {
+      const orClauses = [];
+      for (const item of pisoItems) {
+        const pUpper = item.toUpperCase();
+        if (pUpper.includes('SOT')) {
+          orClauses.push("(UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')");
+        } else {
+          orClauses.push('UPPER(piso_pabellon) LIKE ?');
+          params.push(`%${pUpper}%`);
+        }
+      }
+      if (orClauses.length > 0) {
+        sql += ` AND (${orClauses.join(' OR ')})`;
+      }
+    }
   }
 
   if (hora) {
@@ -325,8 +349,13 @@ async function getAsistencia({ dia, pabellon, piso, hora, search }) {
     params.push(hora);
   }
 
+  if (nrc) {
+    sql += ' AND (nrc = ? OR CAST(nrc AS TEXT) = ? OR CAST(nrc AS TEXT) LIKE ?)';
+    params.push(nrc, nrc, `%${nrc}%`);
+  }
+
   if (search) {
-    sql += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR nrc LIKE ?)';
+    sql += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR CAST(nrc AS TEXT) LIKE ?)';
     const s = `%${search.toLowerCase().trim()}%`;
     params.push(s, s, s, s);
   }

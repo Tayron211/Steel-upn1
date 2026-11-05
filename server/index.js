@@ -13,8 +13,8 @@ app.use(express.json());
 // --- ASISTENCIA ---
 app.get('/api/attendance', async (req, res) => {
   try {
-    const { dia, pabellon, piso, hora, search } = req.query;
-    const list = await db.getAsistencia({ dia, pabellon, piso, hora, search });
+    const { dia, pabellon, piso, hora, search, nrc } = req.query;
+    const list = await db.getAsistencia({ dia, pabellon, piso, hora, search, nrc });
     res.json({ success: true, count: list.length, data: list });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

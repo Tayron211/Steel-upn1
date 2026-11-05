@@ -39,12 +39,41 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   // Filter states
   const [selectedDia, setSelectedDia] = useState(todayDefault);
   const [selectedPabellon, setSelectedPabellon] = useState('');
-  const [selectedPiso, setSelectedPiso] = useState('');
+  const [selectedPisos, setSelectedPisos] = useState([]); // Array para selección múltiple de pisos (ej: ['1ER PISO', '2DO PISO'])
   const [selectedHora, setSelectedHora] = useState('');
   const [blockMode, setBlockMode] = useState('ALL'); // 'ALL' | 'CURRENT' | 'NEXT'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'PUNTUAL' | 'TARDE' | 'FALTA'
   const [viewMode, setViewMode] = useState('CLASSES'); // 'CLASSES' | 'FREE_ROOMS'
   const [search, setSearch] = useState(initialSearch || '');
+
+  // Función para alternar selección múltiple de pisos
+  const handleTogglePiso = (val) => {
+    if (!val) {
+      // Si presiona 'Todos', desmarca todo para ver el campus completo
+      setSelectedPisos([]);
+      return;
+    }
+    setSelectedPisos(prev => {
+      if (prev.includes(val)) {
+        return prev.filter(p => p !== val);
+      } else {
+        return [...prev, val];
+      }
+    });
+  };
+
+  const matchesPiso = (pisoField, targetVal) => {
+    if (!pisoField || !targetVal) return false;
+    const f = String(pisoField).toUpperCase();
+    const t = String(targetVal).toUpperCase();
+    if (t === 'SOT' || t.includes('SOT')) return f.includes('SOT');
+    if (t === '1ER PISO' || t.includes('1ER')) return f.includes('1ER') || f.includes('PRIMER');
+    if (t === '2DO PISO' || t.includes('2DO')) return f.includes('2DO') || f.includes('SEGUNDO');
+    if (t === '3ER PISO' || t.includes('3ER')) return f.includes('3ER') || f.includes('TERCER');
+    if (t === '4TO PISO' || t.includes('4TO')) return f.includes('4TO') || f.includes('CUARTO');
+    if (t === '5TO PISO' || t.includes('5TO')) return f.includes('5TO') || f.includes('QUINTO');
+    return f.includes(t);
+  };
 
   useEffect(() => {
     if (initialSearch) {
@@ -126,7 +155,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       const params = new URLSearchParams();
       if (selectedDia) params.append('dia', selectedDia);
       if (selectedPabellon) params.append('pabellon', selectedPabellon);
-      if (selectedPiso) params.append('piso', selectedPiso);
+      if (selectedPisos.length > 0) params.append('piso', selectedPisos.join(','));
 
       if (blockMode === 'CURRENT') {
         params.append('hora', getCurrentHourBlock());
@@ -157,7 +186,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       const params = new URLSearchParams();
       if (selectedDia) params.append('dia', selectedDia);
       if (selectedPabellon) params.append('pabellon', selectedPabellon);
-      if (selectedPiso) params.append('piso', selectedPiso);
+      if (selectedPisos.length > 0) params.append('piso', selectedPisos.join(','));
 
       if (blockMode === 'CURRENT') {
         params.append('hora', getCurrentHourBlock());
@@ -212,7 +241,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     loadAttendance();
     const interval = setInterval(silentRefreshAttendance, 3000);
     return () => clearInterval(interval);
-  }, [selectedDia, selectedPabellon, selectedPiso, selectedHora, blockMode, search]);
+  }, [selectedDia, selectedPabellon, selectedPisos, selectedHora, blockMode, search]);
 
   const getCurrentTimeStr = () => {
     const d = new Date();
@@ -371,10 +400,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     const busyRoomCodes = new Set(data.map(c => (c.aula || '').toUpperCase().trim()));
     return rooms.filter(r => {
       if (selectedPabellon && r.pabellon !== selectedPabellon) return false;
-      if (selectedPiso && r.piso !== selectedPiso) return false;
+      if (selectedPisos.length > 0) {
+        const matchesAnyPiso = selectedPisos.some(p => matchesPiso(r.piso, p));
+        if (!matchesAnyPiso) return false;
+      }
       return !busyRoomCodes.has((r.abrv || '').toUpperCase().trim());
     });
-  }, [data, rooms, selectedPabellon, selectedPiso]);
+  }, [data, rooms, selectedPabellon, selectedPisos]);
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
@@ -443,21 +475,33 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             ))}
           </div>
 
-          {/* Pisos Pills */}
+          {/* Pisos Pills (Selección Múltiple: Permite filtrar varios pisos a la vez) */}
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
-            {pisosDisponibles.map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => setSelectedPiso(p.val)}
-                className={`h-7 px-2 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 ${selectedPiso === p.val
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+            {pisosDisponibles.map((p) => {
+              const isTodos = p.val === '';
+              const isSelected = isTodos
+                ? selectedPisos.length === 0
+                : selectedPisos.includes(p.val);
+
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => handleTogglePiso(p.val)}
+                  className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
-              >
-                {p.short}
-              </button>
-            ))}
+                  title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label} (puedes activar varios)`}
+                >
+                  <span>{p.short}</span>
+                  {!isTodos && isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -640,6 +684,24 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             className="text-amber-800 dark:text-amber-300 hover:underline text-[11px] font-bold inline-flex items-center gap-1"
           >
             <span>Ver todo el día</span>
+            <X className="w-3 h-3 stroke-[2.2]" />
+          </button>
+        </div>
+      )}
+
+      {/* Active Floor Filter Pill indicator if selectedPisos.length > 0 */}
+      {selectedPisos.length > 0 && viewMode === 'CLASSES' && (
+        <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60">
+          <span className="text-amber-950 dark:text-amber-200 font-medium">
+            Filtrando {selectedPisos.length === 1 ? 'piso' : 'pisos'}: <strong className="font-bold">
+              {pisosDisponibles.filter(p => selectedPisos.includes(p.val)).map(p => p.short).join(' + ')}
+            </strong>
+          </span>
+          <button
+            onClick={() => setSelectedPisos([])}
+            className="text-amber-800 dark:text-amber-300 hover:underline text-[11px] font-bold inline-flex items-center gap-1"
+          >
+            <span>Ver todos los pisos</span>
             <X className="w-3 h-3 stroke-[2.2]" />
           </button>
         </div>

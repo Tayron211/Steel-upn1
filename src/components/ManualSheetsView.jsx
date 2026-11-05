@@ -27,6 +27,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedForPrint, setSelectedForPrint] = useState(null);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+  const [nrcLookupLoading, setNrcLookupLoading] = useState(false);
+  const [nrcMatchFound, setNrcMatchFound] = useState(null);
 
   const [formData, setFormData] = useState({
     codigo: '',
@@ -114,26 +116,51 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       motivo: 'PROBLEMA CON AUTENTICADOR',
       asistente: 'José Carlos Miranda Rosales'
     });
+    setNrcMatchFound(null);
   };
 
-  const handleNrcLookup = async (nrcVal) => {
-    setFormData(prev => ({ ...prev, nrc: nrcVal }));
-    if (nrcVal.length >= 4) {
+  const handleNrcLookup = async (inputVal) => {
+    const rawVal = String(inputVal || '');
+    setFormData(prev => ({ ...prev, nrc: rawVal }));
+    const nrcVal = rawVal.trim();
+
+    if (!nrcVal) {
+      setNrcMatchFound(null);
+      return;
+    }
+
+    // El NRC en UPN es único: buscamos en la base de datos de control docente
+    if (nrcVal.length >= 3) {
+      setNrcLookupLoading(true);
       try {
-        const res = await fetch(`/api/attendance?search=${encodeURIComponent(nrcVal)}`);
+        const res = await fetch(`/api/attendance?nrc=${encodeURIComponent(nrcVal)}&search=${encodeURIComponent(nrcVal)}`);
         const json = await res.json();
-        if (json.success && json.data.length > 0) {
-          const matched = json.data[0];
+        if (json.success && json.data && json.data.length > 0) {
+          // Priorizar coincidencia exacta de NRC
+          const exact = json.data.find(c => String(c.nrc).trim() === nrcVal) || json.data[0];
           setFormData(prev => ({
             ...prev,
-            docente: matched.docente,
-            curso: matched.curso,
-            carrera: matched.carrera
+            docente: exact.docente || prev.docente,
+            curso: exact.curso || prev.curso,
+            carrera: exact.carrera || prev.carrera
           }));
+          setNrcMatchFound({
+            nrc: exact.nrc,
+            docente: exact.docente,
+            curso: exact.curso,
+            carrera: exact.carrera,
+            aula: exact.aula
+          });
+        } else {
+          setNrcMatchFound(null);
         }
       } catch (err) {
-        console.error(err);
+        console.error('Error buscando clase por NRC:', err);
+      } finally {
+        setNrcLookupLoading(false);
       }
+    } else {
+      setNrcMatchFound(null);
     }
   };
 
@@ -505,17 +532,41 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    NRC * <span className="font-normal text-slate-400 dark:text-zinc-500">(autocompleta)</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.nrc}
-                    onChange={(e) => handleNrcLookup(e.target.value)}
-                    placeholder="Ej: 23017"
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono font-bold"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+                      NRC * <span className="font-normal text-slate-400 dark:text-zinc-500">(autocompleta)</span>
+                    </label>
+                    {nrcLookupLoading && (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold animate-pulse">
+                        Buscando clase...
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={formData.nrc}
+                      onChange={(e) => handleNrcLookup(e.target.value)}
+                      onBlur={() => handleNrcLookup(formData.nrc)}
+                      placeholder="Ej: 23017"
+                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-bold transition ${
+                        nrcMatchFound
+                          ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20'
+                          : 'border-slate-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20'
+                      }`}
+                    />
+                    {nrcMatchFound && (
+                      <div className="absolute right-2.5 top-2.5 text-emerald-600 dark:text-emerald-400">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                  {nrcMatchFound && (
+                    <div className="mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60 truncate">
+                      ✓ Autocompletado: {nrcMatchFound.curso}
+                    </div>
+                  )}
                 </div>
 
                 <div>
