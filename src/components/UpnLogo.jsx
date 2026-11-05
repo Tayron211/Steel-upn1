@@ -31,11 +31,11 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
 
   return (
     <div className={`inline-flex items-center gap-2.5 sm:gap-3 select-none ${className}`}>
-      {/* Official UPN Vector Logo directly from upn.edu.pe */}
+      {/* Official UPN Vector Chevron Arrow ("La Flecha") directly from upn.edu.pe */}
       <img 
         src="/logo-upn-oficial.svg" 
-        alt="Universidad Privada del Norte" 
-        className="h-9 sm:h-10 w-auto object-contain rounded-xl shadow-xs ring-1 ring-black/5 shrink-0 select-none hover:opacity-95 transition-opacity"
+        alt="UPN" 
+        className="h-9 sm:h-10 w-9 sm:w-10 aspect-square object-contain rounded-xl shadow-xs ring-1 ring-black/5 shrink-0 select-none hover:opacity-95 transition-opacity"
       />
 
       {/* Institutional Typography Descriptor */}

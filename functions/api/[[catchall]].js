@@ -153,6 +153,8 @@ export async function onRequest(context) {
       try { await db.prepare('ALTER TABLE tickets ADD COLUMN entregado_por TEXT').run(); } catch (e) {}
       try { await db.prepare('ALTER TABLE tickets ADD COLUMN recibido_por TEXT').run(); } catch (e) {}
       try { await db.prepare('ALTER TABLE tickets ADD COLUMN fecha_firma TEXT').run(); } catch (e) {}
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_devolucion TEXT').run(); } catch (e) {}
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN fecha_devolucion TEXT').run(); } catch (e) {}
     }
 
     if (path === '/api/tickets' && method === 'GET') {
@@ -184,9 +186,11 @@ export async function onRequest(context) {
         responsable: t.responsable,
         firmaEntrega: t.firma_entrega || null,
         firmaRecepcion: t.firma_recepcion || null,
+        firmaDevolucion: t.firma_devolucion || null,
         entregadoPor: t.entregado_por || null,
         recibidoPor: t.recibido_por || null,
-        fechaFirma: t.fecha_firma || null
+        fechaFirma: t.fecha_firma || null,
+        fechaDevolucion: t.fecha_devolucion || null
       }));
 
       return json({ success: true, count: mapped.length, data: mapped });
@@ -273,9 +277,11 @@ export async function onRequest(context) {
       if ('responsable' in body) { fields.push('responsable = ?'); values.push(body.responsable); }
       if ('firmaEntrega' in body) { fields.push('firma_entrega = ?'); values.push(body.firmaEntrega); }
       if ('firmaRecepcion' in body) { fields.push('firma_recepcion = ?'); values.push(body.firmaRecepcion); }
+      if ('firmaDevolucion' in body) { fields.push('firma_devolucion = ?'); values.push(body.firmaDevolucion); }
       if ('entregadoPor' in body) { fields.push('entregado_por = ?'); values.push(body.entregadoPor); }
       if ('recibidoPor' in body) { fields.push('recibido_por = ?'); values.push(body.recibidoPor); }
       if ('fechaFirma' in body) { fields.push('fecha_firma = ?'); values.push(body.fechaFirma); }
+      if ('fechaDevolucion' in body) { fields.push('fecha_devolucion = ?'); values.push(body.fechaDevolucion); }
 
       if (fields.length > 0) {
         fields.push("updated_at = datetime('now')");
@@ -302,9 +308,11 @@ export async function onRequest(context) {
           responsable: updated.responsable,
           firmaEntrega: updated.firma_entrega || null,
           firmaRecepcion: updated.firma_recepcion || null,
+          firmaDevolucion: updated.firma_devolucion || null,
           entregadoPor: updated.entregado_por || null,
           recibidoPor: updated.recibido_por || null,
-          fechaFirma: updated.fecha_firma || null
+          fechaFirma: updated.fecha_firma || null,
+          fechaDevolucion: updated.fecha_devolucion || null
         } : null 
       });
     }

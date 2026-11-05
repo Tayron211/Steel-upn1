@@ -13,12 +13,16 @@ export function generateCargoPdf({
   entregadoPor,
   recibidoPor,
   firmaEntrega,
-  firmaRecepcion
+  firmaRecepcion,
+  firmaDevolucion
 }) {
   // Formato rectangular apaisado de vale de cargo (210mm x 96mm)
   const pageWidth = 210;
   const pageHeight = 96;
   const m = 8; // margen perimetral
+
+  const finalFirmaEntrega = firmaEntrega || ticket.firmaEntrega;
+  const finalFirmaRecepcion = firmaRecepcion || ticket.firmaRecepcion || firmaDevolucion || ticket.firmaDevolucion;
 
   const doc = new jsPDF({
     orientation: 'landscape',
@@ -168,9 +172,9 @@ export function generateCargoPdf({
   const leftX = m + 10;
   const leftWidth = 50;
 
-  if (firmaEntrega) {
+  if (finalFirmaEntrega) {
     try {
-      doc.addImage(firmaEntrega, 'PNG', leftX + 2, footerY - 17, leftWidth - 4, 15);
+      doc.addImage(finalFirmaEntrega, 'PNG', leftX + 2, footerY - 17, leftWidth - 4, 15);
     } catch (e) {
       console.warn('Error adding firmaEntrega to PDF', e);
     }
@@ -209,12 +213,19 @@ export function generateCargoPdf({
   const timeStr = ticket.horaReporte || '--:--';
   doc.text(`Hora:  ${timeStr}`, centerX, footerY + 5, { align: 'center' });
 
+  if (ticket.estado === 'ATENDIDO' || ticket.firmaDevolucion) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(22, 101, 52);
+    doc.text('✓ DEVOLUCIÓN REGISTRADA', centerX, footerY + 8.5, { align: 'center' });
+  }
+
   // --- Derecha: RECIBÍ CONFORME (Docente / Alumno) ---
   const rightX = pageWidth - m - 10 - leftWidth;
 
-  if (firmaRecepcion) {
+  if (finalFirmaRecepcion) {
     try {
-      doc.addImage(firmaRecepcion, 'PNG', rightX + 2, footerY - 17, leftWidth - 4, 15);
+      doc.addImage(finalFirmaRecepcion, 'PNG', rightX + 2, footerY - 17, leftWidth - 4, 15);
     } catch (e) {
       console.warn('Error adding firmaRecepcion to PDF', e);
     }
