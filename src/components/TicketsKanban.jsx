@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   HandHelping, 
   Search, 
@@ -11,11 +12,93 @@ import {
   User,
   GraduationCap,
   PenTool,
-  Download
+  Download,
+  Calendar,
+  Building2,
+  Grid3X3,
+  Layers
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
+
+const CAMPUS_ROOMS = [
+  // Pabellón A - Sótano
+  { abrv: 'AS01', pabellon: 'A', piso: 'SÓTANO', tipo: 'LAB' },
+  { abrv: 'AS02', pabellon: 'A', piso: 'SÓTANO', tipo: 'TALLER' },
+  { abrv: 'AS03', pabellon: 'A', piso: 'SÓTANO', tipo: 'TALLER' },
+  { abrv: 'AS04', pabellon: 'A', piso: 'SÓTANO', tipo: 'LAB' },
+  { abrv: 'AS05', pabellon: 'A', piso: 'SÓTANO', tipo: 'LAB' },
+  // Pabellón A - 1er Piso
+  { abrv: 'A101', pabellon: 'A', piso: '1ER PISO', tipo: 'TALLER' },
+  // Pabellón A - 2do Piso
+  { abrv: 'A201', pabellon: 'A', piso: '2DO PISO', tipo: 'AULA' },
+  { abrv: 'A202', pabellon: 'A', piso: '2DO PISO', tipo: 'AULA' },
+  // Pabellón A - 3er Piso
+  { abrv: 'A301', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
+  { abrv: 'A302', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
+  { abrv: 'A303', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
+  { abrv: 'A304', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
+  { abrv: 'A305', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
+  { abrv: 'A306', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
+  // Pabellón A - 4to Piso
+  { abrv: 'A401', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
+  { abrv: 'A402', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
+  { abrv: 'A403', pabellon: 'A', piso: '4TO PISO', tipo: 'LAB' },
+  { abrv: 'A404', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
+  { abrv: 'A405', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
+  { abrv: 'A406', pabellon: 'A', piso: '4TO PISO', tipo: 'TALLER' },
+  { abrv: 'A407', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
+  { abrv: 'OFICINA', pabellon: 'A', piso: '4TO PISO', tipo: 'OFICINA' },
+  // Pabellón A - 5to Piso
+  { abrv: 'A501', pabellon: 'A', piso: '5TO PISO', tipo: 'AULA' },
+  { abrv: 'A502', pabellon: 'A', piso: '5TO PISO', tipo: 'AULA' },
+  { abrv: 'A503', pabellon: 'A', piso: '5TO PISO', tipo: 'LAB' },
+  { abrv: 'A504', pabellon: 'A', piso: '5TO PISO', tipo: 'LAB' },
+  { abrv: 'A505', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
+  { abrv: 'A506', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
+  { abrv: 'A507', pabellon: 'A', piso: '5TO PISO', tipo: 'TALLER' },
+  { abrv: 'A508', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
+  { abrv: 'A509', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
+  { abrv: 'A510', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
+  // Pabellón B - 1er Piso
+  { abrv: 'B101', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
+  { abrv: 'B102', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
+  { abrv: 'B103', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
+  { abrv: 'B104', pabellon: 'B', piso: '1ER PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B105', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
+  { abrv: 'B106', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
+  // Pabellón B - 2do Piso
+  { abrv: 'B201', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
+  { abrv: 'B202', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
+  { abrv: 'B203', pabellon: 'B', piso: '2DO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B204', pabellon: 'B', piso: '2DO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B205', pabellon: 'B', piso: '2DO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B206', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
+  { abrv: 'B207', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
+  // Pabellón B - 3er Piso
+  { abrv: 'B301', pabellon: 'B', piso: '3ER PISO', tipo: 'AULA' },
+  { abrv: 'B302', pabellon: 'B', piso: '3ER PISO', tipo: 'AULA' },
+  { abrv: 'B303', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B304', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B305', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B306', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
+  // Pabellón B - 4to Piso
+  { abrv: 'B401', pabellon: 'B', piso: '4TO PISO', tipo: 'AULA' },
+  { abrv: 'B402', pabellon: 'B', piso: '4TO PISO', tipo: 'AULA' },
+  { abrv: 'B403', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B404', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B405', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B406', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
+  // Pabellón B - 5to Piso
+  { abrv: 'B501', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
+  { abrv: 'B502', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
+  { abrv: 'B503', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
+  { abrv: 'B504', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
+  { abrv: 'B505', pabellon: 'B', piso: '5TO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B506', pabellon: 'B', piso: '5TO PISO', tipo: 'ARQUITECTURA' },
+  { abrv: 'B507', pabellon: 'B', piso: '5TO PISO', tipo: 'ARQUITECTURA' }
+];
 
 const CORE_MATERIALS = [
   { id: 'PLUMONES', label: '🖊️ Plumones y Mota', desc: 'Préstamo de plumones y mota acrílica' },
@@ -50,6 +133,50 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
   // Search filter
   const [search, setSearch] = useState('');
+
+  // Classroom Calendar Picker State
+  const [isRoomCalendarOpen, setIsRoomCalendarOpen] = useState(false);
+  const [calendarPabellon, setCalendarPabellon] = useState('A'); // 'A' | 'B' | 'TODOS'
+  const [calendarPiso, setCalendarPiso] = useState('TODOS');
+  const [calendarSearch, setCalendarSearch] = useState('');
+  const [roomsList, setRoomsList] = useState(CAMPUS_ROOMS);
+
+  useEffect(() => {
+    fetch('/api/rooms')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data && json.data.length > 0) {
+          const apiRooms = json.data.map(r => ({
+            abrv: r.abrv,
+            pabellon: r.pabellon || (r.abrv.startsWith('B') ? 'B' : 'A'),
+            piso: r.piso || '',
+            tipo: r.tipo ? (r.tipo.includes('LAB') ? 'LAB' : r.tipo.includes('TALLER') ? 'TALLER' : r.tipo.includes('CÓMP') ? 'CÓMPUTO' : 'AULA') : 'AULA'
+          }));
+          setRoomsList(apiRooms);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const filteredCalendarRooms = useMemo(() => {
+    return roomsList.filter(room => {
+      if (calendarPabellon !== 'TODOS' && room.pabellon !== calendarPabellon) return false;
+      if (calendarPiso !== 'TODOS') {
+        const pNorm = (room.piso || '').toUpperCase();
+        if (calendarPiso === 'SÓTANO' && !pNorm.includes('SÓT') && !pNorm.includes('SOT')) return false;
+        if (calendarPiso === '1ER PISO' && !pNorm.includes('1') && !pNorm.includes('PRIMER')) return false;
+        if (calendarPiso === '2DO PISO' && !pNorm.includes('2') && !pNorm.includes('SEGUNDO')) return false;
+        if (calendarPiso === '3ER PISO' && !pNorm.includes('3') && !pNorm.includes('TERCER')) return false;
+        if (calendarPiso === '4TO PISO' && !pNorm.includes('4') && !pNorm.includes('CUARTO')) return false;
+        if (calendarPiso === '5TO PISO' && !pNorm.includes('5') && !pNorm.includes('QUINTO')) return false;
+      }
+      if (calendarSearch.trim()) {
+        const q = calendarSearch.trim().toLowerCase();
+        return room.abrv.toLowerCase().includes(q) || (room.tipo && room.tipo.toLowerCase().includes(q));
+      }
+      return true;
+    });
+  }, [roomsList, calendarPabellon, calendarPiso, calendarSearch]);
 
   const deduceFloor = (roomStr) => {
     const num = roomStr.replace(/\D/g, '');
@@ -496,14 +623,38 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               />
             </div>
 
-            <div className="sm:col-span-3">
-              <input
-                type="text"
-                value={roomInput}
-                onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                placeholder="Aula (Opcional)"
-                className="w-full h-10 px-3 text-xs font-mono font-bold bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-center uppercase focus:outline-none focus:border-[#FDBA30]"
-              />
+            <div className="sm:col-span-3 relative">
+              <button
+                type="button"
+                onClick={() => setIsRoomCalendarOpen(true)}
+                className={`w-full h-10 px-2.5 text-xs font-mono font-bold rounded-xl border transition flex items-center justify-between active:scale-98 ${
+                  roomInput
+                    ? 'bg-amber-100/80 dark:bg-amber-950/50 border-amber-400 dark:border-amber-700 text-amber-950 dark:text-amber-200'
+                    : 'bg-slate-50 dark:bg-[#141418] border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 hover:border-amber-400 dark:hover:border-amber-500'
+                }`}
+                title="Abrir mapa de aulas estilo calendario"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Aula (Calendario)'}</span>
+                </div>
+                {roomInput ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRoomInput('');
+                    }}
+                    className="p-1 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                    title="Quitar aula"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase tracking-tight bg-slate-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-zinc-300">
+                    Elegir
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -849,6 +1000,218 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             })}
           </div>
         )
+      )}
+
+      {/* =========================================================================
+          MODAL DE SELECCIÓN DE AULAS ESTILO CALENDARIO (Distribución de Sede)
+          ========================================================================= */}
+      {isRoomCalendarOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsRoomCalendarOpen(false)}
+        >
+          <div 
+            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabecera del Calendario */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-zinc-900/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#FDBA30] text-slate-950 flex items-center justify-center shadow-xs">
+                  <Calendar className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-950 dark:text-white leading-tight">
+                    Seleccionar Aula
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                    Distribución de aulas de campus UPN Comas
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsRoomCalendarOpen(false)}
+                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition active:scale-95"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Controles de Navegación por Pabellón y Piso (Estilo Meses / Días de Calendario) */}
+            <div className="p-4 border-b border-slate-100 dark:border-zinc-800 space-y-3 bg-white dark:bg-[#0c0c10]">
+              {/* Selector de Pabellón */}
+              <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setCalendarPabellon('A')}
+                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                    calendarPabellon === 'A'
+                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>Pabellón A</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalendarPabellon('B')}
+                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                    calendarPabellon === 'B'
+                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>Pabellón B</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalendarPabellon('TODOS')}
+                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                    calendarPabellon === 'TODOS'
+                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Todos</span>
+                </button>
+              </div>
+
+              {/* Selector de Pisos (Estilo Pestañas de Calendario) */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar text-xs">
+                {['TODOS', 'SÓTANO', '1ER PISO', '2DO PISO', '3ER PISO', '4TO PISO', '5TO PISO'].map((pisoKey) => {
+                  const isActive = calendarPiso === pisoKey;
+                  const label = pisoKey === 'TODOS' ? 'Todos' : pisoKey === 'SÓTANO' ? 'Sótano' : pisoKey.replace(' PISO', '°');
+                  return (
+                    <button
+                      key={pisoKey}
+                      type="button"
+                      onClick={() => setCalendarPiso(pisoKey)}
+                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
+                        isActive
+                          ? 'bg-slate-950 dark:bg-zinc-800 text-[#FDBA30] font-black shadow-xs'
+                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Buscador Rápido de Aula */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={calendarSearch}
+                  onChange={(e) => setCalendarSearch(e.target.value)}
+                  placeholder="Filtrar por código (ej. 301, B202, AS01)..."
+                  className="w-full h-9 pl-9 pr-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 font-bold"
+                />
+                {calendarSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCalendarSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Rejilla de Aulas Estilo Calendario (4 cols en móvil, 6 en desktop) */}
+            <div className="p-4 flex-1 overflow-y-auto max-h-[50vh] custom-scrollbar bg-slate-50/50 dark:bg-[#09090b]">
+              {filteredCalendarRooms.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 space-y-2">
+                  <Grid3X3 className="w-8 h-8 mx-auto stroke-[1.5] text-slate-300 dark:text-zinc-600" />
+                  <p className="text-xs font-bold">No se encontraron aulas con ese filtro</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 sm:gap-2.5">
+                  {filteredCalendarRooms.map((room) => {
+                    const isSelected = roomInput === room.abrv;
+                    return (
+                      <button
+                        key={room.abrv}
+                        type="button"
+                        onClick={() => {
+                          setRoomInput(room.abrv);
+                          setIsRoomCalendarOpen(false);
+                          setToastMessage(`✅ Aula ${room.abrv} seleccionada`);
+                          setTimeout(() => setToastMessage(''), 1800);
+                        }}
+                        className={`p-2.5 rounded-2xl border transition-all duration-150 flex flex-col items-center justify-center text-center active:scale-95 group relative ${
+                          isSelected
+                            ? 'bg-[#FDBA30] text-slate-950 border-[#FDBA30] shadow-md ring-2 ring-amber-400 font-black'
+                            : 'bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 hover:bg-amber-50/40 dark:hover:bg-amber-950/20'
+                        }`}
+                      >
+                        <span className={`font-mono text-sm sm:text-base font-black tracking-tight leading-none ${
+                          isSelected ? 'text-slate-950' : 'text-slate-900 dark:text-white'
+                        }`}>
+                          {room.abrv}
+                        </span>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className={`text-[10px] font-bold leading-none truncate ${
+                            isSelected ? 'text-slate-900' : 'text-slate-500 dark:text-zinc-400'
+                          }`}>
+                            {room.piso ? room.piso.replace(' PISO', '') : `Pab ${room.pabellon}`}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-slate-950 text-white flex items-center justify-center">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Pie con Opciones Rápidas */}
+            <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-[#0c0c10] flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRoomInput('DOCENCIA');
+                    setIsRoomCalendarOpen(false);
+                  }}
+                  className="px-3 py-2 text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition"
+                >
+                  🏢 Docencia
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRoomInput('');
+                    setIsRoomCalendarOpen(false);
+                  }}
+                  className="px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition"
+                >
+                  ❌ Sin Aula
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsRoomCalendarOpen(false)}
+                className="h-10 px-5 text-xs font-black bg-slate-950 dark:bg-zinc-800 hover:bg-slate-800 text-white rounded-xl transition active:scale-95 shadow-xs"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import {
   CheckCircle, 
   FileCheck2,
   User,
+  UserCheck,
   BookOpen,
   X,
   Share2,
@@ -38,6 +39,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
     curso: '',
     carrera: '',
     motivo: 'PROBLEMA CON AUTENTICADOR',
+    docenteReemplazo: '',
     asistente: 'José Carlos Miranda Rosales'
   });
 
@@ -88,10 +90,24 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const isReemplazo = formData.motivo === 'DOCENTE DE REEMPLAZO';
+      const suplente = (formData.docenteReemplazo || '').trim().toUpperCase();
+
+      const payload = {
+        ...formData,
+        docenteReemplazo: suplente,
+        motivo: isReemplazo && suplente 
+          ? `DOCENTE DE REEMPLAZO (${suplente})` 
+          : formData.motivo,
+        detalle: isReemplazo && suplente 
+          ? `Docente Titular: ${formData.docente} | Reemplaza: ${suplente}` 
+          : (formData.detalle || '')
+      };
+
       const res = await fetch('/api/manual-sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       const json = await res.json();
       if (json.success) {
@@ -114,6 +130,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       curso: '',
       carrera: '',
       motivo: 'PROBLEMA CON AUTENTICADOR',
+      docenteReemplazo: '',
       asistente: 'José Carlos Miranda Rosales'
     });
     setNrcMatchFound(null);
@@ -165,7 +182,16 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   };
 
   const handleCopyVoucherText = (item) => {
-    const text = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\nN° Boleta: ${item.codigo}\nFecha: ${item.fecha}\nNRC: ${item.nrc}\nDocente: ${item.docente}\nCurso: ${item.curso}\nMotivo: ${item.motivo}\nAsistente Emisor: ${item.asistente}`;
+    const isReemplazo = item.motivo?.includes('DOCENTE DE REEMPLAZO');
+    const suplenteMatch = item.motivo?.match(/DOCENTE DE REEMPLAZO \(([^)]+)\)/i);
+    const suplenteName = suplenteMatch ? suplenteMatch[1] : '';
+
+    let text = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\nN° Boleta: ${item.codigo}\nFecha: ${item.fecha}\nNRC: ${item.nrc}\nDocente Titular: ${item.docente}\nCurso: ${item.curso}`;
+    if (isReemplazo && suplenteName) {
+      text += `\n*Docente que Reemplaza:* ${suplenteName}`;
+    }
+    text += `\nMotivo: ${item.motivo}\nAsistente Emisor: ${item.asistente || 'Operaciones Sede'}`;
+
     navigator.clipboard.writeText(text);
     setCopiedSuccess(true);
     setTimeout(() => setCopiedSuccess(false), 2500);
@@ -446,6 +472,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         <div className="font-extrabold text-slate-950 dark:text-white text-xs leading-snug break-words">
                           {item.docente}
                         </div>
+                        {item.motivo?.includes('DOCENTE DE REEMPLAZO') && (
+                          <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800/80 w-fit">
+                            <UserCheck className="w-3 h-3 stroke-[2.4] shrink-0 text-amber-600" />
+                            <span>Reemplazo</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Motivo: 100% visible */}
@@ -623,6 +655,27 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                   placeholder="Seleccionar motivo"
                 />
               </div>
+
+              {/* Si es DOCENTE DE REEMPLAZO, se habilita campo obligatorio para ingresar el docente que reemplazará */}
+              {formData.motivo === 'DOCENTE DE REEMPLAZO' && (
+                <div className="p-3 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-2xl space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-300">
+                    <UserCheck className="w-4 h-4 stroke-[2.4]" />
+                    <label className="text-xs font-black uppercase tracking-tight">Docente que reemplazará (Suplente) *</label>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={formData.docenteReemplazo}
+                    onChange={(e) => setFormData({ ...formData, docenteReemplazo: e.target.value.toUpperCase() })}
+                    placeholder="Apellidos y Nombres del docente que dictará la clase"
+                    className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                  />
+                  <p className="text-[10px] text-amber-800 dark:text-amber-400 font-medium">
+                    Indica quién asumirá el dictado en lugar del docente titular.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Asistente Emisor *</label>

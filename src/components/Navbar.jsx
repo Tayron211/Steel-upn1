@@ -103,13 +103,13 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
       {/* Clean 2D Frosted Glass Floating Bottom App Dock (Exclusivo para móvil / APK, oculto en modo escritorio PC) */}
       <div className="md:hidden fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
-        <div className="relative pointer-events-auto rounded-[28px] shadow-2xl">
-          {/* Capa 1: Superficie de Cristal Esmerilado Real (Sin overflow-hidden para garantizar blur en Chromium y GPUs móviles) */}
+        <div className="relative pointer-events-auto rounded-[28px] shadow-[0_12px_36px_rgba(0,0,0,0.35)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.85)]">
+          {/* Capa 1: Superficie de Cristal Esmerilado Real de Alta Densidad (95-96% opacidad para evitar que el texto de fondo se trasluzca) */}
           <div
-            className="absolute inset-0 rounded-[28px] bg-white/85 dark:bg-[#0c0c10]/88 border border-white/60 dark:border-white/15 pointer-events-none"
+            className="absolute inset-0 rounded-[28px] bg-white/95 dark:bg-[#0d0d12]/96 border border-white/70 dark:border-white/10 pointer-events-none"
             style={{
-              backdropFilter: 'blur(36px) saturate(190%)',
-              WebkitBackdropFilter: 'blur(36px) saturate(190%)'
+              backdropFilter: 'blur(40px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(200%)'
             }}
           />
 
