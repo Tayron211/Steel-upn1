@@ -1,0 +1,2532 @@
+{
+  "LISTA DE INCIDENCIAS": {
+    "headerRowIdx": 0,
+    "totalRows": 15,
+    "headers": [
+      "LISTA",
+      null,
+      null,
+      null,
+      null,
+      null,
+      "ESTADO",
+      "RESPONSABLE",
+      "TIPO DE SOLICITUD"
+    ],
+    "colStats": {
+      "LISTA": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "CLASE ADELANTADA",
+          "CLASE FUERA DE CAMPUS",
+          "DISTANCIA/TRÁFICO VEHICULAR",
+          "DOCENTE DE LICENCIA",
+          "MOTIVO DE DUELO",
+          "MOTIVO DE SALUD",
+          "MOTIVO DE VIAJE",
+          "MOTIVO LABORAL",
+          "MOTIVO PERSONAL",
+          "CLASE REMOTA",
+          "SALUD FAMILIAR",
+          "SOLICITUD DE ESTUDIANTES",
+          "RESERVA MANUAL",
+          "DOCENTE REEMPLAZO",
+          "OTRO (ESPECIFICAR)"
+        ],
+        "totalDistinct": 15
+      },
+      "ESTADO": {
+        "nonEmptyCount": 3,
+        "sampleValues": [
+          "ATENDIDO",
+          "EN PROCESO",
+          "PENDIENTE"
+        ],
+        "totalDistinct": 3
+      },
+      "RESPONSABLE": {
+        "nonEmptyCount": 7,
+        "sampleValues": [
+          "JOSE MIRANDA",
+          "FRANCISCO VILLAFAN",
+          "JHONAYKER MAGUIÑA",
+          "ANTHONY PALOMINO",
+          "JAEL GALLARDO",
+          "ALESSANDRO PASCUAL",
+          "JAVIER BENITES"
+        ],
+        "totalDistinct": 7
+      },
+      "TIPO DE SOLICITUD": {
+        "nonEmptyCount": 14,
+        "sampleValues": [
+          "PROYECCIÓN",
+          "AULA HIBRIDA",
+          "INTERNET",
+          "WIFI",
+          "APERTURA DE AMBIENTE",
+          "INFRAESTRUCTURA",
+          "PC / PERIFERICOS",
+          "SOFTWARE",
+          "PLATAFORMAS (INTRANET - BLACKBOARD)",
+          "PRESTAMO DE AMBIENTE",
+          "OBJETOS REPORTADOS",
+          "REQUERIMIENTOS EVENTUALES",
+          "HOJA DE ASISTENCIA MANUAL",
+          "ASISTENCIA SUMADI (EXAMENES VIRTUALES)"
+        ],
+        "totalDistinct": 14
+      }
+    },
+    "sampleRows": [
+      {
+        "LISTA": "CLASE ADELANTADA",
+        "ESTADO": "ATENDIDO",
+        "RESPONSABLE": "JOSE MIRANDA",
+        "TIPO DE SOLICITUD": "PROYECCIÓN"
+      },
+      {
+        "LISTA": "CLASE FUERA DE CAMPUS",
+        "ESTADO": "EN PROCESO",
+        "RESPONSABLE": "FRANCISCO VILLAFAN",
+        "TIPO DE SOLICITUD": "AULA HIBRIDA"
+      },
+      {
+        "LISTA": "DISTANCIA/TRÁFICO VEHICULAR",
+        "ESTADO": "PENDIENTE",
+        "RESPONSABLE": "JHONAYKER MAGUIÑA",
+        "TIPO DE SOLICITUD": "INTERNET"
+      }
+    ]
+  },
+  "DATOS": {
+    "headerRowIdx": 0,
+    "totalRows": 9,
+    "headers": [
+      "ASISTENTE",
+      null,
+      "MOTIVO"
+    ],
+    "colStats": {
+      "ASISTENTE": {
+        "nonEmptyCount": 9,
+        "sampleValues": [
+          "José Carlos Miranda Rosales",
+          "Francisco Alonso Villafan Colonia",
+          "Javier Alexander Benites Alban",
+          "Jael Zulema Gallardo Carranza",
+          "Eduardo Antonio Velasquez Carrion",
+          "Junior Marino Flores Pumacayo",
+          "David Samuel Husarez Cabrera",
+          "Alessandro Pascual Romero",
+          "Janeth Vivar Perez"
+        ],
+        "totalDistinct": 9
+      },
+      "MOTIVO": {
+        "nonEmptyCount": 7,
+        "sampleValues": [
+          "CLASE NO FIGURA EN EL PORTAL",
+          "ADELANTO DE CLASE",
+          "RECUPERACIÓN DE CLASE",
+          "DOCENTE SIN ACCESOS",
+          "DOCENTE DE REEMPLAZO",
+          "ASISTENCIA DE ESTUDIANTES",
+          "PROBLEMA CON AUTENTICADOR"
+        ],
+        "totalDistinct": 7
+      }
+    },
+    "sampleRows": [
+      {
+        "ASISTENTE": "José Carlos Miranda Rosales",
+        "MOTIVO": "CLASE NO FIGURA EN EL PORTAL"
+      },
+      {
+        "ASISTENTE": "Francisco Alonso Villafan Colonia",
+        "MOTIVO": "ADELANTO DE CLASE"
+      },
+      {
+        "ASISTENTE": "Javier Alexander Benites Alban",
+        "MOTIVO": "RECUPERACIÓN DE CLASE"
+      }
+    ]
+  },
+  "UBICACION AULAS": {
+    "headerRowIdx": 0,
+    "totalRows": 63,
+    "headers": [
+      "ABRV.",
+      "UBICACION",
+      "AULA",
+      "AFORO"
+    ],
+    "colStats": {
+      "ABRV.": {
+        "nonEmptyCount": 63,
+        "sampleValues": [
+          "AS01",
+          "AS02",
+          "AS03",
+          "AS04",
+          "AS05",
+          "A101",
+          "A201",
+          "A202",
+          "A301",
+          "A302",
+          "A303",
+          "A304",
+          "A305",
+          "A306",
+          "A401"
+        ],
+        "totalDistinct": 63
+      },
+      "UBICACION": {
+        "nonEmptyCount": 63,
+        "sampleValues": [
+          "SÓTANO - A",
+          "1ER PISO - A",
+          "2DO PISO - A",
+          "3ER PISO - A",
+          "4TO PISO - A",
+          "5TO PISO - A",
+          "1ER PISO - B",
+          "2DO PISO - B",
+          "3ER PISO - B",
+          "4TO PISO - B",
+          "5TO PISO - B"
+        ],
+        "totalDistinct": 11
+      },
+      "AULA": {
+        "nonEmptyCount": 63,
+        "sampleValues": [
+          "Laboratorio ZAM AS-01",
+          "Taller de Audio AS-02",
+          "Taller de Audio AS-03",
+          "Laboratorio de Fotografía AS-04",
+          "Laboratorio de Fotografía AS-05",
+          "Taller de Edición A-101",
+          "Aula A-201",
+          "Aula A-202",
+          "Aula A-301",
+          "Aula A-302",
+          "Aula A-303",
+          "Aula A-304",
+          "Aula A-305",
+          "Sala de Conferencias A-306",
+          "Aula A-401"
+        ],
+        "totalDistinct": 63
+      },
+      "AFORO": {
+        "nonEmptyCount": 63,
+        "sampleValues": [
+          "1900-01-29",
+          "1900-01-09",
+          "1900-01-19",
+          "1900-01-20",
+          "1900-02-08",
+          "1900-02-28",
+          "1900-02-05",
+          "1900-01-15",
+          "1900-01-04",
+          "1900-01-27"
+        ],
+        "totalDistinct": 10
+      }
+    },
+    "sampleRows": [
+      {
+        "ABRV.": "AS01",
+        "UBICACION": "SÓTANO - A",
+        "AULA": "Laboratorio ZAM AS-01",
+        "AFORO": "1900-01-29"
+      },
+      {
+        "ABRV.": "AS02",
+        "UBICACION": "SÓTANO - A",
+        "AULA": "Taller de Audio AS-02",
+        "AFORO": "1900-01-09"
+      },
+      {
+        "ABRV.": "AS03",
+        "UBICACION": "SÓTANO - A",
+        "AULA": "Taller de Audio AS-03",
+        "AFORO": "1900-01-09"
+      }
+    ]
+  },
+  "RESUMEN 2026-2": {
+    "headerRowIdx": 3,
+    "totalRows": 83,
+    "headers": [
+      "HORARIOS",
+      "TOTAL DE MATRICULADOS",
+      "ASISTENCIA REAL",
+      "% ASISTENCIA",
+      "TOTAL DE CLASES",
+      "ASISTIÓ CLASES",
+      "TARDE CLASES",
+      "NO ASISTIO CLASES",
+      "OBSERVACION",
+      null,
+      null,
+      "DIA",
+      "% ASISTENCIA",
+      "ASISTIO",
+      "TARDE",
+      "NO ASISTIO",
+      "TOTAL DE CLASES"
+    ],
+    "colStats": {
+      "HORARIOS": {
+        "nonEmptyCount": 77,
+        "sampleValues": [
+          "07:30",
+          "09:10",
+          "10:50",
+          "12:30",
+          "14:30",
+          "16:10",
+          "17:50",
+          "19:30",
+          "21:10",
+          "TOTAL",
+          "MARTES  18/08",
+          "HORARIOS",
+          "MIERCOLES 19/08",
+          "JUEVES 20/08",
+          "VIERNES 21/08"
+        ],
+        "totalDistinct": 17
+      },
+      "TOTAL DE MATRICULADOS": {
+        "nonEmptyCount": 66,
+        "sampleValues": [
+          "1900-12-11",
+          "1900-11-14",
+          "1901-05-08",
+          "1900-06-07",
+          "1901-03-04",
+          "1900-07-29",
+          "1901-01-19",
+          "1900-11-09",
+          "1900-02-27",
+          "1907-06-08",
+          "TOTAL DE MATRICULADOS",
+          "1900-09-21",
+          "1900-06-21",
+          "1901-06-05",
+          "1900-09-10"
+        ],
+        "totalDistinct": 58
+      },
+      "ASISTENCIA REAL": {
+        "nonEmptyCount": 59,
+        "sampleValues": [
+          "1900-12-02",
+          "1900-10-31",
+          "1901-04-20",
+          "1900-05-31",
+          "1901-02-16",
+          "1900-07-27",
+          "1901-01-09",
+          "1900-11-04",
+          "1900-02-26",
+          "ASISTENCIA REAL",
+          "1900-09-04",
+          "1900-06-14",
+          "1901-05-07",
+          "1900-08-30",
+          "1901-05-06"
+        ],
+        "totalDistinct": 49
+      },
+      "% ASISTENCIA": {
+        "nonEmptyCount": 6,
+        "sampleValues": [
+          "23:19",
+          "23:06",
+          "23:20",
+          "23:23",
+          "23:28",
+          "1900-01-07"
+        ],
+        "totalDistinct": 6
+      },
+      "TOTAL DE CLASES": {
+        "nonEmptyCount": 8,
+        "sampleValues": [
+          "1900-05-27",
+          "1900-05-11",
+          "1900-05-15",
+          "1900-05-23",
+          "1900-05-17",
+          "1900-03-28",
+          "00:00",
+          "1902-02-24"
+        ],
+        "totalDistinct": 8
+      },
+      "ASISTIÓ CLASES": {
+        "nonEmptyCount": 60,
+        "sampleValues": [
+          "1900-01-17",
+          "1900-01-12",
+          "1900-01-22",
+          "1900-01-09",
+          "1900-01-18",
+          "1900-01-25",
+          "1900-01-06",
+          "ASISTIÓ CLASES",
+          "1900-01-11",
+          "1900-01-08",
+          "1900-01-20",
+          "1900-01-05",
+          "1900-01-10",
+          "1900-01-13",
+          "1900-01-24"
+        ],
+        "totalDistinct": 22
+      },
+      "TARDE CLASES": {
+        "nonEmptyCount": 59,
+        "sampleValues": [
+          "00:00",
+          "1899-12-31",
+          "TARDE CLASES",
+          "1900-01-01"
+        ],
+        "totalDistinct": 4
+      },
+      "NO ASISTIO CLASES": {
+        "nonEmptyCount": 60,
+        "sampleValues": [
+          "00:00",
+          "NO ASISTIO CLASES",
+          "1899-12-31",
+          "NO ASISTIO"
+        ],
+        "totalDistinct": 4
+      },
+      "OBSERVACION": {
+        "nonEmptyCount": 13,
+        "sampleValues": [
+          "DOCENTE: FIGUEROA/CHUQUILLANQUI JOEL ALFONSO LLEGÓ 19:48",
+          "OBSERVACION",
+          "DOCENTE: HUACHUA/YALLE ENMA ROSARIO  RECUPERARÁ CLASE",
+          "DOCENTE: BALTODANO/VELÁSQUEZ MARLENI YANET  (CLASE LLEGO TARDE)",
+          "DOCENTE: JIMENEZ/VELASQUEZ NADIA RAQUEL  (CLASE LLEGO TARDE)",
+          "NO ASISTIÓ DOCENTE: RODRIGUEZ TANTALEAN, PAULO CESAR - RECUPERARÁ CLASES",
+          "NRC 7025 SIN MATRICULADOS"
+        ],
+        "totalDistinct": 7
+      },
+      "DIA": {
+        "nonEmptyCount": 8,
+        "sampleValues": [
+          "LUNES",
+          "MARTES",
+          "MIERCOLES",
+          "JUEVES",
+          "VIERNES",
+          "SABADO",
+          "DOMINGO",
+          "Total"
+        ],
+        "totalDistinct": 8
+      },
+      "ASISTIO": {
+        "nonEmptyCount": 8,
+        "sampleValues": [
+          "1900-05-26",
+          "1900-05-10",
+          "1900-05-15",
+          "1900-05-21",
+          "1900-05-16",
+          "1900-03-25",
+          "00:00",
+          "1902-02-16"
+        ],
+        "totalDistinct": 8
+      },
+      "TARDE": {
+        "nonEmptyCount": 7,
+        "sampleValues": [
+          "1899-12-31",
+          "00:00",
+          "1900-01-01"
+        ],
+        "totalDistinct": 3
+      },
+      "NO ASISTIO": {
+        "nonEmptyCount": 8,
+        "sampleValues": [
+          "00:00",
+          "1899-12-31",
+          "1900-01-02",
+          "1900-01-03"
+        ],
+        "totalDistinct": 4
+      }
+    },
+    "sampleRows": [
+      {
+        "HORARIOS": "07:30",
+        "TOTAL DE MATRICULADOS": "1900-12-11",
+        "ASISTENCIA REAL": "1900-12-02",
+        "% ASISTENCIA": "23:19",
+        "TOTAL DE CLASES": "1900-05-27",
+        "ASISTIÓ CLASES": "1900-01-17",
+        "TARDE CLASES": "00:00",
+        "NO ASISTIO CLASES": "00:00",
+        "DIA": "LUNES",
+        "ASISTIO": "1900-05-26",
+        "TARDE": "1899-12-31",
+        "NO ASISTIO": "00:00"
+      },
+      {
+        "HORARIOS": "09:10",
+        "TOTAL DE MATRICULADOS": "1900-11-14",
+        "ASISTENCIA REAL": "1900-10-31",
+        "% ASISTENCIA": "23:06",
+        "TOTAL DE CLASES": "1900-05-11",
+        "ASISTIÓ CLASES": "1900-01-12",
+        "TARDE CLASES": "00:00",
+        "NO ASISTIO CLASES": "00:00",
+        "DIA": "MARTES",
+        "ASISTIO": "1900-05-10",
+        "TARDE": "00:00",
+        "NO ASISTIO": "1899-12-31"
+      },
+      {
+        "HORARIOS": "10:50",
+        "TOTAL DE MATRICULADOS": "1901-05-08",
+        "ASISTENCIA REAL": "1901-04-20",
+        "% ASISTENCIA": "23:20",
+        "TOTAL DE CLASES": "1900-05-15",
+        "ASISTIÓ CLASES": "1900-01-22",
+        "TARDE CLASES": "00:00",
+        "NO ASISTIO CLASES": "00:00",
+        "DIA": "MIERCOLES",
+        "ASISTIO": "1900-05-15",
+        "TARDE": "00:00",
+        "NO ASISTIO": "00:00"
+      }
+    ]
+  },
+  "CONTROL ASISTENCIA": {
+    "headerRowIdx": 0,
+    "totalRows": 978,
+    "headers": [
+      "PISO/PABELLON",
+      "SEDE",
+      "PERIODO",
+      "DÍAS",
+      "HORA INICIO PROGRAMADA",
+      "HORA FINAL PROGRAMADA",
+      "AULA",
+      "NRC.",
+      "LISTA CRUZADA",
+      "CÓDIGO DE DOCENTE",
+      "DOCENTE",
+      "CURSO",
+      "CARRERA",
+      "HORA INICIO REAL",
+      "HORA FINAL REAL",
+      "ASISTENCIA",
+      "PUNTUALIDAD",
+      "OBSERVACIÓN",
+      "REAL",
+      "CICLO"
+    ],
+    "colStats": {
+      "PISO/PABELLON": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "2DO PISO - A",
+          "3ER PISO - A",
+          "4TO PISO - A",
+          "5TO PISO - A",
+          "SOTANO",
+          "1ER PISO - B",
+          "2DO PISO - B",
+          "3ER PISO - B",
+          "4TO PISO - B",
+          "5TO PISO - B"
+        ],
+        "totalDistinct": 10
+      },
+      "SEDE": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "Comas"
+        ],
+        "totalDistinct": 1
+      },
+      "PERIODO": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "2519-12-14",
+          "2520-03-23"
+        ],
+        "totalDistinct": 2
+      },
+      "DÍAS": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "LUNES",
+          "MARTES",
+          "MIERCOLES",
+          "JUEVES",
+          "VIERNES",
+          "SABADO",
+          "DOMINGO"
+        ],
+        "totalDistinct": 7
+      },
+      "HORA INICIO PROGRAMADA": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "07:30",
+          "09:10",
+          "10:50",
+          "12:30",
+          "14:30",
+          "16:10",
+          "17:50",
+          "19:30",
+          "21:10"
+        ],
+        "totalDistinct": 9
+      },
+      "HORA FINAL PROGRAMADA": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "09:00",
+          "10:40",
+          "12:20",
+          "14:00",
+          "17:40",
+          "16:00",
+          "19:20",
+          "21:00",
+          "22:40"
+        ],
+        "totalDistinct": 9
+      },
+      "AULA": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "A201",
+          "A301",
+          "A303",
+          "A305",
+          "A401",
+          "A403",
+          "A404",
+          "A505",
+          "AS04",
+          "B104",
+          "B105",
+          "B206",
+          "B301",
+          "B302",
+          "B304"
+        ],
+        "totalDistinct": 52
+      },
+      "NRC.": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "1963-01-06",
+          "1971-01-06",
+          "1978-03-26",
+          "1942-06-11",
+          "1942-06-10",
+          "1983-10-14",
+          "1962-10-18",
+          "1935-04-21",
+          "2087-01-31",
+          "1963-03-27",
+          "1962-10-28",
+          "1956-01-02",
+          "1956-01-21",
+          "1963-04-03",
+          "1963-01-13"
+        ],
+        "totalDistinct": 558
+      },
+      "LISTA CRUZADA": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "",
+          "LN1109",
+          "LN11004",
+          "LN1107",
+          "LN1201",
+          "LN1125",
+          "LN1112",
+          "LN1504",
+          "LN1110",
+          "LN1111",
+          "LN1119",
+          "LN103",
+          "LN1122",
+          "LN1601",
+          "LN1101"
+        ],
+        "totalDistinct": 33
+      },
+      "CÓDIGO DE DOCENTE": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "N00013992",
+          "N00012041",
+          "N00168970",
+          "N00257730",
+          "N00215537",
+          "N00010763",
+          "N00004156",
+          "N00257715",
+          "N00342579",
+          "N00012095",
+          "N00011260",
+          "N00357248",
+          "N00012305",
+          "N00550828",
+          "N00169017"
+        ],
+        "totalDistinct": 168
+      },
+      "DOCENTE": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "HARO/DELGADO OMAR EFRAIN",
+          "ZARATE/AGUILAR KARIN BELINDA",
+          "MENDOZA/VILLACORTA GERMAN",
+          "SEBASTIAN/LOPEZ EDITH CORINA",
+          "BALTODANO/VELÁSQUEZ MARLENI YANET",
+          "GUTIERREZ/REYNOSO ALBERTO CONRADO",
+          "TANNERT/RENGIFO TRUDY",
+          "MUÑOZ/PALACIOS DAVID",
+          "VARGAS/ARIAS MARIANO OCTAVIO",
+          "ACOSTA/CAMPOS JUAN CARLOS",
+          "CERNA/SIFUENTES CARLOS ALFONSO",
+          "SANDOVAL/ROSALES ABNER ABAD",
+          "MORENO/TINEO PACO",
+          "ULLOA/CACHAY RICARDO",
+          "PEREZ/OSORIO JEANETTE BARBARA"
+        ],
+        "totalDistinct": 167
+      },
+      "CURSO": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "TLL. DE FOTOGR.Y ESTÉT.AUDIOV.",
+          "FUNDAMENTOS DE MICROECONOMÍA",
+          "MATEMÁTICA BÁSICA APLICADA",
+          "DERECHO DE LAS PERSONAS",
+          "MARKETING E IDENTIDAD DE MARCA",
+          "NARRATIVA VISUAL",
+          "NEGOCIOS GLOBALES",
+          "CONT. INFORMATIVOS DIGITALES",
+          "FOTOGRAFÍA Y DISEÑO",
+          "TALLER DE DISEÑO 4",
+          "TALLER DE TECN. SUST. EN ARQUI",
+          "TALLER DE PERIODISMO NARRATIVO",
+          "DISEÑO DE SONIDO DIGITAL",
+          "HIST. Y TEOR. DE LA COMUNIC.",
+          "DISEÑO DE MUEBLES"
+        ],
+        "totalDistinct": 269
+      },
+      "CARRERA": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "Com. Audiov. en Med. Digitales",
+          "Economía",
+          "Dpto. Ciencias",
+          "Derecho",
+          "Comunicación y Diseño Gráfico",
+          "Adm. y Negoc. Internacionales",
+          "Com. y Periodismo",
+          "Arq. y Diseño de Interiores",
+          "Arq. y Urbanismo",
+          "Administración",
+          "Dpto. Humanidades",
+          "Contabilidad y Finanzas",
+          "Adm. y Marketing",
+          "Diseño Industrial",
+          "Econ. y Negoc. Internacionales"
+        ],
+        "totalDistinct": 20
+      },
+      "HORA INICIO REAL": {
+        "nonEmptyCount": 364,
+        "sampleValues": [
+          "07:30",
+          "07:35",
+          "09:10",
+          "10:50",
+          "12:30",
+          "14:30",
+          "16:10",
+          "17:50",
+          "19:30",
+          "21:10"
+        ],
+        "totalDistinct": 10
+      },
+      "HORA FINAL REAL": {
+        "nonEmptyCount": 364,
+        "sampleValues": [
+          "09:00",
+          "10:40",
+          "12:20",
+          "14:00",
+          "17:40",
+          "16:00",
+          "19:20",
+          "21:00",
+          "22:40"
+        ],
+        "totalDistinct": 9
+      },
+      "ASISTENCIA": {
+        "nonEmptyCount": 377,
+        "sampleValues": [
+          "SI",
+          "SI (DOCENTE REEMPLAZO)",
+          "NO"
+        ],
+        "totalDistinct": 3
+      },
+      "PUNTUALIDAD": {
+        "nonEmptyCount": 378,
+        "sampleValues": [
+          "PUNTUAL",
+          "TARDE",
+          "-"
+        ],
+        "totalDistinct": 3
+      },
+      "OBSERVACIÓN": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "ORTIZ/CALVAY CESAR ABEL",
+          "IVAN TANTALEAN",
+          "07:43",
+          "07:40",
+          "07:41",
+          "JHONATAN HUERTAS",
+          "11:00",
+          "02:41",
+          "17:58",
+          "RECUPERARÁ CLASE",
+          "REPROGRAMARÁ CLASE"
+        ],
+        "totalDistinct": 11
+      },
+      "REAL": {
+        "nonEmptyCount": 892,
+        "sampleValues": [
+          "1900-01-02",
+          "1900-01-07",
+          "1900-01-06",
+          "1900-01-01",
+          "1899-12-31",
+          "1900-02-03",
+          "1900-01-12",
+          "1900-01-26",
+          "1900-01-04",
+          "1900-02-06",
+          "1900-02-28",
+          "1900-02-08",
+          "1900-01-20",
+          "1900-01-24",
+          "1900-02-05"
+        ],
+        "totalDistinct": 44
+      },
+      "CICLO": {
+        "nonEmptyCount": 0,
+        "sampleValues": [],
+        "totalDistinct": 0
+      }
+    },
+    "sampleRows": [
+      {
+        "PISO/PABELLON": "2DO PISO - A",
+        "SEDE": "Comas",
+        "PERIODO": "2519-12-14",
+        "DÍAS": "LUNES",
+        "HORA INICIO PROGRAMADA": "07:30",
+        "HORA FINAL PROGRAMADA": "09:00",
+        "AULA": "A201",
+        "NRC.": "1963-01-06",
+        "LISTA CRUZADA": " ",
+        "CÓDIGO DE DOCENTE": "N00013992",
+        "DOCENTE": "HARO/DELGADO OMAR EFRAIN",
+        "CURSO": "TLL. DE FOTOGR.Y ESTÉT.AUDIOV.",
+        "CARRERA": "Com. Audiov. en Med. Digitales",
+        "HORA INICIO REAL": "07:30",
+        "HORA FINAL REAL": "09:00",
+        "ASISTENCIA": "SI",
+        "PUNTUALIDAD": "PUNTUAL",
+        "REAL": "1900-01-02"
+      },
+      {
+        "PISO/PABELLON": "3ER PISO - A",
+        "SEDE": "Comas",
+        "PERIODO": "2519-12-14",
+        "DÍAS": "LUNES",
+        "HORA INICIO PROGRAMADA": "07:30",
+        "HORA FINAL PROGRAMADA": "10:40",
+        "AULA": "A301",
+        "NRC.": "1971-01-06",
+        "LISTA CRUZADA": " ",
+        "CÓDIGO DE DOCENTE": "N00012041",
+        "DOCENTE": "ZARATE/AGUILAR KARIN BELINDA",
+        "CURSO": "FUNDAMENTOS DE MICROECONOMÍA",
+        "CARRERA": "Economía",
+        "HORA INICIO REAL": "07:30",
+        "HORA FINAL REAL": "10:40",
+        "ASISTENCIA": "SI",
+        "PUNTUALIDAD": "PUNTUAL",
+        "REAL": "1900-01-02"
+      },
+      {
+        "PISO/PABELLON": "3ER PISO - A",
+        "SEDE": "Comas",
+        "PERIODO": "2519-12-14",
+        "DÍAS": "LUNES",
+        "HORA INICIO PROGRAMADA": "07:30",
+        "HORA FINAL PROGRAMADA": "10:40",
+        "AULA": "A303",
+        "NRC.": "1978-03-26",
+        "LISTA CRUZADA": " ",
+        "CÓDIGO DE DOCENTE": "N00168970",
+        "DOCENTE": "MENDOZA/VILLACORTA GERMAN",
+        "CURSO": "MATEMÁTICA BÁSICA APLICADA",
+        "CARRERA": "Dpto. Ciencias",
+        "HORA INICIO REAL": "07:30",
+        "HORA FINAL REAL": "10:40",
+        "ASISTENCIA": "SI",
+        "PUNTUALIDAD": "PUNTUAL",
+        "REAL": "1900-01-07"
+      }
+    ]
+  },
+  "SIMULACROS": {
+    "headerRowIdx": 0,
+    "totalRows": 4,
+    "headers": [
+      "SIMULACRO MAÑANA 10:00 am",
+      null,
+      null,
+      null,
+      "SIMULACRO TARDE 15:00 pm",
+      null,
+      null,
+      null,
+      "SIMULACRO TARDE 08:00 pm"
+    ],
+    "colStats": {
+      "SIMULACRO MAÑANA 10:00 am": {
+        "nonEmptyCount": 4,
+        "sampleValues": [
+          "HORA",
+          "07:30",
+          "09:10",
+          "TOTAL"
+        ],
+        "totalDistinct": 4
+      },
+      "SIMULACRO TARDE 15:00 pm": {
+        "nonEmptyCount": 3,
+        "sampleValues": [
+          "HORA",
+          "14:30",
+          "TOTAL"
+        ],
+        "totalDistinct": 3
+      },
+      "SIMULACRO TARDE 08:00 pm": {
+        "nonEmptyCount": 3,
+        "sampleValues": [
+          "HORA",
+          "20:00",
+          "TOTAL"
+        ],
+        "totalDistinct": 3
+      }
+    },
+    "sampleRows": [
+      {
+        "SIMULACRO MAÑANA 10:00 am": "HORA",
+        "SIMULACRO TARDE 15:00 pm": "HORA",
+        "SIMULACRO TARDE 08:00 pm": "HORA"
+      },
+      {
+        "SIMULACRO MAÑANA 10:00 am": "07:30",
+        "SIMULACRO TARDE 15:00 pm": "14:30",
+        "SIMULACRO TARDE 08:00 pm": "20:00"
+      },
+      {
+        "SIMULACRO MAÑANA 10:00 am": "09:10",
+        "SIMULACRO TARDE 15:00 pm": "TOTAL",
+        "SIMULACRO TARDE 08:00 pm": "TOTAL"
+      }
+    ]
+  },
+  "INGRESO": {
+    "headerRowIdx": 1,
+    "totalRows": 4,
+    "headers": [
+      null,
+      null,
+      "FECHA",
+      "COLABORADOR",
+      "HORA INGRESO"
+    ],
+    "colStats": {
+      "FECHA": {
+        "nonEmptyCount": 4,
+        "sampleValues": [
+          "2026-06-11"
+        ],
+        "totalDistinct": 1
+      },
+      "COLABORADOR": {
+        "nonEmptyCount": 4,
+        "sampleValues": [
+          "Francisco Villafan",
+          "Jose Miranda",
+          "Javier Benites",
+          "Jhonayker Maguiña"
+        ],
+        "totalDistinct": 4
+      },
+      "HORA INGRESO": {
+        "nonEmptyCount": 4,
+        "sampleValues": [
+          "07:03",
+          "07:11",
+          "06:57"
+        ],
+        "totalDistinct": 3
+      }
+    },
+    "sampleRows": [
+      {
+        "FECHA": "2026-06-11",
+        "COLABORADOR": "Francisco Villafan",
+        "HORA INGRESO": "07:03"
+      },
+      {
+        "FECHA": "2026-06-11",
+        "COLABORADOR": "Jose Miranda",
+        "HORA INGRESO": "07:11"
+      },
+      {
+        "FECHA": "2026-06-11",
+        "COLABORADOR": "Javier Benites",
+        "HORA INGRESO": "07:11"
+      }
+    ]
+  },
+  "LIMPIEZA": {
+    "headerRowIdx": 0,
+    "totalRows": 33,
+    "headers": [
+      "HORA FINAL",
+      "AULA"
+    ],
+    "colStats": {
+      "HORA FINAL": {
+        "nonEmptyCount": 9,
+        "sampleValues": [
+          "10:40",
+          "12:20",
+          "14:00",
+          "16:00",
+          "17:40",
+          "19:20",
+          "21:00",
+          "22:40",
+          "Total general"
+        ],
+        "totalDistinct": 9
+      },
+      "AULA": {
+        "nonEmptyCount": 32,
+        "sampleValues": [
+          "B103",
+          "B105",
+          "B201",
+          "B206",
+          "B207",
+          "B202",
+          "B102",
+          "B104",
+          "B203",
+          "A201",
+          "A202",
+          "B205"
+        ],
+        "totalDistinct": 12
+      }
+    },
+    "sampleRows": [
+      {
+        "HORA FINAL": "10:40",
+        "AULA": "B103"
+      },
+      {
+        "AULA": "B105"
+      },
+      {
+        "AULA": "B201"
+      }
+    ]
+  },
+  "HOJA DE ASISTENCIA 2026-1": {
+    "headerRowIdx": 1,
+    "totalRows": 171,
+    "headers": [
+      "CÓDIGO",
+      "FECHA",
+      "NRC",
+      "DOCENTE",
+      "CURSO",
+      "CARRERA",
+      "MOTIVO",
+      "ASISTENTE"
+    ],
+    "colStats": {
+      "CÓDIGO": {
+        "nonEmptyCount": 171,
+        "sampleValues": [
+          "LN1-001",
+          "LN1-002",
+          "LN1-003",
+          "LN1-004",
+          "LN1-005",
+          "LN1-006",
+          "LN1-007",
+          "LN1-008",
+          "LN1-009",
+          "LN1-010",
+          "LN1-011",
+          "LN1-012",
+          "LN1-013",
+          "LN1-014",
+          "LN1-015"
+        ],
+        "totalDistinct": 171
+      },
+      "FECHA": {
+        "nonEmptyCount": 91,
+        "sampleValues": [
+          "2026-01-05",
+          "2026-01-19",
+          "2026-02-09",
+          "2026-02-10",
+          "2026-02-13",
+          "2026-02-18",
+          "2026-03-23",
+          "2026-03-24",
+          "2026-03-27",
+          "2026-03-28",
+          "2026-03-30",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-04",
+          "2026-04-06"
+        ],
+        "totalDistinct": 51
+      },
+      "NRC": {
+        "nonEmptyCount": 90,
+        "sampleValues": [
+          "1903-03-05",
+          "1903-11-25",
+          "1903-11-19",
+          "1903-01-21",
+          "1903-05-10",
+          "1905-08-12",
+          "1934-12-23",
+          "1907-07-26",
+          "1942-07-28",
+          "1939-02-21",
+          "1935-11-25",
+          "1920-12-24",
+          "1941-01-15",
+          "1909-02-13",
+          "1934-12-16"
+        ],
+        "totalDistinct": 70
+      },
+      "DOCENTE": {
+        "nonEmptyCount": 85,
+        "sampleValues": [
+          "PENA OXOLON CESAR JESUS",
+          "toribio tamara luis jose maria",
+          "ROJAS/TALLEDO JORGE ARMANDO",
+          "LORENA PONTE AVELINO",
+          "ACOSTA/CAMPOS JUAN CARLOS",
+          "FARFAN BASAURI RENZO",
+          "VELAZCO/MARMOLEJO HAROLD GABRIEL",
+          "KARIN BELINDA ZARATE AGUILAR",
+          "ANAMPA/GARCIA JHON PAUL",
+          "FRISANCHO/APARICIO EDWARD PAUL",
+          "ZARATE/AGUILAR KARIN BELINDA",
+          "FARFAN/BASAURI RENZO FERNANDO HERACLIO",
+          "PERICHE ANTON VICTOR",
+          "AZABACHE/BALDEON ERICK BRIAN",
+          "MORENO/TINEO PACO"
+        ],
+        "totalDistinct": 52
+      },
+      "CURSO": {
+        "nonEmptyCount": 81,
+        "sampleValues": [
+          "COSTO Y PRESUPUESTO",
+          "TALLER DE ARQUITECTURA 4",
+          "PROCESOS CONSTRUCTIVOS",
+          "DERECHO CONSTIT.Y TEOR. ESTADO",
+          "OPERATIVIDAD DEL COM. INTER.",
+          "TLL.DE DIS.Y PROD. DE MED.INT.",
+          "REPRESENTACIÓN DEL DISEÑO",
+          "INV. DIGITAL Y PROCESAM. DATOS",
+          "VALOR DINERO Y OPERAC. FINAN.",
+          "TALLER DE ARQUITECTURA 10",
+          "DERECHO PROCESAL CIVIL II",
+          "TALLER DIGITAL Y MULTIMEDIA",
+          "GUION I",
+          "TALLER DE CONSTR. AMBIENTAL 2",
+          "TEORÍA GENERAL DEL PROCESO"
+        ],
+        "totalDistinct": 50
+      },
+      "CARRERA": {
+        "nonEmptyCount": 81,
+        "sampleValues": [
+          "ECONOMIA",
+          "Arq. y Urbanismo",
+          "DISEÑO DE INTERIORES",
+          "Derecho",
+          "Econ. y Negoc. Internacionales",
+          "Com. Audiov. en Med. Digitales",
+          "Diseño Industrial",
+          "Comunic. y Marketing Digital",
+          "Adm. y Negoc. Internacionales",
+          "Arq. y Diseño de Interiores",
+          "Comunicación y Diseño Gráfico",
+          "Contabilidad y Finanzas",
+          "Com. y Periodismo",
+          "Adm. y Marketing",
+          "Com. y Diseño Gráfico"
+        ],
+        "totalDistinct": 17
+      },
+      "MOTIVO": {
+        "nonEmptyCount": 88,
+        "sampleValues": [
+          "DOCENTE DE REEMPLAZO",
+          "RECUPERACIÓN DE CLASE",
+          "PROBLEMA CON AUTENTICADOR",
+          "DOCENTE SIN ACCESOS",
+          "ADELANTO DE CLASE",
+          "CLASE NO FIGURA EN EL PORTAL"
+        ],
+        "totalDistinct": 6
+      },
+      "ASISTENTE": {
+        "nonEmptyCount": 87,
+        "sampleValues": [
+          "JAVIER BENITES",
+          "JOSE MIRANDA",
+          "David Husares",
+          "JAEL GALLARD",
+          "Alessandro Pascual",
+          "EDUARDO VELASQUEZ",
+          "ALESSANDRO PASCUAL",
+          "ANTHONY PALOMINO",
+          "FRANCISCO VILLAFAN",
+          "JHONAYKER MAGUIÑA",
+          "DAVID HUSARES",
+          "JAEL GALLARDO"
+        ],
+        "totalDistinct": 12
+      }
+    },
+    "sampleRows": [
+      {
+        "CÓDIGO": "LN1-001",
+        "FECHA": "2026-01-05",
+        "NRC": "1903-03-05",
+        "DOCENTE": "PENA OXOLON CESAR JESUS",
+        "CURSO": "COSTO Y PRESUPUESTO",
+        "CARRERA": "ECONOMIA",
+        "MOTIVO": "DOCENTE DE REEMPLAZO",
+        "ASISTENTE": "JAVIER BENITES"
+      },
+      {
+        "CÓDIGO": "LN1-002",
+        "FECHA": "2026-01-05",
+        "NRC": "1903-11-25",
+        "MOTIVO": "RECUPERACIÓN DE CLASE",
+        "ASISTENTE": "JOSE MIRANDA"
+      },
+      {
+        "CÓDIGO": "LN1-003",
+        "FECHA": "2026-01-19",
+        "NRC": "1903-11-19",
+        "DOCENTE": "toribio tamara luis jose maria",
+        "MOTIVO": "DOCENTE DE REEMPLAZO",
+        "ASISTENTE": "David Husares"
+      }
+    ]
+  },
+  "ATENCIONES 2026-1": {
+    "headerRowIdx": 1,
+    "totalRows": 438,
+    "headers": [
+      "FECHA",
+      "DIA",
+      "HORA DE REPORTE",
+      "RANGO",
+      "AMBIENTE",
+      "PISO",
+      "PABELLÓN",
+      "TIPO DE SOLICITUD",
+      "ESTADO",
+      "DESCRIPCIÓN / SOLUCIÓN",
+      "RESPONSABLE",
+      null,
+      "46104"
+    ],
+    "colStats": {
+      "46104": {
+        "nonEmptyCount": 126,
+        "sampleValues": [
+          "2026-07-05",
+          "2026-03-23",
+          "2026-03-24",
+          "2026-03-25",
+          "2026-03-26",
+          "2026-03-27",
+          "2026-03-28",
+          "2026-03-30",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-02",
+          "2026-04-03",
+          "2026-04-04",
+          "2026-04-06",
+          "2026-04-07"
+        ],
+        "totalDistinct": 126
+      },
+      "FECHA": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "2026-05-08",
+          "2026-03-31",
+          "2026-06-16",
+          "2026-04-03",
+          "2026-04-23",
+          "2026-06-20",
+          "2026-06-06",
+          "2026-06-05",
+          "2026-05-22",
+          "2026-06-10",
+          "2026-04-22",
+          "2026-04-25",
+          "2026-04-18",
+          "2026-07-01",
+          "2026-05-06"
+        ],
+        "totalDistinct": 118
+      },
+      "DIA": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "VIERNES",
+          "MARTES",
+          "JUEVES",
+          "SÁBADO",
+          "MIÉRCOLES",
+          "LUNES",
+          "DOMINGO"
+        ],
+        "totalDistinct": 7
+      },
+      "HORA DE REPORTE": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "08:13",
+          "08:57",
+          "08:32",
+          "08:58",
+          "08:33",
+          "08:00",
+          "08:03",
+          "08:54",
+          "08:48",
+          "08:46",
+          "08:08",
+          "08:18",
+          "08:06",
+          "08:05",
+          "08:29"
+        ],
+        "totalDistinct": 305
+      },
+      "RANGO": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "08:00 – 09:00",
+          "10:00 – 11:00",
+          "09:00 – 10:00",
+          "11:00 – 12:00",
+          "15:00 – 16:00",
+          "20:00 – 21:00",
+          "17:00 – 18:00",
+          "14:00 – 15:00",
+          "12:00 – 13:00",
+          "13:00 – 14:00",
+          "21:00 – 22:00",
+          "16:00 – 17:00",
+          "18:00 – 19:00",
+          "19:00 – 20:00",
+          "22:00 – 23:00"
+        ],
+        "totalDistinct": 16
+      },
+      "AMBIENTE": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "B104",
+          "B202",
+          "B303",
+          "B403",
+          "OFICINA",
+          "A503",
+          "A510",
+          "B404",
+          "A306",
+          "B101",
+          "B204",
+          "A509",
+          "B401",
+          "B205",
+          "A301"
+        ],
+        "totalDistinct": 60
+      },
+      "PISO": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "PRIMER PISO",
+          "SEGUNDO PISO",
+          "TERCER PISO",
+          "CUARTO PISO",
+          "QUINTO PISO",
+          "SÓTANO"
+        ],
+        "totalDistinct": 6
+      },
+      "PABELLÓN": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "B",
+          "A"
+        ],
+        "totalDistinct": 2
+      },
+      "TIPO DE SOLICITUD": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "PRESTAMO DE AMBIENTE(Reservas, Grabaciones)",
+          "WIFI(Señal, cobertura, Autenticación, AP)",
+          "PC / PERIFERICOS(Audio,teclado, mouse, so)",
+          "PROYECCIÓN (instalación. y config)",
+          "SOFTWARE(credenciales, activación)",
+          "OBJETOS REPORTADOS",
+          "INTERNET(Problemas de conexión)",
+          "PLATAFORMAS (Intranet - Blackboard)",
+          "INFRAESTRUCTURA(Checklist)",
+          "ASISTENCIA SUMADI (Instalación de cámara)",
+          "AULA HIBRIDA (configuarciónde camara, BB)",
+          "REQUERIMIENTOS EVENTUALES(soporte al docente)"
+        ],
+        "totalDistinct": 12
+      },
+      "ESTADO": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "ATENDIDO"
+        ],
+        "totalDistinct": 1
+      },
+      "DESCRIPCIÓN / SOLUCIÓN": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "SE HABILITO EL AULA RESERVADA PARA SU FUNCIÓN",
+          "VALIDACION DE COBERTURA DE WIFI",
+          "SE PROCEDIO A BRINDAR LA CONTRASEÑA DE ESTUDIANTE",
+          "PROBEMA CON TECLADO / SE PROCEDIO A CONECTAR EL MOUSE AL PUERTO USB",
+          "PRESTAMO DE AURICULAR PARA CLASE REMOTA DE LOS DOCENTES",
+          "PROYECTOR NO MUESTRA IMAGEN",
+          "PROGRAMA DE ADOBE NO ABRE, SE REINSTALÓ",
+          "ALUMNO NO CUENTA CON CREDENCIALES DE ADOBE",
+          "PC NO ENCIENDE, SE CREÓ TICKET",
+          "CONGELAR IMAGEN DE PROYECCIÓN",
+          "SE PROCEDIO A REPORTAR FOLDER",
+          "PROYECTOR NO MUESTRA IMAGEN / SE PROCEDE A DUPLICAR",
+          "CABLE DE RED DESCONECTADO / SE PROCEDE A CONECTAR",
+          "USUARIO DE MAC NO INGRESA / SE PROCEDE A RESTABLECER CONTRASEÑA",
+          "EQUIPO NO ENCIENDE / SE PROCE A CONECTAR AL TOMACORRIENTE"
+        ],
+        "totalDistinct": 129
+      },
+      "RESPONSABLE": {
+        "nonEmptyCount": 417,
+        "sampleValues": [
+          "JOSE MIRANDA",
+          "FRANCISCO VILLAFAN",
+          "JHONAYKER MAGUIÑA",
+          "JAVIER BENITES",
+          "ANTHONY PALOMINO",
+          "ALESSANDRO PASCUAL"
+        ],
+        "totalDistinct": 6
+      }
+    },
+    "sampleRows": [
+      {
+        "46104": "2026-07-05",
+        "FECHA": "2026-05-08",
+        "DIA": "VIERNES",
+        "HORA DE REPORTE": "08:13",
+        "RANGO": "08:00 – 09:00",
+        "AMBIENTE": "B104",
+        "PISO": "PRIMER PISO",
+        "PABELLÓN": "B",
+        "TIPO DE SOLICITUD": "PRESTAMO DE AMBIENTE(Reservas, Grabaciones)",
+        "ESTADO": "ATENDIDO",
+        "DESCRIPCIÓN / SOLUCIÓN": "SE HABILITO EL AULA RESERVADA PARA SU FUNCIÓN",
+        "RESPONSABLE": "JOSE MIRANDA"
+      },
+      {
+        "46104": "2026-03-23",
+        "FECHA": "2026-03-31",
+        "DIA": "MARTES",
+        "HORA DE REPORTE": "08:57",
+        "RANGO": "08:00 – 09:00",
+        "AMBIENTE": "B104",
+        "PISO": "PRIMER PISO",
+        "PABELLÓN": "B",
+        "TIPO DE SOLICITUD": "WIFI(Señal, cobertura, Autenticación, AP)",
+        "ESTADO": "ATENDIDO",
+        "DESCRIPCIÓN / SOLUCIÓN": "VALIDACION DE COBERTURA DE WIFI ",
+        "RESPONSABLE": "JOSE MIRANDA"
+      },
+      {
+        "46104": "2026-03-24",
+        "FECHA": "2026-06-16",
+        "DIA": "MARTES",
+        "HORA DE REPORTE": "08:32",
+        "RANGO": "08:00 – 09:00",
+        "AMBIENTE": "B202",
+        "PISO": "SEGUNDO PISO",
+        "PABELLÓN": "B",
+        "TIPO DE SOLICITUD": "WIFI(Señal, cobertura, Autenticación, AP)",
+        "ESTADO": "ATENDIDO",
+        "DESCRIPCIÓN / SOLUCIÓN": "SE PROCEDIO A BRINDAR LA CONTRASEÑA DE ESTUDIANTE",
+        "RESPONSABLE": "JOSE MIRANDA"
+      }
+    ]
+  },
+  "AMBIENTES": {
+    "headerRowIdx": 1,
+    "totalRows": 64,
+    "headers": [
+      "PC",
+      "AULA",
+      "ABRV.",
+      "AFORO",
+      "PABELLON",
+      "PISO",
+      "UBICACION",
+      "TIPO DE AMBIENTE",
+      null,
+      "PISO",
+      "CANTIDAD DE AMBIENTES",
+      "AULA",
+      "TALLER DE ARQUITECTURA Y DIBUJO",
+      "TALLER ESPECIALIZADO",
+      "LABORATORIO DE CÓMPUTO",
+      "LABORATORIO ESPECIALIZADO",
+      "PABELLÓN A",
+      "PABELLÓN B"
+    ],
+    "colStats": {
+      "PC": {
+        "nonEmptyCount": 64,
+        "sampleValues": [
+          "1899-12-31",
+          "1900-01-01",
+          "1900-01-02",
+          "1900-01-03",
+          "1900-01-04",
+          "1900-01-05",
+          "1900-01-06",
+          "1900-01-07",
+          "1900-01-08",
+          "1900-01-09",
+          "1900-01-10",
+          "1900-01-11",
+          "1900-01-12",
+          "1900-01-13",
+          "1900-01-14"
+        ],
+        "totalDistinct": 64
+      },
+      "AULA": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "00:00",
+          "1900-01-05",
+          "1900-01-07",
+          "1900-01-06",
+          "1900-01-26",
+          "AFORO 16",
+          "1899-12-31"
+        ],
+        "totalDistinct": 7
+      },
+      "ABRV.": {
+        "nonEmptyCount": 64,
+        "sampleValues": [
+          "AS01",
+          "AS02",
+          "AS03",
+          "AS04",
+          "AS05",
+          "A101",
+          "B101",
+          "B102",
+          "B103",
+          "B104",
+          "B105",
+          "B106",
+          "A201",
+          "A202",
+          "B201"
+        ],
+        "totalDistinct": 64
+      },
+      "AFORO": {
+        "nonEmptyCount": 64,
+        "sampleValues": [
+          "1900-01-29",
+          "1900-01-09",
+          "1900-01-19",
+          "1900-01-20",
+          "1900-01-04",
+          "1900-02-08",
+          "1900-01-27",
+          "1900-02-28",
+          "1900-02-05",
+          "1900-01-15"
+        ],
+        "totalDistinct": 10
+      },
+      "PABELLON": {
+        "nonEmptyCount": 64,
+        "sampleValues": [
+          "A",
+          "B"
+        ],
+        "totalDistinct": 2
+      },
+      "PISO": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "SÓTANO",
+          "PRIMER PISO",
+          "SEGUNDO PISO",
+          "TERCER PISO",
+          "CUARTO PISO",
+          "QUINTO PISO",
+          "TOTAL",
+          "SEGÚN FORO"
+        ],
+        "totalDistinct": 8
+      },
+      "UBICACION": {
+        "nonEmptyCount": 64,
+        "sampleValues": [
+          "SÓTANO PABELLÓN A",
+          "PRIMER PISO PABELLÓN A",
+          "PRIMER PISO PABELLÓN B",
+          "SEGUNDO PISO PABELLÓN A",
+          "SEGUNDO PISO PABELLÓN B",
+          "TERCER PISO PABELLÓN A",
+          "TERCER PISO PABELLÓN B",
+          "CUARTO PISO PABELLÓN A",
+          "CUARTO PISO PABELLÓN B",
+          "QUINTO PISO PABELLÓN A",
+          "QUINTO PISO PABELLÓN B"
+        ],
+        "totalDistinct": 11
+      },
+      "TIPO DE AMBIENTE": {
+        "nonEmptyCount": 64,
+        "sampleValues": [
+          "LABORATORIO ESPECIALIZADO",
+          "TALLER ESPECIALIZADO",
+          "TALLER DE ARQUITECTURA Y DIBUJO",
+          "AULA",
+          "LABORATORIO DE CÓMPUTO",
+          "OFICINA"
+        ],
+        "totalDistinct": 6
+      },
+      "CANTIDAD DE AMBIENTES": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "1900-01-04",
+          "1900-01-06",
+          "1900-01-08",
+          "1900-01-11",
+          "1900-01-12",
+          "1900-01-16",
+          "1900-03-03",
+          "AFORO 10",
+          "1900-01-01",
+          "00:00"
+        ],
+        "totalDistinct": 10
+      },
+      "TALLER DE ARQUITECTURA Y DIBUJO": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "00:00",
+          "1899-12-31",
+          "1900-01-02",
+          "1900-01-03",
+          "1900-01-14",
+          "AFORO 20",
+          "1900-01-01",
+          "1900-01-06"
+        ],
+        "totalDistinct": 8
+      },
+      "TALLER ESPECIALIZADO": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "1900-01-01",
+          "1900-01-05",
+          "00:00",
+          "1899-12-31",
+          "1900-01-09",
+          "AFORO 28"
+        ],
+        "totalDistinct": 6
+      },
+      "LABORATORIO DE CÓMPUTO": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "00:00",
+          "1900-01-04",
+          "AFORO 30",
+          "1899-12-31",
+          "1900-01-01"
+        ],
+        "totalDistinct": 5
+      },
+      "LABORATORIO ESPECIALIZADO": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "1900-01-02",
+          "00:00",
+          "1899-12-31",
+          "1900-01-01",
+          "1900-01-05",
+          "AFORO 37"
+        ],
+        "totalDistinct": 6
+      },
+      "PABELLÓN A": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "1900-01-04",
+          "1899-12-31",
+          "1900-01-01",
+          "1900-01-05",
+          "1900-01-06",
+          "1900-01-09",
+          "1900-01-30",
+          "AFORO 40",
+          "00:00",
+          "1900-01-08",
+          "1900-01-10",
+          "1900-01-07",
+          "1900-01-14",
+          "1900-02-13"
+        ],
+        "totalDistinct": 14
+      },
+      "PABELLÓN B": {
+        "nonEmptyCount": 15,
+        "sampleValues": [
+          "00:00",
+          "1900-01-05",
+          "1900-01-06",
+          "1900-01-31",
+          "AFORO 60",
+          "1899-12-31",
+          "1900-01-01"
+        ],
+        "totalDistinct": 7
+      }
+    },
+    "sampleRows": [
+      {
+        "PC": "1899-12-31",
+        "AULA": "00:00",
+        "ABRV.": "AS01",
+        "AFORO": "1900-01-29",
+        "PABELLON": "A",
+        "PISO": "SÓTANO",
+        "UBICACION": "SÓTANO PABELLÓN A",
+        "TIPO DE AMBIENTE": "LABORATORIO ESPECIALIZADO",
+        "CANTIDAD DE AMBIENTES": "1900-01-04",
+        "TALLER DE ARQUITECTURA Y DIBUJO": "00:00",
+        "TALLER ESPECIALIZADO": "1900-01-01",
+        "LABORATORIO DE CÓMPUTO": "00:00",
+        "LABORATORIO ESPECIALIZADO": "1900-01-02",
+        "PABELLÓN A": "1900-01-04",
+        "PABELLÓN B": "00:00"
+      },
+      {
+        "PC": "1900-01-01",
+        "AULA": "00:00",
+        "ABRV.": "AS02",
+        "AFORO": "1900-01-09",
+        "PABELLON": "A",
+        "PISO": "PRIMER PISO",
+        "UBICACION": "SÓTANO PABELLÓN A",
+        "TIPO DE AMBIENTE": "TALLER ESPECIALIZADO",
+        "CANTIDAD DE AMBIENTES": "1900-01-06",
+        "TALLER DE ARQUITECTURA Y DIBUJO": "1899-12-31",
+        "TALLER ESPECIALIZADO": "1900-01-05",
+        "LABORATORIO DE CÓMPUTO": "00:00",
+        "LABORATORIO ESPECIALIZADO": "00:00",
+        "PABELLÓN A": "1899-12-31",
+        "PABELLÓN B": "1900-01-05"
+      },
+      {
+        "PC": "1900-01-02",
+        "AULA": "1900-01-05",
+        "ABRV.": "AS03",
+        "AFORO": "1900-01-09",
+        "PABELLON": "A",
+        "PISO": "SEGUNDO PISO",
+        "UBICACION": "SÓTANO PABELLÓN A",
+        "TIPO DE AMBIENTE": "TALLER ESPECIALIZADO",
+        "CANTIDAD DE AMBIENTES": "1900-01-08",
+        "TALLER DE ARQUITECTURA Y DIBUJO": "1900-01-02",
+        "TALLER ESPECIALIZADO": "00:00",
+        "LABORATORIO DE CÓMPUTO": "00:00",
+        "LABORATORIO ESPECIALIZADO": "00:00",
+        "PABELLÓN A": "1900-01-01",
+        "PABELLÓN B": "1900-01-06"
+      }
+    ]
+  },
+  "ATENCIONES 2026-2": {
+    "headerRowIdx": 1,
+    "totalRows": 70,
+    "headers": [
+      "FECHA",
+      "DIA",
+      "HORA DE REPORTE",
+      "RANGO",
+      "AMBIENTE",
+      "PISO",
+      "PABELLÓN",
+      "TIPO DE SOLICITUD",
+      "ESTADO",
+      "DESCRIPCIÓN / SOLUCIÓN",
+      "RESPONSABLE"
+    ],
+    "colStats": {
+      "FECHA": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "2026-08-31",
+          "2026-08-18",
+          "2026-08-19",
+          "2026-08-21",
+          "2026-08-25",
+          "2026-08-13",
+          "2026-08-27",
+          "2026-08-29",
+          "2026-08-22",
+          "2026-08-28",
+          "2026-08-17",
+          "2026-08-20",
+          "2026-09-01",
+          "2026-08-24",
+          "2026-08-26"
+        ],
+        "totalDistinct": 26
+      },
+      "DIA": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "LUNES",
+          "MARTES",
+          "MIÉRCOLES",
+          "VIERNES",
+          "JUEVES",
+          "SÁBADO"
+        ],
+        "totalDistinct": 6
+      },
+      "HORA DE REPORTE": {
+        "nonEmptyCount": 69,
+        "sampleValues": [
+          "09:00",
+          "10:00",
+          "08:00",
+          "10:50",
+          "16:00",
+          "07:30",
+          "16:10",
+          "21:10",
+          "10:11",
+          "11:58",
+          "19:15",
+          "18:20",
+          "18:30",
+          "18:46",
+          "11:11"
+        ],
+        "totalDistinct": 49
+      },
+      "RANGO": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "09:00 – 10:00",
+          "10:00 – 11:00",
+          "08:00 – 09:00",
+          "16:00 – 17:00",
+          "07:00 – 08:00",
+          "21:00 – 22:00",
+          "11:00 – 12:00",
+          "19:00 – 20:00",
+          "18:00 – 19:00",
+          "17:00 – 18:00",
+          "12:00 – 13:00",
+          "15:00 – 16:00",
+          "14:00 – 15:00",
+          "22:00 – 23:00",
+          "20:00 – 21:00"
+        ],
+        "totalDistinct": 16
+      },
+      "AMBIENTE": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "A201",
+          "A202",
+          "B201",
+          "B202",
+          "B207",
+          "A101",
+          "B102",
+          "A505",
+          "B406",
+          "A306",
+          "A509",
+          "A510",
+          "A506",
+          "A507",
+          "B505"
+        ],
+        "totalDistinct": 36
+      },
+      "PISO": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "SEGUNDO PISO",
+          "PRIMER PISO",
+          "QUINTO PISO",
+          "CUARTO PISO",
+          "TERCER PISO"
+        ],
+        "totalDistinct": 5
+      },
+      "PABELLÓN": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "A",
+          "B"
+        ],
+        "totalDistinct": 2
+      },
+      "TIPO DE SOLICITUD": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "Equipos Tecnológicos (Audio,teclado, mouse, so)",
+          "PRESTAMO DE AMBIENTE(Reservas)",
+          "PROYECCIÓN (instalación y config)",
+          "SOFTWARE(credenciales, activación)",
+          "REQUERIMIENTOS EVENTUALES(soporte al docente)",
+          "OBJETOS REPORTADOS",
+          "AULA HIBRIDA (configuarciónde camara, BB)",
+          "PROYECCIÓN (instalación y configuración)",
+          "INFRAESTRUCTURA(Checklist)",
+          "PC / PERIFERICOS(Audio,teclado, mouse, so)"
+        ],
+        "totalDistinct": 10
+      },
+      "ESTADO": {
+        "nonEmptyCount": 69,
+        "sampleValues": [
+          "ATENDIDO",
+          "EN PROCESO",
+          "PENDIENTE"
+        ],
+        "totalDistinct": 3
+      },
+      "DESCRIPCIÓN / SOLUCIÓN": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "MONITOR CON LINEAS / SE GENERO EL TICKET Y ANTENDIO POR SOPORTE TECNICO",
+          "SOLICITUD DE RESERVA ATENDIDA",
+          "SOLICITUD DE RESERVSA ATENDIDA",
+          "PROYECTOR NO MUESTRA IMAGEN",
+          "PROYECCION DESCUADRADA / SE PROCEDIÓ A CONFIGUAR",
+          "INSTALACIÓN DEL PROGRAMA \"FUSION\" A SOLICITUD DEL COORDINADOR",
+          "INSTALACIÓN DEL PROGRAMA \"R STUDIO\" A SOLICITUD DEL COORDINADOR",
+          "Ticket de monitor con falla",
+          "PC CONGELADA / SE PROCEDE A REINCIAR EL EQUIPO",
+          "DOCENTE SIN ACCESOS",
+          "PROBLEMA CON EL SISTEMA",
+          "DOCENTE DE REEMPLAZO",
+          "CLASE NO FIGURA EN EL PORTAL",
+          "PROBLEMA CON AUTENTICADOR",
+          "CAMBIO DE NUEVO WALLPAPER"
+        ],
+        "totalDistinct": 40
+      },
+      "RESPONSABLE": {
+        "nonEmptyCount": 70,
+        "sampleValues": [
+          "ALESSANDRO PASCUAL",
+          "JHONAYKER MAGUIÑA",
+          "FRANCISCO VILLAFAN",
+          "JOSE MIRANDA",
+          "ANTHONY PALOMINO",
+          "JAEL GALLARDO"
+        ],
+        "totalDistinct": 6
+      }
+    },
+    "sampleRows": [
+      {
+        "FECHA": "2026-08-31",
+        "DIA": "LUNES",
+        "HORA DE REPORTE": "09:00",
+        "RANGO": "09:00 – 10:00",
+        "AMBIENTE": "A201",
+        "PISO": "SEGUNDO PISO",
+        "PABELLÓN": "A",
+        "TIPO DE SOLICITUD": "Equipos Tecnológicos (Audio,teclado, mouse, so)",
+        "ESTADO": "ATENDIDO",
+        "DESCRIPCIÓN / SOLUCIÓN": "MONITOR CON LINEAS / SE GENERO EL TICKET Y ANTENDIO POR SOPORTE TECNICO ",
+        "RESPONSABLE": "ALESSANDRO PASCUAL"
+      },
+      {
+        "FECHA": "2026-08-31",
+        "DIA": "LUNES",
+        "HORA DE REPORTE": "09:00",
+        "RANGO": "09:00 – 10:00",
+        "AMBIENTE": "A202",
+        "PISO": "SEGUNDO PISO",
+        "PABELLÓN": "A",
+        "TIPO DE SOLICITUD": "Equipos Tecnológicos (Audio,teclado, mouse, so)",
+        "ESTADO": "ATENDIDO",
+        "DESCRIPCIÓN / SOLUCIÓN": "MONITOR CON LINEAS / SE GENERO EL TICKET Y ANTENDIO POR SOPORTE TECNICO ",
+        "RESPONSABLE": "JHONAYKER MAGUIÑA"
+      },
+      {
+        "FECHA": "2026-08-31",
+        "DIA": "LUNES",
+        "HORA DE REPORTE": "09:00",
+        "RANGO": "09:00 – 10:00",
+        "AMBIENTE": "B201",
+        "PISO": "SEGUNDO PISO",
+        "PABELLÓN": "B",
+        "TIPO DE SOLICITUD": "Equipos Tecnológicos (Audio,teclado, mouse, so)",
+        "ESTADO": "ATENDIDO",
+        "DESCRIPCIÓN / SOLUCIÓN": "MONITOR CON LINEAS / SE GENERO EL TICKET Y ANTENDIO POR SOPORTE TECNICO ",
+        "RESPONSABLE": "JHONAYKER MAGUIÑA"
+      }
+    ]
+  },
+  "HOJA DE ASISTENCIA 2026-2": {
+    "headerRowIdx": 1,
+    "totalRows": 170,
+    "headers": [
+      "CÓDIGO",
+      "FECHA",
+      "NRC",
+      "DOCENTE",
+      "CURSO",
+      "CARRERA",
+      "MOTIVO",
+      "ASISTENTE"
+    ],
+    "colStats": {
+      "CÓDIGO": {
+        "nonEmptyCount": 170,
+        "sampleValues": [
+          "LN1-001",
+          "LN1-002",
+          "LN1-003",
+          "LN1-004",
+          "LN1-005",
+          "LN1-006",
+          "LN1-007",
+          "LN1-008",
+          "LN1-009",
+          "LN1-010",
+          "LN1-011",
+          "LN1-012",
+          "LN1-013",
+          "LN1-014",
+          "LN1-015"
+        ],
+        "totalDistinct": 170
+      },
+      "FECHA": {
+        "nonEmptyCount": 82,
+        "sampleValues": [
+          "2026-08-17",
+          "2026-08-18",
+          "2026-08-20",
+          "2026-08-21",
+          "2026-08-24",
+          "2026-08-25",
+          "2026-08-27",
+          "2026-08-29",
+          "2026-08-31",
+          "2026-09-01",
+          "2026-09-03",
+          "2026-09-05",
+          "2026-09-08",
+          "2026-09-10",
+          "2026-09-11"
+        ],
+        "totalDistinct": 39
+      },
+      "NRC": {
+        "nonEmptyCount": 88,
+        "sampleValues": [
+          "1956-01-22",
+          "1922-06-05",
+          "1955-12-30",
+          "1975-12-30",
+          "1956-01-07",
+          "1956-02-16",
+          "1956-03-05",
+          "1956-02-05",
+          "1971-01-26",
+          "1921-03-02",
+          "1922-06-15",
+          "1922-06-12",
+          "1954-05-24",
+          "2086-12-29",
+          "1956-01-21"
+        ],
+        "totalDistinct": 71
+      },
+      "DOCENTE": {
+        "nonEmptyCount": 88,
+        "sampleValues": [
+          "SANDOVAL/ROSALES ABNER ABAD",
+          "SALAS/SANCHEZ ROSA",
+          "PORTA/GUERRERO POOL JOSEPH",
+          "PONTE/AVELINO LORENA DEL ROCIO",
+          "MORENO/POBLET JOSE ANTONIO",
+          "GARCIA/YZAGUIRRE EDUARDO ROBERTO",
+          "HONORES/PAULET VICTOR FERNANDO",
+          "HAYMES/LÓPEZ FRANCO VALENTINO",
+          "TERAN/PLASENCIA HELENY SOLEY",
+          "ARELLANO/OBREGON JUAN",
+          "BRICEÑO/RODRIGUEZ ANTHONY SERGIO",
+          "NAVAS/MAZA RAUL ROGER",
+          "GONZALES/RAMOS DANIEL ANIBAL",
+          "GUSTAVO CORDOVA MORILLO",
+          "LORENA POBNTE"
+        ],
+        "totalDistinct": 51
+      },
+      "CURSO": {
+        "nonEmptyCount": 88,
+        "sampleValues": [
+          "TALLER DE TECN. SUST. EN ARQUI",
+          "CONTAB. Y ANÁL. FINANCIERO",
+          "TALLER DE DISEÑO 2",
+          "TALLER DE DISEÑO 3",
+          "TALLER DE ARQUITECTURA 6",
+          "TALLER DE ARQUITECTURA 7",
+          "TECNOLAB DE PROC. Y MATER. 1",
+          "REPRESENTACIÓN DEL DISEÑO",
+          "ADMINISTRACIÓN DE OPERACIONES",
+          "PROD. Y OPERACIONES SOSTENIB.",
+          "DERECHO PROCESAL PENAL I",
+          "MODELADO TRIDIMENSIONAL EN ARQ",
+          "DIRECCIÓN GRÁFICA",
+          "TALLER DE ARQUITECTURA 5",
+          "DERECHO TRIBUTARIO 2"
+        ],
+        "totalDistinct": 56
+      },
+      "CARRERA": {
+        "nonEmptyCount": 88,
+        "sampleValues": [
+          "Arq. y Diseño de Interiores",
+          "Administración",
+          "Arq. y Urbanismo",
+          "Diseño Industrial",
+          "Contabilidad y Finanzas",
+          "Derecho",
+          "Comunicación y Diseño Gráfico",
+          "Economía",
+          "Com. Audiov. en Med. Digitales",
+          "Adm. y Negoc. Internacionales",
+          "Adm. y Marketing",
+          "Com. y Publicidad",
+          "Comunic. y Marketing Digital"
+        ],
+        "totalDistinct": 13
+      },
+      "MOTIVO": {
+        "nonEmptyCount": 82,
+        "sampleValues": [
+          "PROBLEMA CON AUTENTICADOR",
+          "DOCENTE SIN ACCESOS",
+          "PROBLEMA CON EL SISTEMA",
+          "DOCENTE DE REEMPLAZO",
+          "CLASE NO FIGURA EN EL PORTAL",
+          "RECUPERACIÓN DE CLASE",
+          "ADELANTO DE CLASE",
+          "PROBLEMA CON EL INTRANET"
+        ],
+        "totalDistinct": 8
+      },
+      "ASISTENTE": {
+        "nonEmptyCount": 79,
+        "sampleValues": [
+          "JAVIER BENITES",
+          "ALESSANDRO PASCUAL",
+          "JANETH VIVAR",
+          "JHONAYKER MAGUIÑA",
+          "JAEL GALLARDO",
+          "JOSE MIRANDA",
+          "ANTHONY PALOMINO",
+          "FRANCISCO VILLAFAN"
+        ],
+        "totalDistinct": 8
+      }
+    },
+    "sampleRows": [
+      {
+        "CÓDIGO": "LN1-001",
+        "FECHA": "2026-08-17",
+        "NRC": "1956-01-22",
+        "DOCENTE": "SANDOVAL/ROSALES ABNER ABAD",
+        "CURSO": "TALLER DE TECN. SUST. EN ARQUI",
+        "CARRERA": "Arq. y Diseño de Interiores",
+        "MOTIVO": "PROBLEMA CON AUTENTICADOR"
+      },
+      {
+        "CÓDIGO": "LN1-002",
+        "FECHA": "2026-08-17",
+        "NRC": "1922-06-05",
+        "DOCENTE": "SALAS/SANCHEZ ROSA",
+        "CURSO": "CONTAB. Y ANÁL. FINANCIERO",
+        "CARRERA": "Administración",
+        "MOTIVO": "DOCENTE SIN ACCESOS"
+      },
+      {
+        "CÓDIGO": "LN1-003",
+        "FECHA": "2026-08-17",
+        "NRC": "1955-12-30",
+        "DOCENTE": "PORTA/GUERRERO POOL JOSEPH",
+        "CURSO": "TALLER DE DISEÑO 2",
+        "CARRERA": "Arq. y Diseño de Interiores",
+        "MOTIVO": "DOCENTE SIN ACCESOS",
+        "ASISTENTE": "JAVIER BENITES"
+      }
+    ]
+  },
+  "RESERVAS": {
+    "headerRowIdx": 3,
+    "totalRows": 297,
+    "headers": [
+      null,
+      "FECHA",
+      "MES",
+      "DIA",
+      "INICIO",
+      "FINAL",
+      "AULA",
+      "UBICACIÓN",
+      "DOCENTE",
+      "DETALLE",
+      "USUARIO",
+      "PRIORIDAD"
+    ],
+    "colStats": {
+      "FECHA": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "2026-10-01",
+          "2026-10-08",
+          "2026-10-15",
+          "2026-10-22",
+          "2026-10-29",
+          "2026-11-05",
+          "2026-11-12",
+          "2026-11-19",
+          "2026-11-26",
+          "2026-10-02",
+          "2026-10-09",
+          "2026-11-07",
+          "2026-10-10",
+          "2026-10-04",
+          "2026-10-05"
+        ],
+        "totalDistinct": 54
+      },
+      "MES": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "OCTUBRE",
+          "NOVIEMBRE",
+          "DICIEMBRE"
+        ],
+        "totalDistinct": 3
+      },
+      "DIA": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "JUEVES",
+          "VIERNES",
+          "SÁBADO",
+          "DOMINGO",
+          "LUNES",
+          "MARTES",
+          "MIÉRCOLES",
+          "MIERCOLES"
+        ],
+        "totalDistinct": 8
+      },
+      "INICIO": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "14:30",
+          "16:00",
+          "21:10",
+          "07:30",
+          "09:10",
+          "11:00",
+          "13:15",
+          "07:00",
+          "10:50",
+          "09:00",
+          "10:00",
+          "16:10",
+          "18:30",
+          "08:00",
+          "19:30"
+        ],
+        "totalDistinct": 29
+      },
+      "FINAL": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "16:00",
+          "17:30",
+          "22:40",
+          "10:40",
+          "12:30",
+          "16:55",
+          "14:00",
+          "12:20",
+          "10:30",
+          "17:40",
+          "20:00",
+          "09:00",
+          "10:00",
+          "21:00",
+          "11:30"
+        ],
+        "totalDistinct": 33
+      },
+      "AULA": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "A509",
+          "B505",
+          "B201",
+          "A201",
+          "A407",
+          "B202",
+          "B303",
+          "B306",
+          "A401",
+          "A510",
+          "B203",
+          "A508",
+          "A202",
+          "A505",
+          "B304"
+        ],
+        "totalDistinct": 39
+      },
+      "UBICACIÓN": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "5TO PISO - A",
+          "5TO PISO - B",
+          "2DO PISO - B",
+          "2DO PISO - A",
+          "4TO PISO - A",
+          "3ER PISO - B",
+          "3ER PISO - A",
+          "4TO PISO - B"
+        ],
+        "totalDistinct": 8
+      },
+      "DOCENTE": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "JULIO BARRERA MINA",
+          "FRANCESCO ARTEMIO DIAZ ALAYA",
+          "GUSTAVO BARRANTES",
+          "SOTO CASTILLO RICHARD DANIEL",
+          "JUAN CARLOS HIDALGO SAYAN",
+          "MARLENI YANET BALTODANO VELASQUEZ",
+          "ULLOA CACHAY RICARDO",
+          "REYNA MORAN APARICIO",
+          "ROJAS TALLEDO JORGE ARMANDO",
+          "FARFAN BASAURI RENZO FERNANDO HERAC",
+          "AREVALO GONZALES JOEL SIXTO",
+          "MUGRUZA/ARANZAMENDI VANESSA ALIDA",
+          "CESAR JESUS PENA OXOLON",
+          "MIGUEL OSWALDO GARCIA JIMENEZ",
+          "LIZ MARGOTH MASIAS ARIAS"
+        ],
+        "totalDistinct": 99
+      },
+      "DETALLE": {
+        "nonEmptyCount": 297,
+        "sampleValues": [
+          "USO DE LABORATORIO",
+          "TALLERES CULTURALES",
+          "COSTOS Y COTIZACIONES INTERN. NRC 26498",
+          "ADELANTO DE CLASES - 22643420504",
+          "TLL. DIR.Y PROD. INFORMATIVOS NRC 23029",
+          "SEMANA DE COMUNICACIONES - DEL AULA AL SET - INSTALAR CÁMARA Y HEADPHONE",
+          "ADELANTO DE CLASES - 22643423026",
+          "EVENTO UPN START",
+          "POSTERGACION DE CLASES - 22643420512",
+          "POSTERGACION DE CLASES - 22643419893",
+          "INSTALACIÓN DE CÁMARA Y HEADPHONE",
+          "DESARROLLO DE EXCEL",
+          "SEMANA DE COMUNICACIONES - LA DIRECCIÓN DE ARTE",
+          "SEMANA DE COMUNICACIONES - TALLER DE FABRIANO",
+          "GESTIÓN DE MEDIOS DIGITALES NRC 26854"
+        ],
+        "totalDistinct": 128
+      },
+      "USUARIO": {
+        "nonEmptyCount": 292,
+        "sampleValues": [
+          "FRANCISCO",
+          "ALESSANDRO",
+          "ONLINE",
+          "JOSE",
+          "JAEL",
+          "JANETH",
+          "JHONAYKER"
+        ],
+        "totalDistinct": 7
+      },
+      "PRIORIDAD": {
+        "nonEmptyCount": 289,
+        "sampleValues": [
+          "NORMAL",
+          "IMPORTANTE"
+        ],
+        "totalDistinct": 2
+      }
+    },
+    "sampleRows": [
+      {
+        "FECHA": "2026-10-01",
+        "MES": "OCTUBRE",
+        "DIA": "JUEVES",
+        "INICIO": "14:30",
+        "FINAL": "16:00",
+        "AULA": "A509",
+        "UBICACIÓN": "5TO PISO - A",
+        "DOCENTE": "JULIO BARRERA MINA",
+        "DETALLE": "USO DE LABORATORIO",
+        "USUARIO": "FRANCISCO",
+        "PRIORIDAD": "NORMAL"
+      },
+      {
+        "FECHA": "2026-10-08",
+        "MES": "OCTUBRE",
+        "DIA": "JUEVES",
+        "INICIO": "14:30",
+        "FINAL": "16:00",
+        "AULA": "A509",
+        "UBICACIÓN": "5TO PISO - A",
+        "DOCENTE": "JULIO BARRERA MINA",
+        "DETALLE": "USO DE LABORATORIO",
+        "USUARIO": "FRANCISCO",
+        "PRIORIDAD": "NORMAL"
+      },
+      {
+        "FECHA": "2026-10-15",
+        "MES": "OCTUBRE",
+        "DIA": "JUEVES",
+        "INICIO": "14:30",
+        "FINAL": "16:00",
+        "AULA": "A509",
+        "UBICACIÓN": "5TO PISO - A",
+        "DOCENTE": "JULIO BARRERA MINA",
+        "DETALLE": "USO DE LABORATORIO",
+        "USUARIO": "FRANCISCO",
+        "PRIORIDAD": "NORMAL"
+      }
+    ]
+  }
+}

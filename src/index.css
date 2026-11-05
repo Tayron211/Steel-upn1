@@ -1,0 +1,205 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-upn-lucuma: #FDBA30;
+  --color-upn-lucuma-dark: #E29B12;
+  --color-upn-black: #000000;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Headings in Sharp / Space Grotesk geometry (Official UPN Style) */
+h1, h2, h3, .font-upn {
+  font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.025em;
+}
+
+input, textarea, select {
+  user-select: auto;
+  -webkit-user-select: auto;
+}
+
+/* Safe area insets for mobile screens / APK */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Minimalist scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* =========================================================
+   APPLE LIQUID GLASS & FLUID MICRO-INTERACTIONS
+   ========================================================= */
+
+/* Apple Liquid Glass Dock Bar (Cristal esmerilado translúcido con cuerpo, no transparente) */
+.apple-liquid-glass-27 {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(200%) brightness(102%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(102%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 22px;
+  box-shadow: 
+    0 20px 48px -8px rgba(15, 23, 42, 0.18),
+    0 6px 18px -2px rgba(15, 23, 42, 0.08),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* Botón deslizante activo: PLANO (2D), tal como estaba antes, con esquinas simétricas menos redondeadas */
+.apple-liquid-slider {
+  background: linear-gradient(180deg, #FFCA36 0%, #FDBA30 100%);
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 18px rgba(253, 186, 48, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* Apple-style translucent liquid glass panel */
+.apple-liquid-glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 
+    0 20px 48px -8px rgba(15, 23, 42, 0.16),
+    0 4px 16px -2px rgba(15, 23, 42, 0.06),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Apple-style floating menu / speed-dial pill */
+.apple-liquid-pill {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    0 12px 32px -4px rgba(15, 23, 42, 0.12),
+    0 2px 8px -1px rgba(15, 23, 42, 0.04),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Apple-style modals and bottom sheets */
+.apple-liquid-modal {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 32px 72px -16px rgba(15, 23, 42, 0.22),
+    0 12px 28px -6px rgba(15, 23, 42, 0.1),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 1);
+}
+
+/* Fluid Keyframe Animations with Apple Easing (cubic-bezier(0.16, 1, 0.3, 1)) */
+@keyframes appleSpringUp {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes appleScaleUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes appleBackdropFade {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes appleSpeedDialItem {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.65);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-spring-up {
+  animation: appleSpringUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-up {
+  animation: appleScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-backdrop-fade {
+  animation: appleBackdropFade 0.2s ease-out forwards;
+}
+
+.animate-speed-dial {
+  animation: appleSpeedDialItem 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: bottom right;
+}
+
+/* Smooth Fluid Micro-Interactions on Interactive Elements */
+button, a, input, select, textarea {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 220ms;
+}
+
+button:active {
+  transform: scale(0.96);
+  transition-duration: 100ms;
+}
+
+/* Fluid View Page Transition (iOS Content Crossfade) */
+@keyframes appleViewEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: none; /* CRITICAL: Clears transform so position: fixed is never trapped */
+  }
+}
+
+.animate-tab-view {
+  animation: appleViewEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
