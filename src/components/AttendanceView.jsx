@@ -349,12 +349,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     } else if (targetStatus === 'PUNTUAL') {
       updates = {
         asistencia: 'SI',
-        puntualidad: 'PUNTUAL'
+        puntualidad: 'PUNTUAL',
+        horaInicioReal: ''
       };
     } else if (targetStatus === 'TARDE') {
       updates = {
         asistencia: 'SI',
-        puntualidad: 'TARDE'
+        puntualidad: 'TARDE',
+        horaInicioReal: getCurrentTimeStr()
       };
     } else if (targetStatus === 'FALTA') {
       updates = {
@@ -925,7 +927,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     {isTarde && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/70">
                         <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.4] shrink-0" />
-                        <span>TARDE</span>
+                        <span>TARDE{item.horaInicioReal ? ` (${item.horaInicioReal})` : ''}</span>
                       </span>
                     )}
                     {isFalta && (
@@ -970,11 +972,16 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     </span>
                   </div>
 
-                  <div className="flex items-center text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
                     <span className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-400 shrink-0" />
                       <span className="text-slate-700 dark:text-zinc-300 font-bold">{item.horaInicioProg} - {item.horaFinalProg}</span>
                     </span>
+                    {isTarde && item.horaInicioReal && (
+                      <span className="text-amber-900 dark:text-amber-200 font-bold bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-md text-[10px] border border-amber-300/80 dark:border-amber-800/80">
+                        Hora real: {item.horaInicioReal}
+                      </span>
+                    )}
                   </div>
 
                   {/* Observación Compacta (Clic para editar) */}
