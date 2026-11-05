@@ -33,8 +33,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
   return (
     <>
-      {/* Native App Top Bar with Official Clean UPN Branding - AMOLED Ready */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-black/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-zinc-800 safe-top transition-colors">
+      {/* Native App Top Bar with Frosted Glass Blur & Official UPN Branding */}
+      <header className="sticky top-0 z-40 bg-white/70 dark:bg-black/70 backdrop-blur-2xl backdrop-saturate-180 border-b border-slate-200/70 dark:border-zinc-800/80 safe-top shadow-2xs supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/60">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between">
           {/* Official UPN Identity Brand */}
           <div className="flex items-center min-w-0">

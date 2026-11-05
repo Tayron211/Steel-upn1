@@ -80,9 +80,9 @@ export default function DashboardView() {
 
   if (loading && !stats) {
     return (
-      <div className="text-center py-20 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
         <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
-        <p className="text-xs font-semibold text-slate-500">Calculando indicadores clave desde SQLite...</p>
+        <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Calculando indicadores clave desde SQLite...</p>
       </div>
     );
   }

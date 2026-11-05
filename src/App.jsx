@@ -5,6 +5,7 @@ import TicketsKanban from './components/TicketsKanban';
 import OperationsHub from './components/OperationsHub';
 import DashboardView from './components/DashboardView';
 import FloatingActionMenu from './components/FloatingActionMenu';
+import MobileSignView from './components/MobileSignView';
 
 const TABS = ['attendance', 'tickets', 'operations', 'dashboard'];
 
@@ -27,6 +28,17 @@ const HASH_TAB_MAP = {
 };
 
 export default function App() {
+  const [mobileSignTicketId, setMobileSignTicketId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const match = hash.match(/^#firmar-(.+)$/);
+      if (match) return match[1];
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('firmar')) return params.get('firmar');
+    }
+    return null;
+  });
+
   const [activeTab, setActiveTab] = useState(() => {
     const hash = (typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '');
     return HASH_TAB_MAP[hash] || 'attendance';
@@ -84,11 +96,22 @@ export default function App() {
   // Sync initial hash and handle Browser Back / Forward buttons (Multi-page experience)
   useEffect(() => {
     const currentHash = window.location.hash.toLowerCase();
-    const initialTab = HASH_TAB_MAP[currentHash] || 'attendance';
-    setActiveTab(initialTab);
-    window.history.replaceState({ tab: initialTab }, '', TAB_HASH_MAP[initialTab]);
+    const signMatch = window.location.hash.match(/^#firmar-(.+)$/);
+    if (signMatch) {
+      setMobileSignTicketId(signMatch[1]);
+    } else {
+      const initialTab = HASH_TAB_MAP[currentHash] || 'attendance';
+      setActiveTab(initialTab);
+      window.history.replaceState({ tab: initialTab }, '', TAB_HASH_MAP[initialTab]);
+    }
 
     const handlePopState = (e) => {
+      const currentSignMatch = window.location.hash.match(/^#firmar-(.+)$/);
+      if (currentSignMatch) {
+        setMobileSignTicketId(currentSignMatch[1]);
+        return;
+      }
+      setMobileSignTicketId(null);
       const tabFromState = e.state?.tab;
       const tabFromHash = HASH_TAB_MAP[window.location.hash.toLowerCase()];
       const resolvedTab = tabFromState || tabFromHash || 'attendance';
@@ -211,9 +234,21 @@ export default function App() {
     }
   };
 
+  if (mobileSignTicketId) {
+    return (
+      <MobileSignView
+        ticketId={mobileSignTicketId}
+        onBack={() => {
+          setMobileSignTicketId(null);
+          navigateTab('tickets', true);
+        }}
+      />
+    );
+  }
+
   return (
     <div 
-      className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950 transition-colors duration-200"
+      className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >

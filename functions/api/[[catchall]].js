@@ -147,6 +147,14 @@ export async function onRequest(context) {
     // -------------------------------------------------------------
     // 2. TICKETS / PRÉSTAMOS: /api/tickets
     // -------------------------------------------------------------
+    if (path.startsWith('/api/tickets')) {
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_entrega TEXT').run(); } catch (e) {}
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_recepcion TEXT').run(); } catch (e) {}
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN entregado_por TEXT').run(); } catch (e) {}
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN recibido_por TEXT').run(); } catch (e) {}
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN fecha_firma TEXT').run(); } catch (e) {}
+    }
+
     if (path === '/api/tickets' && method === 'GET') {
       const estado = url.searchParams.get('estado');
       let sql = 'SELECT * FROM tickets WHERE 1=1';
@@ -173,7 +181,12 @@ export async function onRequest(context) {
         tipoSolicitud: t.tipo_solicitud,
         estado: t.estado,
         descripcionSolucion: t.descripcion_solucion,
-        responsable: t.responsable
+        responsable: t.responsable,
+        firmaEntrega: t.firma_entrega || null,
+        firmaRecepcion: t.firma_recepcion || null,
+        entregadoPor: t.entregado_por || null,
+        recibidoPor: t.recibido_por || null,
+        fechaFirma: t.fecha_firma || null
       }));
 
       return json({ success: true, count: mapped.length, data: mapped });
@@ -201,16 +214,27 @@ export async function onRequest(context) {
         tipo_solicitud: body.tipoSolicitud || 'PLUMONES / MATERIALES',
         estado: body.estado || 'EN PROCESO',
         descripcion_solucion: body.descripcionSolucion || '',
-        responsable: body.responsable || 'OPERACIONES SEDE'
+        responsable: body.responsable || 'OPERACIONES SEDE',
+        firma_entrega: body.firmaEntrega || null,
+        firma_recepcion: body.firmaRecepcion || null,
+        entregado_por: body.entregadoPor || null,
+        recibido_por: body.recibidoPor || null,
+        fecha_firma: body.fechaFirma || (body.firmaEntrega || body.firmaRecepcion ? now.toISOString() : null)
       };
 
       await db.prepare(`
-        INSERT INTO tickets (id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon, tipo_solicitud, estado, descripcion_solucion, responsable, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO tickets (
+          id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon, 
+          tipo_solicitud, estado, descripcion_solucion, responsable,
+          firma_entrega, firma_recepcion, entregado_por, recibido_por, fecha_firma,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `).bind(
         ins.id, ins.periodo, ins.fecha, ins.dia, ins.hora_reporte,
         ins.rango, ins.ambiente, ins.piso, ins.pabellon, ins.tipo_solicitud,
-        ins.estado, ins.descripcion_solucion, ins.responsable
+        ins.estado, ins.descripcion_solucion, ins.responsable,
+        ins.firma_entrega, ins.firma_recepcion, ins.entregado_por, ins.recibido_por, ins.fecha_firma
       ).run();
 
       const created = {
@@ -226,7 +250,12 @@ export async function onRequest(context) {
         tipoSolicitud: ins.tipo_solicitud,
         estado: ins.estado,
         descripcionSolucion: ins.descripcion_solucion,
-        responsable: ins.responsable
+        responsable: ins.responsable,
+        firmaEntrega: ins.firma_entrega,
+        firmaRecepcion: ins.firma_recepcion,
+        entregadoPor: ins.entregado_por,
+        recibidoPor: ins.recibido_por,
+        fechaFirma: ins.fecha_firma
       };
 
       return json({ success: true, data: created });
@@ -242,6 +271,11 @@ export async function onRequest(context) {
       if ('estado' in body) { fields.push('estado = ?'); values.push(body.estado); }
       if ('descripcionSolucion' in body) { fields.push('descripcion_solucion = ?'); values.push(body.descripcionSolucion); }
       if ('responsable' in body) { fields.push('responsable = ?'); values.push(body.responsable); }
+      if ('firmaEntrega' in body) { fields.push('firma_entrega = ?'); values.push(body.firmaEntrega); }
+      if ('firmaRecepcion' in body) { fields.push('firma_recepcion = ?'); values.push(body.firmaRecepcion); }
+      if ('entregadoPor' in body) { fields.push('entregado_por = ?'); values.push(body.entregadoPor); }
+      if ('recibidoPor' in body) { fields.push('recibido_por = ?'); values.push(body.recibidoPor); }
+      if ('fechaFirma' in body) { fields.push('fecha_firma = ?'); values.push(body.fechaFirma); }
 
       if (fields.length > 0) {
         fields.push("updated_at = datetime('now')");
@@ -250,7 +284,29 @@ export async function onRequest(context) {
       }
 
       const updated = await db.prepare('SELECT * FROM tickets WHERE id = ?').bind(id).first();
-      return json({ success: true, data: updated });
+      return json({ 
+        success: true, 
+        data: updated ? {
+          id: updated.id,
+          periodo: updated.periodo,
+          fecha: updated.fecha,
+          dia: updated.dia,
+          horaReporte: updated.hora_reporte,
+          rango: updated.rango,
+          ambiente: updated.ambiente,
+          piso: updated.piso,
+          pabellon: updated.pabellon,
+          tipoSolicitud: updated.tipo_solicitud,
+          estado: updated.estado,
+          descripcionSolucion: updated.descripcion_solucion,
+          responsable: updated.responsable,
+          firmaEntrega: updated.firma_entrega || null,
+          firmaRecepcion: updated.firma_recepcion || null,
+          entregadoPor: updated.entregado_por || null,
+          recibidoPor: updated.recibido_por || null,
+          fechaFirma: updated.fecha_firma || null
+        } : null 
+      });
     }
 
     if (ticketMatch && method === 'DELETE') {

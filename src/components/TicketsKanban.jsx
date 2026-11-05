@@ -15,9 +15,13 @@ import {
   User,
   GraduationCap,
   Sparkles,
-  Edit3
+  Edit3,
+  PenTool,
+  FileText,
+  QrCode
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
+import SignatureModal from './SignatureModal';
 
 const DEFAULT_BASE_ITEMS = [
   { label: '🖊️ Plumones y Mota', val: 'PLUMONES', name: 'PLUMONES / MATERIALES', defaultDesc: 'Préstamo de plumones y mota acrílica' },
@@ -62,6 +66,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
   // Modals & Feedback
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [signingTicket, setSigningTicket] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
   // Detailed Modal Form State
@@ -116,7 +121,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         type: 'ALUMNO',
         label: 'Alumno',
         name: matchAlumno[1] ? matchAlumno[1].trim() : '',
-        badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200'
+        badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60'
       };
     }
     const matchDocente = desc.match(/\[👨‍🏫?\s*DOCENTE(?::\s*([^\]]+))?\]/i);
@@ -125,13 +130,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         type: 'DOCENTE',
         label: 'Docente',
         name: matchDocente[1] ? matchDocente[1].trim() : '',
-        badgeClass: 'bg-amber-50 text-amber-900 border-amber-200'
+        badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
       };
     }
     if (d.includes('ALUMNO')) {
-      return { type: 'ALUMNO', label: 'Alumno', name: '', badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200' };
+      return { type: 'ALUMNO', label: 'Alumno', name: '', badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' };
     }
-    return { type: 'DOCENTE', label: 'Docente', name: '', badgeClass: 'bg-amber-50 text-amber-900 border-amber-200' };
+    return { type: 'DOCENTE', label: 'Docente', name: '', badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' };
   };
 
   const getCleanNote = (desc = '') => {
@@ -416,6 +421,24 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     if (!confirm('¿Deseas eliminar este registro de préstamo?')) return;
     setTickets(prev => prev.filter(t => t.id !== id));
     await fetch(`/api/tickets/${id}`, { method: 'DELETE' });
+  };
+
+  const handleSaveSignatures = async (ticketId, signaturePayload) => {
+    // 1. Optimistic update
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...signaturePayload } : t));
+    setToastMessage('✅ Firmas registradas exitosamente en el Acta de Cargo');
+    setTimeout(() => setToastMessage(''), 3000);
+
+    // 2. Persist to API
+    try {
+      await fetch(`/api/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signaturePayload)
+      });
+    } catch (err) {
+      console.error('Error saving signatures to API', err);
+    }
   };
 
   // Filtered tickets
@@ -800,17 +823,59 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     </div>
 
                     {/* Meta info: hora de entrega */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500 mb-3 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500 mb-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
                       <span className="flex items-center gap-1 text-slate-500 dark:text-zinc-400">
                         <Clock className="w-3 h-3 stroke-[2.2]" />
                         <span>Entregado: {ticket.horaReporte || '--:--'}</span>
                       </span>
                       <span className="font-mono text-slate-400 dark:text-zinc-500">{ticket.fecha}</span>
                     </div>
+
+                    {/* Estado del Acta de Cargo y Firmas con Celular */}
+                    <div className="mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setSigningTicket(ticket)}
+                        className={`w-full py-1.5 px-2.5 rounded-xl border text-[11px] font-bold transition inline-flex items-center justify-between active:scale-98 ${
+                          ticket.firmaEntrega && ticket.firmaRecepcion
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                            : ticket.firmaEntrega || ticket.firmaRecepcion
+                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+                            : 'bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                        }`}
+                        title="Ver o completar Acta de Cargo con firmas móviles"
+                      >
+                        <span className="inline-flex items-center gap-1.5">
+                          <PenTool className="w-3.5 h-3.5 text-amber-500" />
+                          <span>
+                            {ticket.firmaEntrega && ticket.firmaRecepcion
+                              ? '✍️ Cargo con 2 firmas listas'
+                              : ticket.firmaEntrega
+                              ? '✍️ Entregué firmado (falta receptor)'
+                              : ticket.firmaRecepcion
+                              ? '✍️ Recibí firmado (falta entrega)'
+                              : '✍️ Firmar Cargo con celular'}
+                          </span>
+                        </span>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">
+                          Ver / PDF &rarr;
+                        </span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Botón de 1 Toque para Recibir Devolución */}
+                  {/* Botón de 1 Toque para Recibir Devolución + Botón Cargo */}
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => setSigningTicket(ticket)}
+                      className="h-11 px-3 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 border border-slate-200/80 dark:border-zinc-800 active:scale-95 shrink-0"
+                      title="Ver Acta de Cargo oficial y descargar PDF"
+                    >
+                      <FileText className="w-4 h-4 text-amber-500" />
+                      <span className="hidden sm:inline">Cargo PDF</span>
+                    </button>
+
                     {isPending ? (
                       <>
                         <button
@@ -851,7 +916,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           </div>
         )
       ) : (
-        /* ================= TAB 2: HISTORIAL DE DEVUELTOS ================= */
+        /* ================= TAB 2: HISTORIAL DE DEVUELTOS (AMOLED PURE BLACK) ================= */
         concludedLoans.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
             <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">No hay préstamos concluidos con este filtro</p>
@@ -865,12 +930,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col justify-between opacity-95"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all opacity-95"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-xs bg-slate-100 text-slate-800 border border-slate-200 px-2 py-0.5 rounded-lg">
+                        <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 px-2 py-0.5 rounded-lg">
                           {ticket.ambiente || 'AULA'}
                         </span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${ben.badgeClass}`}>
@@ -878,24 +943,53 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                         </span>
                       </div>
 
-                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                         <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                         DEVUELTO
                       </span>
                     </div>
 
-                    <h3 className="text-xs font-bold text-slate-900 mb-1">{ticket.tipoSolicitud}</h3>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white mb-1">{ticket.tipoSolicitud}</h3>
                     {cleanNote && (
-                      <p className="text-xs text-slate-600 mb-2 leading-tight">{cleanNote}</p>
+                      <p className="text-xs text-slate-600 dark:text-zinc-400 mb-2 leading-tight">{cleanNote}</p>
                     )}
+
+                    {/* Estado del Acta de Cargo */}
+                    <div className="mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setSigningTicket(ticket)}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border inline-flex items-center gap-1.5 transition ${
+                          ticket.firmaEntrega && ticket.firmaRecepcion
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
+                        }`}
+                        title="Ver comprobante oficial de cargo"
+                      >
+                        <FileText className="w-3 h-3 text-amber-500" />
+                        <span>
+                          {ticket.firmaEntrega && ticket.firmaRecepcion
+                            ? 'Acta con 2 firmas (Descargar PDF)'
+                            : 'Ver / Completar Acta de Cargo'}
+                        </span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
-                    <span className="text-slate-400 font-mono">{ticket.fecha} · {ticket.horaReporte}</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-[11px]">
+                    <span className="text-slate-400 dark:text-zinc-500 font-mono">{ticket.fecha} · {ticket.horaReporte}</span>
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => setSigningTicket(ticket)}
+                        className="text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white font-bold inline-flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-zinc-700 transition active:scale-95"
+                        title="Ver o descargar Acta de Cargo en PDF"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Acta PDF</span>
+                      </button>
+                      <button
                         onClick={() => handleReopen(ticket)}
-                        className="text-amber-800 hover:text-amber-950 font-bold inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-200/80 transition"
+                        className="text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-200 font-bold inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 px-2.5 py-1 rounded-lg border border-amber-200/80 dark:border-amber-800/80 transition active:scale-95"
                         title="Reabrir a Préstamos Activos"
                       >
                         <RotateCcw className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -903,7 +997,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       </button>
                       <button
                         onClick={() => handleDelete(ticket.id)}
-                        className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                        className="p-1 text-slate-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition active:scale-90"
                         title="Eliminar registro"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1007,6 +1101,16 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Signature & Official Cargo Voucher Modal */}
+      {signingTicket && (
+        <SignatureModal
+          ticket={signingTicket}
+          isOpen={!!signingTicket}
+          onClose={() => setSigningTicket(null)}
+          onSaveSignatures={handleSaveSignatures}
+        />
       )}
     </div>
   );

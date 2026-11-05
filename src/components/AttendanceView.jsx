@@ -722,7 +722,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </div>
             <button
               onClick={() => setViewMode('CLASSES')}
-              className="text-xs font-bold bg-white text-emerald-900 px-3 py-1 rounded-xl border border-emerald-200 shadow-2xs"
+              className="text-xs font-bold bg-white dark:bg-zinc-800 text-emerald-900 dark:text-emerald-300 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xs"
             >
               Volver a Clases
             </button>
@@ -732,28 +732,28 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             {freeRooms.map(room => (
               <div 
                 key={room.abrv}
-                className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between"
+                className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-1.5 mb-2">
-                    <span className="font-mono font-black text-sm bg-slate-900 text-white px-2.5 py-0.5 rounded-xl">
+                    <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-xl">
                       {room.abrv}
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/70 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                       LIBRE
                     </span>
                   </div>
 
-                  <h4 className="text-xs font-bold text-slate-800 break-words mb-1">{room.nombre}</h4>
-                  <span className="inline-block text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md mb-2.5">
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-white break-words mb-1">{room.nombre}</h4>
+                  <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md mb-2.5 border border-blue-200/60 dark:border-blue-800/60">
                     {room.tipo} · Pab. {room.pabellon} ({room.piso})
                   </span>
 
-                  <div className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-1.5 text-slate-600">
+                  <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 p-2 rounded-xl border border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400">
                       <Users className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Capacidad / Aforo: <strong className="text-slate-900">{room.aforo} personas</strong></span>
+                      <span>Capacidad: <strong className="text-slate-900 dark:text-white">{room.aforo} pers.</strong></span>
                     </div>
                     <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">
                       {room.abrv}
@@ -767,17 +767,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       ) : (
         /* VIEW MODE 2: CLASS ATTENDANCE CARDS */
         loading ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
+          <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
             <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
-            <p className="text-xs font-semibold text-slate-500">Cargando programación de aulas...</p>
+            <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Cargando programación de aulas...</p>
           </div>
         ) : displayedItems.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 shadow-xs px-4">
-            <Building className="w-10 h-10 text-slate-300 mx-auto mb-2 stroke-[1.8]" />
-            <p className="text-sm font-bold text-slate-800">
+          <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
+            <Building className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-2 stroke-[1.8]" />
+            <p className="text-sm font-bold text-slate-800 dark:text-white">
               {statusFilter === 'PENDING' ? '¡Excelente trabajo! No hay aulas pendientes' : 'No se encontraron clases'}
             </p>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
               {statusFilter !== 'ALL' 
                 ? 'Todas las clases de este bloque han sido verificadas con éxito.' 
                 : 'Prueba cambiando el piso, pabellón o filtro de búsqueda.'}

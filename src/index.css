@@ -20,8 +20,8 @@ html, body {
   background-color: #f8fafc;
 }
 
-html.dark, html.dark body {
-  background-color: #000000;
+html.dark, html.dark body, html.dark #root {
+  background-color: #000000 !important;
   color: #f4f4f5;
 }
 
@@ -330,11 +330,11 @@ button:active {
   transition-duration: 100ms;
 }
 
-/* Fluid View Page Transition (iOS Content Crossfade) */
+/* Fluid View Page Transition (Instant Zero-Flash Crossfade) */
 @keyframes appleViewEnter {
   0% {
-    opacity: 0;
-    transform: translateY(6px);
+    opacity: 0.88;
+    transform: translateY(3px);
   }
   100% {
     opacity: 1;
@@ -343,5 +343,5 @@ button:active {
 }
 
 .animate-tab-view {
-  animation: appleViewEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleViewEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -24,6 +24,13 @@ class Database {
                 self::$instance->exec('PRAGMA foreign_keys = ON;');
                 self::$instance->exec('PRAGMA journal_mode = WAL;');
                 self::$instance->exec('PRAGMA synchronous = NORMAL;');
+
+                // Auto-migration for Digital Signatures
+                try { self::$instance->exec('ALTER TABLE tickets ADD COLUMN firma_entrega TEXT;'); } catch (Exception $e) {}
+                try { self::$instance->exec('ALTER TABLE tickets ADD COLUMN firma_recepcion TEXT;'); } catch (Exception $e) {}
+                try { self::$instance->exec('ALTER TABLE tickets ADD COLUMN entregado_por TEXT;'); } catch (Exception $e) {}
+                try { self::$instance->exec('ALTER TABLE tickets ADD COLUMN recibido_por TEXT;'); } catch (Exception $e) {}
+                try { self::$instance->exec('ALTER TABLE tickets ADD COLUMN fecha_firma TEXT;'); } catch (Exception $e) {}
             } catch (PDOException $e) {
                 http_response_code(500);
                 echo json_encode([

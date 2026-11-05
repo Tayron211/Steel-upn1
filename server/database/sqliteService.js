@@ -102,6 +102,12 @@ async function initDatabase() {
   await run(`CREATE INDEX IF NOT EXISTS idx_tickets_estado ON tickets(estado)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_tickets_ambiente ON tickets(ambiente)`);
 
+  try { await run(`ALTER TABLE tickets ADD COLUMN firma_entrega TEXT`); } catch (e) {}
+  try { await run(`ALTER TABLE tickets ADD COLUMN firma_recepcion TEXT`); } catch (e) {}
+  try { await run(`ALTER TABLE tickets ADD COLUMN entregado_por TEXT`); } catch (e) {}
+  try { await run(`ALTER TABLE tickets ADD COLUMN recibido_por TEXT`); } catch (e) {}
+  try { await run(`ALTER TABLE tickets ADD COLUMN fecha_firma TEXT`); } catch (e) {}
+
   await run(`
     CREATE TABLE IF NOT EXISTS hojas_manuales (
       id TEXT PRIMARY KEY,
@@ -285,6 +291,11 @@ function mapTicketRow(r) {
     estado: r.estado,
     descripcionSolucion: r.descripcion_solucion,
     responsable: r.responsable,
+    firmaEntrega: r.firma_entrega || null,
+    firmaRecepcion: r.firma_recepcion || null,
+    entregadoPor: r.entregado_por || null,
+    recibidoPor: r.recibido_por || null,
+    fechaFirma: r.fecha_firma || null,
     createdAt: r.created_at
   };
 }
@@ -426,21 +437,32 @@ async function createTicket(ticket) {
   const estado = (ticket.estado || 'PENDIENTE').toUpperCase();
   const descripcionSolucion = ticket.descripcionSolucion || '';
   const responsable = ticket.responsable || 'Sin Asignar';
+  const firmaEntrega = ticket.firmaEntrega || null;
+  const firmaRecepcion = ticket.firmaRecepcion || null;
+  const entregadoPor = ticket.entregadoPor || null;
+  const recibidoPor = ticket.recibidoPor || null;
+  const fechaFirma = ticket.fechaFirma || (firmaEntrega || firmaRecepcion ? now.toISOString() : null);
   const createdAt = now.toISOString();
 
   await run(`
     INSERT INTO tickets (
       id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon,
-      tipo_solicitud, estado, descripcion_solucion, responsable, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      tipo_solicitud, estado, descripcion_solucion, responsable, 
+      firma_entrega, firma_recepcion, entregado_por, recibido_por, fecha_firma,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     id, periodo, fecha, dia, horaReporte, rango, ambiente, piso, pabellon,
-    tipoSolicitud, estado, descripcionSolucion, responsable, createdAt, createdAt
+    tipoSolicitud, estado, descripcionSolucion, responsable,
+    firmaEntrega, firmaRecepcion, entregadoPor, recibidoPor, fechaFirma,
+    createdAt, createdAt
   ]);
 
   return {
     id, periodo, fecha, dia, horaReporte, rango, ambiente, piso, pabellon,
-    tipoSolicitud, estado, descripcionSolucion, responsable, createdAt
+    tipoSolicitud, estado, descripcionSolucion, responsable,
+    firmaEntrega, firmaRecepcion, entregadoPor, recibidoPor, fechaFirma,
+    createdAt
   };
 }
 
@@ -459,6 +481,26 @@ async function updateTicket(id, updates) {
   if (updates.responsable !== undefined) {
     fields.push('responsable = ?');
     params.push(updates.responsable);
+  }
+  if (updates.firmaEntrega !== undefined) {
+    fields.push('firma_entrega = ?');
+    params.push(updates.firmaEntrega);
+  }
+  if (updates.firmaRecepcion !== undefined) {
+    fields.push('firma_recepcion = ?');
+    params.push(updates.firmaRecepcion);
+  }
+  if (updates.entregadoPor !== undefined) {
+    fields.push('entregado_por = ?');
+    params.push(updates.entregadoPor);
+  }
+  if (updates.recibidoPor !== undefined) {
+    fields.push('recibido_por = ?');
+    params.push(updates.recibidoPor);
+  }
+  if (updates.fechaFirma !== undefined) {
+    fields.push('fecha_firma = ?');
+    params.push(updates.fechaFirma);
   }
 
   fields.push('updated_at = ?');

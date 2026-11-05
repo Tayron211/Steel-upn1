@@ -79,16 +79,25 @@ class TicketsController {
         $rango = date('H') . ':00 – ' . str_pad((string)$nextHour, 2, '0', STR_PAD_LEFT) . ':00';
 
         $id = 'ticket_new_' . round(microtime(true) * 1000);
+        $firmaEntrega = $input['firmaEntrega'] ?? null;
+        $firmaRecepcion = $input['firmaRecepcion'] ?? null;
+        $entregadoPor = isset($input['entregadoPor']) ? Security::sanitizeString($input['entregadoPor']) : null;
+        $recibidoPor = isset($input['recibidoPor']) ? Security::sanitizeString($input['recibidoPor']) : null;
+        $fechaFirma = isset($input['fechaFirma']) ? Security::sanitizeString($input['fechaFirma']) : ($firmaEntrega || $firmaRecepcion ? $now : null);
 
         $sql = "INSERT INTO tickets (
             id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon,
-            tipo_solicitud, estado, descripcion_solucion, responsable, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            tipo_solicitud, estado, descripcion_solucion, responsable, 
+            firma_entrega, firma_recepcion, entregado_por, recibido_por, fecha_firma,
+            created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $id, '2026-2', $dateNow, $diaNow, $timeNow, $rango, $ambiente, $piso, $pabellon,
-            $tipoSolicitud, $estado, $descripcion, $responsable, $now, $now
+            $tipoSolicitud, $estado, $descripcion, $responsable,
+            $firmaEntrega, $firmaRecepcion, $entregadoPor, $recibidoPor, $fechaFirma,
+            $now, $now
         ]);
 
         http_response_code(201);
@@ -108,6 +117,11 @@ class TicketsController {
                 'estado' => $estado,
                 'descripcionSolucion' => $descripcion,
                 'responsable' => $responsable,
+                'firmaEntrega' => $firmaEntrega,
+                'firmaRecepcion' => $firmaRecepcion,
+                'entregadoPor' => $entregadoPor,
+                'recibidoPor' => $recibidoPor,
+                'fechaFirma' => $fechaFirma,
                 'createdAt' => $now
             ]
         ], JSON_UNESCAPED_UNICODE);
@@ -133,6 +147,31 @@ class TicketsController {
         if (isset($input['responsable'])) {
             $fields[] = "responsable = ?";
             $params[] = Security::sanitizeString($input['responsable']);
+        }
+
+        if (array_key_exists('firmaEntrega', $input)) {
+            $fields[] = "firma_entrega = ?";
+            $params[] = $input['firmaEntrega'];
+        }
+
+        if (array_key_exists('firmaRecepcion', $input)) {
+            $fields[] = "firma_recepcion = ?";
+            $params[] = $input['firmaRecepcion'];
+        }
+
+        if (array_key_exists('entregadoPor', $input)) {
+            $fields[] = "entregado_por = ?";
+            $params[] = Security::sanitizeString($input['entregadoPor'] ?? '');
+        }
+
+        if (array_key_exists('recibidoPor', $input)) {
+            $fields[] = "recibido_por = ?";
+            $params[] = Security::sanitizeString($input['recibidoPor'] ?? '');
+        }
+
+        if (array_key_exists('fechaFirma', $input)) {
+            $fields[] = "fecha_firma = ?";
+            $params[] = Security::sanitizeString($input['fechaFirma'] ?? '');
         }
 
         if (empty($fields)) {
@@ -182,6 +221,11 @@ class TicketsController {
             'estado' => $r['estado'],
             'descripcionSolucion' => $r['descripcion_solucion'],
             'responsable' => $r['responsable'],
+            'firmaEntrega' => $r['firma_entrega'] ?? null,
+            'firmaRecepcion' => $r['firma_recepcion'] ?? null,
+            'entregadoPor' => $r['entregado_por'] ?? null,
+            'recibidoPor' => $r['recibido_por'] ?? null,
+            'fechaFirma' => $r['fecha_firma'] ?? null,
             'createdAt' => $r['created_at']
         ];
     }
