@@ -39,29 +39,11 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   const [submittingLoan, setSubmittingLoan] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Assistant Saved Signature State
-  const [savedStaffSign, setSavedStaffSign] = useState(() => {
-    try {
-      return localStorage.getItem('upn_staff_signature') || null;
-    } catch (e) {
-      return null;
-    }
-  });
-  const [savedStaffName, setSavedStaffName] = useState(() => {
-    try {
-      return localStorage.getItem('upn_staff_name') || 'OPERACIONES SEDE';
-    } catch (e) {
-      return 'OPERACIONES SEDE';
-    }
-  });
-  const [isEditingStaffSign, setIsEditingStaffSign] = useState(!savedStaffSign);
-
-  // Inline Signature Controls on Cards (Zero popups!)
+  // Inline Card Signing (Zero popups!)
   const [inlineSignTicketId, setInlineSignTicketId] = useState(null);
   const [inlineReceiveTicketId, setInlineReceiveTicketId] = useState(null);
 
   // Signature canvas refs
-  const asistenteFormSignRef = useRef(null);
   const solicitanteFormSignRef = useRef(null);
   const cardSignCanvasRef = useRef(null);
   const returnSignCanvasRef = useRef(null);
@@ -112,23 +94,18 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     return serverTickets.map(t => {
       let fEntrega = t.firmaEntrega;
       let fRecepcion = t.firmaRecepcion;
-      let fDevolucion = t.firmaDevolucion;
       try {
         if (!fEntrega && typeof localStorage !== 'undefined') {
-          fEntrega = localStorage.getItem(`upn_sign_entrega_${t.id}`) || localStorage.getItem('upn_staff_signature');
+          fEntrega = localStorage.getItem(`upn_sign_entrega_${t.id}`);
         }
         if (!fRecepcion && typeof localStorage !== 'undefined') {
           fRecepcion = localStorage.getItem(`upn_sign_recepcion_${t.id}`);
-        }
-        if (!fDevolucion && typeof localStorage !== 'undefined') {
-          fDevolucion = localStorage.getItem(`upn_sign_devolucion_${t.id}`);
         }
       } catch (e) {}
       return {
         ...t,
         firmaEntrega: fEntrega || null,
-        firmaRecepcion: fRecepcion || null,
-        firmaDevolucion: fDevolucion || null
+        firmaRecepcion: fRecepcion || null
       };
     });
   };
@@ -186,17 +163,19 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   // 1-Tap PDF download (directly downloads official slip voucher, NO MODAL!)
   const handleQuickDownloadPdf = (e, ticket) => {
     e.stopPropagation();
+    const ben = parseBeneficiary(ticket.descripcionSolucion);
+    const recipientName = ticket.recibidoPor || ben.name || 'Docente / Solicitante';
+
     generateCargoPdf({
       ticket,
-      entregadoPor: ticket.entregadoPor || ticket.responsable || savedStaffName || 'OPERACIONES SEDE',
-      recibidoPor: ticket.recibidoPor || parseBeneficiary(ticket.descripcionSolucion).name || 'Docente / Solicitante',
-      firmaEntrega: ticket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${ticket.id}`) || savedStaffSign : null),
-      firmaRecepcion: ticket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${ticket.id}`) : null),
-      firmaDevolucion: ticket.firmaDevolucion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_devolucion_${ticket.id}`) : null)
+      entregadoPor: recipientName,
+      recibidoPor: recipientName,
+      firmaEntrega: ticket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${ticket.id}`) : null),
+      firmaRecepcion: ticket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${ticket.id}`) : null)
     });
   };
 
-  // Direct 1-Tap Loan Registration with Dual Signatures (Asistente + Solicitante)
+  // Dinámica Paso 1: El docente/alumno firma que RECIBE el material ("Recibí")
   const handleRegisterLoan = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
@@ -229,20 +208,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     const prefix = beneficiaryType === 'ALUMNO' ? `[🎓 ALUMNO${personTag}]` : `[👨‍🏫 DOCENTE${personTag}]`;
     const finalDesc = `${prefix} ${matDesc}`;
 
-    // Capturar Firma Asistente (Entregué)
-    let finalFirmaEntrega = null;
-    if (asistenteFormSignRef.current && asistenteFormSignRef.current.hasContent()) {
-      finalFirmaEntrega = asistenteFormSignRef.current.getDataUrl();
-      // Guardar como firma predeterminada del asistente en este equipo
-      try {
-        localStorage.setItem('upn_staff_signature', finalFirmaEntrega);
-        setSavedStaffSign(finalFirmaEntrega);
-      } catch (err) {}
-    } else if (savedStaffSign) {
-      finalFirmaEntrega = savedStaffSign;
-    }
-
-    // Capturar Firma Solicitante (Recibí)
+    // Capturar Firma del Solicitante que recibe el material ("Recibí conforme")
     const finalFirmaRecepcion = solicitanteFormSignRef.current ? solicitanteFormSignRef.current.getDataUrl() : null;
 
     const payload = {
@@ -254,8 +220,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       estado: 'EN PROCESO',
       descripcionSolucion: finalDesc,
       rango: '',
-      firmaEntrega: finalFirmaEntrega,
-      entregadoPor: savedStaffName || 'OPERACIONES SEDE',
+      firmaEntrega: null, // Se firmará al devolver ("Entregué")
+      entregadoPor: personName.trim() ? personName.trim().toUpperCase() : '',
       firmaRecepcion: finalFirmaRecepcion,
       recibidoPor: personName.trim() ? personName.trim().toUpperCase() : ''
     };
@@ -270,15 +236,14 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       const json = await res.json();
       if (json.success) {
         const createdTicket = json.data;
-        if (finalFirmaEntrega) {
-          try { localStorage.setItem(`upn_sign_entrega_${createdTicket.id}`, finalFirmaEntrega); } catch (e) {}
-        }
         if (finalFirmaRecepcion) {
-          try { localStorage.setItem(`upn_sign_recepcion_${createdTicket.id}`, finalFirmaRecepcion); } catch (e) {}
+          try { 
+            localStorage.setItem(`upn_sign_recepcion_${createdTicket.id}`, finalFirmaRecepcion); 
+          } catch (e) {}
         }
 
         setTickets(prev => [createdTicket, ...prev]);
-        setToastMessage(`✅ Préstamo registrado con firmas`);
+        setToastMessage(`✅ Préstamo registrado (Firma de Recibí guardada)`);
         
         // Reset form
         setPersonName('');
@@ -286,8 +251,6 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         setManualItemText('');
         setSelectedMaterialVal('PLUMONES');
         if (solicitanteFormSignRef.current) solicitanteFormSignRef.current.clear();
-        if (asistenteFormSignRef.current) asistenteFormSignRef.current.clear();
-        setIsEditingStaffSign(false);
         setActiveViewTab('ACTIVOS');
         setTimeout(() => setToastMessage(''), 2500);
       }
@@ -300,16 +263,14 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     }
   };
 
-  // Guardar firma de recepción de devolución (INLINE en la tarjeta, CERO POPUPS!)
+  // Dinámica Paso 2: Al devolver el objeto, el docente/alumno vuelve a firmar ("Entregué")
   const handleConfirmReturnWithSignature = async (ticket) => {
     const drawnReturnSign = returnSignCanvasRef.current ? returnSignCanvasRef.current.getDataUrl() : null;
     
     try {
       if (drawnReturnSign) {
-        localStorage.setItem(`upn_sign_devolucion_${ticket.id}`, drawnReturnSign);
-        if (!ticket.firmaRecepcion) {
-          localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, drawnReturnSign);
-        }
+        // Esta firma certifica que el docente/alumno ENTREGÓ el material de vuelta
+        localStorage.setItem(`upn_sign_entrega_${ticket.id}`, drawnReturnSign);
       }
     } catch (e) {}
 
@@ -322,14 +283,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     const updates = { 
       estado: 'ATENDIDO',
       descripcionSolucion: newDesc,
-      firmaDevolucion: drawnReturnSign,
-      firmaRecepcion: ticket.firmaRecepcion || drawnReturnSign,
-      fechaDevolucion: now.toISOString()
+      firmaEntrega: drawnReturnSign, // Firma de devolución ("Entregué")
+      fechaFirma: now.toISOString()
     };
 
     setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
     setInlineReceiveTicketId(null);
-    setToastMessage('✅ Material devuelto y firmado con éxito');
+    setToastMessage('✅ Material devuelto y firmado (Entregué) con éxito');
     setTimeout(() => setToastMessage(''), 2500);
 
     try {
@@ -343,7 +303,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     }
   };
 
-  // Recibir devolución directa sin firma (por si el docente tuvo que salir rápido)
+  // Recibir devolución directa sin firma (por si el docente tuvo que salir de prisa)
   const handleMarkReturnedDirect = async (ticket) => {
     const updates = { 
       estado: 'ATENDIDO',
@@ -368,7 +328,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     }
   };
 
-  // Guardar firma pendiente del solicitante en la tarjeta
+  // Guardar firma pendiente del solicitante (Recibí) en la tarjeta
   const handleSaveCardSignature = async (ticketId) => {
     const drawnSignature = cardSignCanvasRef.current ? cardSignCanvasRef.current.getDataUrl() : null;
     if (!drawnSignature) {
@@ -383,7 +343,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     const updates = { firmaRecepcion: drawnSignature };
     setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...updates } : t));
     setInlineSignTicketId(null);
-    setToastMessage('✅ Firma guardada en el comprobante');
+    setToastMessage('✅ Firma de recepción guardada');
     setTimeout(() => setToastMessage(''), 2500);
 
     try {
@@ -492,7 +452,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       </div>
 
       {/* =========================================================================
-          FORMULARIO ÁGIL Y DIRECTO (1 SOLO BLOQUE INLINE, CERO VENTANAS)
+          FORMULARIO ÁGIL: PASO 1 (DOCENTE O ALUMNO FIRMA QUE RECIBIÓ EL OBJETO)
           ========================================================================= */}
       <div className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-xs">
         <form onSubmit={handleRegisterLoan} className="space-y-2.5">
@@ -582,54 +542,15 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             />
           )}
 
-          {/* Fila 3: DOBLE FIRMA DIGITAL INLINE (Asistente que entrega + Solicitante que recibe) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
-            {/* 1. Asistente que entrega */}
-            <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5">
-                  <PenTool className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Firma Asistente (Entregué)</span>
-                </span>
-                {savedStaffSign && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingStaffSign(!isEditingStaffSign)}
-                    className="text-[10px] text-amber-600 dark:text-amber-400 font-bold hover:underline"
-                  >
-                    {isEditingStaffSign ? 'Usar guardada' : 'Redibujar'}
-                  </button>
-                )}
-              </div>
-
-              {savedStaffSign && !isEditingStaffSign ? (
-                <div className="h-[95px] flex flex-col items-center justify-center bg-white dark:bg-zinc-950 rounded-xl border border-dashed border-emerald-300 dark:border-emerald-800/80 p-2 text-center select-none">
-                  <img src={savedStaffSign} alt="Firma Asistente" className="max-h-[55px] object-contain mb-1" />
-                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                    ✓ {savedStaffName || 'OPERACIONES SEDE'}
-                  </span>
-                </div>
-              ) : (
-                <SignatureCanvas
-                  ref={asistenteFormSignRef}
-                  title="Firma Asistente"
-                  subtitle="Firme aquí (Asistente de operaciones)"
-                  height={95}
-                  compact={true}
-                />
-              )}
-            </div>
-
-            {/* 2. Solicitante que recibe */}
-            <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-1.5">
-              <SignatureCanvas
-                ref={solicitanteFormSignRef}
-                title="Firma Solicitante (Recibí)"
-                subtitle="Firme aquí con el dedo (Docente o Alumno)"
-                height={95}
-                compact={true}
-              />
-            </div>
+          {/* Fila 3: Firma 1 (El Solicitante firma que RECIBE el objeto) */}
+          <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-1">
+            <SignatureCanvas
+              ref={solicitanteFormSignRef}
+              title="Firma del Solicitante (Recibí conforme)"
+              subtitle="El docente o alumno firma con el dedo certificando que recibe el material"
+              height={100}
+              compact={true}
+            />
           </div>
 
           {/* Botón Único de Registro (1 Toque) */}
@@ -639,7 +560,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             className="w-full h-11 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
           >
             <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-            <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo con Firmas'}</span>
+            <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo (Firmado: Recibí)'}</span>
           </button>
         </form>
       </div>
@@ -679,7 +600,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           <div className="text-center py-12 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200 dark:border-zinc-800 px-4">
             <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-1.5 stroke-[2.2]" />
             <p className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-              No hay préstamos activos pendientes
+              No hay préstamos activos pendientes de devolución
             </p>
           </div>
         ) : (
@@ -716,19 +637,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       {ticket.tipoSolicitud}
                     </p>
 
-                    {/* Estado de Firmas */}
+                    {/* Estado de Firma Inicial (Recibí) */}
                     <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                      {ticket.firmaEntrega && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800/60">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                          <span>Asistente firmó</span>
-                        </span>
-                      )}
-
                       {ticket.firmaRecepcion ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
                           <Check className="w-3 h-3 stroke-[3]" />
-                          <span>Solicitante firmó</span>
+                          <span>Recibí firmado por solicitante</span>
                         </span>
                       ) : isSigningInline ? null : (
                         <button
@@ -737,17 +651,17 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                           className="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60 transition inline-flex items-center gap-1 active:scale-95"
                         >
                           <PenTool className="w-3 h-3 text-amber-500" />
-                          <span>Falta firma solicitante</span>
+                          <span>✍️ Firmar Recibí pendiente</span>
                         </button>
                       )}
                     </div>
 
-                    {/* Panel de Firma Solicitante en Tarjeta */}
+                    {/* Panel de Firma Inicial si faltaba firmar el Recibí */}
                     {isSigningInline && (
                       <div className="my-2 p-2 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-2">
                         <SignatureCanvas
                           ref={cardSignCanvasRef}
-                          title="Firma del Solicitante"
+                          title="Firma del Solicitante (Recibí conforme)"
                           height={90}
                           compact={true}
                         />
@@ -770,13 +684,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       </div>
                     )}
 
-                    {/* Panel de Recepción de Devolución con Firma (INLINE en la tarjeta!) */}
+                    {/* PASO 2: Panel de Devolución (El solicitante firma que ENTREGÓ de vuelta el material) */}
                     {isReceivingInline && (
                       <div className="my-2 p-2.5 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-2">
                         <SignatureCanvas
                           ref={returnSignCanvasRef}
-                          title="Firma de Recepción / Devolución"
-                          subtitle="Firme para certificar la devolución conforme del material"
+                          title="Firma de Devolución (Entregué)"
+                          subtitle="El docente o alumno firma aquí certificando que entregó el material"
                           height={95}
                           compact={true}
                         />
@@ -787,7 +701,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                             className="flex-1 h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-xs"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
-                            <span>Confirmar Devolución Firmada</span>
+                            <span>Confirmar Devolución (Firmado: Entregué)</span>
                           </button>
                           <button
                             type="button"
@@ -825,10 +739,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       type="button"
                       onClick={() => setInlineReceiveTicketId(ticket.id)}
                       className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
-                      title="Recibir material devuelto con firma de conformidad"
+                      title="Registrar devolución: el docente o alumno vuelve a firmar en Entregué"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.4]" />
-                      <span>Recibir Devolución</span>
+                      <span>Recibir Devolución (Firmar: Entregué)</span>
                     </button>
 
                     <button
@@ -880,16 +794,21 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       {ticket.tipoSolicitud}
                     </p>
 
-                    {/* Badges de firmas en el historial */}
+                    {/* Doble firma completada */}
                     <div className="flex items-center gap-1 flex-wrap mb-2">
-                      {ticket.firmaEntrega && (
-                        <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/60">
-                          ✓ Asistente firmó
+                      {ticket.firmaRecepcion && (
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
+                          ✓ Recibí firmado
                         </span>
                       )}
-                      {(ticket.firmaRecepcion || ticket.firmaDevolucion) && (
-                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
-                          ✓ Devolución firmada
+                      {ticket.firmaEntrega && (
+                        <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/60">
+                          ✓ Entregué firmado
+                        </span>
+                      )}
+                      {ticket.firmaRecepcion && ticket.firmaEntrega && (
+                        <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60">
+                          ★ Doble firma completa
                         </span>
                       )}
                     </div>

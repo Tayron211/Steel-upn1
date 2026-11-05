@@ -168,7 +168,7 @@ export function generateCargoPdf({
   // 7. Pie de Firmas y Fecha/Hora (Alineado proporcionalmente en formato rectangular)
   const footerY = 73;
 
-  // --- Izquierda: ENTREGUÉ (Operaciones Sede) ---
+  // --- Izquierda: ENTREGUÉ (Docente o Alumno al devolver el material) ---
   const leftX = m + 10;
   const leftWidth = 50;
 
@@ -190,7 +190,7 @@ export function generateCargoPdf({
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(71, 85, 105);
-  doc.text((entregadoPor || ticket.entregadoPor || 'OPERACIONES SEDE').slice(0, 30), leftX + leftWidth / 2, footerY + 7.5, { align: 'center' });
+  doc.text(recipientName.slice(0, 30), leftX + leftWidth / 2, footerY + 7.5, { align: 'center' });
 
   // --- Centro: FECHA y HORA ---
   const centerX = pageWidth / 2;
@@ -213,14 +213,14 @@ export function generateCargoPdf({
   const timeStr = ticket.horaReporte || '--:--';
   doc.text(`Hora:  ${timeStr}`, centerX, footerY + 5, { align: 'center' });
 
-  if (ticket.estado === 'ATENDIDO' || ticket.firmaDevolucion) {
+  if (ticket.estado === 'ATENDIDO' || finalFirmaEntrega) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.setTextColor(22, 101, 52);
-    doc.text('✓ DEVOLUCIÓN REGISTRADA', centerX, footerY + 8.5, { align: 'center' });
+    doc.text('✓ DEVOLUCIÓN CONFORME', centerX, footerY + 8.5, { align: 'center' });
   }
 
-  // --- Derecha: RECIBÍ CONFORME (Docente / Alumno) ---
+  // --- Derecha: RECIBÍ CONFORME (Docente o Alumno al recibir el préstamo) ---
   const rightX = pageWidth - m - 10 - leftWidth;
 
   if (finalFirmaRecepcion) {
