@@ -32,7 +32,7 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
         document.body
       )}
 
-      <div className="fixed bottom-22 right-4 sm:bottom-8 sm:right-8 z-[9995]">
+      <div className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-[9995]">
         {/* Apple-Style Speed Dial Options */}
         {isOpen && (
           <div className="absolute bottom-16 right-0 z-[9996] flex flex-col items-end gap-2.5 mb-2 pointer-events-auto">

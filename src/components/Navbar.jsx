@@ -101,8 +101,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         </div>
       </header>
 
-      {/* Clean 2D Frosted Glass Floating Bottom App Dock (Inside root for genuine backdrop blur diffusion) */}
-      <div className="fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
+      {/* Clean 2D Frosted Glass Floating Bottom App Dock (Exclusivo para móvil / APK, oculto en modo escritorio PC) */}
+      <div className="md:hidden fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
         <nav className="relative pointer-events-auto apple-liquid-glass-27 rounded-[28px] p-1.5 grid grid-cols-4 shadow-2xl overflow-hidden select-none">
           {/* Botón deslizante activo con efecto Gota Ámbar Líquida */}
           <div
