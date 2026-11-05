@@ -14,6 +14,7 @@ class AttendanceController {
         $pabellon = isset($_GET['pabellon']) ? strtoupper(trim($_GET['pabellon'])) : '';
         $piso = isset($_GET['piso']) ? strtoupper(trim($_GET['piso'])) : '';
         $hora = isset($_GET['hora']) ? trim($_GET['hora']) : '';
+        $horaDesde = isset($_GET['hora_desde']) ? trim($_GET['hora_desde']) : '';
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
         $sql = "SELECT * FROM asistencia WHERE 1=1";
@@ -42,6 +43,9 @@ class AttendanceController {
         if (!empty($hora)) {
             $sql .= " AND hora_inicio_prog = ?";
             $params[] = $hora;
+        } elseif (!empty($horaDesde)) {
+            $sql .= " AND hora_inicio_prog >= ?";
+            $params[] = $horaDesde;
         }
 
         if (!empty($search)) {

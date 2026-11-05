@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --color-upn-lucuma: #FDBA30;
@@ -29,7 +31,7 @@ input, textarea, select {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Minimalist scrollbars */
+/* Minimalist scrollbars (Light & Dark AMOLED) */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -44,12 +46,19 @@ input, textarea, select {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
 
 /* =========================================================
    APPLE LIQUID GLASS & FLUID MICRO-INTERACTIONS
+   (AMOLED True Black & Crystal White support)
    ========================================================= */
 
-/* Apple Liquid Glass Dock Bar (Cristal esmerilado translúcido con cuerpo, no transparente) */
+/* Apple Liquid Glass Dock Bar */
 .apple-liquid-glass-27 {
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(28px) saturate(200%) brightness(102%);
@@ -63,7 +72,18 @@ input, textarea, select {
     inset 0 -1px 1px 0 rgba(0, 0, 0, 0.03);
 }
 
-/* Botón deslizante activo: PLANO (2D), tal como estaba antes, con esquinas simétricas menos redondeadas */
+.dark .apple-liquid-glass-27 {
+  background: rgba(10, 10, 14, 0.85);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 20px 48px -8px rgba(0, 0, 0, 0.9),
+    0 6px 18px -2px rgba(0, 0, 0, 0.6),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Botón deslizante activo: PLANO (2D) */
 .apple-liquid-slider {
   background: linear-gradient(180deg, #FFCA36 0%, #FDBA30 100%);
   border-radius: 16px;
@@ -86,6 +106,16 @@ input, textarea, select {
     inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
 }
 
+.dark .apple-liquid-glass {
+  background: rgba(12, 12, 16, 0.8);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 20px 48px -8px rgba(0, 0, 0, 0.8),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 /* Apple-style floating menu / speed-dial pill */
 .apple-liquid-pill {
   background: rgba(255, 255, 255, 0.82);
@@ -98,6 +128,16 @@ input, textarea, select {
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
 }
 
+.dark .apple-liquid-pill {
+  background: rgba(14, 14, 18, 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 12px 32px -4px rgba(0, 0, 0, 0.7),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+}
+
 /* Apple-style modals and bottom sheets */
 .apple-liquid-modal {
   background: rgba(255, 255, 255, 0.96);
@@ -108,6 +148,16 @@ input, textarea, select {
     0 32px 72px -16px rgba(15, 23, 42, 0.22),
     0 12px 28px -6px rgba(15, 23, 42, 0.1),
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 1);
+}
+
+.dark .apple-liquid-modal {
+  background: rgba(12, 12, 16, 0.96);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 
+    0 32px 72px -16px rgba(0, 0, 0, 0.9),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* Fluid Keyframe Animations with Apple Easing (cubic-bezier(0.16, 1, 0.3, 1)) */

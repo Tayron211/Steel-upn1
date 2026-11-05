@@ -17,6 +17,7 @@ import {
   Sparkles,
   Edit3
 } from 'lucide-react';
+import ToastBanner from './ToastBanner';
 
 const DEFAULT_BASE_ITEMS = [
   { label: '🖊️ Plumones y Mota', val: 'PLUMONES', name: 'PLUMONES / MATERIALES', defaultDesc: 'Préstamo de plumones y mota acrílica' },
@@ -449,48 +450,46 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   }, [filteredTickets]);
 
   return (
-    <div className="space-y-4 pb-36 md:pb-12 max-w-5xl mx-auto">
-      {/* Toast Alert */}
+    <div className="space-y-4 pb-36 md:pb-12 w-full max-w-7xl mx-auto">
+      {/* Toast Alert - Portaled to viewport body so it never scrolls out of view */}
       {toastMessage && (
-        <div className="fixed top-16 inset-x-4 max-w-sm mx-auto z-50 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-200">
-          <span>{toastMessage}</span>
-          <button onClick={() => setToastMessage('')} className="p-1 text-slate-400 hover:text-white">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <ToastBanner
+          message={toastMessage}
+          onClose={() => setToastMessage('')}
+        />
       )}
 
       {/* =========================================================================
           PANEL DE CONTROL UNIFICADO Y CENTRADO
           (Botones 100% centrados y soporte para items manuales)
           ========================================================================= */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
         {/* Cabecera + Conmutador Simétrico */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
           <div>
-            <h1 className="text-base sm:text-lg font-black text-slate-950 tracking-tight flex items-center gap-2">
+            <h1 className="text-base sm:text-lg font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-2">
               <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4]" />
               <span>Control de Préstamos de Material</span>
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
               Entrega y devolución de materiales (plumones, HDMI, llaves, adaptadores) para <strong>Docentes</strong> y <strong>Alumnos</strong>
             </p>
           </div>
 
           {/* Selector de Pestañas Activos vs Concluidos */}
-          <div className="grid grid-cols-2 gap-1.5 bg-slate-100/90 p-1 rounded-2xl sm:w-80 shrink-0">
+          <div className="grid grid-cols-2 gap-1.5 bg-slate-100/90 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800 p-1 rounded-2xl sm:w-80 shrink-0">
             <button
               onClick={() => setActiveViewTab('ACTIVOS')}
               className={`h-9 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 active:scale-95 ${
                 activeViewTab === 'ACTIVOS'
-                  ? 'bg-white text-slate-950 font-black shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
               <span>Activos</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeViewTab === 'ACTIVOS' ? 'bg-[#FDBA30] text-slate-950' : 'bg-slate-200 text-slate-700'
+                activeViewTab === 'ACTIVOS' ? 'bg-[#FDBA30] text-slate-950' : 'bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200'
               }`}>
                 {activeLoans.length}
               </span>
@@ -500,14 +499,14 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               onClick={() => setActiveViewTab('CONCLUIDOS')}
               className={`h-9 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 active:scale-95 ${
                 activeViewTab === 'CONCLUIDOS'
-                  ? 'bg-white text-slate-950 font-black shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 stroke-[2.4]" />
               <span>Devueltos</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeViewTab === 'CONCLUIDOS' ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-700'
+                activeViewTab === 'CONCLUIDOS' ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200'
               }`}>
                 {concludedLoans.length}
               </span>
@@ -518,19 +517,19 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         {/* Formulario Rápido de Entrega */}
         <form onSubmit={handleRegisterLoan} className="space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">
               Registrar Nueva Entrega
             </span>
 
             {/* Beneficiario Toggle: Docente vs Alumno (Simetría 50/50 y Centrado) */}
-            <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/70 w-full sm:w-64">
+            <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-2xl border border-slate-200/70 dark:border-zinc-800 w-full sm:w-64">
               <button
                 type="button"
                 onClick={() => setBeneficiaryType('DOCENTE')}
                 className={`h-8 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
                   beneficiaryType === 'DOCENTE'
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <User className="w-3.5 h-3.5 stroke-[2.4]" />
@@ -543,7 +542,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 className={`h-8 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
                   beneficiaryType === 'ALUMNO'
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <GraduationCap className="w-4 h-4 stroke-[2.4]" />
@@ -561,7 +560,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 value={roomInput}
                 onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
                 placeholder="Aula (Ej: A202)"
-                className="w-full h-11 px-3.5 font-mono font-black text-sm bg-slate-50 border border-slate-300 rounded-2xl text-slate-950 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
+                className="w-full h-11 px-3.5 font-mono font-black text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-750 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
               />
             </div>
 
@@ -571,14 +570,14 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
                 placeholder={beneficiaryType === 'ALUMNO' ? 'Nombre o Código del Alumno (Opcional)' : 'Nombre del Docente (Opcional)'}
-                className="w-full h-11 px-3.5 text-xs bg-slate-50 border border-slate-300 rounded-2xl text-slate-950 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 transition"
+                className="w-full h-11 px-3.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-750 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 transition"
               />
             </div>
           </div>
 
           {/* Botones de Material (100% Centrados y Simétricos) */}
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1.5">
+            <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-tight mb-1.5">
               Material a entregar (Selecciona o escribe manualmente):
             </div>
 
@@ -593,8 +592,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     onClick={() => setSelectedMaterialVal(t.val)}
                     className={`min-h-[44px] py-2 px-2.5 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border text-center relative w-full min-w-0 ${
                       isSelected
-                        ? 'bg-slate-950 text-white border-slate-950 font-black shadow-xs ring-2 ring-amber-400/40'
-                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200/90'
+                        ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
+                        : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-850 border-slate-200/90 dark:border-zinc-800'
                     }`}
                   >
                     <span className="break-words leading-tight text-center">{t.label}</span>
@@ -617,9 +616,9 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
           {/* Campo de Entrada Manual si seleccionó "Otro (Manual)" */}
           {selectedMaterialVal === 'MANUAL' && (
-            <div className="bg-amber-50/80 border-2 border-amber-300 rounded-2xl p-3.5 space-y-2 animate-scale-up">
-              <label className="block text-[11px] font-black uppercase text-amber-950 flex items-center gap-1.5">
-                <Edit3 className="w-3.5 h-3.5 text-amber-700" />
+            <div className="bg-amber-50/80 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800 rounded-2xl p-3.5 space-y-2 animate-scale-up">
+              <label className="block text-[11px] font-black uppercase text-amber-950 dark:text-amber-300 flex items-center gap-1.5">
+                <Edit3 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                 <span>Especificar Material Manualmente:</span>
               </label>
 
@@ -631,16 +630,16 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 value={manualItemText}
                 onChange={(e) => setManualItemText(e.target.value)}
                 placeholder="Ej: Extensión eléctrica, Parlante Bluetooth, Puntero láser, Adaptador Apple..."
-                className="w-full h-11 px-3.5 text-xs font-bold bg-white border border-amber-300 rounded-xl text-slate-950 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                className="w-full h-11 px-3.5 text-xs font-bold bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-800 rounded-xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
               />
 
               <div className="flex items-center gap-2 pt-0.5">
-                <label className="inline-flex items-center gap-2 text-xs font-bold text-amber-950 cursor-pointer select-none">
+                <label className="inline-flex items-center gap-2 text-xs font-bold text-amber-950 dark:text-amber-300 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={saveAsQuickItem}
                     onChange={(e) => setSaveAsQuickItem(e.target.checked)}
-                    className="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-400"
+                    className="w-4 h-4 text-amber-500 rounded border-slate-300 dark:border-zinc-700 focus:ring-amber-400"
                   />
                   <span>Guardar como botón rápido permanente</span>
                 </label>
@@ -661,7 +660,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         </form>
 
         {/* Buscador y Filtros Rápidos */}
-        <div className="pt-3 border-t border-slate-100 space-y-2">
+        <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2">
           <div className="relative w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 stroke-[2.2]" />
             <input
@@ -669,12 +668,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por aula (A201), material (plumón, HDMI) o beneficiario..."
-              className="w-full pl-10 pr-9 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
+              className="w-full pl-10 pr-9 py-2 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161c] focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 p-0.5"
+                className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
                 title="Limpiar búsqueda"
               >
                 <X className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -688,8 +687,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               onClick={() => { setFilterTipo(''); setFilterBeneficiary(''); }}
               className={`h-7 px-3 rounded-lg font-bold transition active:scale-95 ${
                 !filterTipo && !filterBeneficiary 
-                  ? 'bg-slate-900 text-white font-black' 
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black' 
+                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
               }`}
             >
               Todos ({filteredTickets.length})
@@ -700,7 +699,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                 filterBeneficiary === 'DOCENTE'
                   ? 'bg-amber-400 text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 border border-slate-200/80 dark:border-zinc-800'
               }`}
             >
               👨‍🏫 Docentes
@@ -711,7 +710,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                 filterBeneficiary === 'ALUMNO'
                   ? 'bg-indigo-600 text-white font-black shadow-2xs'
-                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 border border-slate-200/80 dark:border-zinc-800'
               }`}
             >
               🎓 Alumnos
@@ -723,8 +722,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 onClick={() => setFilterTipo(filterTipo === t.val ? '' : t.val)}
                 className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                   filterTipo === t.val
-                    ? 'bg-slate-900 text-white font-black'
-                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70'
+                    ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
+                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 border border-slate-200/70 dark:border-zinc-800'
                 }`}
               >
                 {t.label}
@@ -738,21 +737,21 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           LISTADO DE PRÉSTAMOS ACTIVOS / HISTORIAL
           ========================================================================= */}
       {loading ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
           <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
-          <p className="text-xs font-semibold text-slate-500">Cargando préstamos...</p>
+          <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Cargando préstamos...</p>
         </div>
       ) : activeViewTab === 'ACTIVOS' ? (
         /* ================= TAB 1: PRÉSTAMOS ACTIVOS ================= */
         activeLoans.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 shadow-xs px-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center mb-2.5">
+          <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center mb-2.5">
               <CheckCircle2 className="w-6 h-6 stroke-[2.2]" />
             </div>
-            <p className="text-sm font-bold text-slate-800">
+            <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">
               No hay préstamos activos pendientes de devolución
             </p>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
               Todos los materiales prestados a alumnos y docentes han sido recibidos.
             </p>
           </div>
@@ -766,16 +765,16 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-all"
                 >
                   <div>
                     {/* Header de la tarjeta */}
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-black text-sm bg-slate-900 text-white px-2.5 py-0.5 rounded-xl shadow-xs">
+                        <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-xl shadow-xs">
                           {ticket.ambiente || 'AULA'}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-600 uppercase bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase bg-slate-100 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-750 px-2 py-0.5 rounded-lg">
                           Pab. {ticket.pabellon || 'A'} · {ticket.piso || 'Sede'}
                         </span>
                       </div>
@@ -790,28 +789,28 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
                     {/* Material Prestado */}
                     <div className="mb-2.5">
-                      <div className="text-xs font-black text-slate-900 tracking-tight flex items-center gap-1">
+                      <div className="text-xs font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-1">
                         <span>{ticket.tipoSolicitud}</span>
                       </div>
                       {cleanNote && (
-                        <p className="text-xs text-slate-600 font-medium leading-relaxed mt-1 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                        <p className="text-xs text-slate-600 dark:text-zinc-300 font-medium leading-relaxed mt-1 bg-slate-50 dark:bg-[#121216] p-2 rounded-xl border border-slate-100 dark:border-zinc-800">
                           {cleanNote}
                         </p>
                       )}
                     </div>
 
                     {/* Meta info: hora de entrega */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3 pt-2 border-t border-slate-100">
-                      <span className="flex items-center gap-1 text-slate-500">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500 mb-3 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-zinc-400">
                         <Clock className="w-3 h-3 stroke-[2.2]" />
                         <span>Entregado: {ticket.horaReporte || '--:--'}</span>
                       </span>
-                      <span className="font-mono text-slate-400">{ticket.fecha}</span>
+                      <span className="font-mono text-slate-400 dark:text-zinc-500">{ticket.fecha}</span>
                     </div>
                   </div>
 
                   {/* Botón de 1 Toque para Recibir Devolución */}
-                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800">
                     {isPending ? (
                       <>
                         <button
@@ -840,7 +839,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
                     <button
                       onClick={() => handleDelete(ticket.id)}
-                      className="w-11 h-11 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition inline-flex items-center justify-center border border-slate-200/80 active:scale-95 shrink-0"
+                      className="w-11 h-11 rounded-xl text-slate-400 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200/80 dark:border-zinc-800 active:scale-95 shrink-0"
                       title="Eliminar registro"
                     >
                       <Trash2 className="w-4 h-4 stroke-[2.2]" />
@@ -854,8 +853,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       ) : (
         /* ================= TAB 2: HISTORIAL DE DEVUELTOS ================= */
         concludedLoans.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 shadow-xs px-4">
-            <p className="text-sm font-bold text-slate-800">No hay préstamos concluidos con este filtro</p>
+          <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
+            <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">No hay préstamos concluidos con este filtro</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

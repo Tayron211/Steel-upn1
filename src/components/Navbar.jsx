@@ -4,11 +4,13 @@ import {
   HandHelping, 
   Layers, 
   BarChart3,
-  Clock
+  Clock,
+  Sun,
+  Moon
 } from 'lucide-react';
 import UpnLogo from './UpnLogo';
 
-export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount }) {
+export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, darkMode, onToggleDarkMode }) {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -31,17 +33,33 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount })
 
   return (
     <>
-      {/* Native App Top Bar with Official Clean UPN Branding */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 safe-top">
+      {/* Native App Top Bar with Official Clean UPN Branding - AMOLED Ready */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-black/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-zinc-850/80 safe-top transition-colors">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between">
           {/* Official UPN Identity Brand */}
           <div className="flex items-center min-w-0">
             <UpnLogo variant="horizontal" />
           </div>
 
-          {/* Header Right: Apple Minimalist Live Clock Pill */}
+          {/* Header Right: AMOLED Toggle + Apple Minimalist Live Clock Pill */}
           <div className="flex items-center space-x-2 shrink-0">
-            <div className="flex items-center gap-2 bg-slate-100/90 border border-slate-200/80 px-2.5 sm:px-3 py-1.5 rounded-full text-slate-800 shadow-2xs">
+            {/* Dark / Light Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={onToggleDarkMode}
+              className="h-8.5 w-8.5 sm:h-9 sm:w-9 rounded-full flex items-center justify-center transition-all active:scale-90 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-amber-400 shadow-2xs"
+              title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro AMOLED'}
+              aria-label="Alternar modo de pantalla"
+            >
+              {darkMode ? (
+                <Sun className="w-4 h-4 stroke-[2.4] text-amber-400 animate-pulse" />
+              ) : (
+                <Moon className="w-4 h-4 stroke-[2.3] text-slate-700" />
+              )}
+            </button>
+
+            {/* Live Clock Pill */}
+            <div className="flex items-center gap-2 bg-slate-100/90 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-2.5 sm:px-3 py-1.5 rounded-full text-slate-800 dark:text-zinc-200 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="text-[11px] font-bold tracking-tight">
                 {currentDayName} {formattedTime}
@@ -51,7 +69,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount })
         </div>
 
         {/* Desktop / Tablet Navigation Strip */}
-        <div className="hidden md:block max-w-7xl mx-auto px-6 pb-2.5 pt-1 border-t border-slate-100">
+        <div className="hidden md:block max-w-7xl mx-auto px-6 pb-2.5 pt-1 border-t border-slate-100 dark:border-zinc-900">
           <div className="flex items-center space-x-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -63,10 +81,10 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount })
                   className={`inline-flex items-center justify-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
                     isActive
                       ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_10px_rgba(253,186,48,0.35)] font-extrabold scale-[1.02]'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-900'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 stroke-[2.2] ${isActive ? 'text-slate-950 stroke-[2.5]' : 'text-slate-500'}`} />
+                  <Icon className={`w-4 h-4 stroke-[2.2] ${isActive ? 'text-slate-950 stroke-[2.5]' : 'text-slate-500 dark:text-zinc-400'}`} />
                   <span>{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
@@ -84,7 +102,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount })
 
       {/* iOS Liquid Glass Floating Bottom App Dock - Simetría Squircle (Menos Redondeada) */}
       <div className="md:hidden fixed bottom-4 inset-x-4 z-50 max-w-sm mx-auto pointer-events-none safe-bottom">
-        <nav className="relative pointer-events-auto apple-liquid-glass-27 rounded-[22px] p-1.5 grid grid-cols-4 ring-1 ring-slate-900/5 shadow-2xl overflow-hidden select-none">
+        <nav className="relative pointer-events-auto apple-liquid-glass-27 rounded-[22px] p-1.5 grid grid-cols-4 ring-1 ring-slate-900/5 dark:ring-white/10 shadow-2xl overflow-hidden select-none">
           {/* Botón deslizante activo plano: esquinas simétricas menos redondeadas */}
           <div
             className="apple-liquid-slider absolute top-1.5 bottom-1.5 rounded-[16px] pointer-events-none z-0"
@@ -109,14 +127,14 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount })
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isActive 
                       ? 'text-slate-950 stroke-[2.6] scale-110' 
-                      : 'text-slate-500 hover:text-slate-800 stroke-[1.9]'
+                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white stroke-[1.9]'
                   }`} 
                 />
                 <span 
                   className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
                     isActive 
                       ? 'font-black text-slate-950' 
-                      : 'font-semibold text-slate-500 hover:text-slate-800'
+                      : 'font-semibold text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white'
                   }`}
                 >
                   {item.label}

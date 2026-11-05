@@ -33,6 +33,28 @@ export default function App() {
   });
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
 
+  // AMOLED Dark Mode State with LocalStorage Persistence
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('upn_theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('upn_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('upn_theme', 'light');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
+
   // Cross-module states
   const [newTicketPrefill, setNewTicketPrefill] = useState(null);
   const [manualSheetPrefill, setManualSheetPrefill] = useState(null);
@@ -191,16 +213,18 @@ export default function App() {
 
   return (
     <div 
-      className="min-h-screen bg-slate-50 flex flex-col text-slate-800 selection:bg-amber-400 selection:text-slate-950"
+      className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950 transition-colors duration-200"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top Mobile/Desktop App Header */}
+      {/* Top Mobile/Desktop App Header with AMOLED Mode Toggle */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={(tab) => navigateTab(tab, true)}
         pendingTicketsCount={pendingTicketsCount}
         onResetData={handleResetData}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
       />
 
       {/* Main Fluid App Container */}

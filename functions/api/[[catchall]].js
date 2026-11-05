@@ -49,6 +49,7 @@ export async function onRequest(context) {
       const pabellon = url.searchParams.get('pabellon');
       const piso = url.searchParams.get('piso');
       const hora = url.searchParams.get('hora');
+      const horaDesde = url.searchParams.get('hora_desde');
       const search = url.searchParams.get('search');
 
       let query = 'SELECT * FROM asistencia WHERE 1=1';
@@ -74,6 +75,9 @@ export async function onRequest(context) {
       if (hora) {
         query += ' AND hora_inicio_prog = ?';
         params.push(hora);
+      } else if (horaDesde) {
+        query += ' AND hora_inicio_prog >= ?';
+        params.push(horaDesde);
       }
       if (search) {
         query += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR nrc LIKE ?)';

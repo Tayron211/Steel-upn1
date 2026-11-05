@@ -41,16 +41,16 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
       {/* Institutional Typography Descriptor */}
       <div className="flex flex-col text-left justify-center">
         <div className="flex items-center gap-1.5 leading-none">
-          <span className="text-[13px] sm:text-[14px] font-black tracking-tight text-slate-900 font-['Space_Grotesk',sans-serif]">
+          <span className="text-[13px] sm:text-[14px] font-black tracking-tight text-slate-900 dark:text-white font-['Space_Grotesk',sans-serif]">
             Control Docente
           </span>
         </div>
         <div className="flex items-center gap-1.5 mt-1">
-          <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded tracking-wide font-mono">
+          <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border border-amber-200/80 dark:border-amber-800/80 px-1.5 py-0.5 rounded tracking-wide font-mono">
             SEDE COMAS
           </span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="text-[10px] font-medium text-slate-500 hidden sm:inline">
+          <span className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 hidden sm:inline">
             Operaciones
           </span>
         </div>

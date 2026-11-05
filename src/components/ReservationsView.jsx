@@ -12,6 +12,9 @@ import {
   Flame,
   X
 } from 'lucide-react';
+import ToastBanner from './ToastBanner';
+import CustomDatePicker from './CustomDatePicker';
+import CustomSelect from './CustomSelect';
 
 export default function ReservationsView() {
   const [reservas, setReservas] = useState([]);
@@ -19,6 +22,7 @@ export default function ReservationsView() {
   const [search, setSearch] = useState('');
   const [selectedDia, setSelectedDia] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
@@ -74,11 +78,15 @@ export default function ReservationsView() {
       const json = await res.json();
       if (json.success) {
         setReservas(prev => [json.data, ...prev]);
+        setToastMessage(`✅ Reserva en Aula ${formData.aula} registrada`);
+        setTimeout(() => setToastMessage(''), 3000);
         setIsModalOpen(false);
         resetForm();
       }
     } catch (err) {
       console.error(err);
+      setToastMessage('❌ Error al registrar reserva');
+      setTimeout(() => setToastMessage(''), 3000);
     }
   };
 
@@ -101,6 +109,8 @@ export default function ReservationsView() {
   const handleDelete = async (id) => {
     if (!confirm('¿Seguro que deseas cancelar esta reserva?')) return;
     setReservas(prev => prev.filter(r => r.id !== id));
+    setToastMessage('✅ Reserva cancelada');
+    setTimeout(() => setToastMessage(''), 3000);
     await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
   };
 
@@ -119,15 +129,23 @@ export default function ReservationsView() {
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <ToastBanner
+          message={toastMessage}
+          onClose={() => setToastMessage('')}
+        />
+      )}
+
       {/* Top Banner - Light Minimalist */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+      <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Espacios & Talleres</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Espacios & Talleres</span>
             </div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Reservas de Ambientes</h1>
+            <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Reservas de Ambientes</h1>
           </div>
 
           <button
@@ -150,12 +168,12 @@ export default function ReservationsView() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por aula (A201), docente solicitante o detalle..."
-            className="w-full pl-10 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+            className="w-full pl-10 pr-8 py-2 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161b] focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
           />
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
             >
               <X className="w-3.5 h-3.5 stroke-[2.2]" />
             </button>
@@ -165,15 +183,15 @@ export default function ReservationsView() {
 
       {/* Grid of Reservation Cards */}
       {loading ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
           <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
-          <p className="text-xs font-semibold text-slate-500">Cargando reservas programadas...</p>
+          <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Cargando reservas programadas...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-xs px-4">
-          <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-2 stroke-[1.8]" />
-          <p className="text-sm font-bold text-slate-700">No se encontraron reservas</p>
-          <p className="text-xs text-slate-400 mt-0.5">No hay reservas registradas para los filtros aplicados.</p>
+        <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
+          <Calendar className="w-10 h-10 text-slate-300 dark:text-zinc-650 mx-auto mb-2 stroke-[1.8]" />
+          <p className="text-sm font-bold text-slate-700 dark:text-zinc-200">No se encontraron reservas</p>
+          <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">No hay reservas registradas para los filtros aplicados.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -184,57 +202,57 @@ export default function ReservationsView() {
                 key={r.id}
                 className={`rounded-2xl p-4 border transition-all shadow-xs flex flex-col justify-between ${
                   isImportante 
-                    ? 'bg-amber-50/40 border-amber-200' 
-                    : 'bg-white border-slate-200/90 hover:border-slate-300'
+                    ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/60' 
+                    : 'bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700'
                 }`}
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-black text-slate-900 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-xl font-mono tracking-tight">
+                      <span className="text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight">
                         {r.aula}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-500">
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
                         {r.ubicacion || 'UPN Comas'}
                       </span>
                     </div>
 
                     <span className={`inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                       isImportante 
-                        ? 'bg-amber-100 text-amber-900 border-amber-300' 
-                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                        ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800/80' 
+                        : 'bg-slate-100 dark:bg-zinc-850 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-750'
                     }`}>
-                      {isImportante && <Flame className="w-3 h-3 text-amber-600 stroke-[2.2]" />}
+                      {isImportante && <Flame className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />}
                       <span>{r.prioridad || 'NORMAL'}</span>
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/70 mb-3">
-                    <span className="text-slate-600 font-semibold">
+                  <div className="flex items-center justify-between text-xs font-mono bg-slate-50 dark:bg-[#121216] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-800 mb-3">
+                    <span className="text-slate-600 dark:text-zinc-300 font-semibold">
                       {r.dia} · {r.fecha}
                     </span>
-                    <span className="text-slate-900 font-bold inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-amber-600 stroke-[2.2]" />
+                    <span className="text-slate-900 dark:text-white font-bold inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
                       <span>{r.inicio} - {r.final}</span>
                     </span>
                   </div>
 
                   <div className="space-y-1 mb-3">
-                    <div className="text-xs font-bold text-slate-900 inline-flex items-start gap-1.5 w-full">
-                      <User className="w-3.5 h-3.5 text-slate-400 stroke-[2.2] shrink-0 mt-0.5" />
+                    <div className="text-xs font-bold text-slate-900 dark:text-white inline-flex items-start gap-1.5 w-full">
+                      <User className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 stroke-[2.2] shrink-0 mt-0.5" />
                       <span className="break-words leading-tight">{r.docente || 'Solicitante no especificado'}</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 pl-5 font-medium leading-relaxed break-words" title={r.detalle}>
+                    <p className="text-[11px] text-slate-600 dark:text-zinc-400 pl-5 font-medium leading-relaxed break-words" title={r.detalle}>
                       {r.detalle || 'Sin detalle de actividad.'}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Por: <strong className="text-slate-700 font-semibold">{r.usuario}</strong></span>
+                <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500">
+                  <span>Por: <strong className="text-slate-700 dark:text-zinc-300 font-semibold">{r.usuario}</strong></span>
                   <button
                     onClick={() => handleDelete(r.id)}
-                    className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition inline-flex items-center justify-center"
+                    className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center"
                     title="Cancelar Reserva"
                   >
                     <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -253,19 +271,19 @@ export default function ReservationsView() {
           onClick={() => setIsModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 max-h-[90vh] overflow-y-auto animate-spring-up"
+            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto animate-spring-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800 mb-4">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center shadow-xs shrink-0">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs shrink-0">
                   <Calendar className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base font-black text-slate-950 tracking-tight leading-tight">
+                  <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
                     Nueva Reserva de Ambiente
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                     Préstamo de aula o laboratorio con horario definido
                   </p>
                 </div>
@@ -273,7 +291,7 @@ export default function ReservationsView() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -283,106 +301,104 @@ export default function ReservationsView() {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Aula *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Aula *</label>
                   <input
                     type="text"
                     required
                     value={formData.aula}
                     onChange={(e) => setFormData({ ...formData, aula: e.target.value.toUpperCase() })}
                     placeholder="Ej: A201"
-                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition uppercase font-mono font-bold"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition uppercase font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Fecha *</label>
-                  <input
-                    type="date"
-                    required
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Fecha *</label>
+                  <CustomDatePicker
                     value={formData.fecha}
-                    onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    onChange={(val) => setFormData({ ...formData, fecha: val })}
+                    required
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Hora Inicio *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Hora Inicio *</label>
                   <input
                     type="time"
                     required
                     value={formData.inicio}
                     onChange={(e) => setFormData({ ...formData, inicio: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Hora Final *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Hora Final *</label>
                   <input
                     type="time"
                     required
                     value={formData.final}
                     onChange={(e) => setFormData({ ...formData, final: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Docente / Solicitante *</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Docente / Solicitante *</label>
                 <input
                   type="text"
                   required
                   value={formData.docente}
                   onChange={(e) => setFormData({ ...formData, docente: e.target.value })}
                   placeholder="Apellidos y Nombres"
-                  className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Detalle / Motivo *</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Detalle / Motivo *</label>
                 <textarea
                   rows="2.5"
                   required
                   value={formData.detalle}
                   onChange={(e) => setFormData({ ...formData, detalle: e.target.value })}
                   placeholder="Ej: Uso de laboratorio para taller práctico de arquitectura..."
-                  className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Prioridad</label>
-                  <select
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Prioridad</label>
+                  <CustomSelect
                     value={formData.prioridad}
-                    onChange={(e) => setFormData({ ...formData, prioridad: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-                  >
-                    <option value="NORMAL">Normal</option>
-                    <option value="IMPORTANTE">Importante / Evento</option>
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, prioridad: val })}
+                    options={[
+                      { value: 'NORMAL', label: 'Normal' },
+                      { value: 'IMPORTANTE', label: 'Importante / Evento' }
+                    ]}
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Registrado por</label>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Registrado por</label>
                   <input
                     type="text"
                     value={formData.usuario}
                     onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/90 transition flex items-center justify-center text-center active:scale-95"
+                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 border border-slate-200/90 dark:border-zinc-750 transition flex items-center justify-center text-center active:scale-95"
                 >
                   Cancelar
                 </button>
