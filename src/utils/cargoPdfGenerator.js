@@ -89,7 +89,10 @@ export function generateCargoPdf({
   if (ticket.tipoSolicitud && !itemDetail.toUpperCase().includes(ticket.tipoSolicitud.toUpperCase())) {
     itemDetail = `${ticket.tipoSolicitud} - ${itemDetail}`;
   }
-  const rawItemText = `[Aula ${ticket.ambiente || 'General'}] ${itemDetail}`.toUpperCase();
+  const roomPrefix = ticket.ambiente && ticket.ambiente !== 'DOCENCIA' && ticket.ambiente !== 'SEDE' && ticket.ambiente !== 'GENERAL'
+    ? `[Aula ${ticket.ambiente}] `
+    : (ticket.ambiente === 'DOCENCIA' ? '[Docencia Sede] ' : '');
+  const rawItemText = `${roomPrefix}${itemDetail}`.toUpperCase();
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -226,7 +229,7 @@ export function generateCargoPdf({
   doc.text(recipientName.slice(0, 28), rightX + leftWidth / 2, footerY + 9, { align: 'center' });
 
   // Trigger browser download
-  const fileName = `Acta_Cargo_${ticket.ambiente || 'AULA'}_${cargoNum}.pdf`;
+  const fileName = `Acta_Cargo_${ticket.ambiente || 'DOCENCIA'}_${cargoNum}.pdf`;
   doc.save(fileName);
 }
 

@@ -146,7 +146,7 @@ export default function App() {
     if (!e.touches || e.touches.length !== 1) return;
     const touch = e.touches[0];
 
-    // Detect if gesture originates inside horizontally scrollable container, input, or modal
+    // Detect if gesture originates inside horizontally scrollable container, canvas, input, or modal
     let target = e.target;
     let isIgnored = false;
     while (target && target !== document.body) {
@@ -154,9 +154,13 @@ export default function App() {
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.tagName === 'SELECT' ||
+        target.tagName === 'CANVAS' ||
+        target.closest?.('canvas') ||
         target.classList.contains('overflow-x-auto') ||
         target.getAttribute('role') === 'dialog' ||
-        target.classList.contains('apple-liquid-modal')
+        target.classList.contains('apple-liquid-modal') ||
+        target.closest?.('[role="dialog"]') ||
+        target.closest?.('.fixed')
       ) {
         isIgnored = true;
         break;
@@ -183,7 +187,12 @@ export default function App() {
   };
 
   const handleTouchEnd = (e) => {
+    // Si se tocó un canvas, modal, input, o si hay un canvas en pantalla, nunca cambiar de pestaña
     if (touchRef.current.isIgnored || !e.changedTouches || e.changedTouches.length !== 1) return;
+    if (typeof document !== 'undefined' && (document.querySelector('canvas') || document.querySelector('[role="dialog"]'))) {
+      return;
+    }
+
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - touchRef.current.startX;
     const deltaY = touch.clientY - touchRef.current.startY;

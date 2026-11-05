@@ -94,6 +94,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
   // Drawing event handlers
   const startDrawing = (e) => {
+    if (e.stopPropagation) e.stopPropagation();
     if (e.cancelable && e.type.startsWith('touch')) {
       e.preventDefault();
     }
@@ -110,6 +111,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
   };
 
   const draw = (e) => {
+    if (e.stopPropagation) e.stopPropagation();
     if (!isDrawingRef.current) return;
     if (e.cancelable && e.type.startsWith('touch')) {
       e.preventDefault();
@@ -124,6 +126,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
   };
 
   const stopDrawing = (e) => {
+    if (e.stopPropagation) e.stopPropagation();
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
     if (onSignChange) {
@@ -184,6 +187,9 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
       <div 
         ref={containerRef}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
         className="w-full relative rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 shadow-inner select-none transition-colors"
         style={{ touchAction: 'none' }}
       >

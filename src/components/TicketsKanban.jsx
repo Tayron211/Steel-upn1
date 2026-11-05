@@ -287,14 +287,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   // =========================================================================
   const handleRegisterLoan = async (e, shouldOpenSignModal = false) => {
     if (e && e.preventDefault) e.preventDefault();
-    const cleanRoom = roomInput.trim().toUpperCase();
-    if (!cleanRoom) {
-      setToastMessage('⚠️ Ingresa el código de Aula (Ej: A201)');
-      setTimeout(() => setToastMessage(''), 2500);
-      const el = document.getElementById('unified-room-input');
-      if (el) el.focus();
-      return;
-    }
+    
+    // El Aula es opcional (no se exige obligatoriedad al prestar a docentes o personal)
+    const rawRoom = roomInput.trim().toUpperCase();
+    const cleanRoom = rawRoom || (beneficiaryType === 'DOCENTE' ? 'DOCENCIA' : 'SEDE');
 
     // Material validation
     let matName = '';
@@ -322,8 +318,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     }
 
     setSubmittingLoan(true);
-    const pab = cleanRoom.startsWith('B') ? 'B' : 'A';
-    const floor = deduceFloor(cleanRoom);
+    const pab = cleanRoom.startsWith('B') ? 'B' : (cleanRoom.startsWith('A') ? 'A' : 'SEDE');
+    const floor = (cleanRoom === 'DOCENCIA' || cleanRoom === 'SEDE' || cleanRoom === 'GENERAL')
+      ? 'Sede'
+      : deduceFloor(cleanRoom);
 
     const personTag = personName.trim() ? `: ${personName.trim().toUpperCase()}` : '';
     const prefix = beneficiaryType === 'ALUMNO' 
@@ -370,7 +368,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         }
 
         setTickets(prev => [createdTicket, ...prev]);
-        setToastMessage(`✅ Préstamo a ${beneficiaryType === 'ALUMNO' ? 'Alumno' : 'Docente'} en Aula ${cleanRoom} registrado`);
+        const locLabel = rawRoom ? `en Aula ${rawRoom}` : `(${cleanRoom})`;
+        setToastMessage(`✅ Préstamo a ${beneficiaryType === 'ALUMNO' ? 'Alumno' : 'Docente'} ${locLabel} registrado`);
         setRoomInput('');
         setPersonName('');
         setManualItemText('');
@@ -640,8 +639,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 type="text"
                 value={roomInput}
                 onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                placeholder="Aula (Ej: A202)"
-                className="w-full h-11 px-3.5 font-mono font-black text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
+                placeholder="Aula / Espacio (Opcional, ej: A202)"
+                className="w-full h-11 px-3 font-mono font-bold text-xs sm:text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
               />
             </div>
 

@@ -250,10 +250,16 @@ export default function SignatureModal({
     <div 
       className="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center z-[9999] p-2 sm:p-4 animate-backdrop-fade"
       onClick={onClose}
+      onTouchStart={e => e.stopPropagation()}
+      onTouchMove={e => e.stopPropagation()}
+      onTouchEnd={e => e.stopPropagation()}
     >
       <div 
         className="bg-white dark:bg-[#0c0c0f] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[96vh] flex flex-col animate-spring-up overflow-hidden"
         onClick={e => e.stopPropagation()}
+        onTouchStart={e => e.stopPropagation()}
+        onTouchMove={e => e.stopPropagation()}
+        onTouchEnd={e => e.stopPropagation()}
       >
         {/* Top Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 shrink-0">
@@ -267,7 +273,7 @@ export default function SignatureModal({
                   Acta de Cargo Oficial
                 </h3>
                 <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-zinc-700">
-                  {ticket.ambiente || 'AULA'}
+                  {ticket.ambiente || 'DOCENCIA'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
