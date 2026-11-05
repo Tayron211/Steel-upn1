@@ -672,7 +672,20 @@ async function deleteReserva(id) {
 
 // Ambientes
 async function getAmbientes() {
-  return await query('SELECT * FROM ambientes ORDER BY pabellon ASC, abrv ASC');
+  return await query(`
+    SELECT * FROM ambientes 
+    ORDER BY pabellon ASC, 
+             CASE 
+               WHEN piso LIKE '%SÓT%' OR piso LIKE '%SOT%' THEN 0
+               WHEN piso LIKE '%1%' OR piso LIKE '%PRIMER%' THEN 1
+               WHEN piso LIKE '%2%' OR piso LIKE '%SEGUNDO%' THEN 2
+               WHEN piso LIKE '%3%' OR piso LIKE '%TERCER%' THEN 3
+               WHEN piso LIKE '%4%' OR piso LIKE '%CUARTO%' THEN 4
+               WHEN piso LIKE '%5%' OR piso LIKE '%QUINTO%' THEN 5
+               ELSE 6
+             END ASC, 
+             abrv ASC
+  `);
 }
 
 // Dashboard

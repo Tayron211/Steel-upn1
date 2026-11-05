@@ -23,81 +23,84 @@ import SignatureCanvas from './SignatureCanvas';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
 const CAMPUS_ROOMS = [
-  // Pabellón A - Sótano
-  { abrv: 'AS01', pabellon: 'A', piso: 'SÓTANO', tipo: 'LAB' },
-  { abrv: 'AS02', pabellon: 'A', piso: 'SÓTANO', tipo: 'TALLER' },
-  { abrv: 'AS03', pabellon: 'A', piso: 'SÓTANO', tipo: 'TALLER' },
-  { abrv: 'AS04', pabellon: 'A', piso: 'SÓTANO', tipo: 'LAB' },
-  { abrv: 'AS05', pabellon: 'A', piso: 'SÓTANO', tipo: 'LAB' },
-  // Pabellón A - 1er Piso
-  { abrv: 'A101', pabellon: 'A', piso: '1ER PISO', tipo: 'TALLER' },
-  // Pabellón A - 2do Piso
-  { abrv: 'A201', pabellon: 'A', piso: '2DO PISO', tipo: 'AULA' },
-  { abrv: 'A202', pabellon: 'A', piso: '2DO PISO', tipo: 'AULA' },
-  // Pabellón A - 3er Piso
-  { abrv: 'A301', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
-  { abrv: 'A302', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
-  { abrv: 'A303', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
-  { abrv: 'A304', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
-  { abrv: 'A305', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
-  { abrv: 'A306', pabellon: 'A', piso: '3ER PISO', tipo: 'AULA' },
-  // Pabellón A - 4to Piso
-  { abrv: 'A401', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
-  { abrv: 'A402', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
-  { abrv: 'A403', pabellon: 'A', piso: '4TO PISO', tipo: 'LAB' },
-  { abrv: 'A404', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
-  { abrv: 'A405', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
-  { abrv: 'A406', pabellon: 'A', piso: '4TO PISO', tipo: 'TALLER' },
-  { abrv: 'A407', pabellon: 'A', piso: '4TO PISO', tipo: 'AULA' },
-  { abrv: 'OFICINA', pabellon: 'A', piso: '4TO PISO', tipo: 'OFICINA' },
-  // Pabellón A - 5to Piso
-  { abrv: 'A501', pabellon: 'A', piso: '5TO PISO', tipo: 'AULA' },
-  { abrv: 'A502', pabellon: 'A', piso: '5TO PISO', tipo: 'AULA' },
-  { abrv: 'A503', pabellon: 'A', piso: '5TO PISO', tipo: 'LAB' },
-  { abrv: 'A504', pabellon: 'A', piso: '5TO PISO', tipo: 'LAB' },
-  { abrv: 'A505', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
-  { abrv: 'A506', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
-  { abrv: 'A507', pabellon: 'A', piso: '5TO PISO', tipo: 'TALLER' },
-  { abrv: 'A508', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
-  { abrv: 'A509', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
-  { abrv: 'A510', pabellon: 'A', piso: '5TO PISO', tipo: 'CÓMPUTO' },
-  // Pabellón B - 1er Piso
-  { abrv: 'B101', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
-  { abrv: 'B102', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
-  { abrv: 'B103', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
-  { abrv: 'B104', pabellon: 'B', piso: '1ER PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B105', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
-  { abrv: 'B106', pabellon: 'B', piso: '1ER PISO', tipo: 'TALLER' },
-  // Pabellón B - 2do Piso
-  { abrv: 'B201', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
-  { abrv: 'B202', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
-  { abrv: 'B203', pabellon: 'B', piso: '2DO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B204', pabellon: 'B', piso: '2DO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B205', pabellon: 'B', piso: '2DO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B206', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
-  { abrv: 'B207', pabellon: 'B', piso: '2DO PISO', tipo: 'AULA' },
-  // Pabellón B - 3er Piso
-  { abrv: 'B301', pabellon: 'B', piso: '3ER PISO', tipo: 'AULA' },
-  { abrv: 'B302', pabellon: 'B', piso: '3ER PISO', tipo: 'AULA' },
-  { abrv: 'B303', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B304', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B305', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B306', pabellon: 'B', piso: '3ER PISO', tipo: 'ARQUITECTURA' },
-  // Pabellón B - 4to Piso
-  { abrv: 'B401', pabellon: 'B', piso: '4TO PISO', tipo: 'AULA' },
-  { abrv: 'B402', pabellon: 'B', piso: '4TO PISO', tipo: 'AULA' },
-  { abrv: 'B403', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B404', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B405', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B406', pabellon: 'B', piso: '4TO PISO', tipo: 'ARQUITECTURA' },
-  // Pabellón B - 5to Piso
-  { abrv: 'B501', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
-  { abrv: 'B502', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
-  { abrv: 'B503', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
-  { abrv: 'B504', pabellon: 'B', piso: '5TO PISO', tipo: 'AULA' },
-  { abrv: 'B505', pabellon: 'B', piso: '5TO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B506', pabellon: 'B', piso: '5TO PISO', tipo: 'ARQUITECTURA' },
-  { abrv: 'B507', pabellon: 'B', piso: '5TO PISO', tipo: 'ARQUITECTURA' }
+  // --- PABELLÓN A ---
+  // Sótano
+  { abrv: 'AS01', nombre: 'Laboratorio ZAM AS-01', pabellon: 'A', piso: 'SÓTANO', pisoOrder: 0, categoria: 'LABORATORIO', tag: 'Lab. ZAM', aforo: 30 },
+  { abrv: 'AS02', nombre: 'Taller de Audio AS-02', pabellon: 'A', piso: 'SÓTANO', pisoOrder: 0, categoria: 'TALLER', tag: 'Taller Audio', aforo: 10 },
+  { abrv: 'AS03', nombre: 'Taller de Audio AS-03', pabellon: 'A', piso: 'SÓTANO', pisoOrder: 0, categoria: 'TALLER', tag: 'Taller Audio', aforo: 10 },
+  { abrv: 'AS04', nombre: 'Laboratorio de Fotografía AS-04', pabellon: 'A', piso: 'SÓTANO', pisoOrder: 0, categoria: 'LABORATORIO', tag: 'Lab. Foto', aforo: 20 },
+  { abrv: 'AS05', nombre: 'Laboratorio de Fotografía AS-05', pabellon: 'A', piso: 'SÓTANO', pisoOrder: 0, categoria: 'LABORATORIO', tag: 'Lab. Foto', aforo: 20 },
+  // 1er Piso
+  { abrv: 'A101', nombre: 'Taller de Edición A-101', pabellon: 'A', piso: '1ER PISO', pisoOrder: 1, categoria: 'TALLER', tag: 'Taller Edición', aforo: 21 },
+  // 2do Piso
+  { abrv: 'A201', nombre: 'Aula A-201', pabellon: 'A', piso: '2DO PISO', pisoOrder: 2, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A202', nombre: 'Aula A-202', pabellon: 'A', piso: '2DO PISO', pisoOrder: 2, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  // 3er Piso
+  { abrv: 'A301', nombre: 'Aula A-301', pabellon: 'A', piso: '3ER PISO', pisoOrder: 3, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A302', nombre: 'Aula A-302', pabellon: 'A', piso: '3ER PISO', pisoOrder: 3, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A303', nombre: 'Aula A-303', pabellon: 'A', piso: '3ER PISO', pisoOrder: 3, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A304', nombre: 'Aula A-304', pabellon: 'A', piso: '3ER PISO', pisoOrder: 3, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A305', nombre: 'Aula A-305', pabellon: 'A', piso: '3ER PISO', pisoOrder: 3, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A306', nombre: 'Sala de Conferencias A-306', pabellon: 'A', piso: '3ER PISO', pisoOrder: 3, categoria: 'ESPECIAL', tag: 'Conferencias', aforo: 60 },
+  // 4to Piso
+  { abrv: 'A401', nombre: 'Aula A-401', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A402', nombre: 'Aula A-402', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A403', nombre: 'Laboratorio de Diseño y Producción Digital A-403', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'LABORATORIO', tag: 'Lab. Diseño', aforo: 40 },
+  { abrv: 'A404', nombre: 'Aula A-404', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A405', nombre: 'Aula A-405', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'AULA', tag: 'Aula', aforo: 20 },
+  { abrv: 'A406', nombre: 'Aula de Litigación A-406', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'ESPECIAL', tag: 'Litigación', aforo: 37 },
+  { abrv: 'A407', nombre: 'Sala de Conferencias A-407', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'ESPECIAL', tag: 'Conferencias', aforo: 60 },
+  { abrv: 'OFICINA', nombre: 'Oficina de Operaciones', pabellon: 'A', piso: '4TO PISO', pisoOrder: 4, categoria: 'OFICINA', tag: 'Operaciones', aforo: 5 },
+  // 5to Piso
+  { abrv: 'A501', nombre: 'Aula A-501', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A502', nombre: 'Aula A-502', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'A503', nombre: 'Laboratorio de Diseño Gráfico A-503', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'LABORATORIO', tag: 'Lab. Diseño', aforo: 40 },
+  { abrv: 'A504', nombre: 'Laboratorio de Diseño Gráfico A-504', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'LABORATORIO', tag: 'Lab. Diseño', aforo: 40 },
+  { abrv: 'A505', nombre: 'Laboratorio de Cómputo A-505', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'LABORATORIO', tag: 'Lab. Cómputo', aforo: 40 },
+  { abrv: 'A506', nombre: 'Laboratorio de Cómputo A-506', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'LABORATORIO', tag: 'Lab. Cómputo', aforo: 40 },
+  { abrv: 'A507', nombre: 'Aula Multifuncional A-507', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'AULA', tag: 'Multifunción', aforo: 16 },
+  { abrv: 'A508', nombre: 'Laboratorio de Cómputo A-508', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'LABORATORIO', tag: 'Lab. Cómputo', aforo: 40 },
+  { abrv: 'A509', nombre: 'Laboratorio de Cómputo A-509', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'LABORATORIO', tag: 'Lab. Cómputo', aforo: 40 },
+  { abrv: 'A510', nombre: 'Laboratorio de Cómputo A-510', pabellon: 'A', piso: '5TO PISO', pisoOrder: 5, categoria: 'LABORATORIO', tag: 'Lab. Cómputo', aforo: 40 },
+
+  // --- PABELLÓN B ---
+  // 1er Piso
+  { abrv: 'B101', nombre: 'Laboratorio de Impresión 3D B-101', pabellon: 'B', piso: '1ER PISO', pisoOrder: 1, categoria: 'LABORATORIO', tag: 'Lab. 3D', aforo: 5 },
+  { abrv: 'B102', nombre: 'Taller de Creatividad B-102', pabellon: 'B', piso: '1ER PISO', pisoOrder: 1, categoria: 'TALLER', tag: 'Creatividad', aforo: 40 },
+  { abrv: 'B103', nombre: 'Taller de Diseño Industrial B-103', pabellon: 'B', piso: '1ER PISO', pisoOrder: 1, categoria: 'TALLER', tag: 'Taller', aforo: 30 },
+  { abrv: 'B104', nombre: 'Taller de Arquitectura y Dibujo B-104', pabellon: 'B', piso: '1ER PISO', pisoOrder: 1, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B105', nombre: 'Taller de Materiales de Construcción B-105', pabellon: 'B', piso: '1ER PISO', pisoOrder: 1, categoria: 'TALLER', tag: 'Materiales', aforo: 28 },
+  { abrv: 'B106', nombre: 'Taller de Soldadura B-106', pabellon: 'B', piso: '1ER PISO', pisoOrder: 1, categoria: 'TALLER', tag: 'Soldadura', aforo: 20 },
+  // 2do Piso
+  { abrv: 'B201', nombre: 'Aula B-201', pabellon: 'B', piso: '2DO PISO', pisoOrder: 2, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B202', nombre: 'Aula B-202', pabellon: 'B', piso: '2DO PISO', pisoOrder: 2, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B203', nombre: 'Taller de Arquitectura y Dibujo B-203', pabellon: 'B', piso: '2DO PISO', pisoOrder: 2, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B204', nombre: 'Taller de Arquitectura y Dibujo B-204', pabellon: 'B', piso: '2DO PISO', pisoOrder: 2, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B205', nombre: 'Taller de Arquitectura y Dibujo B-205', pabellon: 'B', piso: '2DO PISO', pisoOrder: 2, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B206', nombre: 'Aula B-206', pabellon: 'B', piso: '2DO PISO', pisoOrder: 2, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B207', nombre: 'Aula B-207', pabellon: 'B', piso: '2DO PISO', pisoOrder: 2, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  // 3er Piso
+  { abrv: 'B301', nombre: 'Aula B-301', pabellon: 'B', piso: '3ER PISO', pisoOrder: 3, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B302', nombre: 'Aula B-302', pabellon: 'B', piso: '3ER PISO', pisoOrder: 3, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B303', nombre: 'Taller de Arquitectura y Dibujo B-303', pabellon: 'B', piso: '3ER PISO', pisoOrder: 3, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B304', nombre: 'Taller de Arquitectura y Dibujo B-304', pabellon: 'B', piso: '3ER PISO', pisoOrder: 3, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B305', nombre: 'Taller de Arquitectura y Dibujo B-305', pabellon: 'B', piso: '3ER PISO', pisoOrder: 3, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B306', nombre: 'Taller de Arquitectura y Dibujo B-306', pabellon: 'B', piso: '3ER PISO', pisoOrder: 3, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  // 4to Piso
+  { abrv: 'B401', nombre: 'Aula B-401', pabellon: 'B', piso: '4TO PISO', pisoOrder: 4, categoria: 'AULA', tag: 'Aula', aforo: 20 },
+  { abrv: 'B402', nombre: 'Aula B-402', pabellon: 'B', piso: '4TO PISO', pisoOrder: 4, categoria: 'AULA', tag: 'Aula', aforo: 20 },
+  { abrv: 'B403', nombre: 'Taller de Arquitectura y Dibujo B-403', pabellon: 'B', piso: '4TO PISO', pisoOrder: 4, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B404', nombre: 'Taller de Arquitectura y Dibujo B-404', pabellon: 'B', piso: '4TO PISO', pisoOrder: 4, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B405', nombre: 'Taller de Arquitectura y Dibujo B-405', pabellon: 'B', piso: '4TO PISO', pisoOrder: 4, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B406', nombre: 'Taller de Arquitectura y Dibujo B-406', pabellon: 'B', piso: '4TO PISO', pisoOrder: 4, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  // 5to Piso
+  { abrv: 'B501', nombre: 'Aula B-501', pabellon: 'B', piso: '5TO PISO', pisoOrder: 5, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B502', nombre: 'Aula B-502', pabellon: 'B', piso: '5TO PISO', pisoOrder: 5, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B503', nombre: 'Aula B-503', pabellon: 'B', piso: '5TO PISO', pisoOrder: 5, categoria: 'AULA', tag: 'Aula', aforo: 20 },
+  { abrv: 'B504', nombre: 'Aula B-504', pabellon: 'B', piso: '5TO PISO', pisoOrder: 5, categoria: 'AULA', tag: 'Aula', aforo: 40 },
+  { abrv: 'B505', nombre: 'Taller de Arquitectura y Dibujo B-505', pabellon: 'B', piso: '5TO PISO', pisoOrder: 5, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B506', nombre: 'Taller de Arquitectura y Dibujo B-506', pabellon: 'B', piso: '5TO PISO', pisoOrder: 5, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 },
+  { abrv: 'B507', nombre: 'Taller de Arquitectura y Dibujo B-507', pabellon: 'B', piso: '5TO PISO', pisoOrder: 5, categoria: 'TALLER', tag: 'Taller Arq.', aforo: 40 }
 ];
 
 const CORE_MATERIALS = [
@@ -134,10 +137,11 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   // Search filter
   const [search, setSearch] = useState('');
 
-  // Classroom Calendar Picker State
+  // Classroom Calendar Picker State (Excel catalog & categorization)
   const [isRoomCalendarOpen, setIsRoomCalendarOpen] = useState(false);
   const [calendarPabellon, setCalendarPabellon] = useState('A'); // 'A' | 'B' | 'TODOS'
   const [calendarPiso, setCalendarPiso] = useState('TODOS');
+  const [calendarCategory, setCalendarCategory] = useState('TODOS'); // 'TODOS' | 'AULA' | 'LABORATORIO' | 'TALLER'
   const [calendarSearch, setCalendarSearch] = useState('');
   const [roomsList, setRoomsList] = useState(CAMPUS_ROOMS);
 
@@ -146,13 +150,42 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       .then(res => res.json())
       .then(json => {
         if (json.success && json.data && json.data.length > 0) {
-          const apiRooms = json.data.map(r => ({
-            abrv: r.abrv,
-            pabellon: r.pabellon || (r.abrv.startsWith('B') ? 'B' : 'A'),
-            piso: r.piso || '',
-            tipo: r.tipo ? (r.tipo.includes('LAB') ? 'LAB' : r.tipo.includes('TALLER') ? 'TALLER' : r.tipo.includes('CÓMP') ? 'CÓMPUTO' : 'AULA') : 'AULA'
-          }));
-          setRoomsList(apiRooms);
+          const roomMap = new Map(CAMPUS_ROOMS.map(r => [r.abrv, r]));
+          const merged = json.data.map(r => {
+            const existing = roomMap.get(r.abrv);
+            if (existing) {
+              return { 
+                ...existing, 
+                nombre: r.nombre || existing.nombre, 
+                piso: r.piso || existing.piso,
+                pabellon: r.pabellon || existing.pabellon,
+                aforo: r.aforo || existing.aforo 
+              };
+            }
+            const nLower = (r.nombre || '').toLowerCase();
+            const isLab = nLower.includes('laboratorio');
+            const isTaller = nLower.includes('taller');
+            let cat = isLab ? 'LABORATORIO' : isTaller ? 'TALLER' : 'AULA';
+            let tag = isLab ? 'Laboratorio' : isTaller ? 'Taller' : 'Aula';
+            if (nLower.includes('cómputo')) tag = 'Lab. Cómputo';
+            return {
+              abrv: r.abrv,
+              nombre: r.nombre || r.abrv,
+              pabellon: r.pabellon || (r.abrv.startsWith('B') ? 'B' : 'A'),
+              piso: r.piso || '',
+              pisoOrder: r.piso?.includes('SÓT') ? 0 : r.piso?.includes('1') ? 1 : r.piso?.includes('2') ? 2 : r.piso?.includes('3') ? 3 : r.piso?.includes('4') ? 4 : 5,
+              categoria: cat,
+              tag: tag,
+              aforo: r.aforo || 40
+            };
+          });
+
+          merged.sort((a, b) => {
+            if (a.pabellon !== b.pabellon) return a.pabellon.localeCompare(b.pabellon);
+            if (a.pisoOrder !== b.pisoOrder) return a.pisoOrder - b.pisoOrder;
+            return a.abrv.localeCompare(b.abrv);
+          });
+          setRoomsList(merged);
         }
       })
       .catch(() => {});
@@ -161,6 +194,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   const filteredCalendarRooms = useMemo(() => {
     return roomsList.filter(room => {
       if (calendarPabellon !== 'TODOS' && room.pabellon !== calendarPabellon) return false;
+      if (calendarCategory !== 'TODOS' && room.categoria !== calendarCategory) return false;
       if (calendarPiso !== 'TODOS') {
         const pNorm = (room.piso || '').toUpperCase();
         if (calendarPiso === 'SÓTANO' && !pNorm.includes('SÓT') && !pNorm.includes('SOT')) return false;
@@ -172,11 +206,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       }
       if (calendarSearch.trim()) {
         const q = calendarSearch.trim().toLowerCase();
-        return room.abrv.toLowerCase().includes(q) || (room.tipo && room.tipo.toLowerCase().includes(q));
+        return room.abrv.toLowerCase().includes(q) || 
+               (room.nombre && room.nombre.toLowerCase().includes(q)) ||
+               (room.tag && room.tag.toLowerCase().includes(q));
       }
       return true;
     });
-  }, [roomsList, calendarPabellon, calendarPiso, calendarSearch]);
+  }, [roomsList, calendarPabellon, calendarPiso, calendarCategory, calendarSearch]);
 
   const deduceFloor = (roomStr) => {
     const num = roomStr.replace(/\D/g, '');
@@ -1085,7 +1121,19 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar text-xs">
                 {['TODOS', 'SÓTANO', '1ER PISO', '2DO PISO', '3ER PISO', '4TO PISO', '5TO PISO'].map((pisoKey) => {
                   const isActive = calendarPiso === pisoKey;
-                  const label = pisoKey === 'TODOS' ? 'Todos' : pisoKey === 'SÓTANO' ? 'Sótano' : pisoKey.replace(' PISO', '°');
+                  const label = pisoKey === 'TODOS' 
+                    ? 'Todos los Pisos' 
+                    : pisoKey === 'SÓTANO' 
+                      ? 'Sótano' 
+                      : pisoKey === '1ER PISO' 
+                        ? 'Piso 1' 
+                        : pisoKey === '2DO PISO' 
+                          ? 'Piso 2' 
+                          : pisoKey === '3ER PISO' 
+                            ? 'Piso 3' 
+                            : pisoKey === '4TO PISO' 
+                              ? 'Piso 4' 
+                              : 'Piso 5';
                   return (
                     <button
                       key={pisoKey}
@@ -1103,6 +1151,32 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 })}
               </div>
 
+              {/* Filtro por Tipo de Ambiente (Aulas, Laboratorios, Talleres del Excel) */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+                {[
+                  { id: 'TODOS', label: 'Todos los Ambientes' },
+                  { id: 'AULA', label: '🏫 Aulas' },
+                  { id: 'LABORATORIO', label: '🔬 Laboratorios' },
+                  { id: 'TALLER', label: '📐 Talleres' }
+                ].map((cat) => {
+                  const isActive = calendarCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCalendarCategory(cat.id)}
+                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
+                        isActive
+                          ? 'bg-amber-400 text-slate-950 font-black shadow-xs ring-1 ring-amber-500/50'
+                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Buscador Rápido de Aula */}
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1110,7 +1184,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                   type="text"
                   value={calendarSearch}
                   onChange={(e) => setCalendarSearch(e.target.value)}
-                  placeholder="Filtrar por código (ej. 301, B202, AS01)..."
+                  placeholder="Filtrar por código o nombre (ej. 301, Cómputo, Foto, AS01)..."
                   className="w-full h-9 pl-9 pr-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 font-bold"
                 />
                 {calendarSearch && (
@@ -1136,17 +1210,22 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 sm:gap-2.5">
                   {filteredCalendarRooms.map((room) => {
                     const isSelected = roomInput === room.abrv;
+                    const isLab = room.categoria === 'LABORATORIO';
+                    const isTaller = room.categoria === 'TALLER';
+                    const isEspecial = room.categoria === 'ESPECIAL' || room.categoria === 'OFICINA';
+
                     return (
                       <button
                         key={room.abrv}
                         type="button"
+                        title={`${room.nombre} · ${room.piso} (${room.pabellon})`}
                         onClick={() => {
                           setRoomInput(room.abrv);
                           setIsRoomCalendarOpen(false);
-                          setToastMessage(`✅ Aula ${room.abrv} seleccionada`);
+                          setToastMessage(`✅ ${room.nombre || room.abrv} seleccionada`);
                           setTimeout(() => setToastMessage(''), 1800);
                         }}
-                        className={`p-2.5 rounded-2xl border transition-all duration-150 flex flex-col items-center justify-center text-center active:scale-95 group relative ${
+                        className={`p-2 sm:p-2.5 rounded-2xl border transition-all duration-150 flex flex-col items-center justify-center text-center active:scale-95 group relative ${
                           isSelected
                             ? 'bg-[#FDBA30] text-slate-950 border-[#FDBA30] shadow-md ring-2 ring-amber-400 font-black'
                             : 'bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 hover:bg-amber-50/40 dark:hover:bg-amber-950/20'
@@ -1157,15 +1236,44 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                         }`}>
                           {room.abrv}
                         </span>
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className={`text-[10px] font-bold leading-none truncate ${
-                            isSelected ? 'text-slate-900' : 'text-slate-500 dark:text-zinc-400'
-                          }`}>
-                            {room.piso ? room.piso.replace(' PISO', '') : `Pab ${room.pabellon}`}
-                          </span>
+
+                        {/* Subtítulo dinámico con data del Excel: AULA, LABORATORIO, TALLER (SIN TEXTOS DE PISO COMO TERCER, CUARTO) */}
+                        <div className="mt-1">
+                          {isLab ? (
+                            <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md inline-block leading-tight ${
+                              isSelected
+                                ? 'bg-slate-950 text-sky-300'
+                                : 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800/60'
+                            }`}>
+                              {room.tag}
+                            </span>
+                          ) : isTaller ? (
+                            <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md inline-block leading-tight ${
+                              isSelected
+                                ? 'bg-slate-950 text-purple-300'
+                                : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60'
+                            }`}>
+                              {room.tag}
+                            </span>
+                          ) : isEspecial ? (
+                            <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md inline-block leading-tight ${
+                              isSelected
+                                ? 'bg-slate-950 text-amber-300'
+                                : 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60'
+                            }`}>
+                              {room.tag}
+                            </span>
+                          ) : (
+                            <span className={`text-[9.5px] font-bold leading-tight ${
+                              isSelected ? 'text-slate-900 font-black' : 'text-slate-400 dark:text-zinc-500'
+                            }`}>
+                              Aula
+                            </span>
+                          )}
                         </div>
+
                         {isSelected && (
-                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-slate-950 text-white flex items-center justify-center">
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-slate-950 text-white flex items-center justify-center shadow-xs">
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                           </div>
                         )}
