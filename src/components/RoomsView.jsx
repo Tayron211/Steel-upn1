@@ -118,7 +118,7 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
-          <Building2 className="w-10 h-10 text-slate-300 dark:text-zinc-650 mx-auto mb-2 stroke-[1.8]" />
+          <Building2 className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-2 stroke-[1.8]" />
           <p className="text-sm font-bold text-slate-700 dark:text-zinc-200">No se encontraron aulas</p>
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba con otro código o filtro de pabellón.</p>
         </div>
@@ -134,7 +134,7 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
                   <span className="text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight">
                     {room.abrv}
                   </span>
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase bg-slate-100 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-750 px-2 py-0.5 rounded-lg">
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2 py-0.5 rounded-lg">
                     Pab. {room.pabellon} · {room.piso || 'Sede'}
                   </span>
                 </div>

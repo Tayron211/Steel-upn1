@@ -407,7 +407,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
 
         {/* Row 2: Symmetrical Pavilion Switcher & 100% Visible Floor Grid */}
-        <div className="flex flex-col lg:flex-row items-stretch gap-2 pt-1 border-t border-slate-100 dark:border-zinc-850">
+        <div className="flex flex-col lg:flex-row items-stretch gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800">
           {/* Pavilion Toggle */}
           <div className="grid grid-cols-3 gap-1 bg-slate-100/90 dark:bg-zinc-900/90 p-1 rounded-2xl shrink-0 lg:w-72 border border-slate-200/60 dark:border-zinc-800">
             <button
@@ -564,7 +564,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             className={`h-7 px-2.5 rounded-lg text-xs font-bold transition whitespace-nowrap active:scale-95 ${
               blockMode === 'ALL' && !selectedHora
                 ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-850'
+                : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
             }`}
           >
             Todo el Día
@@ -591,7 +591,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
                     : isCurrent
                     ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80'
-                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-850'
+                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
                 }`}
                 title={`Ver clases de ${b.start} a ${b.end}`}
               >
@@ -603,7 +603,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
 
         {/* Row 5: KPI Status Filter Cards */}
-        <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-zinc-850 text-center">
+        <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800 text-center">
           <button
             onClick={() => {
               setViewMode('CLASSES');
@@ -612,7 +612,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             className={`py-2 px-1 rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 ${
               statusFilter === 'PUNTUAL' && viewMode === 'CLASSES'
                 ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm scale-[1.02]'
-                : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-850 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
             }`}
           >
             <span className="block text-[9px] font-bold uppercase tracking-tight">PUNTUAL</span>
@@ -627,7 +627,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             className={`py-2 px-1 rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 ${
               statusFilter === 'TARDE' && viewMode === 'CLASSES'
                 ? 'bg-[#FDBA30] text-slate-950 border-amber-500 shadow-sm font-black scale-[1.02]'
-                : 'bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 border-amber-200/70 dark:border-amber-850 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                : 'bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 border-amber-200/70 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40'
             }`}
           >
             <span className="block text-[9px] font-bold uppercase tracking-tight">TARDE</span>
@@ -642,7 +642,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             className={`py-2 px-1 rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 ${
               statusFilter === 'FALTA' && viewMode === 'CLASSES'
                 ? 'bg-rose-600 text-white border-rose-600 shadow-sm scale-[1.02]'
-                : 'bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-300 border-rose-200/70 dark:border-rose-850 hover:bg-rose-100 dark:hover:bg-rose-900/40'
+                : 'bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-300 border-rose-200/70 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40'
             }`}
           >
             <span className="block text-[9px] font-bold uppercase tracking-tight">FALTA</span>
@@ -809,13 +809,19 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     {/* Top Bar: Aula, Pabellón, Estado y Menú 3 puntos */}
                     <div className="flex items-center justify-between gap-1.5 mb-1.5">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
-                          {item.aula}
-                        </span>
+                        {item.aula && item.aula.trim() ? (
+                          <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
+                            {item.aula}
+                          </span>
+                        ) : (
+                          <span className="font-mono font-bold text-xs bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
+                            S/A
+                          </span>
+                        )}
                         <span className="font-mono font-bold text-[10px] text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800/80 px-1.5 py-0.5 rounded-md shadow-2xs">
                           {item.horaInicioProg}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-300 uppercase bg-slate-100 dark:bg-zinc-850 border border-slate-200/80 dark:border-zinc-750 px-1.5 py-0.5 rounded-md">
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md">
                           {item.pisoPabellon || 'Campus'}
                         </span>
                       </div>
@@ -846,7 +852,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                           </span>
                         )}
                         {isPendiente && (
-                          <span className="text-[10px] font-semibold bg-slate-100 dark:bg-zinc-850 text-slate-500 dark:text-zinc-400 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-800">
+                          <span className="text-[10px] font-bold bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-800">
                             PENDIENTE
                           </span>
                         )}
@@ -870,17 +876,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                       </h3>
                       <div className="flex items-start justify-between gap-1 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
                         <span className="break-words leading-tight" title={item.curso}>{item.curso}</span>
-                        <span className="font-mono text-[10px] bg-slate-100 dark:bg-zinc-850 text-slate-600 dark:text-zinc-300 px-1 py-0.2 rounded border border-slate-200 dark:border-zinc-750 shrink-0">
+                        <span className="font-mono text-[10px] bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 px-1 py-0.2 rounded border border-slate-200 dark:border-zinc-800 shrink-0 font-bold">
                           NRC {item.nrc}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
                         <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-500 shrink-0" />
-                          <span>{item.horaInicioProg} - {item.horaFinalProg}</span>
+                          <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" />
+                          <span className="text-slate-600 dark:text-zinc-300 font-medium">{item.horaInicioProg} - {item.horaFinalProg}</span>
                         </span>
-                        <span className={item.horaInicioReal ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-400 dark:text-zinc-500'}>
+                        <span className={item.horaInicioReal ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-400 dark:text-zinc-400 font-medium'}>
                           Real: {item.horaInicioReal || '--:--'}
                         </span>
                       </div>
@@ -954,27 +960,27 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       {/* SECONDARY CLASSROOM ACTIONS SHEET (3-Dots Menu) */}
       {selectedClassOptions && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+          className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
           onClick={() => setSelectedClassOptions(null)}
         >
           <div 
-            className="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 animate-spring-up space-y-4 overflow-hidden"
+            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up space-y-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <span className="font-mono font-black text-xs bg-slate-900 text-white px-2.5 py-1 rounded-xl shadow-xs shrink-0">
-                  {selectedClassOptions.aula}
+                <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-1 rounded-xl shadow-xs shrink-0">
+                  {selectedClassOptions.aula || 'S/A'}
                 </span>
                 <div className="min-w-0">
-                  <div className="text-xs font-black text-slate-900 break-words leading-tight">{selectedClassOptions.docente}</div>
-                  <div className="text-[10px] text-slate-500 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}</div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{selectedClassOptions.docente}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}</div>
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => setSelectedClassOptions(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
               </button>
@@ -990,14 +996,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   setObservationText(item.observacion || '');
                   setReplaceTeacherName('');
                 }}
-                className="w-full p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/90 text-left flex items-center gap-3 transition active:scale-98"
+                className="w-full p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/90 dark:border-zinc-800 text-left flex items-center gap-3 transition active:scale-98"
               >
-                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900">Añadir Observación o Suplente</div>
-                  <div className="text-[10px] text-slate-500 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">Añadir Observación o Suplente</div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
                 </div>
               </button>
 
@@ -1010,14 +1016,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     onEmitManualSheet(item);
                   }
                 }}
-                className="w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200/90 text-left flex items-center gap-3 transition active:scale-98"
+                className="w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/70 border border-indigo-200/90 dark:border-indigo-800/80 text-left flex items-center gap-3 transition active:scale-98"
               >
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0">
                   <FileText className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-indigo-950">Ir a Hoja de Asistencia Manual</div>
-                  <div className="text-[10px] text-indigo-600 break-words leading-tight mt-0.5">Generar boleta prellenada en su apartado</div>
+                  <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200">Ir a Hoja de Asistencia Manual</div>
+                  <div className="text-[10px] text-indigo-600 dark:text-indigo-300 break-words leading-tight mt-0.5">Generar boleta prellenada en su apartado</div>
                 </div>
               </button>
 
@@ -1029,20 +1035,20 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   if (onOpenNewTicket) {
                     onOpenNewTicket({
                       ambiente: item.aula,
-                      pabellon: item.aula.startsWith('B') ? 'B' : 'A',
+                      pabellon: item.aula?.startsWith('B') ? 'B' : 'A',
                       tipo: 'PLUMONES / MATERIALES',
                       descripcion: `[👨‍🏫 DOCENTE: ${item.docente}] Préstamo en aula ${item.aula}`
                     });
                   }
                 }}
-                className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 border border-amber-200/90 text-left flex items-center gap-3 transition active:scale-98"
+                className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
               >
-                <div className="w-9 h-9 rounded-xl bg-amber-200 text-amber-950 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-300 flex items-center justify-center shrink-0">
                   <HandHelping className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-amber-950">Registrar Préstamo de Material</div>
-                  <div className="text-[10px] text-amber-700 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
+                  <div className="text-xs font-bold text-amber-950 dark:text-amber-200">Registrar Préstamo de Material</div>
+                  <div className="text-[10px] text-amber-700 dark:text-amber-300 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
                 </div>
               </button>
             </div>
@@ -1200,29 +1206,29 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         document.body
       )}
 
-      {/* Observation / Suplente Modal - 100% Symmetrical */}
+      {/* Observation / Suplente Modal - 100% Symmetrical with Full AMOLED Dark Mode */}
       {activeModalItem && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+          className="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
           onClick={() => setActiveModalItem(null)}
         >
           <div 
-            className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 animate-spring-up overflow-hidden"
+            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
               <div className="min-w-0 pr-2">
-                <h3 className="text-base font-black text-slate-950 tracking-tight leading-tight">
+                <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
                   Observación o Suplente
                 </h3>
-                <p className="text-xs text-slate-500 break-words mt-0.5">
-                  Aula <strong className="text-slate-900 font-mono">{activeModalItem.aula}</strong> · {activeModalItem.docente}
+                <p className="text-xs text-slate-500 dark:text-zinc-400 break-words mt-0.5">
+                  Aula <strong className="text-slate-900 dark:text-amber-400 font-mono">{activeModalItem.aula || 'S/A'}</strong> · {activeModalItem.docente}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveModalItem(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -1231,7 +1237,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
             <div className="space-y-3.5 mb-5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
                   Docente de Reemplazo (Opcional)
                 </label>
                 <input
@@ -1239,12 +1245,12 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   value={replaceTeacherName}
                   onChange={(e) => setReplaceTeacherName(e.target.value)}
                   placeholder="Ej: JUAN PEREZ GOMEZ"
-                  className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-2xl text-slate-950 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
+                  className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
                   Motivo o Detalle de Observación
                 </label>
                 <textarea
@@ -1252,16 +1258,16 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   value={observationText}
                   onChange={(e) => setObservationText(e.target.value)}
                   placeholder="Ej: Licencia médica, tráfico, adelanto de clase..."
-                  className="w-full p-3.5 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-2xl text-slate-950 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition resize-none"
+                  className="w-full p-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition resize-none"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setActiveModalItem(null)}
-                className="h-11 rounded-2xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/90 transition flex items-center justify-center text-center active:scale-95"
+                className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
               >
                 Cancelar
               </button>

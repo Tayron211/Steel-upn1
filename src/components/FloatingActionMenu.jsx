@@ -44,10 +44,10 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
                 onOpenNewTicket();
               }}
               style={{ animationDelay: '120ms' }}
-              className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:text-amber-800 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 hover:scale-105 select-none"
+              className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:text-amber-800 dark:hover:text-amber-300 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 dark:border-zinc-800 hover:scale-105 select-none"
             >
               <span className="tracking-tight">Nuevo Préstamo de Material</span>
-              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-900 inline-flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:bg-amber-200 transition-all">
+              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 inline-flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:bg-amber-200 dark:group-hover:bg-amber-900 transition-all">
                 <HandHelping className="w-4 h-4 stroke-[2.4]" />
               </div>
             </button>
@@ -60,10 +60,10 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
                 onOpenManualSheet();
               }}
               style={{ animationDelay: '70ms' }}
-              className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:text-indigo-800 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 hover:scale-105 select-none"
+              className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:text-indigo-800 dark:hover:text-indigo-300 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 dark:border-zinc-800 hover:scale-105 select-none"
             >
               <span className="tracking-tight">Emitir Hoja de Asistencia</span>
-              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 inline-flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:bg-indigo-200 transition-all">
+              <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 inline-flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900 transition-all">
                 <FileText className="w-4 h-4 stroke-[2.4]" />
               </div>
             </button>
@@ -76,10 +76,10 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
                 onOpenReservation();
               }}
               style={{ animationDelay: '20ms' }}
-              className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white text-slate-900 hover:text-emerald-800 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 hover:scale-105 select-none"
+              className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:text-emerald-800 dark:hover:text-emerald-300 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 dark:border-zinc-800 hover:scale-105 select-none"
             >
               <span className="tracking-tight">Nueva Reserva de Espacio</span>
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 inline-flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:bg-emerald-200 transition-all">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 inline-flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900 transition-all">
                 <Calendar className="w-4 h-4 stroke-[2.4]" />
               </div>
             </button>

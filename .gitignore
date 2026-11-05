@@ -30,3 +30,8 @@ Thumbs.db
 # Wrangler & Cloudflare
 .wrangler/
 
+# Local SQLite databases
+*.sqlite
+*.sqlite3
+database.sqlite
+

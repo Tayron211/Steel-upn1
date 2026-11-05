@@ -12,6 +12,25 @@
   -webkit-user-select: none;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+}
+
+html.dark, html.dark body {
+  background-color: #000000;
+  color: #f4f4f5;
+}
+
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
 /* Headings in Sharp / Space Grotesk geometry (Official UPN Style) */
 h1, h2, h3, .font-upn {
   font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;

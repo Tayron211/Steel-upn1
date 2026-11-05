@@ -560,7 +560,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 value={roomInput}
                 onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
                 placeholder="Aula (Ej: A202)"
-                className="w-full h-11 px-3.5 font-mono font-black text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-750 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
+                className="w-full h-11 px-3.5 font-mono font-black text-sm bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 uppercase text-center transition"
               />
             </div>
 
@@ -570,7 +570,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
                 placeholder={beneficiaryType === 'ALUMNO' ? 'Nombre o Código del Alumno (Opcional)' : 'Nombre del Docente (Opcional)'}
-                className="w-full h-11 px-3.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-750 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 transition"
+                className="w-full h-11 px-3.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-300 dark:border-zinc-800 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#16161c] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/25 transition"
               />
             </div>
           </div>
@@ -593,7 +593,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     className={`min-h-[44px] py-2 px-2.5 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border text-center relative w-full min-w-0 ${
                       isSelected
                         ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
-                        : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-850 border-slate-200/90 dark:border-zinc-800'
+                        : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200/90 dark:border-zinc-800'
                     }`}
                   >
                     <span className="break-words leading-tight text-center">{t.label}</span>
@@ -699,7 +699,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                 filterBeneficiary === 'DOCENTE'
                   ? 'bg-amber-400 text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 border border-slate-200/80 dark:border-zinc-800'
+                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800'
               }`}
             >
               👨‍🏫 Docentes
@@ -710,7 +710,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                 filterBeneficiary === 'ALUMNO'
                   ? 'bg-indigo-600 text-white font-black shadow-2xs'
-                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 border border-slate-200/80 dark:border-zinc-800'
+                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800'
               }`}
             >
               🎓 Alumnos
@@ -723,7 +723,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 className={`h-7 px-2.5 rounded-lg font-bold transition active:scale-95 ${
                   filterTipo === t.val
                     ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 border border-slate-200/70 dark:border-zinc-800'
+                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/70 dark:border-zinc-800'
                 }`}
               >
                 {t.label}
@@ -774,7 +774,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                         <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-xl shadow-xs">
                           {ticket.ambiente || 'AULA'}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase bg-slate-100 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-750 px-2 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2 py-0.5 rounded-lg">
                           Pab. {ticket.pabellon || 'A'} · {ticket.piso || 'Sede'}
                         </span>
                       </div>
@@ -917,26 +917,26 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         )
       )}
 
-      {/* Modal Detallado (Solo si se requiere configuración especial) */}
+      {/* Modal Detallado (Solo si se requiere configuración especial) - Full AMOLED Dark Mode */}
       {isModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+          className="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
           onClick={() => setIsModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 animate-spring-up overflow-hidden"
+            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800 mb-4">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-900 inline-flex items-center justify-center shadow-xs shrink-0">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 inline-flex items-center justify-center shadow-xs shrink-0">
                   <HandHelping className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-black text-slate-950 tracking-tight leading-tight">
+                  <h2 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
                     Préstamo de Material Detallado
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                     Registro de entrega con especificaciones
                   </p>
                 </div>
@@ -944,7 +944,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -953,7 +953,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
             <form onSubmit={handleSaveModalTicket} className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase mb-1">
                   Aula * (Ej: A201)
                 </label>
                 <input
@@ -971,12 +971,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     });
                   }}
                   placeholder="Ej: A201"
-                  className="w-full text-sm font-mono font-bold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 uppercase"
+                  className="w-full text-sm font-mono font-bold px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 uppercase"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase mb-1">
                   Detalle / Solicitante (Docente o Alumno)
                 </label>
                 <input
@@ -984,15 +984,15 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                   value={formData.descripcionSolucion}
                   onChange={(e) => setFormData({ ...formData, descripcionSolucion: e.target.value })}
                   placeholder="Ej: [ALUMNO: Juan Pérez] Cable HDMI"
-                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20"
+                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="h-11 rounded-2xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/90 transition flex items-center justify-center text-center active:scale-95"
+                  className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
                 >
                   Cancelar
                 </button>

@@ -38,7 +38,7 @@ export default function CustomSelect({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-10 px-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2 text-left font-medium hover:border-[#FDBA30] dark:hover:border-[#FDBA30] focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/20 transition active:scale-[0.99] ${className}`}
+        className={`w-full h-10 px-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2 text-left font-medium hover:border-[#FDBA30] dark:hover:border-[#FDBA30] focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/20 transition active:scale-[0.99] ${className}`}
       >
         <span className={`break-words ${selectedOpt ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-zinc-500'}`}>
           {selectedOpt ? selectedOpt.label : placeholder}
@@ -55,14 +55,14 @@ export default function CustomSelect({
             className="w-full max-w-sm bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 shadow-[0_20px_60px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.85)] animate-spring-up max-h-[80vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850 mb-2">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-2">
               <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                 {placeholder}
               </span>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 text-slate-700 dark:text-zinc-300 transition flex items-center justify-center active:scale-90"
+                className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 transition flex items-center justify-center active:scale-90"
               >
                 <X className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
@@ -82,7 +82,7 @@ export default function CustomSelect({
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between gap-2 active:scale-98 ${
                       isSelected
                         ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                        : 'text-slate-800 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-zinc-850'
+                        : 'text-slate-800 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-zinc-800'
                     }`}
                   >
                     <span className="break-words leading-tight">{opt.label}</span>

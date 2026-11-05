@@ -16,6 +16,13 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 
+const TIME_OPTIONS = [
+  '07:00', '07:30', '08:00', '08:20', '09:00', '09:10', '10:00', '10:50',
+  '11:00', '11:40', '12:00', '12:30', '13:00', '13:20', '14:00', '14:30',
+  '15:00', '15:20', '16:00', '16:10', '17:00', '17:50', '18:00', '18:40',
+  '19:00', '19:30', '20:00', '20:20', '21:00', '21:10', '22:00', '22:50'
+];
+
 export default function ReservationsView() {
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -189,7 +196,7 @@ export default function ReservationsView() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
-          <Calendar className="w-10 h-10 text-slate-300 dark:text-zinc-650 mx-auto mb-2 stroke-[1.8]" />
+          <Calendar className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-2 stroke-[1.8]" />
           <p className="text-sm font-bold text-slate-700 dark:text-zinc-200">No se encontraron reservas</p>
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">No hay reservas registradas para los filtros aplicados.</p>
         </div>
@@ -220,7 +227,7 @@ export default function ReservationsView() {
                     <span className={`inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                       isImportante 
                         ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800/80' 
-                        : 'bg-slate-100 dark:bg-zinc-850 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-750'
+                        : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-800'
                     }`}>
                       {isImportante && <Flame className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />}
                       <span>{r.prioridad || 'NORMAL'}</span>
@@ -291,7 +298,7 @@ export default function ReservationsView() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -308,7 +315,7 @@ export default function ReservationsView() {
                     value={formData.aula}
                     onChange={(e) => setFormData({ ...formData, aula: e.target.value.toUpperCase() })}
                     placeholder="Ej: A201"
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition uppercase font-mono font-bold"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition uppercase font-mono font-bold"
                   />
                 </div>
 
@@ -325,23 +332,21 @@ export default function ReservationsView() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Hora Inicio *</label>
-                  <input
-                    type="time"
-                    required
+                  <CustomSelect
                     value={formData.inicio}
-                    onChange={(e) => setFormData({ ...formData, inicio: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    onChange={(val) => setFormData({ ...formData, inicio: val })}
+                    options={TIME_OPTIONS}
+                    placeholder="Hora Inicio"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Hora Final *</label>
-                  <input
-                    type="time"
-                    required
+                  <CustomSelect
                     value={formData.final}
-                    onChange={(e) => setFormData({ ...formData, final: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    onChange={(val) => setFormData({ ...formData, final: val })}
+                    options={TIME_OPTIONS}
+                    placeholder="Hora Final"
                   />
                 </div>
               </div>
@@ -354,7 +359,7 @@ export default function ReservationsView() {
                   value={formData.docente}
                   onChange={(e) => setFormData({ ...formData, docente: e.target.value })}
                   placeholder="Apellidos y Nombres"
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
                 />
               </div>
 
@@ -366,7 +371,7 @@ export default function ReservationsView() {
                   value={formData.detalle}
                   onChange={(e) => setFormData({ ...formData, detalle: e.target.value })}
                   placeholder="Ej: Uso de laboratorio para taller práctico de arquitectura..."
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
                 />
               </div>
 
@@ -389,7 +394,7 @@ export default function ReservationsView() {
                     type="text"
                     value={formData.usuario}
                     onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
                   />
                 </div>
               </div>
@@ -398,7 +403,7 @@ export default function ReservationsView() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 border border-slate-200/90 dark:border-zinc-750 transition flex items-center justify-center text-center active:scale-95"
+                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
                 >
                   Cancelar
                 </button>

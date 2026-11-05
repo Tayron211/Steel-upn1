@@ -166,7 +166,7 @@ export default function CustomDatePicker({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-10 px-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2 text-left font-medium hover:border-[#FDBA30] dark:hover:border-[#FDBA30] focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/20 transition active:scale-[0.99] ${className}`}
+        className={`w-full h-10 px-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2 text-left font-medium hover:border-[#FDBA30] dark:hover:border-[#FDBA30] focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/20 transition active:scale-[0.99] ${className}`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <Calendar className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0 stroke-[2.2]" />
@@ -190,7 +190,7 @@ export default function CustomDatePicker({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header: Month & Year with Navigation Controls */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-850 mb-3">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-3">
               <div className="flex items-center gap-1.5 pl-1">
                 <span className="text-sm font-extrabold text-slate-950 dark:text-white tracking-tight">
                   {MONTH_NAMES[viewMonth]}
@@ -204,7 +204,7 @@ export default function CustomDatePicker({
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 text-slate-700 dark:text-zinc-300 transition flex items-center justify-center active:scale-90"
+                  className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 transition flex items-center justify-center active:scale-90"
                   title="Mes anterior"
                 >
                   <ChevronLeft className="w-4 h-4 stroke-[2.4]" />
@@ -212,7 +212,7 @@ export default function CustomDatePicker({
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 text-slate-700 dark:text-zinc-300 transition flex items-center justify-center active:scale-90"
+                  className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 transition flex items-center justify-center active:scale-90"
                   title="Mes siguiente"
                 >
                   <ChevronRight className="w-4 h-4 stroke-[2.4]" />
@@ -248,7 +248,7 @@ export default function CustomDatePicker({
                         ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs scale-105 z-10'
                         : cell.isCurrentMonth
                         ? 'text-slate-800 dark:text-zinc-100 hover:bg-amber-50 dark:hover:bg-zinc-800'
-                        : 'text-slate-300 dark:text-zinc-650 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                        : 'text-slate-300 dark:text-zinc-600 hover:bg-slate-50 dark:hover:bg-zinc-900'
                     } ${
                       today && !selected
                         ? 'border border-amber-400/80 dark:border-amber-400/60 font-extrabold text-amber-600 dark:text-amber-400'
@@ -262,7 +262,7 @@ export default function CustomDatePicker({
             </div>
 
             {/* Bottom Actions: Hoy, Limpiar, Cerrar */}
-            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-zinc-850">
+            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={handleSelectToday}

@@ -214,7 +214,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="bg-slate-100 dark:bg-zinc-850 text-slate-700 dark:text-zinc-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono">
+            <span className="bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono">
               {validSheets.length} Emitidas
             </span>
 
@@ -273,7 +273,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
                   filterMotivo === m
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-850 border border-slate-200/70 dark:border-zinc-800'
+                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/70 dark:border-zinc-800'
                 }`}
               >
                 {m}
@@ -313,7 +313,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       {item.fecha}
                     </span>
                   </div>
-                  <span className="font-mono text-xs font-black text-slate-900 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-850 px-2.5 py-1 rounded-md border border-slate-200/80 dark:border-zinc-750 whitespace-nowrap">
+                  <span className="font-mono text-xs font-black text-slate-900 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-900 px-2.5 py-1 rounded-md border border-slate-200/80 dark:border-zinc-800 whitespace-nowrap">
                     NRC {item.nrc}
                   </span>
                 </div>
@@ -384,7 +384,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     <th className="py-3.5 px-4 whitespace-nowrap text-right min-w-[150px]">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 transition-colors">
                       {/* Hoja y Fecha */}
@@ -400,7 +400,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       {/* NRC, Curso y Carrera: 100% visible, no truncations! */}
                       <td className="py-3.5 px-4 align-top">
                         <div className="flex items-center gap-1.5 mb-1">
-                          <span className="font-mono font-black text-[10px] text-slate-900 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-850 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-750 inline-block">
+                          <span className="font-mono font-black text-[10px] text-slate-900 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-900 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-800 inline-block">
                             NRC {item.nrc}
                           </span>
                         </div>
@@ -495,7 +495,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -514,7 +514,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     value={formData.nrc}
                     onChange={(e) => handleNrcLookup(e.target.value)}
                     placeholder="Ej: 23017"
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono font-bold"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono font-bold"
                   />
                 </div>
 
@@ -536,7 +536,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                   value={formData.docente}
                   onChange={(e) => setFormData({ ...formData, docente: e.target.value })}
                   placeholder="Apellidos y Nombres"
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
                 />
               </div>
 
@@ -548,7 +548,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     required
                     value={formData.curso}
                     onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                   />
                 </div>
 
@@ -558,7 +558,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     type="text"
                     value={formData.carrera}
                     onChange={(e) => setFormData({ ...formData, carrera: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-750 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -587,7 +587,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-850 hover:bg-slate-200 dark:hover:bg-zinc-750 border border-slate-200/90 dark:border-zinc-750 transition flex items-center justify-center text-center active:scale-95"
+                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
                 >
                   Cancelar
                 </button>
@@ -629,7 +629,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 dark:text-zinc-400">NRC:</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-850 px-2 py-0.5 rounded-md">{selectedForPrint.nrc}</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2 py-0.5 rounded-md">{selectedForPrint.nrc}</span>
               </div>
               <div>
                 <span className="text-slate-400 dark:text-zinc-500 block text-[10px] uppercase font-bold">Docente:</span>
@@ -654,7 +654,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
             <div className="pt-3 border-t border-dashed border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-2">
               <button
                 onClick={() => setSelectedForPrint(null)}
-                className="text-xs font-semibold px-3.5 py-2 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-850 rounded-xl transition inline-flex items-center justify-center"
+                className="text-xs font-semibold px-3.5 py-2 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition inline-flex items-center justify-center"
               >
                 Cerrar
               </button>
