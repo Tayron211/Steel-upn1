@@ -176,6 +176,34 @@ app.post('/api/reset-excel', async (req, res) => {
   }
 });
 
+// --- SYNC EXCEL ---
+app.post('/api/sync-excel', async (req, res) => {
+  try {
+    await db.seedFromExcel();
+    res.json({ 
+      success: true, 
+      message: 'Base de datos sincronizada desde CONTROL DOCENTE.xlsx',
+      data: { message: 'Base de datos sincronizada desde CONTROL DOCENTE.xlsx' }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- IMPORT EXCEL DATA ---
+app.post('/api/import-excel-data', async (req, res) => {
+  try {
+    const result = await db.importCustomData(req.body);
+    res.json({ 
+      success: true, 
+      message: `Base de datos SQLite actualizada: ${result.count} clases importadas`,
+      data: result
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Serve frontend build if present
 const distPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));

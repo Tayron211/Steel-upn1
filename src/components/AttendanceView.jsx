@@ -12,6 +12,9 @@ import {
   FileText,
   X,
   CalendarClock,
+  CalendarPlus,
+  GraduationCap,
+  User,
   Building,
   RotateCcw,
   Sparkles,
@@ -97,6 +100,84 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   // Secondary Classroom Action Sheet (Discreet 3-dots menu)
   const [selectedClassOptions, setSelectedClassOptions] = useState(null);
+
+  // Reservation Modal for Free Classrooms
+  const [reservingRoom, setReservingRoom] = useState(null);
+  const [reservationForm, setReservationForm] = useState({
+    tipo: 'DOCENTE',
+    nombre: '',
+    fecha: new Date().toISOString().split('T')[0],
+    horaInicio: '08:00',
+    horaFin: '10:00',
+    actividades: ''
+  });
+  const [savingReservation, setSavingReservation] = useState(false);
+
+  const handleOpenReserveModal = (room) => {
+    setReservingRoom(room);
+    setReservationForm({
+      tipo: 'DOCENTE',
+      nombre: '',
+      fecha: new Date().toISOString().split('T')[0],
+      horaInicio: getCurrentTimeStr() || '08:00',
+      horaFin: '11:00',
+      actividades: ''
+    });
+  };
+
+  const handleSaveReservation = async (e) => {
+    if (e) e.preventDefault();
+    if (!reservingRoom) return;
+    if (!reservationForm.nombre.trim()) {
+      alert('Por favor, ingresa el nombre del docente o alumno solicitante.');
+      return;
+    }
+    setSavingReservation(true);
+    try {
+      const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+      const resDate = new Date(reservationForm.fecha + 'T12:00:00');
+      const diaName = days[resDate.getDay()];
+
+      const payload = {
+        fecha: reservationForm.fecha,
+        dia: diaName,
+        hora_inicio: reservationForm.horaInicio,
+        hora_fin: reservationForm.horaFin,
+        aula: reservingRoom.abrv,
+        docente: reservationForm.tipo === 'ALUMNO' 
+          ? `[ALUMNO] ${reservationForm.nombre.trim().toUpperCase()}` 
+          : reservationForm.nombre.trim().toUpperCase(),
+        motivo: reservationForm.actividades.trim() || 'RESERVA DE AULA',
+        usuario: 'OPERACIONES'
+      };
+
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json.success) {
+        setToastMessage(`✅ Aula ${reservingRoom.abrv} reservada con éxito (${reservationForm.horaInicio} - ${reservationForm.horaFin})`);
+        setReservingRoom(null);
+        setReservationForm({
+          tipo: 'DOCENTE',
+          nombre: '',
+          fecha: new Date().toISOString().split('T')[0],
+          horaInicio: '08:00',
+          horaFin: '10:00',
+          actividades: ''
+        });
+      } else {
+        alert('Error al guardar reserva: ' + (json.error || 'intente nuevamente'));
+      }
+    } catch (err) {
+      console.error('Error guardando reserva:', err);
+      alert('Error de conexión al guardar reserva');
+    } finally {
+      setSavingReservation(false);
+    }
+  };
 
   const pisosDisponibles = [
     { label: 'Todos', short: 'Todos', val: '' },
@@ -266,20 +347,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         horaFinalReal: ''
       };
     } else if (targetStatus === 'PUNTUAL') {
-      const timeNow = getCurrentTimeStr();
       updates = {
         asistencia: 'SI',
-        puntualidad: 'PUNTUAL',
-        horaInicioReal: item.horaInicioReal || timeNow,
-        horaFinalReal: item.horaFinalProg || item.horaFinalReal
+        puntualidad: 'PUNTUAL'
       };
     } else if (targetStatus === 'TARDE') {
-      const timeNow = getCurrentTimeStr();
       updates = {
         asistencia: 'SI',
-        puntualidad: 'TARDE',
-        horaInicioReal: timeNow,
-        horaFinalReal: item.horaFinalProg || item.horaFinalReal
+        puntualidad: 'TARDE'
       };
     } else if (targetStatus === 'FALTA') {
       updates = {
@@ -349,7 +424,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       updates.docente = replaceTeacherName.trim().toUpperCase();
       updates.asistencia = 'DOCENTE DE REEMPLAZO';
       updates.puntualidad = 'PUNTUAL';
-      updates.horaInicioReal = getCurrentTimeStr();
       updates.observacion = observationText.trim() ? `Docente Reemplazo. Obs: ${observationText}` : 'Docente Reemplazo';
     } else {
       updates.observacion = observationText.trim();
@@ -731,20 +805,24 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           {freeRooms.map(room => (
             <div
               key={room.abrv}
-              className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between"
+              onClick={() => handleOpenReserveModal(room)}
+              className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-150 active:scale-98 group"
+              title="Haz clic para registrar la reserva de esta aula"
             >
               <div>
                 <div className="flex items-start justify-between gap-1.5 mb-2">
-                  <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-xl">
+                  <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 group-hover:bg-[#FDBA30] group-hover:text-slate-950 text-white px-2.5 py-0.5 rounded-xl transition-colors">
                     {room.abrv}
                   </span>
                   <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/70 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                     LIBRE
                   </span>
                 </div>
 
-                <h4 className="text-xs font-bold text-slate-800 dark:text-white break-words mb-1">{room.nombre}</h4>
+                <h4 className="text-xs font-bold text-slate-800 dark:text-white break-words mb-1 group-hover:text-amber-500 transition-colors">
+                  {room.nombre}
+                </h4>
                 <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md mb-2.5 border border-blue-200/60 dark:border-blue-800/60">
                   {room.tipo} · Pab. {room.pabellon} ({room.piso})
                 </span>
@@ -758,6 +836,18 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     {room.abrv}
                   </span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenReserveModal(room);
+                  }}
+                  className="w-full mt-2.5 h-8 bg-amber-400 hover:bg-[#FDBA30] active:bg-amber-500 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5 stroke-[2.4]" />
+                  <span>Reservar Aula</span>
+                </button>
               </div>
             </div>
           ))}
@@ -880,13 +970,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" />
-                      <span className="text-slate-600 dark:text-zinc-300 font-medium">{item.horaInicioProg} - {item.horaFinalProg}</span>
-                    </span>
-                    <span className={item.horaInicioReal ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-400 dark:text-zinc-400 font-medium'}>
-                      Real: {item.horaInicioReal || '--:--'}
+                  <div className="flex items-center text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-400 shrink-0" />
+                      <span className="text-slate-700 dark:text-zinc-300 font-bold">{item.horaInicioProg} - {item.horaFinalProg}</span>
                     </span>
                   </div>
 
@@ -1276,6 +1363,181 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               Guardar
             </button>
           </div>
+        </div>
+      </div>,
+      document.body
+    )
+  }
+
+  {/* MODAL PARA REGISTRAR RESERVA DE AULA LIBRE */}
+  {
+    reservingRoom && typeof document !== 'undefined' && createPortal(
+      <div
+        className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+        onClick={() => !savingReservation && setReservingRoom(null)}
+      >
+        <div
+          className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up space-y-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Encabezado */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono font-black text-sm bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs">
+                {reservingRoom.abrv}
+              </span>
+              <div>
+                <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight">
+                  Reservar {reservingRoom.nombre}
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold mt-0.5">
+                  {reservingRoom.tipo} · Pab. {reservingRoom.pabellon} ({reservingRoom.piso}) · Cap. {reservingRoom.aforo} pers.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={savingReservation}
+              onClick={() => setReservingRoom(null)}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveReservation} className="space-y-3.5">
+            {/* Tipo de Solicitante Toggle */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
+                Tipo de Solicitante
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setReservationForm(f => ({ ...f, tipo: 'DOCENTE' }))}
+                  className={`h-9 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                    reservationForm.tipo === 'DOCENTE'
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Docente</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReservationForm(f => ({ ...f, tipo: 'ALUMNO' }))}
+                  className={`h-9 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                    reservationForm.tipo === 'ALUMNO'
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Alumno / Delegado</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Nombre Solicitante */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                Nombre del {reservationForm.tipo === 'DOCENTE' ? 'Docente' : 'Alumno'} *
+              </label>
+              <input
+                type="text"
+                required
+                value={reservationForm.nombre}
+                onChange={(e) => setReservationForm(f => ({ ...f, nombre: e.target.value }))}
+                placeholder={reservationForm.tipo === 'DOCENTE' ? 'Ej: ING. CARLOS MENDOZA' : 'Ej: JUAN PEREZ (Delegado)'}
+                className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
+              />
+            </div>
+
+            {/* Fecha y Horario */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  Fecha *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={reservationForm.fecha}
+                  onChange={(e) => setReservationForm(f => ({ ...f, fecha: e.target.value }))}
+                  className="w-full h-10 px-2.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-slate-950 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  Hora Inicio *
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={reservationForm.horaInicio}
+                  onChange={(e) => setReservationForm(f => ({ ...f, horaInicio: e.target.value }))}
+                  className="w-full h-10 px-2.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-slate-950 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  Hora Fin *
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={reservationForm.horaFin}
+                  onChange={(e) => setReservationForm(f => ({ ...f, horaFin: e.target.value }))}
+                  className="w-full h-10 px-2.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-slate-950 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                />
+              </div>
+            </div>
+
+            {/* Actividades que se realizarán */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                Actividades que se realizarán *
+              </label>
+              <textarea
+                rows="3"
+                required
+                value={reservationForm.actividades}
+                onChange={(e) => setReservationForm(f => ({ ...f, actividades: e.target.value }))}
+                placeholder="Ej: Asesoría de tesis, recuperación de clase, sustentación de proyecto, reunión de grupo..."
+                className="w-full p-3 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition resize-none"
+              />
+            </div>
+
+            {/* Acciones */}
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+              <button
+                type="button"
+                disabled={savingReservation}
+                onClick={() => setReservingRoom(null)}
+                className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={savingReservation}
+                className="h-11 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95 disabled:opacity-50 gap-2"
+              >
+                {savingReservation ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <CalendarPlus className="w-4 h-4 stroke-[2.5]" />
+                    <span>Confirmar Reserva</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>,
       document.body

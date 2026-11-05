@@ -749,9 +749,80 @@ async function getAllDataForExport() {
   };
 }
 
+async function importCustomData({ asistencia = [], ambientes = [], clearExisting = true }) {
+  await run('BEGIN TRANSACTION');
+  try {
+    if (clearExisting && asistencia.length > 0) {
+      await run('DELETE FROM asistencia');
+    }
+    for (const a of asistencia) {
+      await run(`
+        INSERT OR REPLACE INTO asistencia (
+          id, piso_pabellon, sede, periodo, dia, hora_inicio_prog, hora_final_prog,
+          aula, nrc, lista_cruzada, codigo_docente, docente, curso, carrera,
+          hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion,
+          real_horas, ciclo, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        a.id || `asist_${Date.now()}_${Math.random()}`,
+        a.pisoPabellon || a.piso_pabellon || '',
+        a.sede || 'Comas',
+        a.periodo || '2026-2',
+        normalizeDay(a.dia || ''),
+        a.horaInicioProg || a.hora_inicio_prog || '',
+        a.horaFinalProg || a.hora_final_prog || '',
+        (a.aula || '').trim().toUpperCase(),
+        a.nrc ? String(a.nrc).trim() : '',
+        a.listaCruzada || a.lista_cruzada || '',
+        a.codigoDocente || a.codigo_docente || '',
+        (a.docente || '').trim().toUpperCase(),
+        (a.curso || '').trim().toUpperCase(),
+        a.carrera || '',
+        a.horaInicioReal || a.hora_inicio_real || '',
+        a.horaFinalReal || a.hora_final_real || '',
+        (a.asistencia || 'PENDIENTE').trim().toUpperCase(),
+        a.puntualidad || '-',
+        a.observacion || '',
+        a.real !== undefined && a.real !== null ? Number(a.real) : null,
+        a.ciclo || '',
+        new Date().toISOString()
+      ]);
+    }
+
+    if (ambientes.length > 0) {
+      if (clearExisting) {
+        await run('DELETE FROM ambientes');
+      }
+      for (const amb of ambientes) {
+        await run(`
+          INSERT OR REPLACE INTO ambientes (
+            abrv, nombre, pc, aforo, pabellon, piso, ubicacion, tipo
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          (amb.abrv || '').trim().toUpperCase(),
+          amb.nombre || '',
+          amb.pc ? Number(amb.pc) : 0,
+          amb.aforo ? Number(amb.aforo) : 30,
+          amb.pabellon || '',
+          amb.piso || '',
+          amb.ubicacion || '',
+          amb.tipo || 'AULA'
+        ]);
+      }
+    }
+
+    await run('COMMIT');
+    return { success: true, count: asistencia.length };
+  } catch (err) {
+    await run('ROLLBACK');
+    throw err;
+  }
+}
+
 module.exports = {
   initDatabase,
   seedFromExcel,
+  importCustomData,
   getAsistencia,
   updateAsistencia,
   bulkUpdateAsistencia,

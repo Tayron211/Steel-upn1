@@ -672,7 +672,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               >
                 <div className="flex items-center gap-1.5 truncate">
                   <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Aula (Calendario)'}</span>
+                  <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Aula'}</span>
                 </div>
                 {roomInput ? (
                   <span

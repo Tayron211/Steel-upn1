@@ -448,7 +448,97 @@ export async function onRequest(context) {
     }
 
     if (path === '/api/sync-excel') {
-      return json({ success: true, message: 'Base de datos Cloudflare D1 activa 24/7 y sincronizada.' });
+      return json({ 
+        success: true, 
+        message: 'Base de datos Cloudflare D1 activa 24/7 y sincronizada.',
+        data: { message: 'Base de datos Cloudflare D1 activa 24/7 y sincronizada.' }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // IMPORTACIÓN MASIVA DE EXCEL A CLOUDFLARE D1
+    // -------------------------------------------------------------
+    if (path === '/api/import-excel-data' && method === 'POST') {
+      const body = await request.json();
+      const { asistencia = [], ambientes = [], clearExisting = true } = body;
+
+      if (clearExisting && asistencia.length > 0) {
+        await db.prepare('DELETE FROM asistencia').run();
+      }
+
+      if (asistencia.length > 0) {
+        const chunkSize = 50;
+        for (let i = 0; i < asistencia.length; i += chunkSize) {
+          const chunk = asistencia.slice(i, i + chunkSize);
+          const stmts = chunk.map((a, idx) => {
+            const id = a.id || `asist_imp_${Date.now()}_${i + idx}`;
+            return db.prepare(`
+              INSERT OR REPLACE INTO asistencia (
+                id, piso_pabellon, sede, periodo, dia, hora_inicio_prog, hora_final_prog,
+                aula, nrc, lista_cruzada, codigo_docente, docente, curso, carrera,
+                hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion,
+                real_horas, ciclo, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `).bind(
+              id,
+              a.pisoPabellon || a.piso_pabellon || '',
+              a.sede || 'Comas',
+              a.periodo || '2026-2',
+              normalizeDay(a.dia || ''),
+              a.horaInicioProg || a.hora_inicio_prog || '',
+              a.horaFinalProg || a.hora_final_prog || '',
+              (a.aula || '').trim().toUpperCase(),
+              a.nrc ? String(a.nrc).trim() : '',
+              a.listaCruzada || a.lista_cruzada || '',
+              a.codigoDocente || a.codigo_docente || '',
+              (a.docente || '').trim().toUpperCase(),
+              (a.curso || '').trim().toUpperCase(),
+              a.carrera || '',
+              a.horaInicioReal || a.hora_inicio_real || '',
+              a.horaFinalReal || a.hora_final_real || '',
+              (a.asistencia || 'PENDIENTE').trim().toUpperCase(),
+              a.puntualidad || '-',
+              a.observacion || '',
+              a.real !== undefined && a.real !== null ? Number(a.real) : null,
+              a.ciclo || ''
+            );
+          });
+          await db.batch(stmts);
+        }
+      }
+
+      if (ambientes.length > 0) {
+        if (clearExisting) {
+          await db.prepare('DELETE FROM ambientes').run();
+        }
+        const chunkSize = 50;
+        for (let i = 0; i < ambientes.length; i += chunkSize) {
+          const chunk = ambientes.slice(i, i + chunkSize);
+          const stmts = chunk.map(amb => {
+            return db.prepare(`
+              INSERT OR REPLACE INTO ambientes (
+                abrv, nombre, pc, aforo, pabellon, piso, ubicacion, tipo
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+              (amb.abrv || '').trim().toUpperCase(),
+              amb.nombre || '',
+              amb.pc ? Number(amb.pc) : 0,
+              amb.aforo ? Number(amb.aforo) : 30,
+              amb.pabellon || '',
+              amb.piso || '',
+              amb.ubicacion || '',
+              amb.tipo || 'AULA'
+            );
+          });
+          await db.batch(stmts);
+        }
+      }
+
+      return json({
+        success: true,
+        message: `Base de datos actualizada con éxito: ${asistencia.length} clases y ${ambientes.length} ambientes sincronizados.`,
+        data: { count: asistencia.length }
+      });
     }
 
     // -------------------------------------------------------------
