@@ -18,10 +18,12 @@ import {
   Edit3,
   PenTool,
   FileText,
-  QrCode
+  QrCode,
+  Download
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureModal from './SignatureModal';
+import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
 const DEFAULT_BASE_ITEMS = [
   { label: '🖊️ Plumones y Mota', val: 'PLUMONES', name: 'PLUMONES / MATERIALES', defaultDesc: 'Préstamo de plumones y mota acrílica' },
@@ -150,13 +152,35 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     return amb.trim();
   };
 
+  // Garantiza que las firmas guardadas localmente nunca se pierdan al refrescar
+  const mergeWithLocalSignatures = (serverTickets) => {
+    if (!Array.isArray(serverTickets)) return [];
+    return serverTickets.map(t => {
+      let fEntrega = t.firmaEntrega;
+      let fRecepcion = t.firmaRecepcion;
+      try {
+        if (!fEntrega && typeof localStorage !== 'undefined') {
+          fEntrega = localStorage.getItem(`upn_sign_entrega_${t.id}`);
+        }
+        if (!fRecepcion && typeof localStorage !== 'undefined') {
+          fRecepcion = localStorage.getItem(`upn_sign_recepcion_${t.id}`);
+        }
+      } catch (e) {}
+      return {
+        ...t,
+        firmaEntrega: fEntrega || null,
+        firmaRecepcion: fRecepcion || null
+      };
+    });
+  };
+
   const loadTickets = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/tickets');
       const json = await res.json();
-      if (json.success) {
-        setTickets(json.data);
+      if (json.success && Array.isArray(json.data)) {
+        setTickets(mergeWithLocalSignatures(json.data));
       }
     } catch (err) {
       console.error(err);
@@ -170,12 +194,24 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     try {
       const res = await fetch('/api/tickets');
       const json = await res.json();
-      if (json.success) {
-        setTickets(json.data);
+      if (json.success && Array.isArray(json.data)) {
+        setTickets(mergeWithLocalSignatures(json.data));
       }
     } catch (err) {
       // silent
     }
+  };
+
+  // Descarga directa del Acta de Cargo en PDF con 1 solo toque
+  const handleQuickDownloadPdf = (e, ticket) => {
+    e.stopPropagation();
+    generateCargoPdf({
+      ticket,
+      entregadoPor: ticket.entregadoPor || ticket.responsable || 'Operaciones Sede',
+      recibidoPor: ticket.recibidoPor || 'Solicitante',
+      firmaEntrega: ticket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${ticket.id}`) : null),
+      firmaRecepcion: ticket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${ticket.id}`) : null)
+    });
   };
 
   useEffect(() => {
@@ -247,9 +283,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
   // =========================================================================
   // SUBMIT LOAN (Symmetrical, Supports Manual Item and Preset Chips)
+  // shouldOpenSignModal: Si es true, registra y abre de inmediato el Acta de Cargo
   // =========================================================================
-  const handleRegisterLoan = async (e) => {
-    if (e) e.preventDefault();
+  const handleRegisterLoan = async (e, shouldOpenSignModal = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     const cleanRoom = roomInput.trim().toUpperCase();
     if (!cleanRoom) {
       setToastMessage('⚠️ Ingresa el código de Aula (Ej: A201)');
@@ -296,6 +333,14 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     const noteText = customNote.trim() ? ` - ${customNote.trim()}` : '';
     const finalDesc = `${prefix} ${matDesc}${noteText}`;
 
+    // Auto-vincular firma de operaciones si ya existe guardada en este equipo
+    let initialFirmaEntrega = null;
+    let initialEntregadoPor = 'OPERACIONES SEDE';
+    try {
+      initialFirmaEntrega = localStorage.getItem('upn_staff_signature') || null;
+      initialEntregadoPor = localStorage.getItem('upn_staff_name') || 'OPERACIONES SEDE';
+    } catch (err) {}
+
     const payload = {
       ambiente: cleanRoom,
       piso: floor,
@@ -304,7 +349,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       responsable: 'OPERACIONES SEDE',
       estado: 'EN PROCESO',
       descripcionSolucion: finalDesc,
-      rango: ''
+      rango: '',
+      firmaEntrega: initialFirmaEntrega,
+      entregadoPor: initialEntregadoPor,
+      recibidoPor: personName.trim() ? personName.trim().toUpperCase() : ''
     };
 
     try {
@@ -315,7 +363,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       });
       const json = await res.json();
       if (json.success) {
-        setTickets(prev => [json.data, ...prev]);
+        const createdTicket = json.data;
+        if (initialFirmaEntrega && !createdTicket.firmaEntrega) {
+          createdTicket.firmaEntrega = initialFirmaEntrega;
+          createdTicket.entregadoPor = initialEntregadoPor;
+        }
+
+        setTickets(prev => [createdTicket, ...prev]);
         setToastMessage(`✅ Préstamo a ${beneficiaryType === 'ALUMNO' ? 'Alumno' : 'Docente'} en Aula ${cleanRoom} registrado`);
         setRoomInput('');
         setPersonName('');
@@ -323,6 +377,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         setCustomNote('');
         setActiveViewTab('ACTIVOS');
         setTimeout(() => setToastMessage(''), 3000);
+
+        if (shouldOpenSignModal) {
+          setSigningTicket(createdTicket);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -670,14 +728,26 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             </div>
           )}
 
-          {/* Botón Principal de Acción Centrado */}
-          <div className="pt-1">
+          {/* Botones de Acción Directos: 1 Toque para Registrar y Firmar o Solo Registrar */}
+          <div className="pt-1.5 flex flex-col sm:flex-row items-center gap-2 pb-1">
+            <button
+              type="button"
+              disabled={submittingLoan}
+              onClick={(e) => handleRegisterLoan(e, true)}
+              className="w-full sm:flex-1 h-12 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-2xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
+              title="Crea el préstamo y abre inmediatamente el Acta de Cargo para firmar"
+            >
+              <PenTool className="w-4 h-4 stroke-[2.4]" />
+              <span>✍️ Registrar y Firmar Cargo</span>
+            </button>
+
             <button
               type="submit"
               disabled={submittingLoan}
-              className="w-full h-12 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-2xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
+              className="w-full sm:w-auto h-12 px-5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-bold text-xs sm:text-sm rounded-2xl border border-slate-300 dark:border-zinc-700 transition flex items-center justify-center gap-2 active:scale-98 shrink-0"
+              title="Registrar préstamo rápido sin abrir firma"
             >
-              <span>⚡ Registrar Préstamo de Material</span>
+              <span>⚡ Solo Registrar</span>
             </button>
           </div>
         </form>
@@ -866,15 +936,27 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
                   {/* Botón de 1 Toque para Recibir Devolución + Botón Cargo */}
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800">
-                    <button
-                      type="button"
-                      onClick={() => setSigningTicket(ticket)}
-                      className="h-11 px-3 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 border border-slate-200/80 dark:border-zinc-800 active:scale-95 shrink-0"
-                      title="Ver Acta de Cargo oficial y descargar PDF"
-                    >
-                      <FileText className="w-4 h-4 text-amber-500" />
-                      <span className="hidden sm:inline">Cargo PDF</span>
-                    </button>
+                    {ticket.firmaEntrega || ticket.firmaRecepcion ? (
+                      <button
+                        type="button"
+                        onClick={(e) => handleQuickDownloadPdf(e, ticket)}
+                        className="h-11 px-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 border border-emerald-200/80 dark:border-emerald-800/80 active:scale-95 shrink-0"
+                        title="Descargar Acta de Cargo oficial en PDF directamente"
+                      >
+                        <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.4]" />
+                        <span className="hidden sm:inline">PDF</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigningTicket(ticket)}
+                        className="h-11 px-3 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 border border-slate-200/80 dark:border-zinc-800 active:scale-95 shrink-0"
+                        title="Abrir comprobante para firmar"
+                      >
+                        <PenTool className="w-4 h-4 text-amber-500 stroke-[2.2]" />
+                        <span className="hidden sm:inline">Firmar</span>
+                      </button>
+                    )}
 
                     {isPending ? (
                       <>
@@ -978,14 +1060,24 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-[11px]">
                     <span className="text-slate-400 dark:text-zinc-500 font-mono">{ticket.fecha} · {ticket.horaReporte}</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      {ticket.firmaEntrega || ticket.firmaRecepcion ? (
+                        <button
+                          onClick={(e) => handleQuickDownloadPdf(e, ticket)}
+                          className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 dark:hover:text-emerald-200 font-bold inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-2.5 py-1 rounded-lg border border-emerald-200/80 dark:border-emerald-800/80 transition active:scale-95"
+                          title="Descargar Acta de Cargo en PDF directamente"
+                        >
+                          <Download className="w-3.5 h-3.5 stroke-[2.2]" />
+                          <span>PDF</span>
+                        </button>
+                      ) : null}
                       <button
                         onClick={() => setSigningTicket(ticket)}
                         className="text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white font-bold inline-flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-zinc-700 transition active:scale-95"
-                        title="Ver o descargar Acta de Cargo en PDF"
+                        title="Ver o completar Acta de Cargo"
                       >
                         <FileText className="w-3.5 h-3.5" />
-                        <span>Acta PDF</span>
+                        <span>Ver Cargo</span>
                       </button>
                       <button
                         onClick={() => handleReopen(ticket)}

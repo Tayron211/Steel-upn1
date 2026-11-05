@@ -78,95 +78,50 @@ input, textarea, select {
    ========================================================= */
 
 /* =========================================================
-   HYPER-REALISTIC APPLE LIQUID GLASS (Frosted Luminous Edge)
-   Reference: Pure crystal frosted refraction with specular rim
+   CLEAN FLAT 2D FROSTED BLUR DOCK (Pure 2D Glass, Zero 3D)
    ========================================================= */
 
-/* Apple Liquid Glass Dock Bar (Signature Floating Dock) */
+/* Flat 2D Frosted Floating Dock with smooth blur and thin translucent border */
 .apple-liquid-glass-27 {
   position: relative;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.22) 45%,
-    rgba(255, 255, 255, 0.40) 100%
-  );
-  backdrop-filter: blur(28px) saturate(220%) contrast(102%) brightness(106%);
-  -webkit-backdrop-filter: blur(28px) saturate(220%) contrast(102%) brightness(106%);
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
-  border-radius: 28px;
-  box-shadow: 
-    0 24px 48px -10px rgba(15, 23, 42, 0.18),
-    0 8px 24px -4px rgba(15, 23, 42, 0.08),
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
-    inset 0 -1.5px 2px 0 rgba(255, 255, 255, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  background-color: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 26px;
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08);
 }
 
 .apple-liquid-glass-27::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.45) 0%,
-    rgba(255, 255, 255, 0.08) 45%,
-    transparent 75%
-  );
-  pointer-events: none;
-  z-index: 1;
+  display: none !important;
 }
 
 .dark .apple-liquid-glass-27 {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.16) 0%,
-    rgba(24, 24, 32, 0.52) 40%,
-    rgba(10, 10, 14, 0.70) 100%
-  );
-  backdrop-filter: blur(32px) saturate(210%) brightness(115%);
-  -webkit-backdrop-filter: blur(32px) saturate(210%) brightness(115%);
-  border: 1.5px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 
-    0 24px 56px -10px rgba(0, 0, 0, 0.95),
-    0 8px 24px -4px rgba(0, 0, 0, 0.75),
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1.5px 2px 0 rgba(255, 255, 255, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  background-color: rgba(14, 14, 18, 0.68);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6);
 }
 
 .dark .apple-liquid-glass-27::before {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.03) 45%,
-    transparent 75%
-  );
+  display: none !important;
 }
 
-/* Botón deslizante activo con efecto Gota Ámbar Líquida */
+/* Flat 2D Active Slider (Pure 2D amber pill, zero 3D bevels or inner emboss) */
 .apple-liquid-slider {
-  background: linear-gradient(180deg, #FFCA36 0%, #FDBA30 55%, #F59E0B 100%);
-  border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  box-shadow: 
-    0 4px 20px -2px rgba(253, 186, 48, 0.6),
-    0 2px 8px -1px rgba(253, 186, 48, 0.4),
-    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.95),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.12);
-  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: #FDBA30;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 4px 14px 0 rgba(253, 186, 48, 0.4);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
 .dark .apple-liquid-slider {
-  background: linear-gradient(180deg, #FFCA36 0%, #FDBA30 55%, #F59E0B 100%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 4px 24px -2px rgba(253, 186, 48, 0.75),
-    0 2px 10px -1px rgba(253, 186, 48, 0.5),
-    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.9),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.2);
+  background: #FDBA30;
+  border: none;
+  box-shadow: 0 4px 16px 0 rgba(253, 186, 48, 0.45);
 }
 
 /* Apple-style translucent liquid glass panel */

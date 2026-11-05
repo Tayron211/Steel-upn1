@@ -52,9 +52,6 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    // Draw baseline guide
-    drawGuide(ctx, width, height);
-
     // Restore existing or initial image
     if (existingData && existingData !== 'data:,') {
       const img = new Image();
@@ -73,25 +70,6 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
       };
       img.src = initialImage;
     }
-  };
-
-  const drawGuide = (ctx, w, h) => {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(24, h - 36);
-    ctx.lineTo(w - 24, h - 36);
-    ctx.stroke();
-
-    // Small 'X' mark at start of line
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
-    ctx.fillText('✕', 26, h - 42);
-    ctx.font = '10px sans-serif';
-    ctx.fillText('LÍNEA DE FIRMA', 44, h - 42);
-    ctx.restore();
   };
 
   useEffect(() => {
@@ -163,7 +141,6 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, w, h);
-    drawGuide(ctx, w, h);
 
     hasDrawnRef.current = false;
     setHasContent(false);
@@ -212,7 +189,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
       >
         <canvas
           ref={canvasRef}
-          className="block w-full cursor-crosshair"
+          className="block w-full cursor-crosshair relative z-10"
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -222,11 +199,18 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
           onTouchEnd={stopDrawing}
           onTouchCancel={stopDrawing}
         />
+
+        {/* Baseline visual guide line rendered as overlay - NEVER baked into the exported PNG! */}
+        <div className="absolute inset-x-6 bottom-9 pointer-events-none flex items-center justify-between border-b border-dashed border-slate-300/80 dark:border-zinc-700/80 pb-1 z-0">
+          <span className="text-[10px] font-bold text-slate-400/80 dark:text-zinc-600 select-none">
+            ✕ LÍNEA DE FIRMA
+          </span>
+        </div>
         
         {!hasContent && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
             <span className="text-xs font-medium text-slate-400/80 dark:text-zinc-600 select-none">
-              Dibuja tu firma aquí
+              Dibuja tu firma con el dedo aquí
             </span>
           </div>
         )}
@@ -236,3 +220,4 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 });
 
 export default SignatureCanvas;
+

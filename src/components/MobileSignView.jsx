@@ -113,6 +113,15 @@ export default function MobileSignView({ ticketId, onBack }) {
       });
       const json = await res.json();
       if (json.success) {
+        try {
+          if (role === 'entrega') {
+            localStorage.setItem(`upn_sign_entrega_${ticketId}`, finalSign);
+            localStorage.setItem('upn_staff_signature', finalSign);
+          } else {
+            localStorage.setItem(`upn_sign_recepcion_${ticketId}`, finalSign);
+          }
+          window.dispatchEvent(new Event('storage'));
+        } catch (e) {}
         setSubmitted(true);
       } else {
         setErrorMsg('No se pudo guardar la firma. Intente nuevamente.');
@@ -312,3 +321,4 @@ export default function MobileSignView({ ticketId, onBack }) {
     </div>
   );
 }
+

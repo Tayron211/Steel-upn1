@@ -7,12 +7,13 @@ import {
   FileText, 
   Printer, 
   Copy, 
-  Download,
-  UserCheck, 
+  Download, 
+  RotateCcw,
   CheckCircle2, 
   ExternalLink,
   ShieldCheck,
-  RotateCcw
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import SignatureCanvas from './SignatureCanvas';
@@ -27,14 +28,10 @@ export default function SignatureModal({
 }) {
   if (!isOpen || !ticket) return null;
 
-  // Tabs: 'acta' (Cargo preview & fill) | 'entrega' (Sign 1) | 'recepcion' (Sign 2) | 'qr' (Mobile QR)
-  const [activeTab, setActiveTab] = useState('acta');
+  // Cargo Folio Number
+  const cargoNum = (ticket.id || '').replace(/^ticket_/, 'CARGO-').slice(-8).toUpperCase();
 
-  // Fields corresponding exactly to the "Acta de Cargo" model
-  const [cargoNum, setCargoNum] = useState(() => {
-    return (ticket.id || '').replace(/^ticket_/, 'CARGO-').slice(-8).toUpperCase();
-  });
-
+  // Señor(es) - Recipient
   const [senorEs, setSenorEs] = useState(() => {
     if (ticket.recibidoPor) return ticket.recibidoPor;
     const match = (ticket.descripcionSolucion || '').match(/\[(🎓\s*ALUMNO|👨‍🏫\s*DOCENTE):\s*([^\]]+)\]/i);
@@ -42,6 +39,7 @@ export default function SignatureModal({
     return '';
   });
 
+  // Remitimos con el portador - Material description
   const [remitimosConElPortador, setRemitimosConElPortador] = useState(() => {
     const cleanDesc = (ticket.descripcionSolucion || ticket.tipoSolicitud || '')
       .replace(/\[(🎓|👨‍🏫)?\s*(ALUMNO|DOCENTE)(?::[^\]]+)?\]/gi, '')
@@ -49,19 +47,40 @@ export default function SignatureModal({
     return cleanDesc || ticket.tipoSolicitud || 'Plumones y mota acrílica';
   });
 
+  // Names for Entregué & Recibí
   const [entregadoPor, setEntregadoPor] = useState(() => {
     return ticket.entregadoPor || ticket.responsable || defaultAssistant;
   });
 
-  const [recibidoPor, setRecibidoPor] = useState(() => {
-    return ticket.recibidoPor || senorEs;
+  // Signatures State with persistent fallback in localStorage so they are NEVER lost
+  const [firmaEntrega, setFirmaEntrega] = useState(() => {
+    if (ticket.firmaEntrega) return ticket.firmaEntrega;
+    try {
+      const local = localStorage.getItem(`upn_sign_entrega_${ticket.id}`);
+      if (local) return local;
+      // Optional: global saved staff signature
+      const staffSign = localStorage.getItem('upn_staff_signature');
+      return staffSign || null;
+    } catch (e) {
+      return null;
+    }
   });
 
-  // Stored signatures
-  const [firmaEntrega, setFirmaEntrega] = useState(() => ticket.firmaEntrega || null);
-  const [firmaRecepcion, setFirmaRecepcion] = useState(() => ticket.firmaRecepcion || null);
+  const [firmaRecepcion, setFirmaRecepcion] = useState(() => {
+    if (ticket.firmaRecepcion) return ticket.firmaRecepcion;
+    try {
+      return localStorage.getItem(`upn_sign_recepcion_${ticket.id}`) || null;
+    } catch (e) {
+      return null;
+    }
+  });
 
-  // QR Code Data URL
+  // Mode toggles: edit signature directly in modal
+  const [isEditingEntrega, setIsEditingEntrega] = useState(() => !ticket.firmaEntrega);
+  const [isEditingRecepcion, setIsEditingRecepcion] = useState(() => !ticket.firmaRecepcion);
+
+  // QR Code drawer toggle
+  const [showQrDrawer, setShowQrDrawer] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,57 +88,121 @@ export default function SignatureModal({
   const canvasEntregaRef = useRef(null);
   const canvasRecepcionRef = useRef(null);
 
-  // Sync recibidoPor with senorEs
-  const handleSenorEsChange = (val) => {
-    setSenorEs(val);
-    setRecibidoPor(val);
-  };
-
-  // Compute mobile signing URL
+  // Mobile signing URL
   const getMobileSignUrl = () => {
     if (typeof window === 'undefined') return '';
-    const origin = window.location.origin;
-    const path = window.location.pathname;
-    return `${origin}${path}#firmar-${ticket.id}`;
+    return `${window.location.origin}${window.location.pathname}#firmar-${ticket.id}`;
   };
 
-  // Generate QR Code
   useEffect(() => {
     const url = getMobileSignUrl();
     if (!url) return;
     QRCode.toDataURL(url, {
-      width: 280,
+      width: 240,
       margin: 1.5,
-      color: {
-        dark: '#0f172a',
-        light: '#ffffff'
-      }
+      color: { dark: '#0f172a', light: '#ffffff' }
     })
       .then(data => setQrCodeDataUrl(data))
-      .catch(err => console.error('Error generating QR', err));
+      .catch(err => console.error(err));
   }, [ticket.id]);
 
-  // Handle Save
-  const handleSave = async () => {
+  // Sincronización en Vivo: Si firman desde el celular o en otra pestaña, se actualiza automáticamente en pantalla
+  useEffect(() => {
+    if (!ticket || !ticket.id) return;
+
+    const handleStorageEvent = (e) => {
+      if (e.key === `upn_sign_recepcion_${ticket.id}` && e.newValue) {
+        setFirmaRecepcion(e.newValue);
+        setIsEditingRecepcion(false);
+      }
+      if (e.key === `upn_sign_entrega_${ticket.id}` && e.newValue) {
+        setFirmaEntrega(e.newValue);
+        setIsEditingEntrega(false);
+      }
+    };
+    window.addEventListener('storage', handleStorageEvent);
+
+    // Consulta periódica por si el celular firmó y envió al backend
+    const poller = setInterval(async () => {
+      try {
+        const res = await fetch('/api/tickets');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            const current = json.data.find(t => t.id === ticket.id);
+            if (current) {
+              if (current.firmaRecepcion && current.firmaRecepcion !== firmaRecepcion) {
+                setFirmaRecepcion(current.firmaRecepcion);
+                setIsEditingRecepcion(false);
+                try { localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, current.firmaRecepcion); } catch (e) {}
+              }
+              if (current.firmaEntrega && current.firmaEntrega !== firmaEntrega) {
+                setFirmaEntrega(current.firmaEntrega);
+                setIsEditingEntrega(false);
+                try { localStorage.setItem(`upn_sign_entrega_${ticket.id}`, current.firmaEntrega); } catch (e) {}
+              }
+              if (current.recibidoPor && !senorEs) {
+                setSenorEs(current.recibidoPor);
+              }
+            }
+          }
+        }
+      } catch (err) {}
+    }, 2500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+      clearInterval(poller);
+    };
+  }, [ticket.id, firmaRecepcion, firmaEntrega, senorEs]);
+
+  // Handle signature change and persist immediately
+  const handleFirmaEntregaChange = (dataUrl) => {
+    setFirmaEntrega(dataUrl);
+    try {
+      if (dataUrl) {
+        localStorage.setItem(`upn_sign_entrega_${ticket.id}`, dataUrl);
+        localStorage.setItem('upn_staff_signature', dataUrl); // save staff default
+      }
+    } catch (e) {}
+  };
+
+  const handleFirmaRecepcionChange = (dataUrl) => {
+    setFirmaRecepcion(dataUrl);
+    try {
+      if (dataUrl) {
+        localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, dataUrl);
+      }
+    } catch (e) {}
+  };
+
+  // Save changes
+  const handleSaveAll = async () => {
     setSaving(true);
-    
-    let finalFirmaEntrega = firmaEntrega;
-    let finalFirmaRecepcion = firmaRecepcion;
+    let finalEntrega = firmaEntrega;
+    let finalRecepcion = firmaRecepcion;
 
     if (canvasEntregaRef.current && canvasEntregaRef.current.hasContent()) {
-      finalFirmaEntrega = canvasEntregaRef.current.getDataUrl();
+      finalEntrega = canvasEntregaRef.current.getDataUrl();
     }
     if (canvasRecepcionRef.current && canvasRecepcionRef.current.hasContent()) {
-      finalFirmaRecepcion = canvasRecepcionRef.current.getDataUrl();
+      finalRecepcion = canvasRecepcionRef.current.getDataUrl();
     }
 
     const payload = {
-      firmaEntrega: finalFirmaEntrega,
-      firmaRecepcion: finalFirmaRecepcion,
+      firmaEntrega: finalEntrega,
+      firmaRecepcion: finalRecepcion,
       entregadoPor: entregadoPor.trim() || 'Operaciones Sede',
-      recibidoPor: (senorEs || recibidoPor).trim() || 'Solicitante',
+      recibidoPor: senorEs.trim() || 'Solicitante',
+      descripcionSolucion: remitimosConElPortador.trim() || ticket.descripcionSolucion,
       fechaFirma: new Date().toISOString()
     };
+
+    // Keep locally
+    try {
+      if (finalEntrega) localStorage.setItem(`upn_sign_entrega_${ticket.id}`, finalEntrega);
+      if (finalRecepcion) localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, finalRecepcion);
+    } catch (e) {}
 
     try {
       await onSaveSignatures(ticket.id, payload);
@@ -131,15 +214,16 @@ export default function SignatureModal({
     }
   };
 
+  // PDF Export
   const handleDownloadPdf = () => {
-    let finalFirmaEntrega = firmaEntrega;
-    let finalFirmaRecepcion = firmaRecepcion;
+    let finalEntrega = firmaEntrega;
+    let finalRecepcion = firmaRecepcion;
 
     if (canvasEntregaRef.current && canvasEntregaRef.current.hasContent()) {
-      finalFirmaEntrega = canvasEntregaRef.current.getDataUrl();
+      finalEntrega = canvasEntregaRef.current.getDataUrl();
     }
     if (canvasRecepcionRef.current && canvasRecepcionRef.current.hasContent()) {
-      finalFirmaRecepcion = canvasRecepcionRef.current.getDataUrl();
+      finalRecepcion = canvasRecepcionRef.current.getDataUrl();
     }
 
     generateCargoPdf({
@@ -148,21 +232,16 @@ export default function SignatureModal({
         descripcionSolucion: remitimosConElPortador
       },
       entregadoPor,
-      recibidoPor: senorEs || recibidoPor,
-      firmaEntrega: finalFirmaEntrega,
-      firmaRecepcion: finalFirmaRecepcion
+      recibidoPor: senorEs,
+      firmaEntrega: finalEntrega,
+      firmaRecepcion: finalRecepcion
     });
   };
 
   const handleCopyLink = () => {
-    const url = getMobileSignUrl();
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(getMobileSignUrl());
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
-  };
-
-  const handlePrintActa = () => {
-    window.print();
   };
 
   const hasBothSignatures = !!(firmaEntrega && firmaRecepcion);
@@ -173,396 +252,266 @@ export default function SignatureModal({
       onClick={onClose}
     >
       <div 
-        className="bg-white dark:bg-[#0c0c0f] rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[94vh] flex flex-col animate-spring-up overflow-hidden"
+        className="bg-white dark:bg-[#0c0c0f] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[96vh] flex flex-col animate-spring-up overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Top Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0 pr-2">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+            <div className="w-9 h-9 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
               <FileText className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight truncate">
-                  Acta de Cargo y Firmas
+                  Acta de Cargo Oficial
                 </h3>
                 <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-zinc-700">
                   {ticket.ambiente || 'AULA'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
-                Modelo oficial de cargo UPN con firmas móviles y descarga en PDF
+                Firma directamente abajo o genera el PDF con 1 toque
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
-            title="Cerrar"
-          >
-            <X className="w-4 h-4 stroke-[2.5]" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowQrDrawer(prev => !prev)}
+              className="py-1.5 px-3 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-200/80 dark:border-zinc-700"
+              title="Abrir código QR para firmar en tu celular"
+            >
+              <QrCode className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden sm:inline">Firmar con Celular</span>
+              {showQrDrawer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+              title="Cerrar"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-2xl my-3 shrink-0 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('acta')}
-            className={`py-1.5 px-3 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'acta'
-                ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Modelo de Cargo</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('entrega')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'entrega'
-                ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>✍️ Entregué</span>
-            {firmaEntrega ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 stroke-[2.5]" />
-            ) : (
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('recepcion')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'recepcion'
-                ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>✍️ Recibí Conforme</span>
-            {firmaRecepcion ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 stroke-[2.5]" />
-            ) : (
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('qr')}
-            className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'qr'
-                ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-            title="Firmar desde teléfono móvil con QR"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">QR Celular</span>
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto pr-1">
-          {/* =========================================================================
-              TAB 1: MODELO DE ACTA DE CARGO (Exact Reproduction from Image)
-              ========================================================================= */}
-          {activeTab === 'acta' && (
-            <div className="space-y-4 animate-fade-in">
-              {/* The Official Cargo Box (Double Border) */}
-              <div className="p-1 rounded-3xl bg-slate-100 dark:bg-zinc-900 border-2 border-slate-700 dark:border-zinc-700 shadow-sm">
-                <div className="p-4 sm:p-5 rounded-[22px] bg-white dark:bg-[#0c0c0f] border border-slate-400 dark:border-zinc-700 flex flex-col justify-between min-h-[300px]">
-                  {/* Top Right: Cargo N° [ _______ ] */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">
-                      UNIVERSIDAD PRIVADA DEL NORTE
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-slate-800 dark:text-zinc-200">
-                        Cargo N°
-                      </span>
-                      <div className="px-3 py-1 rounded-xl border border-slate-400 dark:border-zinc-600 bg-slate-50 dark:bg-zinc-900 font-mono font-bold text-xs text-slate-900 dark:text-white shadow-2xs">
-                        {cargoNum}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Main Fields: Señor(es) & Remitimos con el portador */}
-                  <div className="space-y-4 mb-6">
-                    {/* Field 1: Señor(es) */}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <label className="text-sm font-black text-slate-800 dark:text-zinc-200 shrink-0">
-                          Señor(es)
-                        </label>
-                        <input
-                          type="text"
-                          value={senorEs}
-                          onChange={e => handleSenorEsChange(e.target.value)}
-                          placeholder="Nombre del Docente o Alumno solicitante..."
-                          className="flex-1 text-xs font-bold text-slate-900 dark:text-white bg-transparent border-b border-slate-500 dark:border-zinc-600 focus:border-amber-500 focus:outline-none px-1 py-0.5"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Field 2: Remitimos con el portador */}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <label className="text-sm font-black text-slate-800 dark:text-zinc-200 shrink-0">
-                          Remitimos con el portador
-                        </label>
-                        <input
-                          type="text"
-                          value={remitimosConElPortador}
-                          onChange={e => setRemitimosConElPortador(e.target.value)}
-                          placeholder="Detalle del material prestado (plumones, llave, adaptador...)..."
-                          className="flex-1 text-xs font-bold text-slate-900 dark:text-white bg-transparent border-b border-slate-500 dark:border-zinc-600 focus:border-amber-500 focus:outline-none px-1 py-0.5"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Lower Row: Entregué (Left) | Fecha/Hora (Center) | Recibí conforme (Right) */}
-                  <div className="grid grid-cols-3 gap-2 items-end pt-3 border-t border-slate-100 dark:border-zinc-800">
-                    {/* LEFT: ENTREGUÉ (Asistente / Operaciones) */}
-                    <div className="flex flex-col items-center text-center">
-                      <div 
-                        onClick={() => setActiveTab('entrega')}
-                        className="w-full h-18 rounded-lg bg-slate-50 dark:bg-zinc-900/60 border border-dashed border-slate-300 dark:border-zinc-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-amber-500 transition group p-1 mb-1"
-                        title="Clic para firmar entrega"
-                      >
-                        {firmaEntrega ? (
-                          <img src={firmaEntrega} alt="Firma Entregué" className="max-h-full max-w-full object-contain" />
-                        ) : (
-                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline inline-flex items-center gap-1">
-                            <PenTool className="w-3 h-3" /> Firmar aquí
-                          </span>
-                        )}
-                      </div>
-                      <div className="w-full border-t border-slate-600 dark:border-zinc-500 mt-0.5" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 mt-1">
-                        Entregué
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-400 truncate max-w-[120px] font-medium">
-                        {entregadoPor || 'Operaciones Sede'}
-                      </span>
-                    </div>
-
-                    {/* CENTER: FECHA Y HORA */}
-                    <div className="flex flex-col items-center text-center pb-1">
-                      <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-400 mb-0.5">
-                        Fecha
-                      </span>
-                      <div className="px-2.5 py-0.5 rounded-lg border border-slate-400 dark:border-zinc-600 bg-slate-50 dark:bg-zinc-900 font-mono font-bold text-[11px] text-slate-800 dark:text-zinc-200 mb-1.5 shadow-2xs">
-                        {ticket.fecha || new Date().toISOString().split('T')[0]}
-                      </div>
-
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-zinc-400">
-                        <span>Hora:</span>
-                        <strong className="font-mono text-slate-900 dark:text-white">
-                          {ticket.horaReporte || '--:--'}
-                        </strong>
-                      </div>
-                    </div>
-
-                    {/* RIGHT: RECIBÍ CONFORME (Docente / Alumno) */}
-                    <div className="flex flex-col items-center text-center">
-                      <div 
-                        onClick={() => setActiveTab('recepcion')}
-                        className="w-full h-18 rounded-lg bg-slate-50 dark:bg-zinc-900/60 border border-dashed border-slate-300 dark:border-zinc-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-amber-500 transition group p-1 mb-1"
-                        title="Clic para firmar recepción"
-                      >
-                        {firmaRecepcion ? (
-                          <img src={firmaRecepcion} alt="Firma Recibí Conforme" className="max-h-full max-w-full object-contain" />
-                        ) : (
-                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline inline-flex items-center gap-1">
-                            <PenTool className="w-3 h-3" /> Firmar aquí
-                          </span>
-                        )}
-                      </div>
-                      <div className="w-full border-t border-slate-600 dark:border-zinc-500 mt-0.5" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 mt-1">
-                        Recibí conforme
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-400 truncate max-w-[120px] font-medium">
-                        {senorEs || 'Docente / Alumno'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons: Download PDF & Print */}
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={handleDownloadPdf}
-                  className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-black shadow-sm transition inline-flex items-center justify-center gap-2 active:scale-95"
-                >
-                  <Download className="w-4 h-4 stroke-[2.5]" />
-                  <span>Descargar Acta en PDF</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handlePrintActa}
-                  className="py-3 px-4 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-2xl text-xs font-bold transition inline-flex items-center justify-center gap-2 active:scale-95 border border-slate-200/80 dark:border-zinc-700"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Imprimir</span>
-                </button>
-              </div>
+        {/* Expandable Mobile QR Drawer */}
+        {showQrDrawer && (
+          <div className="p-3 my-2 bg-slate-50 dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-3 animate-fade-in shrink-0">
+            <div className="p-1.5 bg-white rounded-xl border border-slate-200 shrink-0">
+              {qrCodeDataUrl && (
+                <img src={qrCodeDataUrl} alt="QR Firma" className="w-20 h-20 object-contain block" />
+              )}
             </div>
-          )}
-
-          {/* =========================================================================
-              TAB 2: FIRMA DE ENTREGA (ASISTENTE / OPERACIONES)
-              ========================================================================= */}
-          {activeTab === 'entrega' && (
-            <div className="space-y-3.5 animate-fade-in">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Nombre del Asistente (Entregué)
-                </label>
-                <input
-                  type="text"
-                  value={entregadoPor}
-                  onChange={e => setEntregadoPor(e.target.value)}
-                  placeholder="Ej: Alessandro Pascual"
-                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-bold"
-                />
-              </div>
-
-              <SignatureCanvas
-                ref={canvasEntregaRef}
-                title="Firma del Asistente · Entregué"
-                subtitle="Certifica la entrega de los materiales con tu dedo o puntero"
-                initialImage={firmaEntrega}
-                strokeColor="#0284c7"
-                onSignChange={dataUrl => setFirmaEntrega(dataUrl)}
-              />
-
-              <div className="flex items-center justify-between text-xs pt-1">
-                <span className="text-[11px] text-slate-500 dark:text-zinc-400">
-                  {firmaEntrega ? '✅ Firma de entrega registrada' : '⚠️ Pendiente de firma'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('recepcion')}
-                  className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
-                >
-                  <span>Ir a Firma Recibí Conforme &rarr;</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* =========================================================================
-              TAB 3: FIRMA DE RECEPCIÓN (DOCENTE / ALUMNO)
-              ========================================================================= */}
-          {activeTab === 'recepcion' && (
-            <div className="space-y-3.5 animate-fade-in">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Nombre de Quien Recibe · Señor(es)
-                </label>
-                <input
-                  type="text"
-                  value={senorEs}
-                  onChange={e => handleSenorEsChange(e.target.value)}
-                  placeholder="Ej: Haro Omar / Docente de Diseño"
-                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-bold"
-                />
-              </div>
-
-              <SignatureCanvas
-                ref={canvasRecepcionRef}
-                title="Firma de Conformidad · Recibí Conforme"
-                subtitle="El docente o alumno certifica haber recibido el material conforme"
-                initialImage={firmaRecepcion}
-                strokeColor="#0f172a"
-                onSignChange={dataUrl => setFirmaRecepcion(dataUrl)}
-              />
-
-              <div className="flex items-center justify-between text-xs pt-1">
-                <span className="text-[11px] text-slate-500 dark:text-zinc-400">
-                  {firmaRecepcion ? '✅ Firma de recepción registrada' : '⚠️ Pendiente de firma'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('acta')}
-                  className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
-                >
-                  <span>Ver Acta de Cargo Completa &rarr;</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* =========================================================================
-              TAB 4: CÓDIGO QR PARA FIRMAR CON CELULAR
-              ========================================================================= */}
-          {activeTab === 'qr' && (
-            <div className="py-2 flex flex-col items-center text-center animate-fade-in">
-              <div className="p-3 bg-white rounded-3xl border-2 border-slate-200 shadow-md mb-3">
-                {qrCodeDataUrl ? (
-                  <img 
-                    src={qrCodeDataUrl} 
-                    alt="Código QR para firmar con celular" 
-                    className="w-56 h-56 object-contain block"
-                  />
-                ) : (
-                  <div className="w-56 h-56 flex items-center justify-center text-slate-400 text-xs font-mono">
-                    Generando QR...
-                  </div>
-                )}
-              </div>
-
-              <h4 className="text-sm font-black text-slate-900 dark:text-white mb-1">
-                Firma Directa con Smartphone
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mb-4 leading-relaxed">
-                Escanea el código QR con la cámara de tu celular para abrir el panel táctil y firmar el Acta de Cargo en pantalla.
+            <div className="flex-1 min-w-0 text-left">
+              <h4 className="text-xs font-black text-slate-900 dark:text-white">Escanea con tu celular</h4>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
+                Apunta con la cámara de tu móvil para abrir el lienzo táctil a pantalla completa.
               </p>
-
-              <div className="flex items-center gap-2 w-full max-w-xs">
+              <div className="flex items-center gap-2 mt-2">
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="flex-1 py-2.5 px-3 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700"
+                  className="py-1 px-2.5 bg-white dark:bg-zinc-800 rounded-lg text-[10px] font-bold border border-slate-200 dark:border-zinc-700 inline-flex items-center gap-1 text-slate-700 dark:text-zinc-300"
                 >
-                  {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedLink ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
+                  <Copy className="w-3 h-3" />
+                  <span>{copiedLink ? '¡Copiado!' : 'Copiar enlace'}</span>
                 </button>
-
                 <a
                   href={getMobileSignUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2.5 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-xs"
+                  className="py-1 px-2.5 bg-amber-500 text-slate-950 rounded-lg text-[10px] font-black inline-flex items-center gap-1 shadow-2xs"
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Abrir aquí</span>
+                  <ExternalLink className="w-3 h-3" />
+                  <span>Abrir móvil</span>
                 </a>
               </div>
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Unified Single-Page Cargo Sheet */}
+        <div className="flex-1 overflow-y-auto pr-1 my-3">
+          <div className="p-1 rounded-3xl bg-slate-100 dark:bg-zinc-900 border-2 border-slate-700 dark:border-zinc-700 shadow-sm">
+            <div className="p-4 sm:p-5 rounded-[22px] bg-white dark:bg-[#0c0c0f] border border-slate-400 dark:border-zinc-700 flex flex-col justify-between space-y-4">
+              
+              {/* Header: University & Cargo Number */}
+              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 pb-2.5">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-widest">
+                    UPN · OPERACIONES SEDE
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-800 dark:text-zinc-200">
+                    Cargo N°
+                  </span>
+                  <div className="px-3 py-1 rounded-xl border border-slate-400 dark:border-zinc-600 bg-slate-50 dark:bg-zinc-900 font-mono font-bold text-xs text-slate-900 dark:text-white shadow-2xs">
+                    {cargoNum}
+                  </div>
+                </div>
+              </div>
+
+              {/* Field 1: Señor(es) */}
+              <div className="flex items-center gap-2 pt-1">
+                <label className="text-sm font-black text-slate-800 dark:text-zinc-200 shrink-0">
+                  Señor(es)
+                </label>
+                <input
+                  type="text"
+                  value={senorEs}
+                  onChange={e => setSenorEs(e.target.value)}
+                  placeholder="Nombre del Docente o Alumno..."
+                  className="flex-1 text-xs font-bold text-slate-900 dark:text-white bg-transparent border-b border-slate-500 dark:border-zinc-600 focus:border-amber-500 focus:outline-none px-1 py-0.5"
+                />
+              </div>
+
+              {/* Field 2: Remitimos con el portador (Multi-renglón con líneas continuas) */}
+              <div className="pt-1">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <label className="text-sm font-black text-slate-800 dark:text-zinc-200 shrink-0">
+                    Remitimos con el portador
+                  </label>
+                </div>
+                <textarea
+                  rows={2}
+                  value={remitimosConElPortador}
+                  onChange={e => setRemitimosConElPortador(e.target.value)}
+                  placeholder="Detalle de materiales prestados..."
+                  className="w-full text-xs font-bold text-slate-900 dark:text-white bg-transparent focus:outline-none resize-none px-1 py-1"
+                  style={{
+                    lineHeight: '26px',
+                    backgroundImage: 'repeating-linear-gradient(transparent, transparent 24px, rgba(148, 163, 184, 0.7) 24px, rgba(148, 163, 184, 0.7) 25px)',
+                    backgroundAttachment: 'local'
+                  }}
+                />
+              </div>
+
+              {/* Integrated Signatures Row: Entregué (Left) | Fecha/Hora (Center) | Recibí conforme (Right) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200 dark:border-zinc-800 items-end">
+                
+                {/* 1. ENTREGUÉ (OPERACIONES / ASISTENTE) */}
+                <div className="flex flex-col items-center text-center p-2 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-zinc-800">
+                  <div className="w-full flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-zinc-400 mb-1 px-1">
+                    <span>1. ENTREGUÉ</span>
+                    {firmaEntrega && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingEntrega(true)}
+                        className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 font-bold"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" /> Re-firmar
+                      </button>
+                    )}
+                  </div>
+
+                  {firmaEntrega && !isEditingEntrega ? (
+                    <div className="w-full h-24 rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 flex items-center justify-center p-1 overflow-hidden shadow-2xs">
+                      <img src={firmaEntrega} alt="Firma Entregué" className="max-h-full max-w-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-full">
+                      <SignatureCanvas
+                        ref={canvasEntregaRef}
+                        title="Firma Asistente"
+                        subtitle="Firma aquí con el dedo"
+                        initialImage={firmaEntrega}
+                        strokeColor="#0284c7"
+                        onSignChange={handleFirmaEntregaChange}
+                      />
+                    </div>
+                  )}
+
+                  <div className="w-full border-t border-slate-600 dark:border-zinc-500 mt-2 pt-1">
+                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 block">
+                      Entregué
+                    </span>
+                    <input
+                      type="text"
+                      value={entregadoPor}
+                      onChange={e => setEntregadoPor(e.target.value)}
+                      placeholder="Nombre del Asistente"
+                      className="text-[10px] text-center font-bold text-slate-600 dark:text-zinc-400 bg-transparent border-b border-transparent focus:border-amber-500 focus:outline-none w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. FECHA Y HORA (CENTRO) */}
+                <div className="flex flex-col items-center text-center justify-center py-2">
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-400 mb-0.5">
+                    Fecha
+                  </span>
+                  <div className="px-3 py-1 rounded-xl border border-slate-400 dark:border-zinc-600 bg-slate-50 dark:bg-zinc-900 font-mono font-bold text-xs text-slate-800 dark:text-zinc-200 mb-2 shadow-2xs">
+                    {ticket.fecha || new Date().toISOString().split('T')[0]}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-zinc-400">
+                    <span>Hora:</span>
+                    <strong className="font-mono text-slate-900 dark:text-white text-sm">
+                      {ticket.horaReporte || '--:--'}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* 3. RECIBÍ CONFORME (DOCENTE / ALUMNO) */}
+                <div className="flex flex-col items-center text-center p-2 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-zinc-800">
+                  <div className="w-full flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-zinc-400 mb-1 px-1">
+                    <span>2. RECIBÍ CONFORME</span>
+                    {firmaRecepcion && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingRecepcion(true)}
+                        className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 font-bold"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" /> Re-firmar
+                      </button>
+                    )}
+                  </div>
+
+                  {firmaRecepcion && !isEditingRecepcion ? (
+                    <div className="w-full h-24 rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 flex items-center justify-center p-1 overflow-hidden shadow-2xs">
+                      <img src={firmaRecepcion} alt="Firma Recibí Conforme" className="max-h-full max-w-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-full">
+                      <SignatureCanvas
+                        ref={canvasRecepcionRef}
+                        title="Firma Receptor"
+                        subtitle="Firma aquí con el dedo"
+                        initialImage={firmaRecepcion}
+                        strokeColor="#0f172a"
+                        onSignChange={handleFirmaRecepcionChange}
+                      />
+                    </div>
+                  )}
+
+                  <div className="w-full border-t border-slate-600 dark:border-zinc-500 mt-2 pt-1">
+                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 block">
+                      Recibí conforme
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-400 block truncate max-w-[140px]">
+                      {senorEs || 'Docente / Alumno'}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="pt-3.5 mt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-zinc-400">
-            <span>Firmas:</span>
+        {/* Modal Footer: Download PDF & Save Button */}
+        <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-zinc-400">
+            <span>Estado:</span>
             {hasBothSignatures ? (
               <span className="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -571,27 +520,28 @@ export default function SignatureModal({
             ) : firmaEntrega || firmaRecepcion ? (
               <span className="text-amber-600 dark:text-amber-400">1 de 2 firmas</span>
             ) : (
-              <span className="text-slate-400">Sin firmas aún</span>
+              <span className="text-slate-400">Sin firmas registradas</span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
-              onClick={onClose}
-              className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+              onClick={handleDownloadPdf}
+              className="flex-1 sm:flex-initial py-2.5 px-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
             >
-              Cerrar
+              <Download className="w-4 h-4 stroke-[2.5]" />
+              <span>Descargar PDF</span>
             </button>
 
             <button
               type="button"
-              onClick={handleSave}
+              onClick={handleSaveAll}
               disabled={saving}
-              className="py-2.5 px-5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 rounded-xl text-xs font-black shadow-xs transition inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="flex-1 sm:flex-initial py-2.5 px-4 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 rounded-xl text-xs font-black shadow-xs transition inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>{saving ? 'Guardando...' : 'Guardar y Confirmar'}</span>
+              <span>{saving ? 'Guardando...' : 'Guardar y Cerrar'}</span>
             </button>
           </div>
         </div>

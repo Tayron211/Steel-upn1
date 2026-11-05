@@ -59,36 +59,99 @@ export function generateCargoPdf({
   doc.setTextColor(15, 23, 42);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('Señor(es)', m + 8, m + 28);
+  doc.text('Señor(es)', m + 8, m + 26);
 
   const recipientName = (recibidoPor || ticket.recibidoPor || 'Docente / Solicitante').toUpperCase();
+  const rightEdge = pageWidth - m - 8; // 190 mm (safe inside double border)
+  const senorStartX = m + 32;
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  doc.text(recipientName, m + 32, m + 27.5);
+  const senorMaxW = rightEdge - senorStartX;
+  const senorLines = doc.splitTextToSize(recipientName, senorMaxW);
+  doc.text(senorLines[0] || '', senorStartX, m + 25.5);
 
   // Underline for Señor(es)
-  doc.setLineWidth(0.3);
-  doc.line(m + 30, m + 29, pageWidth - m - 8, m + 29);
+  doc.setLineWidth(0.35);
+  doc.line(senorStartX - 2, m + 27, rightEdge, m + 27);
 
-  // 5. Field: Remitimos con el portador
+  // 5. Field: Remitimos con el portador (Multi-renglón inteligente con salto de línea)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('Remitimos con el portador', m + 8, m + 42);
+  const labelPortador = 'Remitimos con el portador';
+  doc.text(labelPortador, m + 8, m + 38);
 
   const cleanDesc = (ticket.descripcionSolucion || ticket.tipoSolicitud || 'Materiales y equipos de aula')
     .replace(/\[(🎓|👨‍🏫)?\s*(ALUMNO|DOCENTE)(?::[^\]]+)?\]/gi, '')
     .trim();
-  const itemText = `[Aula ${ticket.ambiente || 'General'}] ${ticket.tipoSolicitud} - ${cleanDesc}`.toUpperCase();
+
+  let itemDetail = cleanDesc;
+  if (ticket.tipoSolicitud && !itemDetail.toUpperCase().includes(ticket.tipoSolicitud.toUpperCase())) {
+    itemDetail = `${ticket.tipoSolicitud} - ${itemDetail}`;
+  }
+  const rawItemText = `[Aula ${ticket.ambiente || 'General'}] ${itemDetail}`.toUpperCase();
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(itemText.slice(0, 75), m + 64, m + 41.5);
 
-  // Underline for Remitimos con el portador
-  doc.line(m + 62, m + 43, pageWidth - m - 8, m + 43);
+  const labelWidth = doc.getTextWidth(labelPortador + ' ');
+  const line1StartX = m + 8 + labelWidth;
+  const line1MaxW = rightEdge - line1StartX;
+  const subsequentMaxW = rightEdge - (m + 8);
+
+  // Divide el texto palabra por palabra para que continúe en el siguiente renglón
+  const words = rawItemText.split(/\s+/);
+  const lines = [];
+  let currentLine = '';
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    const testLine = currentLine ? `${currentLine} ${w}` : w;
+    const maxWForThisLine = lines.length === 0 ? line1MaxW : subsequentMaxW;
+
+    if (doc.getTextWidth(testLine) <= maxWForThisLine) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = w;
+      } else {
+        lines.push(testLine);
+        currentLine = '';
+      }
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  // Siempre dibuja al menos 2 renglones con sus líneas completas de subrayado
+  const totalRenglones = Math.max(2, Math.min(lines.length, 3));
+  const startRenglonY = m + 37.5;
+  const renglonSpacing = 10; // 10 mm entre renglones
+
+  for (let r = 0; r < totalRenglones; r++) {
+    const rY = startRenglonY + r * renglonSpacing;
+    const textOnRenglon = lines[r] || '';
+
+    doc.setLineWidth(0.35);
+    if (r === 0) {
+      if (textOnRenglon) {
+        doc.text(textOnRenglon, line1StartX, rY);
+      }
+      // Subrayado del Renglón 1 hasta el borde derecho
+      doc.line(line1StartX - 1, rY + 1.8, rightEdge, rY + 1.8);
+    } else {
+      if (textOnRenglon) {
+        doc.text(textOnRenglon, m + 8, rY);
+      }
+      // Subrayado del Renglón 2 (y siguientes) de extremo a extremo
+      doc.line(m + 8, rY + 1.8, rightEdge, rY + 1.8);
+    }
+  }
 
   // 6. Signatures & Date/Time Footer (Positioned near bottom)
-  const footerY = pageHeight - m - 24;
+  const footerY = pageHeight - m - 20;
 
   // --- Left: ENTREGUÉ (Asistente / Operaciones) ---
   const leftX = m + 12;
@@ -166,3 +229,4 @@ export function generateCargoPdf({
   const fileName = `Acta_Cargo_${ticket.ambiente || 'AULA'}_${cargoNum}.pdf`;
   doc.save(fileName);
 }
+

@@ -302,27 +302,29 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Action Speed Dial (FAB) for 1-Tap Mobile Actions */}
-      <FloatingActionMenu
-        onOpenManualSheet={() => {
-          setOperationsSubTab('manual');
-          navigateTab('operations', true);
-        }}
-        onOpenNewTicket={() => {
-          setNewTicketPrefill({
-            ambiente: '',
-            pabellon: 'A',
-            piso: '1ER PISO',
-            tipoSolicitud: 'PLUMONES / MATERIALES',
-            descripcionSolucion: 'Préstamo de plumones y mota acrílica'
-          });
-          navigateTab('tickets', true);
-        }}
-        onOpenReservation={() => {
-          setOperationsSubTab('reservations');
-          navigateTab('operations', true);
-        }}
-      />
+      {/* Floating Action Speed Dial (FAB) for 1-Tap Mobile Actions (Oculto en tickets para no tapar el formulario de préstamos) */}
+      {activeTab !== 'tickets' && (
+        <FloatingActionMenu
+          onOpenManualSheet={() => {
+            setOperationsSubTab('manual');
+            navigateTab('operations', true);
+          }}
+          onOpenNewTicket={() => {
+            setNewTicketPrefill({
+              ambiente: '',
+              pabellon: 'A',
+              piso: '1ER PISO',
+              tipoSolicitud: 'PLUMONES / MATERIALES',
+              descripcionSolucion: 'Préstamo de plumones y mota acrílica'
+            });
+            navigateTab('tickets', true);
+          }}
+          onOpenReservation={() => {
+            setOperationsSubTab('reservations');
+            navigateTab('operations', true);
+          }}
+        />
+      )}
     </div>
   );
 }
