@@ -211,13 +211,13 @@ export function generateCargoPdf({
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   const timeStr = ticket.horaReporte || '--:--';
-  doc.text(`Hora:  ${timeStr}`, centerX, footerY + 5, { align: 'center' });
+  doc.text(`Hora: ${timeStr}`, centerX, footerY + 3.8, { align: 'center' });
 
   if (ticket.estado === 'ATENDIDO' || finalFirmaEntrega) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.setTextColor(22, 101, 52);
-    doc.text('✓ DEVOLUCIÓN CONFORME', centerX, footerY + 8.5, { align: 'center' });
+    doc.text('DEVOLUCIÓN CONFORME', centerX, footerY + 7.5, { align: 'center' });
   }
 
   // --- Derecha: RECIBÍ CONFORME (Docente o Alumno al recibir el préstamo) ---
