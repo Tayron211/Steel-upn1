@@ -8,6 +8,7 @@
     "build": "vite build",
     "deploy": "vite build && wrangler pages deploy dist --project-name=steel-upn1 --branch=main",
     "sync": "vite build && git add . && git commit -m \"chore: actualizacion de sistema\" && git push origin main && wrangler pages deploy dist --project-name=steel-upn1 --branch=main",
+    "sync:data": "node scripts/sync_data.cjs",
     "server": "node server/index.js",
     "start": "node server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
