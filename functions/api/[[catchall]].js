@@ -382,31 +382,40 @@ export async function onRequest(context) {
 
     if (path === '/api/manual-sheets' && method === 'POST') {
       const body = await request.json();
-      const countRow = await db.prepare('SELECT count(*) as total FROM hojas_manuales').first();
-      const nextNum = (countRow ? countRow.total : 0) + 1;
-      const codigo = `LN1-${String(nextNum).padStart(3, '0')}`;
-      const now = new Date();
-      const fecha = now.toISOString().split('T')[0];
+      // Siguiente código según el mayor LN1-XXX existente (evita duplicados)
+      const { results: codes } = await db.prepare('SELECT codigo FROM hojas_manuales').all();
+      const maxNum = codes.reduce((max, r) => {
+        const m = String(r.codigo || '').match(/LN\d*-(\d+)/i);
+        const n = m ? parseInt(m[1], 10) : 0;
+        return n > max ? n : max;
+      }, 0);
+      const codigo = `LN1-${String(maxNum + 1).padStart(3, '0')}`;
+      const id = `manual_new_${Date.now()}`;
+      const fecha = new Date().toISOString().split('T')[0];
 
       await db.prepare(`
-        INSERT INTO hojas_manuales (codigo, fecha, nrc, docente, curso, motivo, asistente, detalle, aula, hora_inicio, hora_fin, firma_docente, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, detalle, aula, hora_inicio, hora_fin, firma_docente, docente_reemplazo, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `).bind(
+        id,
+        body.periodo || '2026-2',
         codigo,
         body.fecha || fecha,
-        body.nrc || '',
+        body.nrc ? String(body.nrc) : '',
         body.docente || '',
         body.curso || '',
-        body.motivo || 'DOCENTE DE REEMPLAZO',
+        body.carrera || '',
+        body.motivo || 'DOCENTE SIN ACCESOS',
         body.asistente || 'OPERACIONES',
         body.detalle || '',
         body.aula || '',
         body.hora_inicio || '',
         body.hora_fin || '',
-        body.firma_docente || ''
+        body.firma_docente || '',
+        body.docenteReemplazo || ''
       ).run();
 
-      const created = await db.prepare('SELECT * FROM hojas_manuales WHERE codigo = ?').bind(codigo).first();
+      const created = await db.prepare('SELECT * FROM hojas_manuales WHERE id = ?').bind(id).first();
       return json({ success: true, data: created });
     }
 

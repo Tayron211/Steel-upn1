@@ -124,14 +124,17 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
         body: JSON.stringify(payload)
       });
       const json = await res.json();
-      if (json.success) {
-        setSheets(prev => [json.data, ...prev]);
-        setSelectedForPrint(json.data);
+      if (!json.success) {
+        alert('No se pudo registrar la hoja: ' + (json.error || json.message || 'intente nuevamente'));
+        return;
       }
+      setSheets(prev => [json.data, ...prev]);
+      setSelectedForPrint(json.data);
       setIsModalOpen(false);
       resetForm();
     } catch (err) {
       console.error(err);
+      alert('Error de conexión al registrar la hoja. Intente nuevamente.');
     }
   };
 
