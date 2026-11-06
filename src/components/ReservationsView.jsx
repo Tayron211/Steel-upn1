@@ -14,11 +14,101 @@ import {
   Users,
   Flame,
   X,
-  Check
+  Check,
+  ChevronDown
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
+
+const CAMPUS_ROOMS_CATALOG = [
+  // --- PABELLÓN A ---
+  // Sótano
+  { abrv: 'AS01', nombre: 'Laboratorio ZAM AS-01', pabellon: 'A', piso: 'SÓTANO', categoria: 'LABORATORIO', tipo: 'Laboratorio ZAM', aforo: 30 },
+  { abrv: 'AS02', nombre: 'Taller de Audio AS-02', pabellon: 'A', piso: 'SÓTANO', categoria: 'TALLER', tipo: 'Taller de Audio', aforo: 10 },
+  { abrv: 'AS03', nombre: 'Taller de Audio AS-03', pabellon: 'A', piso: 'SÓTANO', categoria: 'TALLER', tipo: 'Taller de Audio', aforo: 10 },
+  { abrv: 'AS04', nombre: 'Laboratorio de Fotografía AS-04', pabellon: 'A', piso: 'SÓTANO', categoria: 'LABORATORIO', tipo: 'Lab. Fotografía', aforo: 20 },
+  { abrv: 'AS05', nombre: 'Laboratorio de Fotografía AS-05', pabellon: 'A', piso: 'SÓTANO', categoria: 'LABORATORIO', tipo: 'Lab. Fotografía', aforo: 20 },
+  // 1er Piso
+  { abrv: 'A101', nombre: 'Taller de Edición A-101', pabellon: 'A', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller de Edición', aforo: 21 },
+  // 2do Piso
+  { abrv: 'A201', nombre: 'Aula A-201', pabellon: 'A', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A202', nombre: 'Aula A-202', pabellon: 'A', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  // 3er Piso
+  { abrv: 'A301', nombre: 'Aula A-301', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A302', nombre: 'Aula A-302', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A303', nombre: 'Aula A-303', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A304', nombre: 'Aula A-304', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A305', nombre: 'Aula A-305', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A306', nombre: 'Sala de Conferencias A-306', pabellon: 'A', piso: '3ER PISO', categoria: 'ESPECIAL', tipo: 'Sala de Conferencias', aforo: 60 },
+  // 4to Piso
+  { abrv: 'A401', nombre: 'Aula A-401', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A402', nombre: 'Aula A-402', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A403', nombre: 'Laboratorio de Diseño y Producción Digital A-403', pabellon: 'A', piso: '4TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. Diseño Digital', aforo: 40 },
+  { abrv: 'A404', nombre: 'Aula A-404', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A405', nombre: 'Aula A-405', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
+  { abrv: 'A406', nombre: 'Aula de Litigación A-406', pabellon: 'A', piso: '4TO PISO', categoria: 'ESPECIAL', tipo: 'Aula de Litigación', aforo: 37 },
+  { abrv: 'A407', nombre: 'Sala de Conferencias A-407', pabellon: 'A', piso: '4TO PISO', categoria: 'ESPECIAL', tipo: 'Sala de Conferencias', aforo: 60 },
+  // 5to Piso
+  { abrv: 'A501', nombre: 'Aula A-501', pabellon: 'A', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A502', nombre: 'Aula A-502', pabellon: 'A', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'A503', nombre: 'Laboratorio de Diseño Gráfico A-503', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. Diseño Gráfico', aforo: 40 },
+  { abrv: 'A504', nombre: 'Laboratorio de Diseño Gráfico A-504', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. Diseño Gráfico', aforo: 40 },
+  { abrv: 'A505', nombre: 'Laboratorio de Cómputo A-505', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
+  { abrv: 'A506', nombre: 'Laboratorio de Cómputo A-506', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
+  { abrv: 'A507', nombre: 'Aula Multifuncional A-507', pabellon: 'A', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula Multifuncional', aforo: 16 },
+  { abrv: 'A508', nombre: 'Laboratorio de Cómputo A-508', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
+  { abrv: 'A509', nombre: 'Laboratorio de Cómputo A-509', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
+  { abrv: 'A510', nombre: 'Laboratorio de Cómputo A-510', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
+
+  // --- PABELLÓN B ---
+  // 1er Piso
+  { abrv: 'B101', nombre: 'Laboratorio de Impresión 3D B-101', pabellon: 'B', piso: '1ER PISO', categoria: 'LABORATORIO', tipo: 'Lab. Impresión 3D', aforo: 5 },
+  { abrv: 'B102', nombre: 'Taller de Creatividad B-102', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Creatividad', aforo: 40 },
+  { abrv: 'B103', nombre: 'Taller de Diseño Industrial B-103', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Diseño Ind.', aforo: 30 },
+  { abrv: 'B104', nombre: 'Taller de Arquitectura y Dibujo B-104', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B105', nombre: 'Taller de Materiales de Construcción B-105', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Materiales', aforo: 28 },
+  { abrv: 'B106', nombre: 'Taller de Soldadura B-106', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Soldadura', aforo: 20 },
+  // 2do Piso
+  { abrv: 'B201', nombre: 'Aula B-201', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B202', nombre: 'Aula B-202', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B203', nombre: 'Taller de Arquitectura y Dibujo B-203', pabellon: 'B', piso: '2DO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B204', nombre: 'Taller de Arquitectura y Dibujo B-204', pabellon: 'B', piso: '2DO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B205', nombre: 'Taller de Arquitectura y Dibujo B-205', pabellon: 'B', piso: '2DO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B206', nombre: 'Aula B-206', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B207', nombre: 'Aula B-207', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  // 3er Piso
+  { abrv: 'B301', nombre: 'Aula B-301', pabellon: 'B', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B302', nombre: 'Aula B-302', pabellon: 'B', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B303', nombre: 'Taller de Arquitectura y Dibujo B-303', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B304', nombre: 'Taller de Arquitectura y Dibujo B-304', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B305', nombre: 'Taller de Arquitectura y Dibujo B-305', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B306', nombre: 'Taller de Arquitectura y Dibujo B-306', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  // 4to Piso
+  { abrv: 'B401', nombre: 'Aula B-401', pabellon: 'B', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
+  { abrv: 'B402', nombre: 'Aula B-402', pabellon: 'B', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
+  { abrv: 'B403', nombre: 'Taller de Arquitectura y Dibujo B-403', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B404', nombre: 'Taller de Arquitectura y Dibujo B-404', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B405', nombre: 'Taller de Arquitectura y Dibujo B-405', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B406', nombre: 'Taller de Arquitectura y Dibujo B-406', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  // 5to Piso
+  { abrv: 'B501', nombre: 'Aula B-501', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B502', nombre: 'Aula B-502', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B503', nombre: 'Aula B-503', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
+  { abrv: 'B504', nombre: 'Aula B-504', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
+  { abrv: 'B505', nombre: 'Taller de Arquitectura y Dibujo B-505', pabellon: 'B', piso: '5TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B506', nombre: 'Taller de Arquitectura y Dibujo B-506', pabellon: 'B', piso: '5TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
+  { abrv: 'B507', nombre: 'Taller de Arquitectura y Dibujo B-507', pabellon: 'B', piso: '5TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 }
+];
+
+const inferCategoria = (rm) => {
+  if (rm.categoria) return rm.categoria;
+  const text = `${rm.nombre || ''} ${rm.tipo || ''}`.toUpperCase();
+  if (text.includes('LAB')) return 'LABORATORIO';
+  if (text.includes('TALLER')) return 'TALLER';
+  if (text.includes('CONFERENCIA') || text.includes('LITIGAC')) return 'ESPECIAL';
+  return 'AULA';
+};
 
 const TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:20', '09:00', '09:10', '10:00', '10:50',
@@ -126,6 +216,11 @@ export default function ReservationsView() {
   const [selectedHoraBlock, setSelectedHoraBlock] = useState(() => getCurrentHourBlock()); // '' = Todo el día, o '07:30', etc.
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRoomPickerOpen, setIsRoomPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerCategory, setPickerCategory] = useState('ALL'); // 'ALL' | 'AULA' | 'LABORATORIO' | 'TALLER' | 'ESPECIAL'
+  const [pickerPabellon, setPickerPabellon] = useState(''); // '' | 'A' | 'B'
+  const [pickerPiso, setPickerPiso] = useState(''); // '' | 'SOT' | '1ER PISO' | ...
   const [toastMessage, setToastMessage] = useState('');
 
   // Generar los próximos 7 días (Hoy + 6 días siguientes)
@@ -240,14 +335,59 @@ export default function ReservationsView() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen]);
 
+  // Catálogo unificado de todas las aulas, laboratorios y talleres
+  const allRooms = useMemo(() => {
+    const map = new Map();
+    CAMPUS_ROOMS_CATALOG.forEach(rm => {
+      map.set(rm.abrv.toUpperCase().trim(), {
+        ...rm,
+        categoria: inferCategoria(rm)
+      });
+    });
+    rooms.forEach(rm => {
+      if (!rm.abrv) return;
+      const key = rm.abrv.toUpperCase().trim();
+      const existing = map.get(key) || {};
+      const merged = {
+        ...existing,
+        ...rm,
+        abrv: key,
+        nombre: existing.nombre || rm.nombre || `Ambiente ${key}`,
+        tipo: existing.tipo || rm.tipo || 'Aula'
+      };
+      merged.categoria = inferCategoria(merged);
+      map.set(key, merged);
+    });
+    return Array.from(map.values());
+  }, [rooms]);
+
   // Mapa rápido de aulas para obtener piso y pabellón
   const roomMap = useMemo(() => {
     const map = {};
-    rooms.forEach(rm => {
+    allRooms.forEach(rm => {
       if (rm.abrv) map[rm.abrv.toUpperCase().trim()] = rm;
     });
     return map;
-  }, [rooms]);
+  }, [allRooms]);
+
+  // Lista filtrada para el menú selector de Aula / Laboratorio dentro del modal
+  const pickerFilteredRooms = useMemo(() => {
+    const q = pickerSearch.trim().toLowerCase();
+    return allRooms.filter(rm => {
+      if (pickerCategory !== 'ALL' && rm.categoria !== pickerCategory) return false;
+      if (pickerPabellon && rm.pabellon !== pickerPabellon) return false;
+      if (pickerPiso && !matchesPiso(rm.piso, pickerPiso)) return false;
+      if (q) {
+        const hit =
+          (rm.abrv && rm.abrv.toLowerCase().includes(q)) ||
+          (rm.nombre && rm.nombre.toLowerCase().includes(q)) ||
+          (rm.tipo && rm.tipo.toLowerCase().includes(q)) ||
+          (rm.piso && rm.piso.toLowerCase().includes(q));
+        if (!hit) return false;
+      }
+      return true;
+    });
+  }, [allRooms, pickerCategory, pickerPabellon, pickerPiso, pickerSearch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -376,7 +516,7 @@ export default function ReservationsView() {
     const target = activeDayInfo;
     const blockObj = REAL_BLOCKS.find(b => b.start === selectedHoraBlock);
 
-    return rooms
+    return allRooms
       .filter(room => {
         if (selectedPabellon && room.pabellon !== selectedPabellon) return false;
         if (selectedPisos.length > 0) {
@@ -459,7 +599,7 @@ export default function ReservationsView() {
         // Si seleccionó "Todo el día", mostrar aulas que tengan al menos 1 bloque libre
         return room.freeBlocksCount > 0;
       });
-  }, [rooms, dayClasses, reservas, activeDayInfo, selectedHoraBlock, selectedPabellon, selectedPisos, search]);
+  }, [allRooms, dayClasses, reservas, activeDayInfo, selectedHoraBlock, selectedPabellon, selectedPisos, search]);
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
@@ -968,15 +1108,29 @@ export default function ReservationsView() {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Aula *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.aula}
-                    onChange={(e) => setFormData({ ...formData, aula: e.target.value.toUpperCase() })}
-                    placeholder="Ej: A201"
-                    className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition uppercase font-mono font-bold"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    Aula / Laboratorio *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPickerSearch('');
+                      setIsRoomPickerOpen(true);
+                    }}
+                    className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition flex items-center justify-between gap-2 overflow-hidden"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 font-mono font-black text-[11px] border border-amber-300/60 dark:border-amber-800/60 shrink-0">
+                        {formData.aula || 'ELEGIR'}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-300 truncate">
+                        {roomMap[(formData.aula || '').toUpperCase().trim()]?.tipo ||
+                          roomMap[(formData.aula || '').toUpperCase().trim()]?.nombre ||
+                          'Ver menú de aulas y labs'}
+                      </span>
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0 stroke-[2.5]" />
+                  </button>
                 </div>
 
                 <div>
@@ -1075,6 +1229,226 @@ export default function ReservationsView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Menú Selector de Todas las Aulas, Laboratorios y Talleres */}
+      {isRoomPickerOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-4 animate-backdrop-fade"
+          onClick={() => setIsRoomPickerOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[88vh] flex flex-col animate-spring-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabecera del Menú de Aulas y Laboratorios */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs shrink-0">
+                  <DoorOpen className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+                    Catálogo de Aulas, Laboratorios y Talleres
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
+                    Selecciona el ambiente para reservar ({pickerFilteredRooms.length} disponibles en lista)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRoomPickerOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Buscador + Filtros Rápidos (Categoría, Pabellón y Piso) */}
+            <div className="py-3 space-y-2.5 border-b border-slate-100 dark:border-zinc-800/80 shrink-0">
+              {/* Buscador */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                  placeholder="Buscar por código (A201, A505, B101, AS04) o nombre (Cómputo, Fotografía, Taller)..."
+                  className="w-full h-9 pl-9 pr-8 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                />
+                {pickerSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setPickerSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Pestañas por Tipo de Ambiente: Todos | Aulas | Laboratorios | Talleres | Especiales */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                {[
+                  { id: 'ALL', label: 'Todos los Ambientes', count: allRooms.length },
+                  { id: 'AULA', label: '🏫 Aulas', count: allRooms.filter(r => r.categoria === 'AULA').length },
+                  { id: 'LABORATORIO', label: '🔬 Laboratorios', count: allRooms.filter(r => r.categoria === 'LABORATORIO').length },
+                  { id: 'TALLER', label: '📐 Talleres', count: allRooms.filter(r => r.categoria === 'TALLER').length },
+                  { id: 'ESPECIAL', label: '🎙️ Conferencias / Litigación', count: allRooms.filter(r => r.categoria === 'ESPECIAL').length }
+                ].map(cat => {
+                  const active = pickerCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setPickerCategory(cat.id)}
+                      className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 active:scale-95 ${
+                        active
+                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-zinc-800'
+                      }`}
+                    >
+                      <span>{cat.label}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-black ${
+                        active ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-200/70 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                      }`}>
+                        {cat.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Filtros de Pabellón y Piso */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+                  {[
+                    { label: 'Ambos Pab.', val: '' },
+                    { label: 'Pab. A', val: 'A' },
+                    { label: 'Pab. B', val: 'B' }
+                  ].map(p => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setPickerPabellon(p.val)}
+                      className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition whitespace-nowrap ${
+                        pickerPabellon === p.val
+                          ? 'bg-slate-900 dark:bg-[#FDBA30] text-white dark:text-slate-950 font-black'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 overflow-x-auto no-scrollbar">
+                  {PISOS_DISPONIBLES.map(p => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setPickerPiso(p.val)}
+                      className={`h-6 px-2 rounded-lg text-[10px] font-bold transition whitespace-nowrap ${
+                        pickerPiso === p.val
+                          ? 'bg-amber-500 text-slate-950 font-black'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {p.short}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Grilla de Aulas y Laboratorios */}
+            <div className="overflow-y-auto py-3 pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[52vh]">
+              {pickerFilteredRooms.length === 0 ? (
+                <div className="col-span-full py-10 text-center">
+                  <p className="text-xs font-bold text-slate-500 dark:text-zinc-400">
+                    No se encontraron aulas o laboratorios con ese filtro
+                  </p>
+                </div>
+              ) : (
+                pickerFilteredRooms.map(rm => {
+                  const isSelected = (formData.aula || '').toUpperCase().trim() === rm.abrv;
+                  const catBadge =
+                    rm.categoria === 'LABORATORIO'
+                      ? 'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'
+                      : rm.categoria === 'TALLER'
+                      ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800/60'
+                      : rm.categoria === 'ESPECIAL'
+                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+                      : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60';
+
+                  return (
+                    <button
+                      key={rm.abrv}
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          aula: rm.abrv,
+                          ubicacion: `${rm.piso} - ${rm.pabellon}`
+                        }));
+                        setIsRoomPickerOpen(false);
+                      }}
+                      className={`p-3 rounded-2xl border text-left transition flex items-start justify-between gap-2.5 active:scale-[0.98] ${
+                        isSelected
+                          ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-500/80 ring-1 ring-amber-400/40'
+                          : 'bg-slate-50/70 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-800'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className={`px-2 py-0.5 rounded-lg font-mono text-xs font-black tracking-tight border ${
+                            isSelected
+                              ? 'bg-[#FDBA30] text-slate-950 border-amber-400'
+                              : 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border-slate-200 dark:border-zinc-700'
+                          }`}>
+                            {rm.abrv}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider border ${catBadge}`}>
+                            {rm.categoria === 'LABORATORIO'
+                              ? '🔬 Laboratorio'
+                              : rm.categoria === 'TALLER'
+                              ? '📐 Taller'
+                              : rm.categoria === 'ESPECIAL'
+                              ? '🎙️ Especial'
+                              : '🏫 Aula'}
+                          </span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {rm.nombre}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 text-[10px] font-semibold text-slate-500 dark:text-zinc-400">
+                          <span>{rm.piso} · Pab. {rm.pabellon}</span>
+                          {rm.aforo && (
+                            <>
+                              <span>•</span>
+                              <span className="inline-flex items-center gap-0.5">
+                                <Users className="w-3 h-3" /> {rm.aforo} pers.
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                        isSelected
+                          ? 'bg-[#FDBA30] text-slate-950'
+                          : 'bg-slate-200/70 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500'
+                      }`}>
+                        <Check className="w-3.5 h-3.5 stroke-[2.8]" />
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>,
         document.body
