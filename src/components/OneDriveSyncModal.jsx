@@ -108,6 +108,7 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
   const API = "${origin}";
   let lastExcelHash = "";
   let lastWebHash = "";
+  let lastWebSign = -1;
 
   for (let cycle = 0; cycle < 600; cycle++) {
     const shAsistRead = workbook.getWorksheet("CONTROL ASISTENCIA");
@@ -188,11 +189,17 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
       lastExcelHash = currentExcelHash;
     }
 
-    const waitUrl = cycle === 0 ? API + "/api/all-data" : API + "/api/all-data?wait=2500";
-    const res = await fetch(waitUrl);
-    const json: AllDataResponse = await res.json();
+    // Puerta barata: solo traemos toda la data si la BD cambió.
+    // Antes cada ciclo leía ~1.800 filas cada 2,5 s y agotaba el límite de D1.
+    const signRes = await fetch(API + "/api/web-sign?wait=2000");
+    const signJson = await signRes.json();
+    const webSign = signJson && signJson.success ? Number(signJson.ts) : 0;
+    if (webSign !== lastWebSign) {
+      lastWebSign = webSign;
+      const res = await fetch(API + "/api/all-data");
+      const json: AllDataResponse = await res.json();
 
-    if (json && json.success && json.data) {
+      if (json && json.success && json.data) {
       const webData = json.data;
       const currentWebHash = JSON.stringify(webData);
 
@@ -296,6 +303,7 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
         }
 
         lastWebHash = currentWebHash;
+      }
       }
     }
   }

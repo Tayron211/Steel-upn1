@@ -1059,7 +1059,14 @@ async function handleApiRequest(context) {
     if (path === '/api/web-sign' && method === 'GET') {
       // Marca barata de "¿la BD cambió?" para el polling de la app y el watcher del Excel local (1 fila leída)
       await ensureTables(db);
-      const r = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_write_ts'").first();
+      const waitParam = Number(url.searchParams.get('wait') || 0);
+      let r = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_write_ts'").first();
+      // Long-poll opcional (usado por el script de Excel Online): espera y
+      // vuelve a leer. Cuesta 2 filas en vez de traer todas las tablas cada 2 s.
+      if (waitParam > 0 && waitParam <= 5000) {
+        await new Promise((resolve) => setTimeout(resolve, waitParam));
+        r = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_write_ts'").first();
+      }
       return json({ success: true, ts: r ? Number(r.v) : 0 });
     }
 
