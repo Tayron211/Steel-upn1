@@ -150,14 +150,19 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       const payload = {
         fecha: reservationForm.fecha,
         dia: diaName,
+        inicio: reservationForm.horaInicio,
+        final: reservationForm.horaFin,
         hora_inicio: reservationForm.horaInicio,
         hora_fin: reservationForm.horaFin,
         aula: reservingRoom.abrv,
+        ubicacion: `${reservingRoom.piso || ''} - ${reservingRoom.pabellon || ''}`.replace(/^ - | - $/g, ''),
         docente: reservationForm.tipo === 'ALUMNO' 
           ? `[ALUMNO] ${reservationForm.nombre.trim().toUpperCase()}` 
           : reservationForm.nombre.trim().toUpperCase(),
+        detalle: reservationForm.actividades.trim() || 'RESERVA DE AULA',
         motivo: reservationForm.actividades.trim() || 'RESERVA DE AULA',
-        usuario: 'OPERACIONES'
+        usuario: 'OPERACIONES',
+        prioridad: 'NORMAL'
       };
 
       const res = await fetch('/api/reservations', {

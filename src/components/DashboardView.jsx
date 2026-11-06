@@ -329,11 +329,11 @@ export default function DashboardView() {
       const resRows = (resJson.data || []).map(r => ({
         'FECHA': r.fecha || '',
         'DIA': r.dia || '',
-        'HORA INICIO': r.hora_inicio || '',
-        'HORA FIN': r.hora_fin || '',
+        'HORA INICIO': r.inicio || r.hora_inicio || '',
+        'HORA FIN': r.final || r.hora_fin || '',
         'AULA': r.aula || '',
         'SOLICITANTE': r.docente || '',
-        'MOTIVO': r.motivo || '',
+        'MOTIVO': r.detalle || r.motivo || '',
         'USUARIO': r.usuario || ''
       }));
       const wsRes = XLSX.utils.json_to_sheet(resRows);

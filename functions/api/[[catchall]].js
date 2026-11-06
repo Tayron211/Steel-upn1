@@ -423,26 +423,44 @@ export async function onRequest(context) {
     // 5. RESERVATIONS: /api/reservations
     // -------------------------------------------------------------
     if (path === '/api/reservations' && method === 'GET') {
-      const { results } = await db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, hora_inicio ASC').all();
+      const { results } = await db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all();
       return json({ success: true, count: results.length, data: results });
     }
 
     if (path === '/api/reservations' && method === 'POST') {
       const body = await request.json();
       const id = `res_${Date.now()}`;
+      const months = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+      const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+      const fechaStr = body.fecha || new Date().toISOString().split('T')[0];
+      const dt = new Date(fechaStr + 'T12:00:00');
+      const mes = body.mes || months[dt.getMonth()] || 'NOVIEMBRE';
+      const dia = body.dia || days[dt.getDay()] || 'LUNES';
+      const inicio = body.inicio || body.hora_inicio || body.horaInicio || '08:00';
+      const final = body.final || body.hora_fin || body.horaFin || '10:00';
+      const aula = (body.aula || '').toUpperCase();
+      const ubicacion = body.ubicacion || '';
+      const docente = body.docente || '';
+      const detalle = body.detalle || body.motivo || body.actividades || 'RESERVA DE AULA';
+      const usuario = body.usuario || 'OPERACIONES';
+      const prioridad = body.prioridad || 'NORMAL';
+
       await db.prepare(`
-        INSERT INTO reservas (id, fecha, dia, hora_inicio, hora_fin, aula, docente, motivo, usuario, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, usuario, prioridad, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `).bind(
         id,
-        body.fecha || '',
-        body.dia || '',
-        body.hora_inicio || '',
-        body.hora_fin || '',
-        body.aula || '',
-        body.docente || '',
-        body.motivo || '',
-        body.usuario || 'OPERACIONES'
+        fechaStr,
+        mes,
+        dia,
+        inicio,
+        final,
+        aula,
+        ubicacion,
+        docente,
+        detalle,
+        usuario,
+        prioridad
       ).run();
 
       const created = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
