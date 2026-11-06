@@ -42,6 +42,19 @@ function formatExcelTime(val) {
   return String(val);
 }
 
+function formatExcelDate(val) {
+  if (val === undefined || val === null || val === '') return '';
+  if (typeof val === 'string') return val.trim();
+  if (typeof val === 'number' && val > 20000) {
+    const utcDays = Math.floor(val - 25569);
+    const d = new Date(utcDays * 86400 * 1000);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0];
+    }
+  }
+  return String(val);
+}
+
 export default function DashboardView() {
   const daysOfWeek = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
   const todayDefault = daysOfWeek[new Date().getDay()];
@@ -221,6 +234,93 @@ export default function DashboardView() {
         });
       }
 
+      // Sheet de Atenciones (ATENCIONES 2026-2 y ATENCIONES 2026-1)
+      const parsedTickets = [];
+      const atenSheets = sheetNames.filter(n => n.toUpperCase().includes('ATENCION'));
+      for (const atenName of atenSheets) {
+        const is20261 = atenName.includes('2026-1');
+        const defaultPeriodo = is20261 ? '2026-1' : '2026-2';
+        const atenRows = XLSX.utils.sheet_to_json(wb.Sheets[atenName], { header: 1 });
+        for (let r = 1; r < atenRows.length; r++) {
+          const row = atenRows[r];
+          if (!row || (!row[4] && !row[7] && !row[10])) continue;
+          const headerCheck = String(row[0] || '').toUpperCase();
+          if (headerCheck.includes('PERIODO') || String(row[4] || '').toUpperCase() === 'AMBIENTE') continue;
+          parsedTickets.push({
+            id: `ticket_${is20261 ? '1' : '2'}_${r}`,
+            periodo: row[0] ? String(row[0]).trim() : defaultPeriodo,
+            fecha: formatExcelDate(row[1]),
+            dia: row[2] ? String(row[2]).trim().toUpperCase() : '',
+            horaReporte: formatExcelTime(row[3]),
+            ambiente: row[4] ? String(row[4]).trim().toUpperCase() : '',
+            piso: row[5] !== undefined && row[5] !== null ? String(row[5]).trim() : '',
+            pabellon: row[6] ? String(row[6]).trim().toUpperCase() : '',
+            tipoSolicitud: row[7] ? String(row[7]).trim().toUpperCase() : 'ASISTENCIA TÉCNICA',
+            estado: row[8] ? String(row[8]).trim().toUpperCase() : 'ATENDIDO',
+            usuario: row[9] ? (String(row[9]).toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE') : 'DOCENTE',
+            descripcionSolucion: row[10] !== undefined ? String(row[10] || '').trim() : (row[9] ? String(row[9]).trim() : ''),
+            responsable: row[11] !== undefined ? String(row[11] || '').trim() : (row[10] ? String(row[10]).trim() : '')
+          });
+        }
+      }
+
+      // Sheet de Hojas Manuales (HOJA DE ASISTENCIA 2026-2)
+      const parsedManualSheets = [];
+      const manualSheetName = sheetNames.find(n => n.toUpperCase().includes('HOJA DE ASISTENCIA 2026-2')) ||
+                              sheetNames.find(n => n.toUpperCase().includes('HOJA DE ASISTENCIA'));
+      if (manualSheetName && wb.Sheets[manualSheetName]) {
+        const manRows = XLSX.utils.sheet_to_json(wb.Sheets[manualSheetName], { header: 1 });
+        for (let r = 1; r < manRows.length; r++) {
+          const row = manRows[r];
+          if (!row) continue;
+          const nHoja = row[0] ? String(row[0]).trim().toUpperCase() : '';
+          if (nHoja.includes('HOJA') || String(row[4] || '').toUpperCase().includes('NOMBRE')) continue;
+          const docente = row[5] ? String(row[5]).trim().toUpperCase() : '';
+          const nrc = row[3] ? String(row[3]).trim() : '';
+          const curso = row[6] ? String(row[6]).trim().toUpperCase() : '';
+          const docReemp = row[8] ? String(row[8]).trim().toUpperCase() : '';
+          if (!docente && !nrc && !curso && !docReemp) continue;
+          parsedManualSheets.push({
+            id: `manual_2_${r}`,
+            n_hoja: nHoja.replace(/^LNI-/i, 'LN1-'),
+            fecha: formatExcelDate(row[1]),
+            aula: row[2] ? String(row[2]).trim().toUpperCase() : '',
+            nrc,
+            codigo_docente: row[4] ? String(row[4]).trim() : '',
+            docente,
+            curso,
+            observacion: row[7] ? String(row[7]).trim() : '',
+            docente_reemplazo: docReemp,
+            motivo: docReemp ? 'REEMPLAZO DOCENTE' : 'CLASE REGULAR',
+            estado_hoja: 'REGISTRADO'
+          });
+        }
+      }
+
+      // Sheet de Reservas (RESERVAS)
+      const parsedReservas = [];
+      const resSheetName = sheetNames.find(n => n.toUpperCase().includes('RESERVA'));
+      if (resSheetName && wb.Sheets[resSheetName]) {
+        const resRows = XLSX.utils.sheet_to_json(wb.Sheets[resSheetName], { header: 1 });
+        for (let r = 1; r < resRows.length; r++) {
+          const row = resRows[r];
+          if (!row || (!row[0] && !row[5])) continue;
+          if (String(row[0] || '').toUpperCase().includes('RESPONSABLE')) continue;
+          parsedReservas.push({
+            id: `res_imp_${r}`,
+            responsable: row[0] ? String(row[0]).trim() : '',
+            fecha: formatExcelDate(row[1]),
+            dia: row[2] ? String(row[2]).trim().toUpperCase() : '',
+            inicio: formatExcelTime(row[3]),
+            final: formatExcelTime(row[4]),
+            ambiente: row[5] ? String(row[5]).trim().toUpperCase() : '',
+            piso_pabellon: row[6] ? String(row[6]).trim() : '',
+            motivo: row[7] ? String(row[7]).trim() : '',
+            soporte: row[8] ? String(row[8]).trim() : ''
+          });
+        }
+      }
+
       // Sheet de Ambientes si está presente
       const ambSheetName = sheetNames.find(n => 
         n.toUpperCase().includes('UBICACION') || n.toUpperCase().includes('AMBIENTES') || n.toUpperCase().includes('AULAS')
@@ -251,7 +351,7 @@ export default function DashboardView() {
       }
 
       const confirmImport = window.confirm(
-        `Se encontraron ${parsedClasses.length} clases programadas${parsedAmbientes.length > 0 ? ` y ${parsedAmbientes.length} ambientes` : ''} en "${file.name}".\n\n¿Deseas suministrar esta nueva información como base de datos para la aplicación?`
+        `Se encontraron en "${file.name}":\n• ${parsedClasses.length} clases programadas\n• ${parsedTickets.length} atenciones\n• ${parsedManualSheets.length} hojas de asistencia\n• ${parsedReservas.length} reservas${parsedAmbientes.length > 0 ? `\n• ${parsedAmbientes.length} ambientes` : ''}\n\n¿Deseas jalar toda esta data de tu Excel hacia la aplicación?`
       );
 
       if (!confirmImport) {
@@ -260,13 +360,16 @@ export default function DashboardView() {
         return;
       }
 
-      setSyncMessage(`Actualizando base de datos con ${parsedClasses.length} clases...`);
+      setSyncMessage(`Sincronizando toda la data de "${file.name}"...`);
 
       const res = await fetch('/api/import-excel-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           asistencia: parsedClasses,
+          tickets: parsedTickets,
+          manualSheets: parsedManualSheets,
+          reservas: parsedReservas,
           ambientes: parsedAmbientes,
           clearExisting: true
         })
@@ -274,7 +377,7 @@ export default function DashboardView() {
 
       const json = await res.json();
       if (json.success) {
-        setSyncMessage(`✅ ¡Base de datos actualizada con éxito! (${parsedClasses.length} clases importadas)`);
+        setSyncMessage(`✅ ¡Data jalada con éxito! (${parsedClasses.length} clases, ${parsedTickets.length} atenciones, ${parsedManualSheets.length} hojas manuales)`);
         silentRefreshStats();
         setTimeout(() => setSyncMessage(''), 6000);
       } else {
@@ -600,20 +703,14 @@ export default function DashboardView() {
                       <span className="truncate">
                         {liveExcel.linked
                           ? `OneDrive Activo (${liveExcel.fileName})`
-                          : liveExcel.needsReauth
-                            ? `Reactivar OneDrive (${liveExcel.fileName})`
-                            : 'Vincular Excel de OneDrive (En Vivo)'}
+                          : 'OneDrive: CONTROL DOCENTE - Copia.xlsx'}
                       </span>
-                      {liveExcel.linked && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-black shrink-0">
-                          EN VIVO
-                        </span>
-                      )}
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-black shrink-0 whitespace-nowrap">
+                        CONECTADO
+                      </span>
                     </div>
                     <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
-                      {liveExcel.linked
-                        ? `Guarda automáticamente cada cambio en tu Excel de OneDrive${liveExcel.lastSync ? ` (Últ: ${liveExcel.lastSync})` : ''}.`
-                        : 'Selecciona tu CONTROL DOCENTE.xlsx en tu carpeta OneDrive para que cada cambio se guarde solo.'}
+                      Abrir o sincronizar en tiempo real con tu archivo CONTROL DOCENTE - Copia.xlsx en OneDrive UPN.
                     </p>
                   </div>
                 </button>

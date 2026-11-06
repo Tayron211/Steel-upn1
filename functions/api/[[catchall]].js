@@ -493,11 +493,18 @@ export async function onRequest(context) {
     }
 
     // -------------------------------------------------------------
-    // IMPORTACIÓN MASIVA DE EXCEL A CLOUDFLARE D1
+    // IMPORTACIÓN MASIVA DE EXCEL A CLOUDFLARE D1 (TODAS LAS HOJAS)
     // -------------------------------------------------------------
     if (path === '/api/import-excel-data' && method === 'POST') {
       const body = await request.json();
-      const { asistencia = [], ambientes = [], clearExisting = true } = body;
+      const {
+        asistencia = [],
+        tickets = [],
+        manualSheets = [],
+        reservas = [],
+        ambientes = [],
+        clearExisting = true
+      } = body;
 
       if (clearExisting && asistencia.length > 0) {
         await db.prepare('DELETE FROM asistencia').run();
@@ -544,6 +551,109 @@ export async function onRequest(context) {
         }
       }
 
+      if (tickets.length > 0) {
+        try {
+          await db.prepare('ALTER TABLE tickets ADD COLUMN usuario TEXT DEFAULT "DOCENTE"').run();
+        } catch (_) {}
+        if (clearExisting) {
+          await db.prepare('DELETE FROM tickets').run();
+        }
+        const chunkSize = 50;
+        for (let i = 0; i < tickets.length; i += chunkSize) {
+          const chunk = tickets.slice(i, i + chunkSize);
+          const stmts = chunk.map((t, idx) => {
+            const id = t.id || `ticket_imp_${Date.now()}_${i + idx}`;
+            const usuarioVal = String(t.usuario || 'DOCENTE').trim().toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE';
+            return db.prepare(`
+              INSERT OR REPLACE INTO tickets (
+                id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon,
+                tipo_solicitud, estado, usuario, descripcion_solucion, responsable, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `).bind(
+              id,
+              t.periodo || '2026-2',
+              t.fecha || '',
+              normalizeDay(t.dia || ''),
+              t.horaReporte || t.hora_reporte || '',
+              t.rango || '',
+              (t.ambiente || '').trim().toUpperCase(),
+              t.piso || '',
+              t.pabellon || '',
+              t.tipoSolicitud || t.tipo_solicitud || 'ASISTENCIA TÉCNICA',
+              (t.estado || 'PENDIENTE').trim().toUpperCase(),
+              usuarioVal,
+              t.descripcionSolucion || t.descripcion_solucion || '',
+              t.responsable || ''
+            );
+          });
+          await db.batch(stmts);
+        }
+      }
+
+      if (manualSheets.length > 0) {
+        if (clearExisting) {
+          await db.prepare('DELETE FROM hojas_manuales').run();
+        }
+        const chunkSize = 50;
+        for (let i = 0; i < manualSheets.length; i += chunkSize) {
+          const chunk = manualSheets.slice(i, i + chunkSize);
+          const stmts = chunk.map((m, idx) => {
+            const id = m.id || `manual_2_${i + idx + 1}`;
+            return db.prepare(`
+              INSERT OR REPLACE INTO hojas_manuales (
+                id, n_hoja, fecha, aula, nrc, codigo_docente, docente, curso,
+                observacion, docente_reemplazo, motivo, estado_hoja, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `).bind(
+              id,
+              m.n_hoja || m.nHoja || '',
+              m.fecha || '',
+              (m.aula || '').trim().toUpperCase(),
+              m.nrc ? String(m.nrc).trim() : '',
+              m.codigo_docente || m.codigoDocente || '',
+              (m.docente || '').trim().toUpperCase(),
+              (m.curso || '').trim().toUpperCase(),
+              m.observacion || '',
+              (m.docente_reemplazo || m.docenteReemplazo || '').trim().toUpperCase(),
+              m.motivo || 'REEMPLAZO DOCENTE',
+              m.estado_hoja || m.estadoHoja || 'REGISTRADO'
+            );
+          });
+          await db.batch(stmts);
+        }
+      }
+
+      if (reservas.length > 0) {
+        if (clearExisting) {
+          await db.prepare('DELETE FROM reservas').run();
+        }
+        const chunkSize = 50;
+        for (let i = 0; i < reservas.length; i += chunkSize) {
+          const chunk = reservas.slice(i, i + chunkSize);
+          const stmts = chunk.map((r, idx) => {
+            const id = r.id || `res_imp_${Date.now()}_${i + idx}`;
+            return db.prepare(`
+              INSERT OR REPLACE INTO reservas (
+                id, responsable, fecha, dia, inicio, final, ambiente,
+                piso_pabellon, motivo, soporte, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `).bind(
+              id,
+              r.responsable || '',
+              r.fecha || '',
+              normalizeDay(r.dia || ''),
+              r.inicio || '',
+              r.final || '',
+              (r.ambiente || '').trim().toUpperCase(),
+              r.piso_pabellon || r.pisoPabellon || '',
+              r.motivo || '',
+              r.soporte || ''
+            );
+          });
+          await db.batch(stmts);
+        }
+      }
+
       if (ambientes.length > 0) {
         if (clearExisting) {
           await db.prepare('DELETE FROM ambientes').run();
@@ -573,8 +683,13 @@ export async function onRequest(context) {
 
       return json({
         success: true,
-        message: `Base de datos actualizada con éxito: ${asistencia.length} clases y ${ambientes.length} ambientes sincronizados.`,
-        data: { count: asistencia.length }
+        message: `Base de datos sincronizada: ${asistencia.length} clases, ${tickets.length} atenciones, ${manualSheets.length} hojas manuales y ${reservas.length} reservas.`,
+        data: {
+          count: asistencia.length,
+          ticketsCount: tickets.length,
+          manualCount: manualSheets.length,
+          reservasCount: reservas.length
+        }
       });
     }
 
