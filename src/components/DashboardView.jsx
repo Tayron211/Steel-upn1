@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { buildMasterExcelFromTemplate } from '../utils/excelTemplateExporter';
+import { createDbChangeGate } from '../utils/webSignGate';
 import OneDriveSyncModal from './OneDriveSyncModal';
 import {
   linkOneDriveExcelFile,
@@ -103,9 +104,12 @@ export default function DashboardView() {
     }
   };
 
+  const dbChanged = useMemo(() => createDbChangeGate(), []);
+
   // Silent background refresh for multi-user real-time state
   const silentRefreshStats = async () => {
     try {
+      if (!(await dbChanged())) return; // sin escrituras nuevas -> no gastar lecturas de D1
       const res = await fetch(`/api/dashboard?dia=${selectedDia}`);
       const json = await res.json();
       if (json.success) {

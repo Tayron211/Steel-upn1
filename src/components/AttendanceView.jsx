@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { createDbChangeGate } from '../utils/webSignGate';
 import {
   Search,
   CheckCircle2,
@@ -244,6 +245,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     return next ? next.start : REAL_BLOCKS[0].start;
   };
 
+  const dbChanged = useMemo(() => createDbChangeGate(), []);
+
   const loadAttendance = async () => {
     setLoading(true);
     try {
@@ -278,6 +281,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   // Multi-user silent background polling (keeps records synced without interrupting user)
   const silentRefreshAttendance = async () => {
     try {
+      if (!(await dbChanged())) return; // sin escrituras nuevas -> no gastar lecturas de D1
       const params = new URLSearchParams();
       if (selectedDia) params.append('dia', selectedDia);
       if (selectedPabellon) params.append('pabellon', selectedPabellon);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { createDbChangeGate } from '../utils/webSignGate';
 import { 
   HandHelping, 
   Search, 
@@ -290,8 +291,11 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     }
   };
 
+  const dbChanged = useMemo(() => createDbChangeGate(), []);
+
   const silentRefreshTickets = async () => {
     try {
+      if (!(await dbChanged())) return; // sin escrituras nuevas -> no gastar lecturas de D1
       const res = await fetch('/api/tickets');
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {

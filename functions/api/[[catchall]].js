@@ -3,7 +3,7 @@
  * Handles all /api/* requests 24/7 at the edge with Cloudflare D1 (Serverless SQLite)
  */
 import { buildMasterExcelFromTemplate } from '../../src/utils/excelTemplateExporter';
-import { pushToExcel, pullIfExcelChanged, debugInspect } from '../../src/utils/onedriveGraphSync';
+import { pushToExcel, pullIfExcelChanged, debugInspect, ensureTables } from '../../src/utils/onedriveGraphSync';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -12,7 +12,9 @@ function json(data, status = 200) {
       'Content-Type': 'application/json; charset=UTF-8',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      // Datos siempre frescos: los pollers dependen de ver los cambios al instante
+      'Cache-Control': 'no-store'
     }
   });
 }
@@ -23,13 +25,36 @@ function normalizeDay(day) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+// Las columnas de tickets solo se intentan agregar una vez por isolate.
+// Antes se lanzaban 8 ALTER TABLE en CADA petición a /api/tickets (aunque
+// fallaran por "columna duplicada"), gastando consultas innecesarias en D1.
+const ticketColumnsReady = new WeakMap();
+function ensureTicketColumns(db) {
+  if (!db || typeof db.prepare !== 'function') return Promise.resolve();
+  let pending = ticketColumnsReady.get(db);
+  if (!pending) {
+    pending = (async () => {
+      const cols = [
+        'usuario', 'firma_entrega', 'firma_recepcion', 'entregado_por',
+        'recibido_por', 'fecha_firma', 'firma_devolucion', 'fecha_devolucion'
+      ];
+      for (const col of cols) {
+        try { await db.prepare(`ALTER TABLE tickets ADD COLUMN ${col} TEXT`).run(); } catch (_) {}
+      }
+    })();
+    ticketColumnsReady.set(db, pending);
+  }
+  return pending;
+}
+
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
   const response = await handleApiRequest(context);
   try {
     const p = new URL(request.url).pathname;
     const m = request.method;
-    // Cada cambio (POST/PUT/DELETE) hecho desde cualquier dispositivo dispara la sincronización con OneDrive en el servidor
+    // Cada cambio (POST/PUT/DELETE) marca la BD como sucia y dispara la sincronización con OneDrive
+    // como máximo una vez cada 30 s (throttle): evita agotar el límite diario de lecturas de filas de D1
     if (
       response.ok &&
       (m === 'POST' || m === 'PUT' || m === 'DELETE') &&
@@ -38,7 +63,21 @@ export async function onRequest(context) {
     ) {
       const syncUrl = new URL('/api/onedrive/sync', request.url);
       context.waitUntil(
-        fetch(syncUrl.toString(), { method: 'POST' }).catch(() => {})
+        (async () => {
+          try {
+            const db = env.DB;
+            await ensureTables(db);
+            const nowMs = String(Date.now());
+            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
+            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
+            const lp = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_push'").first();
+            if (!lp || Date.now() - Number(lp.v || 0) >= 30000) {
+              // Marcar antes de disparar: evita ráfagas de sincronizaciones concurrentes
+              await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_push', ?)").bind(nowMs).run();
+              await fetch(syncUrl.toString(), { method: 'POST' });
+            }
+          } catch (_) {}
+        })()
       );
     }
   } catch (_) {}
@@ -194,18 +233,22 @@ async function handleApiRequest(context) {
     // 2. TICKETS / PRÉSTAMOS: /api/tickets
     // -------------------------------------------------------------
     if (path.startsWith('/api/tickets')) {
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN usuario TEXT').run(); } catch (e) {}
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_entrega TEXT').run(); } catch (e) {}
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_recepcion TEXT').run(); } catch (e) {}
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN entregado_por TEXT').run(); } catch (e) {}
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN recibido_por TEXT').run(); } catch (e) {}
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN fecha_firma TEXT').run(); } catch (e) {}
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_devolucion TEXT').run(); } catch (e) {}
-      try { await db.prepare('ALTER TABLE tickets ADD COLUMN fecha_devolucion TEXT').run(); } catch (e) {}
+      await ensureTicketColumns(db);
     }
 
     if (path === '/api/tickets' && method === 'GET') {
       const estado = url.searchParams.get('estado');
+      if (url.searchParams.get('count') === '1') {
+        // Solo devuelve el número, sin traer todas las filas al cliente (contador del header)
+        let csql = 'SELECT COUNT(*) AS c FROM tickets WHERE 1=1';
+        const cparams = [];
+        if (estado) {
+          csql += ' AND estado = ?';
+          cparams.push(estado);
+        }
+        const cr = cparams.length > 0 ? await db.prepare(csql).bind(...cparams).all() : await db.prepare(csql).all();
+        return json({ success: true, count: cr.results && cr.results[0] ? Number(cr.results[0].c) : 0 });
+      }
       let sql = 'SELECT * FROM tickets WHERE 1=1';
       const params = [];
       if (estado) {
@@ -990,6 +1033,13 @@ async function handleApiRequest(context) {
     if (path === '/api/onedrive/sync' && method === 'POST') {
       const result = await pushToExcel(db);
       return json(result);
+    }
+
+    if (path === '/api/web-sign' && method === 'GET') {
+      // Marca barata de "¿la BD cambió?" para el polling de la app y el watcher del Excel local (1 fila leída)
+      await ensureTables(db);
+      const r = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_write_ts'").first();
+      return json({ success: true, ts: r ? Number(r.v) : 0 });
     }
 
     if (path === '/api/onedrive/debug' && method === 'GET') {

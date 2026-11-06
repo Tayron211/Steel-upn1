@@ -5,6 +5,7 @@
  */
 import * as XLSX from 'xlsx';
 import { buildMasterExcelFromTemplate } from './excelTemplateExporter';
+import { createDbChangeGate } from './webSignGate';
 
 const DB_NAME = 'upn_onedrive_excel_sync_db';
 const STORE_NAME = 'handles';
@@ -16,8 +17,8 @@ let syncTimer = null;
 let watchInterval = null;
 let isSyncingNow = false;
 let lastKnownFileModified = 0;
-let lastKnownWebSign = '';
 const listeners = new Set();
+const dbChanged = createDbChangeGate({ fireOnFirst: false });
 
 function formatExcelTime(val) {
   if (val === undefined || val === null || val === '') return '';
@@ -251,23 +252,12 @@ function startBidirectionalWatchLoop() {
         return;
       }
 
-      const res = await fetch('/api/all-data');
-      if (res.ok) {
-        const j = await res.json();
-        if (j.success && j.data) {
-          const sign = `${(j.data.asistencia || []).map(a => `${a.id}:${a.asistencia}:${a.puntualidad}`).join('|')}#${(j.data.tickets || []).length}#${(j.data.manualSheets || []).length}#${(j.data.reservas || []).length}`;
-          if (lastKnownWebSign && sign !== lastKnownWebSign) {
-            lastKnownWebSign = sign;
-            await syncAllDataToLinkedExcel();
-          } else if (!lastKnownWebSign) {
-            lastKnownWebSign = sign;
-          }
-        }
-      }
+      // Web -> file: solo jala la data completa si la BD cambió desde la última vez (consulta de 1 fila)
+      if (await dbChanged()) await syncAllDataToLinkedExcel();
     } catch (e) {
       isSyncingNow = false;
     }
-  }, 4000);
+  }, 15000);
 }
 
 export async function linkOneDriveExcelFile() {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createDbChangeGate } from '../utils/webSignGate';
 import { 
   X, 
   Check, 
@@ -87,6 +88,8 @@ export default function SignatureModal({
 
   const canvasEntregaRef = useRef(null);
   const canvasRecepcionRef = useRef(null);
+  const dbGateRef = useRef(null);
+  if (!dbGateRef.current) dbGateRef.current = createDbChangeGate();
 
   // Mobile signing URL
   const getMobileSignUrl = () => {
@@ -125,6 +128,7 @@ export default function SignatureModal({
     // Consulta periódica por si el celular firmó y envió al backend
     const poller = setInterval(async () => {
       try {
+        if (!(await dbGateRef.current())) return; // sin escrituras nuevas -> no gastar lecturas de D1
         const res = await fetch('/api/tickets');
         if (res.ok) {
           const json = await res.json();

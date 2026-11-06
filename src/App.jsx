@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import AttendanceView from './components/AttendanceView';
 import TicketsKanban from './components/TicketsKanban';
@@ -7,6 +7,7 @@ import DashboardView from './components/DashboardView';
 import FloatingActionMenu from './components/FloatingActionMenu';
 import MobileSignView from './components/MobileSignView';
 import ErrorBoundary from './components/ErrorBoundary';
+import { createDbChangeGate } from './utils/webSignGate';
 import {
   triggerAutoSyncLinkedExcel,
   restoreLinkedExcelIfPossible
@@ -128,9 +129,12 @@ export default function App() {
   }, []);
 
   // Multi-user silent background update for pending counter
-  const updatePendingCount = async () => {
+  const dbChanged = useMemo(() => createDbChangeGate(), []);
+
+  const updatePendingCount = async (force = false) => {
     try {
-      const res = await fetch('/api/tickets?estado=PENDIENTE');
+      if (!force && !(await dbChanged())) return; // sin escrituras nuevas -> no gastar lecturas de D1
+      const res = await fetch('/api/tickets?estado=PENDIENTE&count=1');
       const json = await res.json();
       if (json.success) {
         setPendingTicketsCount(json.count);
@@ -146,7 +150,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Excel de OneDrive -> App: consulta cada 10 s si el Excel fue editado directamente y trae los cambios
+  // Excel de OneDrive -> App: consulta cada 30 s si el Excel fue editado directamente y trae los cambios
   useEffect(() => {
     let stopped = false;
     const pullExcel = async () => {
@@ -160,7 +164,7 @@ export default function App() {
       } catch (_) {}
     };
     const first = setTimeout(pullExcel, 3000);
-    const interval = setInterval(pullExcel, 10000);
+    const interval = setInterval(pullExcel, 30000);
     return () => {
       stopped = true;
       clearTimeout(first);
@@ -186,6 +190,8 @@ export default function App() {
           (method === 'POST' || method === 'PUT' || method === 'DELETE')
         ) {
           triggerAutoSyncLinkedExcel();
+          // Solo los cambios de tickets alteran el contador de pendientes
+          if (urlStr.includes('/api/tickets')) updatePendingCount(true);
         }
       } catch (e) {}
       return res;

@@ -83,11 +83,25 @@ async function gfetch(token, url, init = {}) {
   return { ok: res.ok, status: res.status, json };
 }
 
-export async function ensureTables(db) {
-  await db.prepare(`CREATE TABLE IF NOT EXISTS onedrive_auth (
-    id TEXT PRIMARY KEY, refresh_token TEXT, access_token TEXT, expires_at INTEGER,
-    item_id TEXT, file_name TEXT, last_web_hash TEXT, last_excel_hash TEXT, updated_at TEXT)`).run();
-  await db.prepare('CREATE TABLE IF NOT EXISTS onedrive_state (k TEXT PRIMARY KEY, v TEXT)').run();
+// Una sola vez por isolate: evita repetir DDL en cada petición/poll.
+const ensuredTables = new WeakMap();
+
+export function ensureTables(db) {
+  if (!db || typeof db.prepare !== 'function') return Promise.resolve();
+  let pending = ensuredTables.get(db);
+  if (!pending) {
+    pending = (async () => {
+      await db.prepare(`CREATE TABLE IF NOT EXISTS onedrive_auth (
+        id TEXT PRIMARY KEY, refresh_token TEXT, access_token TEXT, expires_at INTEGER,
+        item_id TEXT, file_name TEXT, last_web_hash TEXT, last_excel_hash TEXT, updated_at TEXT)`).run();
+      await db.prepare('CREATE TABLE IF NOT EXISTS onedrive_state (k TEXT PRIMARY KEY, v TEXT)').run();
+    })().catch((err) => {
+      ensuredTables.delete(db); // permitir reintento si falló
+      throw err;
+    });
+    ensuredTables.set(db, pending);
+  }
+  return pending;
 }
 async function getState(db, k) {
   const r = await db.prepare('SELECT v FROM onedrive_state WHERE k = ?').bind(k).first();
@@ -95,6 +109,15 @@ async function getState(db, k) {
 }
 async function setState(db, k, v) {
   await db.prepare('INSERT OR REPLACE INTO onedrive_state (k, v) VALUES (?, ?)').bind(k, String(v)).run();
+}
+
+/**
+ * Marca que la BD cambió para que los clientes (vía /api/web-sign) refresquen.
+ * Necesario cuando las escrituras no pasan por la API (ej. pull Excel -> D1),
+ * ya que el hook de /api/* solo detecta POST/PUT/DELETE de la propia API.
+ */
+export async function markDbWrite(db) {
+  await setState(db, 'last_write_ts', String(Date.now()));
 }
 
 async function getAccess(db) {
@@ -570,7 +593,7 @@ async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot) {
   return { updated: rows.length, status: res.status };
 }
 
-async function pushAsistencia(db, token, itemId) {
+async function pushAsistencia(db, token, itemId, preRows) {
   const used = await loadUsed(token, itemId, 'CONTROL ASISTENCIA');
   if (!used) return { skipped: 'sin hoja' };
   const hdr = findHeader(used, ['AULA', 'NRC']);
@@ -588,7 +611,7 @@ async function pushAsistencia(db, token, itemId) {
   ].filter((m) => m.idx >= 0);
   if (managed.length === 0) return { skipped: 'sin columnas' };
 
-  const dbRows = (await db.prepare('SELECT * FROM asistencia').all()).results || [];
+  const dbRows = preRows || ((await db.prepare('SELECT * FROM asistencia').all()).results || []);
   const byKey = new Map();
   for (const r of dbRows) byKey.set(`${String(r.nrc || '').trim()}|${mapDay(r.dia)}|${String(r.aula || '').trim().toUpperCase()}`, r);
 
@@ -677,6 +700,7 @@ export async function pullIfExcelChanged(db) {
   return withLock(db, 'sync', async () => {
     const changes = await pullFromExcel(db, token, itemId);
     await setState(db, 'excel_mod', mod);
+    if (changes > 0) await markDbWrite(db); // el pull escribió filas: avisar a los clientes
     return { success: true, pulled: true, changes };
   });
 }
@@ -700,9 +724,14 @@ export async function pushToExcel(db) {
     const mod = await itemMod(token, primary.id);
     let pulled = 0;
     if (lastMod && mod && mod !== lastMod) pulled = await pullFromExcel(db, token, primary.id);
+    if (pulled > 0) await markDbWrite(db); // hubo Excel -> BD: avisar a los clientes
 
-    // 2) BD -> Excel
-    const asRows = (await db.prepare('SELECT nrc, docente, curso, carrera FROM asistencia').all()).results || [];
+    // 2) BD -> Excel (una sola lectura de asistencia: sirve para el mapa NRC y para el push de la hoja)
+    const asRows = (
+      (await db.prepare(
+        'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
+      ).all()).results || []
+    );
     const nrcMap = new Map();
     for (const a of asRows) {
       const k = String(a.nrc || '').trim();
@@ -714,7 +743,7 @@ export async function pushToExcel(db) {
       const isPrimary = t.id === primary.id;
       const r = {
         file: t.name,
-        asistencia: await pushAsistencia(db, token, t.id),
+        asistencia: await pushAsistencia(db, token, t.id, asRows),
         tickets: await pushRecords(db, token, t.id, 'tickets', ctx, isPrimary),
         manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary),
         reservas: await pushRecords(db, token, t.id, 'reservas', ctx, isPrimary)
@@ -722,6 +751,7 @@ export async function pushToExcel(db) {
       report.push(r);
     }
     await setState(db, 'excel_mod', await itemMod(token, primary.id));
+    await setState(db, 'last_push', String(Date.now()));
     await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
     return { success: true, connected: true, pulled, filesUpdated: report, message: 'Sincronizado con OneDrive' };
   };
