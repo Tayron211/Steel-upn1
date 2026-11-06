@@ -433,10 +433,14 @@ export async function syncAllDataToLinkedExcel() {
 }
 
 export function triggerLiveExcelSync() {
-  if (!cachedHandle) return;
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
-    syncAllDataToLinkedExcel();
+    // 1. Sincronizar directo en la nube con Microsoft Graph OneDrive si está conectado
+    fetch('/api/onedrive/sync', { method: 'POST' }).catch(() => {});
+    // 2. Sincronizar archivo local si está vinculado
+    if (cachedHandle) {
+      syncAllDataToLinkedExcel();
+    }
   }, 600);
 }
 

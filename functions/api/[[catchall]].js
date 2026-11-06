@@ -758,6 +758,10 @@ export async function onRequest(context) {
     // 7. ALL DATA SNAPSHOT (para sincronización en vivo con OneDrive / Excel): /api/all-data
     // -------------------------------------------------------------
     if (path === '/api/all-data' && method === 'GET') {
+      const waitParam = Number(url.searchParams.get('wait') || 0);
+      if (waitParam > 0 && waitParam <= 5000) {
+        await new Promise(resolve => setTimeout(resolve, waitParam));
+      }
       const [asistRes, ticketRes, manualRes, resRes] = await Promise.all([
         db.prepare('SELECT * FROM asistencia ORDER BY hora_inicio_prog ASC, aula ASC').all(),
         db.prepare('SELECT * FROM tickets ORDER BY created_at DESC').all(),
@@ -905,6 +909,307 @@ export async function onRequest(context) {
           'Cache-Control': 'no-store, no-cache, must-revalidate',
           'Access-Control-Allow-Origin': '*'
         }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 9. CONEXIÓN DIRECTA MICROSOFT GRAPH ONEDRIVE UPN (/api/onedrive/*)
+    // Sincroniza directamente CONTROL DOCENTE - Copia.xlsx en la nube sin pegar scripts
+    // -------------------------------------------------------------
+    const TENANT_ID = 'ae544a57-aecb-4bf9-828a-5b520732b110';
+    const CLIENT_ID = 'd3590ed6-52b3-4102-aeff-aad2292ab01c';
+
+    if (path.startsWith('/api/onedrive/')) {
+      await db.prepare(`
+        CREATE TABLE IF NOT EXISTS onedrive_auth (
+          id TEXT PRIMARY KEY,
+          refresh_token TEXT,
+          access_token TEXT,
+          expires_at INTEGER,
+          item_id TEXT,
+          file_name TEXT,
+          last_web_hash TEXT,
+          last_excel_hash TEXT,
+          updated_at TEXT
+        )
+      `).run();
+    }
+
+    if (path === '/api/onedrive/status' && method === 'GET') {
+      const row = await db.prepare('SELECT item_id, file_name, updated_at, refresh_token FROM onedrive_auth WHERE id = ?').bind('primary').first();
+      return json({
+        success: true,
+        connected: Boolean(row && row.refresh_token),
+        fileName: row?.file_name || 'CONTROL DOCENTE - Copia.xlsx',
+        itemId: row?.item_id || null,
+        updatedAt: row?.updated_at || null
+      });
+    }
+
+    if (path === '/api/onedrive/device-code' && method === 'POST') {
+      const dcRes = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/devicecode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: CLIENT_ID,
+          scope: 'https://graph.microsoft.com/.default offline_access'
+        })
+      });
+      const dcJson = await dcRes.json();
+      return json({ success: true, data: dcJson });
+    }
+
+    if (path === '/api/onedrive/poll-token' && method === 'POST') {
+      const { device_code } = await request.json();
+      const tkRes = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+          client_id: CLIENT_ID,
+          device_code
+        })
+      });
+      const tkJson = await tkRes.json();
+      if (!tkRes.ok || !tkJson.access_token) {
+        return json({
+          success: false,
+          pending: tkJson.error === 'authorization_pending',
+          error: tkJson.error_description || tkJson.error || 'Esperando autorización'
+        });
+      }
+
+      // Buscar el archivo CONTROL DOCENTE - Copia.xlsx en el OneDrive del usuario
+      let itemId = null;
+      let fileName = 'CONTROL DOCENTE - Copia.xlsx';
+      try {
+        const directRes = await fetch('https://graph.microsoft.com/v1.0/me/drive/root:/CONTROL%20DOCENTE%20-%20Copia.xlsx', {
+          headers: { Authorization: `Bearer ${tkJson.access_token}` }
+        });
+        if (directRes.ok) {
+          const dItem = await directRes.json();
+          itemId = dItem.id;
+          fileName = dItem.name || fileName;
+        } else {
+          const searchRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='CONTROL DOCENTE')", {
+            headers: { Authorization: `Bearer ${tkJson.access_token}` }
+          });
+          if (searchRes.ok) {
+            const sJson = await searchRes.json();
+            const match = (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('CONTROL DOCENTE - COPIA')) || (sJson.value || [])[0];
+            if (match) {
+              itemId = match.id;
+              fileName = match.name;
+            }
+          }
+        }
+      } catch (_) {}
+
+      const expiresAt = Date.now() + Number(tkJson.expires_in || 3600) * 1000;
+      await db.prepare(`
+        INSERT OR REPLACE INTO onedrive_auth (
+          id, refresh_token, access_token, expires_at, item_id, file_name, updated_at
+        ) VALUES ('primary', ?, ?, ?, ?, ?, datetime('now'))
+      `).bind(tkJson.refresh_token || '', tkJson.access_token, expiresAt, itemId || '', fileName).run();
+
+      return json({
+        success: true,
+        connected: true,
+        fileName,
+        itemId
+      });
+    }
+
+    if (path === '/api/onedrive/sync' && method === 'POST') {
+      const authRow = await db.prepare('SELECT * FROM onedrive_auth WHERE id = ?').bind('primary').first();
+      if (!authRow || !authRow.refresh_token) {
+        return json({ success: false, connected: false, message: 'OneDrive aún no vinculado' });
+      }
+
+      let accessToken = authRow.access_token;
+      if (!accessToken || Date.now() > Number(authRow.expires_at || 0) - 120000) {
+        const refRes = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            client_id: CLIENT_ID,
+            refresh_token: authRow.refresh_token,
+            scope: 'https://graph.microsoft.com/.default offline_access'
+          })
+        });
+        const refJson = await refRes.json();
+        if (refRes.ok && refJson.access_token) {
+          accessToken = refJson.access_token;
+          const newExp = Date.now() + Number(refJson.expires_in || 3600) * 1000;
+          await db.prepare(`
+            UPDATE onedrive_auth
+            SET access_token = ?, refresh_token = COALESCE(?, refresh_token), expires_at = ?, updated_at = datetime('now')
+            WHERE id = 'primary'
+          `).bind(accessToken, refJson.refresh_token || null, newExp).run();
+        }
+      }
+
+      let itemId = authRow.item_id;
+      if (!itemId) {
+        const searchRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='CONTROL DOCENTE')", {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (searchRes.ok) {
+          const sJson = await searchRes.json();
+          const match = (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('CONTROL DOCENTE - COPIA')) || (sJson.value || [])[0];
+          if (match) {
+            itemId = match.id;
+            await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(itemId, match.name).run();
+          }
+        }
+      }
+
+      if (!itemId) {
+        return json({ success: false, message: 'No se encontró CONTROL DOCENTE - Copia.xlsx en OneDrive' });
+      }
+
+      const [asistRes, ticketRes, manualRes, resRes] = await Promise.all([
+        db.prepare('SELECT * FROM asistencia ORDER BY hora_inicio_prog ASC, aula ASC').all(),
+        db.prepare('SELECT * FROM tickets WHERE periodo != "2026-1" ORDER BY created_at DESC').all(),
+        db.prepare("SELECT * FROM hojas_manuales WHERE id NOT LIKE 'manual_1_%' AND ((docente IS NOT NULL AND docente != '') OR (nrc IS NOT NULL AND nrc != '')) ORDER BY fecha DESC, id DESC").all(),
+        db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all()
+      ]);
+
+      const headers = {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      };
+
+      const colLetter = (n) => {
+        let s = '';
+        while (n > 0) {
+          const m = (n - 1) % 26;
+          s = String.fromCharCode(65 + m) + s;
+          n = Math.floor((n - 1) / 26);
+        }
+        return s;
+      };
+
+      // 1. Sincronizar ATENCIONES 2026-2 (incluye columna J = USUARIO)
+      const tickets = ticketRes.results || [];
+      if (tickets.length > 0) {
+        const rowsAten = tickets.map(t => [
+          t.periodo || '2026-2',
+          t.fecha || '',
+          t.dia || '',
+          t.hora_reporte || '',
+          t.ambiente || '',
+          t.piso || '',
+          t.pabellon || '',
+          t.tipo_solicitud || 'ASISTENCIA TÉCNICA',
+          t.estado || 'ATENDIDO',
+          t.usuario || 'DOCENTE',
+          t.descripcion_solucion || '',
+          t.responsable || ''
+        ]);
+        const endRow = rowsAten.length + 1;
+        await fetch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('ATENCIONES 2026-2')}/range(address='A2:L${endRow}')`,
+          { method: 'PATCH', headers, body: JSON.stringify({ values: rowsAten }) }
+        );
+      }
+
+      // 2. Sincronizar HOJA DE ASISTENCIA 2026-2 (incluye columna I = DOCENTE REEMPLAZANTE)
+      const manuals = manualRes.results || [];
+      if (manuals.length > 0) {
+        const rowsMan = manuals.map((m, i) => [
+          m.n_hoja || `LN1-${String(i + 1).padStart(3, '0')}`,
+          m.fecha || '',
+          m.aula || '',
+          m.nrc || '',
+          m.codigo_docente || '',
+          m.docente || '',
+          m.curso || '',
+          m.observacion || '',
+          m.docente_reemplazo || ''
+        ]);
+        const endRow = rowsMan.length + 1;
+        await fetch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('HOJA DE ASISTENCIA 2026-2')}/range(address='A2:I${endRow}')`,
+          { method: 'PATCH', headers, body: JSON.stringify({ values: rowsMan }) }
+        );
+      }
+
+      // 3. Sincronizar RESERVAS
+      const reservas = resRes.results || [];
+      if (reservas.length > 0) {
+        const rowsRes = reservas.map(r => [
+          r.responsable || '',
+          r.fecha || '',
+          r.dia || '',
+          r.inicio || '',
+          r.final || '',
+          r.ambiente || '',
+          r.piso_pabellon || '',
+          r.motivo || '',
+          r.soporte || ''
+        ]);
+        const endRow = rowsRes.length + 1;
+        await fetch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('RESERVAS')}/range(address='A2:I${endRow}')`,
+          { method: 'PATCH', headers, body: JSON.stringify({ values: rowsRes }) }
+        );
+      }
+
+      // 4. Sincronizar bidireccionalmente CONTROL ASISTENCIA (Columnas N:R = Inicio Real, Fin Real, Asistencia, Puntualidad, Observación)
+      const usedRes = await fetch(
+        `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('CONTROL ASISTENCIA')}/usedRange(valuesOnly=true)`,
+        { headers }
+      );
+      if (usedRes.ok) {
+        const usedJson = await usedRes.json();
+        const vals = usedJson.values || [];
+        if (vals.length > 1) {
+          const byKey = new Map();
+          for (const a of (asistRes.results || [])) {
+            const k = `${String(a.nrc || '').trim()}_${String(a.dia || '').trim().toUpperCase()}_${String(a.aula || '').trim().toUpperCase()}`;
+            byKey.set(k, a);
+          }
+          const colUpdates = [];
+          for (let r = 1; r < vals.length; r++) {
+            const nrc = String(vals[r][7] || '').trim();
+            const dia = String(vals[r][3] || '').trim().toUpperCase();
+            const aula = String(vals[r][6] || '').trim().toUpperCase();
+            const match = byKey.get(`${nrc}_${dia}_${aula}`);
+            if (match) {
+              colUpdates.push([
+                match.hora_inicio_real || vals[r][13] || '',
+                match.hora_final_real || vals[r][14] || '',
+                match.asistencia === 'PENDIENTE' ? '' : (match.asistencia || ''),
+                match.puntualidad === '-' ? '' : (match.puntualidad || ''),
+                match.observacion || ''
+              ]);
+            } else {
+              colUpdates.push([
+                vals[r][13] || '',
+                vals[r][14] || '',
+                vals[r][15] || '',
+                vals[r][16] || '',
+                vals[r][17] || ''
+              ]);
+            }
+          }
+          if (colUpdates.length > 0) {
+            const endRow = colUpdates.length + 1;
+            await fetch(
+              `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('CONTROL ASISTENCIA')}/range(address='N2:R${endRow}')`,
+              { method: 'PATCH', headers, body: JSON.stringify({ values: colUpdates }) }
+            );
+          }
+        }
+      }
+
+      await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
+      return json({
+        success: true,
+        connected: true,
+        message: 'Sincronizado en tiempo real con CONTROL DOCENTE - Copia.xlsx en OneDrive'
       });
     }
 

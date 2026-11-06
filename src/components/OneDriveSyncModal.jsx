@@ -1,55 +1,140 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Cloud, Check, Copy, ExternalLink, X, FolderSync, Sparkles, RefreshCw } from 'lucide-react';
-import {
-  linkOneDriveExcelFile,
-  reauthorizeSavedExcel,
-  syncAllDataToLinkedExcel,
-  getLiveExcelState
-} from '../utils/liveExcelSync';
+import { Cloud, Check, Copy, ExternalLink, X, FolderSync, Sparkles, RefreshCw, ShieldCheck } from 'lucide-react';
+import { getLiveExcelState } from '../utils/liveExcelSync';
 
 export const USER_ONEDRIVE_EXCEL_URL =
   'https://educorpperu-my.sharepoint.com/:x:/r/personal/tayron_salinas_upn_edu_pe/_layouts/15/Doc.aspx?sourcedoc=%7B43927736-578C-4F3E-91C2-C9FD6E2CE448%7D&file=CONTROL%20DOCENTE%20-%20Copia.xlsx&action=default&mobileredirect=true&share=cQo2d5JDjFc-T5HCyf1uLORIEgUB1-7s8tpfsE3FwtzKMreVQA';
 
 export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatusMessage }) {
+  const [cloudStatus, setCloudStatus] = useState({ loading: true, connected: false, fileName: 'CONTROL DOCENTE - Copia.xlsx', updatedAt: null });
+  const [deviceAuth, setDeviceAuth] = useState(null);
+  const [authPolling, setAuthPolling] = useState(false);
+  const [syncingNow, setSyncingNow] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [copiedAutoScript, setCopiedAutoScript] = useState(false);
-  const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedPs, setCopiedPs] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const pollRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (pollRef.current) clearInterval(pollRef.current);
+      return;
+    }
+    fetch('/api/onedrive/status')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success) {
+          setCloudStatus({
+            loading: false,
+            connected: j.connected,
+            fileName: j.fileName || 'CONTROL DOCENTE - Copia.xlsx',
+            updatedAt: j.updatedAt
+          });
+        } else {
+          setCloudStatus((prev) => ({ ...prev, loading: false }));
+        }
+      })
+      .catch(() => setCloudStatus((prev) => ({ ...prev, loading: false })));
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [isOpen]);
 
   if (!isOpen || typeof document === 'undefined') return null;
 
   const origin = window.location.origin.includes('localhost')
     ? 'https://steel-upn1.pages.dev'
     : window.location.origin;
-  const liveExportUrl = `${origin}/api/export-excel`;
 
-  // Script Único Automático Bidireccional en Tiempo Real para Excel Online (Automatizar -> Nuevo script)
+  const handleStartCloudAuth = async () => {
+    try {
+      setAuthPolling(true);
+      const res = await fetch('/api/onedrive/device-code', { method: 'POST' });
+      const json = await res.json();
+      if (json.success && json.data?.user_code) {
+        setDeviceAuth(json.data);
+        navigator.clipboard.writeText(json.data.user_code);
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 4000);
+        window.open(json.data.verification_uri || 'https://login.microsoft.com/device', '_blank');
+
+        if (pollRef.current) clearInterval(pollRef.current);
+        pollRef.current = setInterval(async () => {
+          try {
+            const pRes = await fetch('/api/onedrive/poll-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ device_code: json.data.device_code })
+            });
+            const pJson = await pRes.json();
+            if (pJson.success && pJson.connected) {
+              clearInterval(pollRef.current);
+              setAuthPolling(false);
+              setDeviceAuth(null);
+              setCloudStatus({
+                loading: false,
+                connected: true,
+                fileName: pJson.fileName || 'CONTROL DOCENTE - Copia.xlsx',
+                updatedAt: new Date().toLocaleTimeString('es-PE')
+              });
+              await fetch('/api/onedrive/sync', { method: 'POST' });
+              onStatusMessage?.('✅ OneDrive UPN conectado automáticamente en tiempo real.');
+            }
+          } catch (_) {}
+        }, 3500);
+      }
+    } catch (_) {
+      setAuthPolling(false);
+    }
+  };
+
+  const handleSyncCloudNow = async () => {
+    setSyncingNow(true);
+    try {
+      const res = await fetch('/api/onedrive/sync', { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        setCloudStatus((prev) => ({ ...prev, updatedAt: new Date().toLocaleTimeString('es-PE') }));
+        onStatusMessage?.('✅ CONTROL DOCENTE - Copia.xlsx sincronizado en OneDrive.');
+      }
+    } catch (_) {}
+    setSyncingNow(false);
+  };
+
+  // Script 100% compatible con TypeScript estricto de Excel Online (Sin 'any', sin 'setTimeout', sin funciones internas)
   const autoRealtimeOfficeScript = `async function main(workbook: ExcelScript.Workbook) {
   const API = "${origin}";
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  let lastExcelHash = "";
+  let lastWebHash = "";
 
-  function readExcelSnapshot() {
-    const shAsist = workbook.getWorksheet("CONTROL ASISTENCIA");
-    const asistVals = shAsist ? shAsist.getUsedRange()?.getValues() || [] : [];
-    const asistencia = [];
+  for (let cycle = 0; cycle < 600; cycle++) {
+    const shAsistRead = workbook.getWorksheet("CONTROL ASISTENCIA");
+    const usedAsist = shAsistRead ? shAsistRead.getUsedRange() : undefined;
+    const asistVals: (string | number | boolean)[][] = usedAsist ? usedAsist.getValues() : [];
+    const asistenciaExcel: AsistenciaItem[] = [];
+
     for (let r = 1; r < asistVals.length; r++) {
       const row = asistVals[r];
-      if (!row[6] && !row[10] && !row[7]) continue;
-      if (String(row[6] || "").toUpperCase() === "AULA") continue;
-      asistencia.push({
-        id: \`asist_imp_\${r}\`,
+      const aulaCell = String(row[6] || "").trim().toUpperCase();
+      const docCell = String(row[10] || "").trim().toUpperCase();
+      const nrcCell = String(row[7] || "").trim();
+      if (!aulaCell && !docCell && !nrcCell) continue;
+      if (aulaCell === "AULA") continue;
+      asistenciaExcel.push({
+        id: "asist_imp_" + String(r),
         pisoPabellon: String(row[0] || ""),
         sede: String(row[1] || "Comas"),
         periodo: String(row[2] || "2026-2"),
         dia: String(row[3] || "").toUpperCase(),
         horaInicioProg: String(row[4] || ""),
         horaFinalProg: String(row[5] || ""),
-        aula: String(row[6] || "").toUpperCase(),
-        nrc: String(row[7] || ""),
+        aula: aulaCell,
+        nrc: nrcCell,
         listaCruzada: String(row[8] || ""),
         codigoDocente: String(row[9] || ""),
-        docente: String(row[10] || "").toUpperCase(),
+        docente: docCell,
         curso: String(row[11] || "").toUpperCase(),
         carrera: String(row[12] || ""),
         horaInicioReal: String(row[13] || ""),
@@ -60,135 +145,246 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
       });
     }
 
-    const shMan = workbook.getWorksheet("HOJA DE ASISTENCIA 2026-2");
-    const manVals = shMan ? shMan.getUsedRange()?.getValues() || [] : [];
-    const manualSheets = [];
+    const shManRead = workbook.getWorksheet("HOJA DE ASISTENCIA 2026-2");
+    const usedMan = shManRead ? shManRead.getUsedRange() : undefined;
+    const manVals: (string | number | boolean)[][] = usedMan ? usedMan.getValues() : [];
+    const manualExcel: ManualItem[] = [];
+
     for (let r = 1; r < manVals.length; r++) {
       const row = manVals[r];
-      if (!row[5] && !row[3] && !row[8]) continue;
-      if (String(row[0] || "").toUpperCase().includes("HOJA")) continue;
-      manualSheets.push({
-        id: \`manual_2_\${r}\`,
-        n_hoja: String(row[0] || "").toUpperCase(),
+      const nHojaVal = String(row[0] || "").trim().toUpperCase();
+      if (nHojaVal.indexOf("HOJA") >= 0) continue;
+      const docVal = String(row[5] || "").trim().toUpperCase();
+      const nrcVal = String(row[3] || "").trim();
+      const reempVal = String(row[8] || "").trim().toUpperCase();
+      if (!docVal && !nrcVal && !reempVal) continue;
+      manualExcel.push({
+        id: "manual_2_" + String(r),
+        n_hoja: nHojaVal,
         fecha: String(row[1] || ""),
         aula: String(row[2] || "").toUpperCase(),
-        nrc: String(row[3] || ""),
+        nrc: nrcVal,
         codigo_docente: String(row[4] || ""),
-        docente: String(row[5] || "").toUpperCase(),
+        docente: docVal,
         curso: String(row[6] || "").toUpperCase(),
         observacion: String(row[7] || ""),
-        docente_reemplazo: String(row[8] || "").toUpperCase()
+        docente_reemplazo: reempVal
       });
     }
-    return { asistencia, manualSheets, hash: JSON.stringify({ asistencia, manualSheets }) };
-  }
 
-  function writeWebToExcel(data: any) {
-    const { asistencia = [], tickets = [], manualSheets = [], reservas = [] } = data;
-    const shAsist = workbook.getWorksheet("CONTROL ASISTENCIA");
-    if (shAsist && asistencia.length > 0) {
-      const used = shAsist.getUsedRange();
-      const vals = used ? used.getValues() : [];
-      const byKey = new Map<string, any>();
-      for (const a of asistencia) {
-        const k = \`\${String(a.nrc || "").trim()}_\${String(a.dia || "").trim().toUpperCase()}_\${String(a.aula || "").trim().toUpperCase()}\`;
-        byKey.set(k, a);
-      }
-      for (let r = 1; r < vals.length; r++) {
-        const nrc = String(vals[r][7] || "").trim();
-        const dia = String(vals[r][3] || "").trim().toUpperCase();
-        const aula = String(vals[r][6] || "").trim().toUpperCase();
-        const match = byKey.get(\`\${nrc}_\${dia}_\${aula}\`);
-        if (match) {
-          if (match.horaInicioReal) shAsist.getCell(r, 13).setValue(match.horaInicioReal);
-          if (match.horaFinalReal) shAsist.getCell(r, 14).setValue(match.horaFinalReal);
-          shAsist.getCell(r, 15).setValue(match.asistencia === "PENDIENTE" ? "" : (match.asistencia || ""));
-          shAsist.getCell(r, 16).setValue(match.puntualidad === "-" ? "" : (match.puntualidad || ""));
-          shAsist.getCell(r, 17).setValue(match.observacion || "");
-        }
-      }
-    }
-
-    const shAten = workbook.getWorksheet("ATENCIONES 2026-2");
-    const t20262 = tickets.filter((t: any) => String(t.periodo || "2026-2") !== "2026-1");
-    if (shAten && t20262.length > 0) {
-      const rows = t20262.map((t: any) => [
-        t.periodo || "2026-2", t.fecha || "", t.dia || "", t.horaReporte || "",
-        t.ambiente || "", t.piso || "", t.pabellon || "",
-        t.tipoSolicitud || "ASISTENCIA TÉCNICA", t.estado || "ATENDIDO",
-        t.usuario || "DOCENTE", t.descripcionSolucion || "", t.responsable || ""
-      ]);
-      shAten.getRangeByIndexes(1, 0, rows.length, 12).setValues(rows);
-    }
-
-    const shMan = workbook.getWorksheet("HOJA DE ASISTENCIA 2026-2");
-    const m20262 = manualSheets.filter((m: any) => !String(m.id || "").startsWith("manual_1_"));
-    if (shMan && m20262.length > 0) {
-      const rows = m20262.map((m: any, i: number) => [
-        m.n_hoja || \`LN1-\${String(i + 1).padStart(3, "0")}\`, m.fecha || "", m.aula || "",
-        m.nrc || "", m.codigo_docente || "", m.docente || "", m.curso || "",
-        m.observacion || "", m.docente_reemplazo || ""
-      ]);
-      shMan.getRangeByIndexes(1, 0, rows.length, 9).setValues(rows);
-    }
-
-    const shRes = workbook.getWorksheet("RESERVAS");
-    if (shRes && reservas.length > 0) {
-      const rows = reservas.map((r: any) => [
-        r.responsable || "", r.fecha || "", r.dia || "", r.inicio || "", r.final || "",
-        r.ambiente || "", r.piso_pabellon || "", r.motivo || "", r.soporte || ""
-      ]);
-      shRes.getRangeByIndexes(1, 0, rows.length, 9).setValues(rows);
-    }
-  }
-
-  let lastExcelHash = readExcelSnapshot().hash;
-  let lastWebHash = "";
-
-  console.log("🟢 Sincronización bidireccional en tiempo real activa...");
-  for (let cycle = 0; cycle < 1200; cycle++) {
-    const snap = readExcelSnapshot();
-    if (snap.hash !== lastExcelHash && snap.asistencia.length > 0) {
-      await fetch(\`\${API}/api/import-excel-data\`, {
+    const currentExcelHash = JSON.stringify({ a: asistenciaExcel, m: manualExcel });
+    if (!lastExcelHash) {
+      lastExcelHash = currentExcelHash;
+    } else if (currentExcelHash !== lastExcelHash && asistenciaExcel.length > 0) {
+      await fetch(API + "/api/import-excel-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ asistencia: snap.asistencia, manualSheets: snap.manualSheets, clearExisting: true })
+        body: JSON.stringify({
+          asistencia: asistenciaExcel,
+          manualSheets: manualExcel,
+          clearExisting: true
+        })
       });
-      lastExcelHash = snap.hash;
-      console.log("⬆️ Cambio en Excel enviado a la Web App!");
+      lastExcelHash = currentExcelHash;
     }
 
-    const res = await fetch(\`\${API}/api/all-data\`);
-    const json = await res.json();
-    if (json.success && json.data) {
-      const webHash = JSON.stringify(json.data);
-      if (webHash !== lastWebHash) {
-        writeWebToExcel(json.data);
-        lastWebHash = webHash;
-        lastExcelHash = readExcelSnapshot().hash;
-        console.log("⬇️ Cambio en la Web App guardado en Excel OneDrive!");
+    const waitUrl = cycle === 0 ? API + "/api/all-data" : API + "/api/all-data?wait=2500";
+    const res = await fetch(waitUrl);
+    const json: AllDataResponse = await res.json();
+
+    if (json && json.success && json.data) {
+      const webData = json.data;
+      const currentWebHash = JSON.stringify(webData);
+
+      if (currentWebHash !== lastWebHash) {
+        const asistenciaWeb: AsistenciaItem[] = webData.asistencia || [];
+        const ticketsWeb: TicketItem[] = webData.tickets || [];
+        const manualWeb: ManualItem[] = webData.manualSheets || [];
+        const reservasWeb: ReservaItem[] = webData.reservas || [];
+
+        if (shAsistRead && asistenciaWeb.length > 0 && asistVals.length > 1) {
+          const byKey: AsistenciaMap = {};
+          for (let i = 0; i < asistenciaWeb.length; i++) {
+            const item = asistenciaWeb[i];
+            const k =
+              String(item.nrc || "").trim() +
+              "_" +
+              String(item.dia || "").trim().toUpperCase() +
+              "_" +
+              String(item.aula || "").trim().toUpperCase();
+            byKey[k] = item;
+          }
+          for (let r = 1; r < asistVals.length; r++) {
+            const nrcRow = String(asistVals[r][7] || "").trim();
+            const diaRow = String(asistVals[r][3] || "").trim().toUpperCase();
+            const aulaRow = String(asistVals[r][6] || "").trim().toUpperCase();
+            const match = byKey[nrcRow + "_" + diaRow + "_" + aulaRow];
+            if (match) {
+              const iniReal = String(match.horaInicioReal || "");
+              const finReal = String(match.horaFinalReal || "");
+              const asistStr = match.asistencia === "PENDIENTE" ? "" : String(match.asistencia || "");
+              const puntStr = match.puntualidad === "-" ? "" : String(match.puntualidad || "");
+              const obsStr = String(match.observacion || "");
+              shAsistRead.getRangeByIndexes(r, 13, 1, 5).setValues([[iniReal, finReal, asistStr, puntStr, obsStr]]);
+            }
+          }
+        }
+
+        const shAten = workbook.getWorksheet("ATENCIONES 2026-2");
+        const rowsAten: (string | number | boolean)[][] = [];
+        for (let i = 0; i < ticketsWeb.length; i++) {
+          const t = ticketsWeb[i];
+          if (String(t.periodo || "2026-2") === "2026-1") continue;
+          rowsAten.push([
+            String(t.periodo || "2026-2"),
+            String(t.fecha || ""),
+            String(t.dia || ""),
+            String(t.horaReporte || ""),
+            String(t.ambiente || ""),
+            String(t.piso || ""),
+            String(t.pabellon || ""),
+            String(t.tipoSolicitud || "ASISTENCIA TECNICA"),
+            String(t.estado || "ATENDIDO"),
+            String(t.usuario || "DOCENTE"),
+            String(t.descripcionSolucion || ""),
+            String(t.responsable || "")
+          ]);
+        }
+        if (shAten && rowsAten.length > 0) {
+          shAten.getRangeByIndexes(1, 0, rowsAten.length, 12).setValues(rowsAten);
+        }
+
+        const rowsMan: (string | number | boolean)[][] = [];
+        for (let i = 0; i < manualWeb.length; i++) {
+          const m = manualWeb[i];
+          const mid = String(m.id || "");
+          if (mid.indexOf("manual_1_") === 0) continue;
+          rowsMan.push([
+            String(m.n_hoja || "LN1-" + String(rowsMan.length + 1)),
+            String(m.fecha || ""),
+            String(m.aula || ""),
+            String(m.nrc || ""),
+            String(m.codigo_docente || ""),
+            String(m.docente || ""),
+            String(m.curso || ""),
+            String(m.observacion || ""),
+            String(m.docente_reemplazo || "")
+          ]);
+        }
+        if (shManRead && rowsMan.length > 0) {
+          shManRead.getRangeByIndexes(1, 0, rowsMan.length, 9).setValues(rowsMan);
+        }
+
+        const shRes = workbook.getWorksheet("RESERVAS");
+        const rowsRes: (string | number | boolean)[][] = [];
+        for (let i = 0; i < reservasWeb.length; i++) {
+          const rv = reservasWeb[i];
+          rowsRes.push([
+            String(rv.responsable || ""),
+            String(rv.fecha || ""),
+            String(rv.dia || ""),
+            String(rv.inicio || ""),
+            String(rv.final || ""),
+            String(rv.ambiente || ""),
+            String(rv.piso_pabellon || ""),
+            String(rv.motivo || ""),
+            String(rv.soporte || "")
+          ]);
+        }
+        if (shRes && rowsRes.length > 0) {
+          shRes.getRangeByIndexes(1, 0, rowsRes.length, 9).setValues(rowsRes);
+        }
+
+        lastWebHash = currentWebHash;
       }
     }
-    await sleep(3000);
   }
+}
+
+interface AsistenciaItem {
+  id?: string;
+  pisoPabellon?: string;
+  sede?: string;
+  periodo?: string;
+  dia?: string;
+  horaInicioProg?: string;
+  horaFinalProg?: string;
+  aula?: string;
+  nrc?: string;
+  listaCruzada?: string;
+  codigoDocente?: string;
+  docente?: string;
+  curso?: string;
+  carrera?: string;
+  horaInicioReal?: string;
+  horaFinalReal?: string;
+  asistencia?: string;
+  puntualidad?: string;
+  observacion?: string;
+}
+
+interface AsistenciaMap {
+  [key: string]: AsistenciaItem;
+}
+
+interface TicketItem {
+  periodo?: string;
+  fecha?: string;
+  dia?: string;
+  horaReporte?: string;
+  ambiente?: string;
+  piso?: string;
+  pabellon?: string;
+  tipoSolicitud?: string;
+  estado?: string;
+  usuario?: string;
+  descripcionSolucion?: string;
+  responsable?: string;
+}
+
+interface ManualItem {
+  id?: string;
+  n_hoja?: string;
+  fecha?: string;
+  aula?: string;
+  nrc?: string;
+  codigo_docente?: string;
+  docente?: string;
+  curso?: string;
+  observacion?: string;
+  docente_reemplazo?: string;
+}
+
+interface ReservaItem {
+  responsable?: string;
+  fecha?: string;
+  dia?: string;
+  inicio?: string;
+  final?: string;
+  ambiente?: string;
+  piso_pabellon?: string;
+  motivo?: string;
+  soporte?: string;
+}
+
+interface AllDataPayload {
+  asistencia?: AsistenciaItem[];
+  tickets?: TicketItem[];
+  manualSheets?: ManualItem[];
+  reservas?: ReservaItem[];
+}
+
+interface AllDataResponse {
+  success?: boolean;
+  data?: AllDataPayload;
 }`;
 
-  const psOneLiner = `powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location '${
-    typeof window !== 'undefined' ? 'd:\\Users\\Arianny\\Downloads\\PROYECTOS\\steel-pro1' : '.'
-  }'; .\\sincronizar-onedrive.bat"`;
-
-  const state = liveExcel || getLiveExcelState();
+  const psOneLiner = `powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location 'd:\\Users\\Arianny\\Downloads\\PROYECTOS\\steel-pro1'; .\\sincronizar-onedrive.bat"`;
 
   const handleCopyAutoScript = () => {
     navigator.clipboard.writeText(autoRealtimeOfficeScript);
     setCopiedAutoScript(true);
     setTimeout(() => setCopiedAutoScript(false), 2500);
-  };
-
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(liveExportUrl);
-    setCopiedUrl(true);
-    setTimeout(() => setCopiedUrl(false), 2500);
   };
 
   const handleCopyPs = () => {
@@ -214,7 +410,7 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
             </div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base font-black text-slate-950 dark:text-white tracking-tight leading-snug">
-                Sincronización Bidireccional en Tiempo Real
+                Sincronización Automática con OneDrive UPN
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug truncate">
                 Archivo: <span className="font-mono font-bold text-sky-600 dark:text-sky-400">CONTROL DOCENTE - Copia.xlsx</span>
@@ -230,84 +426,154 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
           </button>
         </div>
 
-        {/* Tarjeta del Archivo OneDrive del Usuario */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/90 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="text-xs font-black text-slate-900 dark:text-white truncate">
-                CONTROL DOCENTE - Copia.xlsx (tayron.salinas@upn.edu.pe)
+        {/* CONEXIÓN DIRECTA EN LA NUBE CON MICROSOFT 365 (SIN SCRIPTS) */}
+        <div className="p-4 rounded-2xl bg-sky-50/80 dark:bg-sky-950/30 border-2 border-sky-300 dark:border-sky-700 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <ShieldCheck className="w-4 h-4 stroke-[2.5] text-sky-600 dark:text-sky-400 shrink-0" />
+              <span className="text-xs font-black text-sky-950 dark:text-sky-200 leading-snug">
+                CONEXIÓN DIRECTA MICROSOFT 365 (Sin pegar scripts)
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
-              Guarda y jala automáticamente cada cambio cada 3 segundos
-            </p>
+            <span className={`text-[10px] font-black px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 text-center leading-none ${
+              cloudStatus.connected
+                ? 'bg-emerald-500 text-white'
+                : 'bg-sky-600 text-white'
+            }`}>
+              {cloudStatus.connected ? 'CONECTADO 24/7' : '1 CLIC'}
+            </span>
           </div>
-          <a
-            href={USER_ONEDRIVE_EXCEL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-9 px-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black inline-flex items-center justify-center gap-1.5 transition active:scale-95 whitespace-nowrap shrink-0"
-          >
-            <ExternalLink className="w-3.5 h-3.5 stroke-[2.4] shrink-0" />
-            <span>Abrir mi Excel en OneDrive</span>
-          </a>
+
+          {cloudStatus.connected ? (
+            <div className="space-y-2.5">
+              <p className="text-xs text-emerald-800 dark:text-emerald-300 font-semibold">
+                ✅ Tu cuenta <span className="font-mono">tayron.salinas@upn.edu.pe</span> está vinculada directamente en la nube con <strong className="font-mono">{cloudStatus.fileName}</strong>. Cada cambio se guarda automáticamente.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={syncingNow}
+                  onClick={handleSyncCloudNow}
+                  className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black inline-flex items-center gap-1.5 transition active:scale-95"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 stroke-[2.4] ${syncingNow ? 'animate-spin' : ''}`} />
+                  <span>{syncingNow ? 'Sincronizando en OneDrive...' : 'Sincronizar Ahora con OneDrive'}</span>
+                </button>
+                <a
+                  href={USER_ONEDRIVE_EXCEL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-9 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-zinc-800 text-white text-xs font-black inline-flex items-center gap-1.5 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 stroke-[2.4]" />
+                  <span>Abrir Excel en OneDrive</span>
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
+                Conecta directamente el servidor con tu cuenta <strong className="font-mono text-slate-900 dark:text-white">tayron.salinas@upn.edu.pe</strong> para que actualice tu archivo <strong className="font-mono text-slate-900 dark:text-white">CONTROL DOCENTE - Copia.xlsx</strong> solo en la nube sin usar scripts:
+              </p>
+
+              {deviceAuth ? (
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-sky-200 dark:border-sky-800 space-y-2">
+                  <div className="text-xs font-bold text-slate-700 dark:text-zinc-200">
+                    Pega este código en la pestaña de Microsoft que se abrió (ya está copiado en tu portapapeles):
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 flex items-center justify-center font-mono text-base font-black tracking-widest text-amber-950 dark:text-amber-300 select-all">
+                      {deviceAuth.user_code}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(deviceAuth.user_code);
+                        setCopiedCode(true);
+                        setTimeout(() => setCopiedCode(false), 2000);
+                      }}
+                      className="h-10 px-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black inline-flex items-center gap-1.5"
+                    >
+                      {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      <span>{copiedCode ? 'Copiado' : 'Copiar Código'}</span>
+                    </button>
+                  </div>
+                  <div className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold animate-pulse">
+                    ⏳ Esperando a que inicies sesión en Microsoft para vincular tu Excel automáticamente...
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleStartCloudAuth}
+                    className="h-9 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black inline-flex items-center gap-2 transition active:scale-95 shadow-xs"
+                  >
+                    <Cloud className="w-4 h-4 stroke-[2.4]" />
+                    <span>Conectar mi OneDrive UPN en 1 Clic (Sin Scripts)</span>
+                  </button>
+                  <a
+                    href={USER_ONEDRIVE_EXCEL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-9 px-3.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-bold inline-flex items-center gap-1.5 transition"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 stroke-[2.3]" />
+                    <span>Ver mi Excel</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* MODO 1: En tu pestaña de OneDrive (1 solo Script que guarda y jala en bucle continuo) */}
-        <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/90 dark:border-amber-800/70 space-y-2.5">
+        {/* OPCIÓN 2: Script Corregido (Cero errores TypeScript en Excel Online) */}
+        <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/90 dark:border-amber-800/70 space-y-2">
           <div className="flex items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <Sparkles className="w-4 h-4 stroke-[2.4] text-amber-600 dark:text-amber-400 shrink-0" />
               <span className="text-xs font-black text-amber-950 dark:text-amber-300 leading-snug">
-                MODO 1 (En Excel Online): Bucle Automático en Tiempo Real
+                Script para Pestaña "Automatizar" (Corregido sin errores)
               </span>
             </div>
             <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 whitespace-nowrap shrink-0 text-center leading-none">
-              JALA Y GUARDA SOLO
+              CORREGIDO
             </span>
           </div>
           <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
-            En tu pestaña abierta de <strong className="font-mono text-slate-900 dark:text-white">CONTROL DOCENTE - Copia.xlsx</strong>, ve a <strong>Automatizar → Nuevo script</strong>, pega este único script y dale a <strong>Ejecutar</strong> una sola vez: quedará escuchando cada 3 segundos; <strong>si cambias algo en el Excel lo sube solo a la Web, y si cambias algo en la Web lo guarda solo en el Excel</strong>:
+            Si prefieres usar la pestaña <strong>Automatizar → Nuevo script</strong> dentro de Excel Online, este script ya tiene todos los tipos estrictos corregidos (sin <code className="font-mono">any</code> ni <code className="font-mono">setTimeout</code>):
           </p>
-          <div className="pt-0.5">
-            <button
-              type="button"
-              onClick={handleCopyAutoScript}
-              className="w-full sm:w-auto h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black inline-flex items-center justify-center gap-2 transition active:scale-95 whitespace-nowrap shadow-xs"
-            >
-              {copiedAutoScript ? <Check className="w-3.5 h-3.5 stroke-[2.6] shrink-0" /> : <RefreshCw className="w-3.5 h-3.5 stroke-[2.4] shrink-0" />}
-              <span>{copiedAutoScript ? '¡Script Automático 24/7 Copiado!' : 'Copiar Script Automático en Tiempo Real (Guarda y Jala)'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleCopyAutoScript}
+            className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black inline-flex items-center justify-center gap-2 transition active:scale-95 whitespace-nowrap shadow-xs"
+          >
+            {copiedAutoScript ? <Check className="w-3.5 h-3.5 stroke-[2.6] shrink-0" /> : <Copy className="w-3.5 h-3.5 stroke-[2.4] shrink-0" />}
+            <span>{copiedAutoScript ? '¡Script sin errores copiado!' : 'Copiar Script Corregido para Excel Online'}</span>
+          </button>
         </div>
 
-        {/* MODO 2: Sincronizador Bidireccional Automático en PC */}
-        <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/90 dark:border-emerald-800/70 space-y-2.5">
-          <div className="flex items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
+        {/* OPCIÓN 3: Sincronizador Bidireccional Automático en PC */}
+        <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/90 dark:border-emerald-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
               <FolderSync className="w-4 h-4 stroke-[2.4] text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="text-xs font-black text-emerald-950 dark:text-emerald-300 leading-snug">
-                MODO 2 (En Segundo Plano en tu PC): sincronizar-onedrive.bat
+              <span className="text-xs font-black text-emerald-950 dark:text-emerald-300">
+                Sincronizador Local en PC (sincronizar-onedrive.bat)
               </span>
             </div>
-            <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-600 text-white whitespace-nowrap shrink-0 text-center leading-none">
-              ACTIVO CADA 3S
-            </span>
+            <p className="text-[11px] text-slate-600 dark:text-zinc-400 mt-0.5">
+              Activo en segundo plano cada 3 segundos.
+            </p>
           </div>
-          <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
-            El motor <strong className="font-mono text-slate-900 dark:text-white">sincronizar-onedrive.bat</strong> vigila tu archivo Excel cada 3 segundos: si modificas y guardas el Excel en tu PC/OneDrive, <strong>jala los datos automáticamente a la Web</strong>; y si registras algo en la Web o celulares, <strong>actualiza el Excel automáticamente</strong>.
-          </p>
-          <div className="pt-0.5">
-            <button
-              type="button"
-              onClick={handleCopyPs}
-              className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black inline-flex items-center justify-center gap-2 transition active:scale-95 shadow-xs"
-            >
-              {copiedPs ? <Check className="w-3.5 h-3.5 stroke-[2.6] shrink-0" /> : <Copy className="w-3.5 h-3.5 stroke-[2.3] shrink-0" />}
-              <span>{copiedPs ? '¡Comando copiado!' : 'Copiar comando para iniciar sincronizador en PC'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleCopyPs}
+            className="h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black inline-flex items-center justify-center gap-1.5 transition shrink-0 whitespace-nowrap"
+          >
+            {copiedPs ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedPs ? 'Copiado' : 'Copiar comando PC'}</span>
+          </button>
         </div>
 
         <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">
