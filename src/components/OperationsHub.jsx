@@ -24,38 +24,38 @@ export default function OperationsHub({
       <div className="apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm">
         <button
           onClick={() => setSubTab('manual')}
-          className={`flex-1 py-2 px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 ${
+          className={`flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'manual'
               ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_12px_rgba(253,186,48,0.4)] font-black scale-[1.02]'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/60'
           }`}
         >
           <FileText className="w-4 h-4 stroke-[2.2] shrink-0" />
-          <span>Hojas Manuales</span>
+          <span className="truncate">Hojas Manuales</span>
         </button>
 
         <button
           onClick={() => setSubTab('reservations')}
-          className={`flex-1 py-2 px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 ${
+          className={`flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'reservations'
               ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_12px_rgba(253,186,48,0.4)] font-black scale-[1.02]'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/60'
           }`}
         >
           <Calendar className="w-4 h-4 stroke-[2.2] shrink-0" />
-          <span>Reservas</span>
+          <span className="truncate">Reservas</span>
         </button>
 
         <button
           onClick={() => setSubTab('rooms')}
-          className={`flex-1 py-2 px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 ${
+          className={`flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'rooms'
               ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_12px_rgba(253,186,48,0.4)] font-black scale-[1.02]'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/60'
           }`}
         >
           <Building2 className="w-4 h-4 stroke-[2.2] shrink-0" />
-          <span>Ambientes</span>
+          <span className="truncate">Ambientes</span>
         </button>
       </div>
 

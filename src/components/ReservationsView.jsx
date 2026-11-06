@@ -146,13 +146,13 @@ export default function ReservationsView() {
 
       {/* Top Banner - Light Minimalist */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Espacios & Talleres</span>
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">Espacios & Talleres</span>
             </div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Reservas de Ambientes</h1>
+            <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">Reservas de Ambientes</h1>
           </div>
 
           <button
@@ -160,9 +160,9 @@ export default function ReservationsView() {
               resetForm();
               setIsModalOpen(true);
             }}
-            className="h-9 px-3.5 rounded-xl text-xs font-bold bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
+            className="h-9 px-3.5 rounded-xl text-xs font-bold bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0 self-start sm:self-auto"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
             <span>Nueva Reserva</span>
           </button>
         </div>

@@ -575,39 +575,39 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       {/* =========================================================================
           CABECERA Y PESTAÑAS (ACTIVOS / DEVUELTOS)
           ========================================================================= */}
-      <div className="flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2">
-          <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4]" />
-          <h1 className="text-base font-black text-slate-950 dark:text-white tracking-tight">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4] shrink-0" />
+          <h1 className="text-base font-black text-slate-950 dark:text-white tracking-tight whitespace-nowrap">
             Préstamos de Material
           </h1>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shrink-0">
           <button
             onClick={() => setActiveViewTab('ACTIVOS')}
-            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
+            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
               activeViewTab === 'ACTIVOS'
                 ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
                 : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <span>Activos</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-[#FDBA30] text-slate-950">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-[#FDBA30] text-slate-950">
               {activeLoans.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveViewTab('CONCLUIDOS')}
-            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 ${
+            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
               activeViewTab === 'CONCLUIDOS'
                 ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
                 : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <span>Devueltos</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-white">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-emerald-500 text-white">
               {concludedLoans.length}
             </span>
           </button>

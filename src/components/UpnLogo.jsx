@@ -8,12 +8,12 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
   if (variant === 'badge') {
     return (
       <div className={`relative inline-flex items-center justify-center rounded-xl overflow-hidden shadow-xs shrink-0 select-none ${
-        size === 'sm' ? 'h-8' : size === 'lg' ? 'h-12' : 'h-9.5'
+        size === 'sm' ? 'h-8 w-8' : size === 'lg' ? 'h-12 w-12' : 'h-9 w-9 sm:h-10 sm:w-10'
       } ${className}`}>
         <img 
           src="/logo-upn-oficial.svg" 
           alt="UPN Logo Oficial" 
-          className="h-full w-auto object-contain rounded-xl"
+          className="h-full w-full object-contain rounded-xl"
         />
       </div>
     );
@@ -24,13 +24,13 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
       <img 
         src="/logo-upn-oficial.svg" 
         alt="Universidad Privada del Norte" 
-        className={`h-9 sm:h-10 w-auto object-contain rounded-xl shadow-xs select-none ${className}`}
+        className={`h-9 w-9 sm:h-10 sm:w-10 aspect-square object-contain rounded-xl shadow-xs shrink-0 select-none ${className}`}
       />
     );
   }
 
   return (
-    <div className={`inline-flex items-center gap-2.5 sm:gap-3 select-none ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 sm:gap-3 min-w-0 select-none ${className}`}>
       {/* Official UPN Vector Chevron Arrow ("La Flecha") directly from upn.edu.pe */}
       <img 
         src="/logo-upn-oficial.svg" 
@@ -39,18 +39,18 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
       />
 
       {/* Institutional Typography Descriptor */}
-      <div className="flex flex-col text-left justify-center">
+      <div className="flex flex-col text-left justify-center min-w-0">
         <div className="flex items-center gap-1.5 leading-none">
-          <span className="text-[13px] sm:text-[14px] font-black tracking-tight text-slate-900 dark:text-white font-['Space_Grotesk',sans-serif]">
+          <span className="text-[13px] sm:text-[14px] font-black tracking-tight text-slate-900 dark:text-white font-['Space_Grotesk',sans-serif] whitespace-nowrap truncate">
             Control Docente
           </span>
         </div>
         <div className="flex items-center gap-1.5 mt-1">
-          <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border border-amber-200/80 dark:border-amber-800/80 px-1.5 py-0.5 rounded tracking-wide font-mono">
+          <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border border-amber-200/80 dark:border-amber-800/80 px-1.5 py-0.5 rounded tracking-wide font-mono whitespace-nowrap shrink-0">
             SEDE COMAS
           </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 hidden sm:inline">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+          <span className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 hidden sm:inline whitespace-nowrap">
             Operaciones
           </span>
         </div>

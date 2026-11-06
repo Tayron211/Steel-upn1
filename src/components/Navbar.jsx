@@ -35,20 +35,20 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   return (
     <>
       {/* Native App Top Bar with Frosted Glass Blur & Official UPN Branding */}
-      <header className="sticky top-0 z-40 bg-white/70 dark:bg-black/70 backdrop-blur-2xl backdrop-saturate-180 border-b border-slate-200/70 dark:border-zinc-800/80 safe-top shadow-2xs supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/60">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/70 dark:bg-black/70 backdrop-blur-2xl backdrop-saturate-180 border-b border-slate-200/70 dark:border-zinc-800/80 safe-top shadow-2xs supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/60 print:hidden">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
           {/* Official UPN Identity Brand */}
           <div className="flex items-center min-w-0">
             <UpnLogo variant="horizontal" />
           </div>
 
           {/* Header Right: AMOLED Toggle + Apple Minimalist Live Clock Pill */}
-          <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Dark / Light Mode Toggle Button */}
             <button
               type="button"
               onClick={onToggleDarkMode}
-              className="h-8.5 w-8.5 sm:h-9 sm:w-9 rounded-full flex items-center justify-center transition-all active:scale-90 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-amber-400 shadow-2xs"
+              className="h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-90 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-amber-400 shadow-2xs shrink-0"
               title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro AMOLED'}
               aria-label="Alternar modo de pantalla"
             >
@@ -60,9 +60,9 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
             </button>
 
             {/* Live Clock Pill */}
-            <div className="flex items-center gap-2 bg-slate-100/90 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-2.5 sm:px-3 py-1.5 rounded-full text-slate-800 dark:text-zinc-200 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[11px] font-bold tracking-tight">
+            <div className="flex items-center gap-2 bg-slate-100/90 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-2.5 sm:px-3 py-1.5 rounded-full text-slate-800 dark:text-zinc-200 shadow-2xs whitespace-nowrap shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
                 {currentDayName} {formattedTime}
               </span>
             </div>
@@ -71,7 +71,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
         {/* Desktop / Tablet Navigation Strip */}
         <div className="hidden md:block max-w-7xl mx-auto px-6 pb-2.5 pt-1 border-t border-slate-100 dark:border-zinc-900">
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -79,16 +79,16 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`inline-flex items-center justify-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap shrink-0 ${
                     isActive
                       ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_10px_rgba(253,186,48,0.35)] font-extrabold scale-[1.02]'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-900'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 stroke-[2.2] ${isActive ? 'text-slate-950 stroke-[2.5]' : 'text-slate-500 dark:text-zinc-400'}`} />
+                  <Icon className={`w-4 h-4 stroke-[2.2] shrink-0 ${isActive ? 'text-slate-950 stroke-[2.5]' : 'text-slate-500 dark:text-zinc-400'}`} />
                   <span>{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none ${
                       isActive ? 'bg-slate-950 text-[#FDBA30]' : 'bg-rose-500 text-white'
                     }`}>
                       {item.badge}

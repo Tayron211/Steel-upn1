@@ -796,17 +796,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   {
     viewMode === 'FREE_ROOMS' ? (
       <div className="space-y-2.5">
-        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200/80 p-3 rounded-2xl">
-          <div className="flex items-center gap-2">
-            <DoorOpen className="w-5 h-5 text-emerald-700 stroke-[2.2]" />
-            <div>
-              <h3 className="text-xs font-bold text-emerald-950">Aulas Disponibles / Libres en este Horario</h3>
-              <p className="text-[11px] text-emerald-700">Espacios sin clase programada listos para préstamo o talleres</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/70 p-3 rounded-2xl">
+          <div className="flex items-center gap-2 min-w-0">
+            <DoorOpen className="w-5 h-5 text-emerald-700 dark:text-emerald-400 stroke-[2.2] shrink-0" />
+            <div className="min-w-0">
+              <h3 className="text-xs font-bold text-emerald-950 dark:text-emerald-200 leading-tight">Aulas Disponibles / Libres en este Horario</h3>
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-tight mt-0.5">Espacios sin clase programada listos para préstamo o talleres</p>
             </div>
           </div>
           <button
             onClick={() => setViewMode('CLASSES')}
-            className="text-xs font-bold bg-white dark:bg-zinc-800 text-emerald-900 dark:text-emerald-300 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xs"
+            className="text-xs font-bold bg-white dark:bg-zinc-800 text-emerald-900 dark:text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xs whitespace-nowrap shrink-0 self-start sm:self-auto"
           >
             Volver a Clases
           </button>
@@ -1397,16 +1397,16 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           onClick={(e) => e.stopPropagation()}
         >
           {/* Encabezado */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-            <div className="flex items-center gap-2.5">
-              <span className="font-mono font-black text-sm bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs">
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center gap-2.5 min-w-0 pr-1">
+              <span className="font-mono font-black text-sm bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs shrink-0">
                 {reservingRoom.abrv}
               </span>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight">
+              <div className="min-w-0">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight break-words">
                   Reservar {reservingRoom.nombre}
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold mt-0.5 break-words leading-tight">
                   {reservingRoom.tipo} · Pab. {reservingRoom.pabellon} ({reservingRoom.piso}) · Cap. {reservingRoom.aforo} pers.
                 </p>
               </div>
@@ -1415,7 +1415,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               type="button"
               disabled={savingReservation}
               onClick={() => setReservingRoom(null)}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90"
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
             </button>

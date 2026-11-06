@@ -42,6 +42,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedForPrint, setSelectedForPrint] = useState(null);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [nrcLookupLoading, setNrcLookupLoading] = useState(false);
   const [nrcMatchFound, setNrcMatchFound] = useState(null);
 
@@ -129,9 +130,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
         return;
       }
       setSheets(prev => [json.data, ...prev]);
-      setSelectedForPrint(json.data);
       setIsModalOpen(false);
       resetForm();
+      setToastMessage(`✅ Hoja ${json.data?.codigo || ''} registrada correctamente`);
+      setTimeout(() => setToastMessage(''), 3000);
     } catch (err) {
       console.error(err);
       alert('Error de conexión al registrar la hoja. Intente nuevamente.');
@@ -259,31 +261,34 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   return (
     <div className="space-y-4 pb-36 md:pb-12 w-full mx-auto">
       {/* Toast Alert - Portaled to viewport body so it's 100% visible regardless of scroll position */}
-      {copiedSuccess && (
+      {(copiedSuccess || toastMessage) && (
         <ToastBanner
-          message="¡Texto de boleta copiado al portapapeles!"
+          message={toastMessage || '¡Texto de boleta copiado al portapapeles!'}
           type="info"
-          onClose={() => setCopiedSuccess(false)}
+          onClose={() => {
+            setCopiedSuccess(false);
+            setToastMessage('');
+          }}
         />
       )}
 
       {/* Top Controller Panel - Clean & Orderly */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 truncate">
                 Contingencia Académica · Operaciones Sede
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl font-black text-slate-950 dark:text-white tracking-tight">
+            <h1 className="text-lg sm:text-xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
               Hojas de Asistencia Manual
             </h1>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono whitespace-nowrap shrink-0">
               {validSheets.length} Emitidas
             </span>
 
@@ -292,10 +297,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 resetForm();
                 setIsModalOpen(true);
               }}
-              className="h-10 px-4 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
+              className="h-10 px-4 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0"
             >
-              <Plus className="w-4 h-4 stroke-[2.8]" />
-              <span>+ Emitir Nueva Hoja</span>
+              <Plus className="w-4 h-4 stroke-[2.8] shrink-0" />
+              <span>Emitir Nueva Hoja</span>
             </button>
           </div>
         </div>
@@ -458,10 +463,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 <thead className="bg-slate-50 dark:bg-[#121216] text-slate-600 dark:text-zinc-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200/90 dark:border-zinc-800">
                   <tr>
                     <th className="py-3.5 px-4 whitespace-nowrap min-w-[120px]">Hoja / Fecha</th>
-                    <th className="py-3.5 px-4 min-w-[240px]">NRC · Curso / Carrera</th>
-                    <th className="py-3.5 px-4 min-w-[180px]">Docente</th>
-                    <th className="py-3.5 px-4 min-w-[160px]">Motivo</th>
-                    <th className="py-3.5 px-4 min-w-[200px]">Asistente Emisor</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[240px]">NRC · Curso / Carrera</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Docente</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px]">Motivo</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[200px]">Asistente Emisor</th>
                     <th className="py-3.5 px-4 whitespace-nowrap text-right min-w-[150px]">Acciones</th>
                   </tr>
                 </thead>
@@ -757,29 +762,32 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               className="bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-900 dark:text-zinc-100 animate-scale-up space-y-4 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header del Modal */}
-              <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-3">
-                  <UpnLogo variant="logo-only" className="!h-10 !w-10 shrink-0" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-black text-xs sm:text-sm bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-lg shadow-2xs">
+              {/* Header del Modal - Simétrico y Adaptable en todos los formatos */}
+              <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-center gap-3 min-w-0 pr-1">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/70 flex items-center justify-center shadow-xs shrink-0">
+                    <FileCheck2 className="w-5 h-5 stroke-[2.3]" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+                        Detalles de la Hoja
+                      </h3>
+                      <span className="font-mono font-black text-xs bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-lg shadow-2xs whitespace-nowrap shrink-0">
                         {selectedForPrint.codigo}
                       </span>
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-                        Hoja de Asistencia Manual
-                      </span>
                     </div>
-                    <h3 className="text-base font-black text-slate-950 dark:text-white leading-tight mt-1">
-                      Detalles de la Hoja
-                    </h3>
+                    <p className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
+                      Hoja de Asistencia Manual · UPN Sede Comas
+                    </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setSelectedForPrint(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0 print:hidden"
+                  title="Cerrar ventana"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
                 </button>
