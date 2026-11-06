@@ -29,6 +29,15 @@ import {
   MoreVertical
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
+import CustomDatePicker from './CustomDatePicker';
+import CustomSelect from './CustomSelect';
+
+const TIME_OPTIONS = [
+  '07:00', '07:30', '08:00', '08:20', '09:00', '09:10', '10:00', '10:50',
+  '11:00', '11:40', '12:00', '12:30', '13:00', '13:20', '14:00', '14:30',
+  '15:00', '15:20', '16:00', '16:10', '17:00', '17:50', '18:00', '18:40',
+  '19:00', '19:30', '20:00', '20:20', '21:00', '21:10', '22:00', '22:50'
+];
 
 export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, initialSearch = '', onClearInitialSearch }) {
   const [data, setData] = useState([]);
@@ -119,8 +128,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       tipo: 'DOCENTE',
       nombre: '',
       fecha: new Date().toISOString().split('T')[0],
-      horaInicio: getCurrentTimeStr() || '08:00',
-      horaFin: '11:00',
+      horaInicio: '08:00',
+      horaFin: '10:00',
       actividades: ''
     });
   };
@@ -1467,36 +1476,32 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
                   Fecha *
                 </label>
-                <input
-                  type="date"
-                  required
+                <CustomDatePicker
                   value={reservationForm.fecha}
-                  onChange={(e) => setReservationForm(f => ({ ...f, fecha: e.target.value }))}
-                  className="w-full h-10 px-2.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-slate-950 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                  onChange={(val) => setReservationForm(f => ({ ...f, fecha: val }))}
+                  required
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
                   Hora Inicio *
                 </label>
-                <input
-                  type="time"
-                  required
+                <CustomSelect
                   value={reservationForm.horaInicio}
-                  onChange={(e) => setReservationForm(f => ({ ...f, horaInicio: e.target.value }))}
-                  className="w-full h-10 px-2.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-slate-950 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                  onChange={(val) => setReservationForm(f => ({ ...f, horaInicio: val }))}
+                  options={TIME_OPTIONS}
+                  placeholder="Hora Inicio"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
                   Hora Fin *
                 </label>
-                <input
-                  type="time"
-                  required
+                <CustomSelect
                   value={reservationForm.horaFin}
-                  onChange={(e) => setReservationForm(f => ({ ...f, horaFin: e.target.value }))}
-                  className="w-full h-10 px-2.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-slate-950 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                  onChange={(val) => setReservationForm(f => ({ ...f, horaFin: val }))}
+                  options={TIME_OPTIONS}
+                  placeholder="Hora Fin"
                 />
               </div>
             </div>
