@@ -409,6 +409,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       piso: quickAttentionItem.pisoPabellon || 'SEDE',
       tipoSolicitud: quickAttentionTipo,
       estado: quickAttentionStatus,
+      usuario: quickAttentionBeneficiary,
       descripcionSolucion: `${personTag} ${quickAttentionNotes || `Préstamo en aula ${quickAttentionItem.aula}`}`,
       responsable: 'Operaciones Sede'
     };
@@ -1003,9 +1004,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words leading-snug" title={item.docente}>
                     {item.docente}
                   </h3>
-                  <div className="flex items-start justify-between gap-1 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
+                  <div className="flex items-start justify-between gap-2 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
                     <span className="break-words leading-tight" title={item.curso}>{item.curso}</span>
-                    <span className="font-mono text-[10px] bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 px-1 py-0.2 rounded border border-slate-200 dark:border-zinc-800 shrink-0 font-bold">
+                    <span className="font-mono text-xs bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 px-2.5 py-0.5 rounded-lg border border-slate-200/90 dark:border-zinc-700 shrink-0 font-black tracking-tight shadow-2xs">
                       NRC {item.nrc}
                     </span>
                   </div>

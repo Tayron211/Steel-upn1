@@ -199,15 +199,64 @@ function updateControlAsistenciaXml(sheetXml, asistenciaList) {
 }
 
 /**
- * Reconstruye <sheetData> de ATENCIONES 2026-2 (xl/worksheets/sheet12.xml)
- * Incluye las fórmulas originales de DIA, RANGO y PISO + formato condicional de ESTADO.
+ * Extrae el tipo de usuario ('DOCENTE' o 'ALUMNO') y limpia la descripción si tenía prefijos
+ */
+function extractTicketUsuarioAndDesc(t) {
+  let rawDesc = String(t.descripcionSolucion || t.descripcion_solucion || '').trim();
+  let usuario = String(t.usuario || '').toUpperCase().trim();
+
+  if (!usuario) {
+    if (/\[?\s*🎓?\s*ALUMNO/i.test(rawDesc) || rawDesc.toUpperCase().includes('ALUMNO') || rawDesc.toUpperCase().includes('ESTUDIANTE')) {
+      usuario = 'ALUMNO';
+    } else {
+      usuario = 'DOCENTE';
+    }
+  }
+
+  return {
+    usuario: usuario === 'ALUMNO' ? 'ALUMNO' : 'DOCENTE',
+    desc: rawDesc
+  };
+}
+
+/**
+ * Reconstruye <sheetData> de ATENCIONES 2026-2 (xl/worksheets/sheet12.xml) y ATENCIONES 2026-1 (xl/worksheets/sheet10.xml)
+ * Incluye la columna J "USUARIO" (DOCENTE / ALUMNO), las fórmulas originales de DIA, RANGO y PISO + formato condicional de ESTADO.
  */
 function updateAtencionesXml(sheetXml, ticketsList) {
   const row1Match = sheetXml.match(/<row r="1"[\s\S]*?<\/row>/);
   const row2Match = sheetXml.match(/<row r="2"[\s\S]*?<\/row>/);
   if (!row1Match || !row2Match) return { xml: sheetXml, lastRow: 3 };
 
-  const rowsXml = [row1Match[0], row2Match[0]];
+  // Extender Fila 1 (banner amarillo) hasta L1
+  let row1Xml = row1Match[0].replace('spans="1:15"', 'spans="1:16"');
+  if (!row1Xml.includes('r="L1"')) {
+    row1Xml = row1Xml.replace('<c r="K1" s="346"/>', '<c r="K1" s="346"/><c r="L1" s="346"/>');
+  }
+
+  // Reconstruir Fila 2 con las 12 columnas de la tabla oficial incluyendo J2 = "USUARIO"
+  const row2Xml = [
+    '<row r="2" spans="1:16" ht="30" x14ac:dyDescent="0.25">',
+    xmlCellString('A2', 147, 'FECHA'),
+    xmlCellString('B2', 148, 'DIA'),
+    xmlCellString('C2', 149, 'HORA DE REPORTE'),
+    xmlCellString('D2', 148, 'RANGO'),
+    xmlCellString('E2', 150, 'AMBIENTE'),
+    xmlCellString('F2', 148, 'PISO'),
+    xmlCellString('G2', 148, 'PABELLÓN'),
+    xmlCellString('H2', 150, 'TIPO DE SOLICITUD'),
+    xmlCellString('I2', 150, 'ESTADO'),
+    xmlCellString('J2', 150, 'USUARIO'),
+    xmlCellString('K2', 150, 'DESCRIPCIÓN / SOLUCIÓN'),
+    xmlCellString('L2', 151, 'RESPONSABLE'),
+    xmlCellEmpty('M2', 207),
+    xmlCellEmpty('N2', 207),
+    xmlCellEmpty('O2', 207),
+    xmlCellEmpty('P2', 207),
+    '</row>'
+  ].join('');
+
+  const rowsXml = [row1Xml, row2Xml];
 
   // Filtrar tickets de 2026-2 (o nuevos creados en la app que no sean de 2026-1)
   const list = (ticketsList || []).filter(t => t.periodo !== '2026-1');
@@ -228,10 +277,10 @@ function updateAtencionesXml(sheetXml, ticketsList) {
     const pabellon = (t.pabellon || (ambiente.startsWith('B') ? 'B' : 'A')).toUpperCase().trim();
     const tipoSol = t.tipoSolicitud || t.tipo_solicitud || 'Soporte General';
     const estado = (t.estado || 'ATENDIDO').toUpperCase().trim();
-    const desc = t.descripcionSolucion || t.descripcion_solucion || '';
+    const { usuario, desc } = extractTicketUsuarioAndDesc(t);
     const resp = t.responsable || 'Operaciones';
 
-    // Fórmulas exactas de ATENCIONES 2026-2 en CONTROL DOCENTE.xlsx
+    // Fórmulas exactas de ATENCIONES en CONTROL DOCENTE.xlsx
     const fDia = `UPPER(TEXT(A${r},"dddd"))`;
     const fRango = `TEXT(HOUR(C${r}),"00")&amp;":00 – "&amp;TEXT(MOD(HOUR(C${r})+1,24),"00")&amp;":00"`;
     const fPiso = `VLOOKUP($E${r},AMBIENTES!$C$3:$H$66,4,FALSE)`;
@@ -246,15 +295,16 @@ function updateAtencionesXml(sheetXml, ticketsList) {
       xmlCellString(`G${r}`, 182, pabellon),
       xmlCellString(`H${r}`, 179, tipoSol),
       xmlCellString(`I${r}`, 193, estado),
-      xmlCellString(`J${r}`, 182, desc),
-      xmlCellString(`K${r}`, 196, resp),
-      xmlCellEmpty(`L${r}`, 207),
+      xmlCellString(`J${r}`, 196, usuario),
+      xmlCellString(`K${r}`, 182, desc),
+      xmlCellString(`L${r}`, 196, resp),
       xmlCellEmpty(`M${r}`, 207),
       xmlCellEmpty(`N${r}`, 207),
-      xmlCellEmpty(`O${r}`, 207)
+      xmlCellEmpty(`O${r}`, 207),
+      xmlCellEmpty(`P${r}`, 207)
     ].join('');
 
-    rowsXml.push(`<row r="${r}" spans="1:15">${cells}</row>`);
+    rowsXml.push(`<row r="${r}" spans="1:16">${cells}</row>`);
   });
 
   const lastRow = Math.max(3, list.length + 2);
@@ -262,10 +312,15 @@ function updateAtencionesXml(sheetXml, ticketsList) {
     /<sheetData>[\s\S]*?<\/sheetData>/,
     `<sheetData>${rowsXml.join('')}</sheetData>`
   );
-  updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:O${lastRow}"/>`);
+  updated = updated.replace(
+    /<cols>[\s\S]*?<\/cols>/,
+    '<cols><col min="1" max="1" width="11.42578125" style="146" bestFit="1" customWidth="1"/><col min="2" max="2" width="10.85546875" style="146" bestFit="1" customWidth="1"/><col min="3" max="3" width="13.42578125" style="146" bestFit="1" customWidth="1"/><col min="4" max="4" width="15.85546875" style="146" customWidth="1"/><col min="5" max="5" width="14.85546875" style="146" bestFit="1" customWidth="1"/><col min="6" max="6" width="16.85546875" style="146" customWidth="1"/><col min="7" max="7" width="12.5703125" style="146" customWidth="1"/><col min="8" max="8" width="47.28515625" style="146" bestFit="1" customWidth="1"/><col min="9" max="10" width="17.42578125" style="146" customWidth="1"/><col min="11" max="11" width="75" style="146" bestFit="1" customWidth="1"/><col min="12" max="12" width="22.140625" style="146" bestFit="1" customWidth="1"/><col min="13" max="16384" width="11.42578125" style="146"/></cols>'
+  );
+  updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:P${lastRow}"/>`);
+  updated = updated.replace(/<mergeCell ref="A1:[KL]1"\/>/, '<mergeCell ref="A1:L1"/>');
   updated = updated.replace(/sqref="I3:I\d+"/, `sqref="I3:I${lastRow}"`);
   updated = updated.replace(/<xm:sqref>I3:I\d+<\/xm:sqref>/, `<xm:sqref>I3:I${lastRow}</xm:sqref>`);
-  updated = updated.replace(/<xm:sqref>K3:K\d+<\/xm:sqref>/, `<xm:sqref>K3:K${lastRow}</xm:sqref>`);
+  updated = updated.replace(/<xm:sqref>[KL]3:[KL]\d+<\/xm:sqref>/, `<xm:sqref>L3:L${lastRow}</xm:sqref>`);
   updated = updated.replace(/<xm:sqref>E3:E\d+<\/xm:sqref>/, `<xm:sqref>E3:E${lastRow}</xm:sqref>`);
 
   return { xml: updated, lastRow };
@@ -688,7 +743,7 @@ export function buildMasterExcelFromTemplate(templateUint8, { asistencia, ticket
     }
   }
 
-  // 2. Actualizar ATENCIONES 2026-2 (sheet12.xml + table4.xml)
+  // 2. Actualizar ATENCIONES 2026-2 (sheet12.xml + table4.xml) y poblar USUARIO en ATENCIONES 2026-1 (sheet10.xml)
   if (archive['xl/worksheets/sheet12.xml']) {
     const s12 = strFromU8(archive['xl/worksheets/sheet12.xml']);
     const { xml, lastRow } = updateAtencionesXml(s12, tickets);
@@ -696,9 +751,37 @@ export function buildMasterExcelFromTemplate(templateUint8, { asistencia, ticket
 
     if (archive['xl/tables/table4.xml']) {
       let t4 = strFromU8(archive['xl/tables/table4.xml']);
-      t4 = t4.replace(/ref="A2:K\d+"/g, `ref="A2:K${lastRow}"`);
+      t4 = t4.replace(/ref="A2:[KL]\d+"/g, `ref="A2:L${lastRow}"`);
+      if (!t4.includes('name="USUARIO"')) {
+        t4 = t4
+          .replace('count="11"', 'count="12"')
+          .replace(
+            '<tableColumn id="10"',
+            '<tableColumn id="12" name="USUARIO" dataDxfId="26"/><tableColumn id="10"'
+          );
+      }
       archive['xl/tables/table4.xml'] = strToU8(t4);
     }
+  }
+
+  // También rellenar la columna J (USUARIO: DOCENTE / ALUMNO) en ATENCIONES 2026-1 (sheet10.xml) donde el usuario agregó la columna J2="USUARIO"
+  if (archive['xl/worksheets/sheet10.xml']) {
+    let s10 = strFromU8(archive['xl/worksheets/sheet10.xml']);
+    s10 = s10.replace(/<row r="(\d+)"([\s\S]*?)<\/row>/g, (fullRow, rNumStr, inner) => {
+      const rNum = parseInt(rNumStr, 10);
+      if (rNum < 3) return fullRow;
+      // Determinar si la fila corresponde a ALUMNO o DOCENTE según su descripción en K
+      const kMatch = inner.match(/<c r="K\d+"[^>]*><v>(\d+)<\/v><\/c>/);
+      const kText = kMatch && sstList[parseInt(kMatch[1], 10)] ? sstList[parseInt(kMatch[1], 10)].toUpperCase() : '';
+      const userType = (kText.includes('ESTUDIANTE') || kText.includes('ALUMNO') || kText.includes('DELEGADO'))
+        ? 'ALUMNO'
+        : 'DOCENTE';
+      return fullRow.replace(
+        new RegExp(`<c r="J${rNum}" s="(\\d+)"\\/>`),
+        `<c r="J${rNum}" s="$1" t="inlineStr"><is><t>${userType}</t></is></c>`
+      );
+    });
+    archive['xl/worksheets/sheet10.xml'] = strToU8(s10);
   }
 
   // 3. Actualizar HOJA DE ASISTENCIA 2026-2 (sheet13.xml)

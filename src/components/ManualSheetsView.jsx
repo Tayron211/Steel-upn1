@@ -385,7 +385,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       {item.fecha}
                     </span>
                   </div>
-                  <span className="font-mono text-xs font-black text-slate-900 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-900 px-2.5 py-1 rounded-md border border-slate-200/80 dark:border-zinc-800 whitespace-nowrap">
+                  <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-900 px-3 py-1 rounded-lg border border-slate-200/90 dark:border-zinc-700 whitespace-nowrap shadow-2xs">
                     NRC {item.nrc}
                   </span>
                 </div>
@@ -485,8 +485,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
                       {/* NRC, Curso y Carrera: 100% visible, no truncations! */}
                       <td className="py-3.5 px-4 align-top">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span className="font-mono font-black text-[10px] text-slate-900 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-900 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-800 inline-block">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <span className="font-mono font-black text-xs text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-900 px-2.5 py-1 rounded-lg border border-slate-200/90 dark:border-zinc-700 inline-block shadow-2xs">
                             NRC {item.nrc}
                           </span>
                         </div>

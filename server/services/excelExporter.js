@@ -178,13 +178,38 @@ function exportToExcelBuffer(data) {
     }
   }
 
-  // 2. ATENCIONES 2026-2
+  // 2. ATENCIONES 2026-2 (con columna J = USUARIO: DOCENTE / ALUMNO)
   if (archive['xl/worksheets/sheet12.xml']) {
     const sheetXml = strFromU8(archive['xl/worksheets/sheet12.xml']);
     const row1Match = sheetXml.match(/<row r="1"[\s\S]*?<\/row>/);
     const row2Match = sheetXml.match(/<row r="2"[\s\S]*?<\/row>/);
     if (row1Match && row2Match) {
-      const rowsXml = [row1Match[0], row2Match[0]];
+      let row1Xml = row1Match[0].replace('spans="1:15"', 'spans="1:16"');
+      if (!row1Xml.includes('r="L1"')) {
+        row1Xml = row1Xml.replace('<c r="K1" s="346"/>', '<c r="K1" s="346"/><c r="L1" s="346"/>');
+      }
+      const row2Xml = [
+        '<row r="2" spans="1:16" ht="30" x14ac:dyDescent="0.25">',
+        xmlCellString('A2', 147, 'FECHA'),
+        xmlCellString('B2', 148, 'DIA'),
+        xmlCellString('C2', 149, 'HORA DE REPORTE'),
+        xmlCellString('D2', 148, 'RANGO'),
+        xmlCellString('E2', 150, 'AMBIENTE'),
+        xmlCellString('F2', 148, 'PISO'),
+        xmlCellString('G2', 148, 'PABELLÓN'),
+        xmlCellString('H2', 150, 'TIPO DE SOLICITUD'),
+        xmlCellString('I2', 150, 'ESTADO'),
+        xmlCellString('J2', 150, 'USUARIO'),
+        xmlCellString('K2', 150, 'DESCRIPCIÓN / SOLUCIÓN'),
+        xmlCellString('L2', 151, 'RESPONSABLE'),
+        xmlCellEmpty('M2', 207),
+        xmlCellEmpty('N2', 207),
+        xmlCellEmpty('O2', 207),
+        xmlCellEmpty('P2', 207),
+        '</row>'
+      ].join('');
+
+      const rowsXml = [row1Xml, row2Xml];
       const list = (data.tickets || []).filter(t => t.periodo !== '2026-1');
       list.forEach((t, idx) => {
         const r = idx + 3;
@@ -194,6 +219,10 @@ function exportToExcelBuffer(data) {
         const horaStr = t.horaReporte || '09:00';
         const timeFrac = timeToExcelFraction(horaStr);
         const ambiente = (t.ambiente || 'A201').toUpperCase().trim();
+        const rawDesc = String(t.descripcionSolucion || '');
+        const usuario = t.usuario
+          ? String(t.usuario).toUpperCase().trim()
+          : (rawDesc.toUpperCase().includes('ALUMNO') || rawDesc.toUpperCase().includes('ESTUDIANTE') ? 'ALUMNO' : 'DOCENTE');
 
         const cells = [
           serialDate !== null ? xmlCellNumber(`A${r}`, 202, serialDate) : xmlCellString(`A${r}`, 202, fechaStr),
@@ -205,16 +234,18 @@ function exportToExcelBuffer(data) {
           xmlCellString(`G${r}`, 182, (t.pabellon || (ambiente.startsWith('B') ? 'B' : 'A')).toUpperCase()),
           xmlCellString(`H${r}`, 179, t.tipoSolicitud || 'Soporte General'),
           xmlCellString(`I${r}`, 193, (t.estado || 'ATENDIDO').toUpperCase()),
-          xmlCellString(`J${r}`, 182, t.descripcionSolucion || ''),
-          xmlCellString(`K${r}`, 196, t.responsable || 'Operaciones'),
-          xmlCellEmpty(`L${r}`, 207),
+          xmlCellString(`J${r}`, 196, usuario),
+          xmlCellString(`K${r}`, 182, rawDesc),
+          xmlCellString(`L${r}`, 196, t.responsable || 'Operaciones'),
           xmlCellEmpty(`M${r}`, 207),
           xmlCellEmpty(`N${r}`, 207),
-          xmlCellEmpty(`O${r}`, 207)
+          xmlCellEmpty(`O${r}`, 207),
+          xmlCellEmpty(`P${r}`, 207)
         ].join('');
-        rowsXml.push(`<row r="${r}" spans="1:15">${cells}</row>`);
+        rowsXml.push(`<row r="${r}" spans="1:16">${cells}</row>`);
       });
-      const updated = sheetXml.replace(/<sheetData>[\s\S]*?<\/sheetData>/, `<sheetData>${rowsXml.join('')}</sheetData>`);
+      let updated = sheetXml.replace(/<sheetData>[\s\S]*?<\/sheetData>/, `<sheetData>${rowsXml.join('')}</sheetData>`);
+      updated = updated.replace(/<mergeCell ref="A1:[KL]1"\/>/, '<mergeCell ref="A1:L1"/>');
       archive['xl/worksheets/sheet12.xml'] = strToU8(updated);
     }
   }

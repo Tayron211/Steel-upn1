@@ -383,6 +383,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       tipoSolicitud: matName,
       responsable: 'OPERACIONES SEDE',
       estado: 'EN PROCESO',
+      usuario: beneficiaryType, // 'DOCENTE' o 'ALUMNO'
       descripcionSolucion: finalDesc,
       rango: '',
       firmaEntrega: null, // Se firmará al devolver ("Entregué")

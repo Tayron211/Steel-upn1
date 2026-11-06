@@ -171,6 +171,7 @@ export async function onRequest(context) {
     // 2. TICKETS / PRÉSTAMOS: /api/tickets
     // -------------------------------------------------------------
     if (path.startsWith('/api/tickets')) {
+      try { await db.prepare('ALTER TABLE tickets ADD COLUMN usuario TEXT').run(); } catch (e) {}
       try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_entrega TEXT').run(); } catch (e) {}
       try { await db.prepare('ALTER TABLE tickets ADD COLUMN firma_recepcion TEXT').run(); } catch (e) {}
       try { await db.prepare('ALTER TABLE tickets ADD COLUMN entregado_por TEXT').run(); } catch (e) {}
@@ -205,6 +206,7 @@ export async function onRequest(context) {
         pabellon: t.pabellon,
         tipoSolicitud: t.tipo_solicitud,
         estado: t.estado,
+        usuario: t.usuario || (String(t.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE'),
         descripcionSolucion: t.descripcion_solucion,
         responsable: t.responsable,
         firmaEntrega: t.firma_entrega || null,
@@ -227,6 +229,11 @@ export async function onRequest(context) {
       const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
       const dia = days[now.getDay()];
       const horaReporte = now.toTimeString().slice(0, 5);
+      const inferredUsuario = body.usuario
+        ? String(body.usuario).toUpperCase().trim()
+        : String(body.descripcionSolucion || '').toUpperCase().includes('ALUMNO')
+          ? 'ALUMNO'
+          : 'DOCENTE';
 
       const ins = {
         id,
@@ -240,6 +247,7 @@ export async function onRequest(context) {
         pabellon: body.pabellon || '',
         tipo_solicitud: body.tipoSolicitud || 'PLUMONES / MATERIALES',
         estado: body.estado || 'EN PROCESO',
+        usuario: inferredUsuario,
         descripcion_solucion: body.descripcionSolucion || '',
         responsable: body.responsable || 'OPERACIONES SEDE',
         firma_entrega: body.firmaEntrega || null,
@@ -252,15 +260,15 @@ export async function onRequest(context) {
       await db.prepare(`
         INSERT INTO tickets (
           id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon, 
-          tipo_solicitud, estado, descripcion_solucion, responsable,
+          tipo_solicitud, estado, usuario, descripcion_solucion, responsable,
           firma_entrega, firma_recepcion, entregado_por, recibido_por, fecha_firma,
           created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `).bind(
         ins.id, ins.periodo, ins.fecha, ins.dia, ins.hora_reporte,
         ins.rango, ins.ambiente, ins.piso, ins.pabellon, ins.tipo_solicitud,
-        ins.estado, ins.descripcion_solucion, ins.responsable,
+        ins.estado, ins.usuario, ins.descripcion_solucion, ins.responsable,
         ins.firma_entrega, ins.firma_recepcion, ins.entregado_por, ins.recibido_por, ins.fecha_firma
       ).run();
 
@@ -276,6 +284,7 @@ export async function onRequest(context) {
         pabellon: ins.pabellon,
         tipoSolicitud: ins.tipo_solicitud,
         estado: ins.estado,
+        usuario: ins.usuario,
         descripcionSolucion: ins.descripcion_solucion,
         responsable: ins.responsable,
         firmaEntrega: ins.firma_entrega,
@@ -683,6 +692,7 @@ export async function onRequest(context) {
         pabellon: t.pabellon,
         tipoSolicitud: t.tipo_solicitud,
         estado: t.estado,
+        usuario: t.usuario || (String(t.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE'),
         descripcionSolucion: t.descripcion_solucion,
         responsable: t.responsable
       }));
@@ -760,6 +770,7 @@ export async function onRequest(context) {
         pabellon: t.pabellon,
         tipoSolicitud: t.tipo_solicitud,
         estado: t.estado,
+        usuario: t.usuario || (String(t.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE'),
         descripcionSolucion: t.descripcion_solucion,
         responsable: t.responsable
       }));
