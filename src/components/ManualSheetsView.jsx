@@ -760,7 +760,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               {/* Header del Modal */}
               <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800">
                 <div className="flex items-center gap-3">
-                  <UpnLogo variant="symbol" className="w-10 h-10 shrink-0" />
+                  <UpnLogo variant="logo-only" className="!h-10 !w-10 shrink-0" />
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-black text-xs sm:text-sm bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-lg shadow-2xs">
@@ -886,7 +886,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     title="Imprimir boleta física"
                   >
                     <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
-                    <span>Imprimir Boleta</span>
+                    <span>Imprimir</span>
                   </button>
                 </div>
               </div>
