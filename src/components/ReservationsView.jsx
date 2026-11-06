@@ -202,6 +202,7 @@ export default function ReservationsView() {
   const [reservas, setReservas] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [dayClasses, setDayClasses] = useState([]);
+  const [modalDayClasses, setModalDayClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
 
@@ -370,10 +371,79 @@ export default function ReservationsView() {
     return map;
   }, [allRooms]);
 
-  // Lista filtrada para el menú selector de Aula / Laboratorio dentro del modal
+  // Cargar clases del día elegido dentro del modal "Nueva Reserva"
+  useEffect(() => {
+    const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+    const diaModal = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
+    if (diaModal === activeDayInfo.diaName) {
+      setModalDayClasses(dayClasses);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/attendance?dia=${encodeURIComponent(diaModal)}`)
+      .then(r => r.json())
+      .then(j => {
+        if (!cancelled && j.success) {
+          setModalDayClasses(j.data || []);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.fecha, activeDayInfo.diaName, dayClasses]);
+
+  // Solo aulas que estén 100% LIBRES en la fecha y rango horario (inicio - final) de la Nueva Reserva
+  const freeRoomsForModalTime = useMemo(() => {
+    const bStart = timeToMins(formData.inicio);
+    const bEnd = timeToMins(formData.final);
+    const targetFecha = formData.fecha;
+
+    return allRooms.filter(rm => {
+      const code = (rm.abrv || '').toUpperCase().trim();
+
+      // Conflicto con clases programadas ese día
+      const classConflict = modalDayClasses.some(c => {
+        if ((c.aula || '').toUpperCase().trim() !== code) return false;
+        const cStart = timeToMins(c.horaInicioProg);
+        const cEnd = timeToMins(c.horaFinalProg);
+        return cStart < bEnd && cEnd > bStart;
+      });
+      if (classConflict) return false;
+
+      // Conflicto con otras reservas en esa misma fecha
+      const resConflict = reservas.some(r => {
+        if ((r.aula || '').toUpperCase().trim() !== code) return false;
+        if (r.fecha !== targetFecha) return false;
+        const rStart = timeToMins(r.inicio || r.hora_inicio);
+        const rEnd = timeToMins(r.final || r.hora_fin);
+        return rStart < bEnd && rEnd > bStart;
+      });
+      if (resConflict) return false;
+
+      return true;
+    });
+  }, [allRooms, modalDayClasses, reservas, formData.fecha, formData.inicio, formData.final]);
+
+  // Si el aula seleccionada pasa a estar ocupada al cambiar fecha u horario, autoseleccionar la primera aula libre
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const currentCode = (formData.aula || '').toUpperCase().trim();
+    const stillFree = freeRoomsForModalTime.some(r => r.abrv === currentCode);
+    if (!stillFree && freeRoomsForModalTime.length > 0) {
+      const firstFree = freeRoomsForModalTime[0];
+      setFormData(prev => ({
+        ...prev,
+        aula: firstFree.abrv,
+        ubicacion: `${firstFree.piso} - ${firstFree.pabellon}`
+      }));
+    }
+  }, [isModalOpen, freeRoomsForModalTime, formData.aula]);
+
+  // Lista filtrada para el menú selector de Aula / Laboratorio dentro del modal (SOLO AULAS LIBRES)
   const pickerFilteredRooms = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
-    return allRooms.filter(rm => {
+    return freeRoomsForModalTime.filter(rm => {
       if (pickerCategory !== 'ALL' && rm.categoria !== pickerCategory) return false;
       if (pickerPabellon && rm.pabellon !== pickerPabellon) return false;
       if (pickerPiso && !matchesPiso(rm.piso, pickerPiso)) return false;
@@ -387,7 +457,7 @@ export default function ReservationsView() {
       }
       return true;
     });
-  }, [allRooms, pickerCategory, pickerPabellon, pickerPiso, pickerSearch]);
+  }, [freeRoomsForModalTime, pickerCategory, pickerPabellon, pickerPiso, pickerSearch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1108,8 +1178,11 @@ export default function ReservationsView() {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Aula / Laboratorio *
+                  <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    <span>Aula / Laboratorio Libre *</span>
+                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                      {freeRoomsForModalTime.length} libres
+                    </span>
                   </label>
                   <button
                     type="button"
@@ -1252,10 +1325,10 @@ export default function ReservationsView() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-                    Catálogo de Aulas, Laboratorios y Talleres
+                    Aulas y Laboratorios Libres ({formData.inicio} - {formData.final})
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
-                    Selecciona el ambiente para reservar ({pickerFilteredRooms.length} disponibles en lista)
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5 truncate">
+                    ✓ Solo se muestran ambientes libres el {formData.fecha} ({pickerFilteredRooms.length} disponibles)
                   </p>
                 </div>
               </div>
@@ -1277,7 +1350,7 @@ export default function ReservationsView() {
                   type="text"
                   value={pickerSearch}
                   onChange={(e) => setPickerSearch(e.target.value)}
-                  placeholder="Buscar por código (A201, A505, B101, AS04) o nombre (Cómputo, Fotografía, Taller)..."
+                  placeholder="Buscar aula libre por código (A201, A505, B101, AS04) o nombre..."
                   className="w-full h-9 pl-9 pr-8 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
                 />
                 {pickerSearch && (
@@ -1291,14 +1364,14 @@ export default function ReservationsView() {
                 )}
               </div>
 
-              {/* Pestañas por Tipo de Ambiente: Todos | Aulas | Laboratorios | Talleres | Especiales */}
+              {/* Pestañas por Tipo de Ambiente Libre: Todos | Aulas | Laboratorios | Talleres | Especiales */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                 {[
-                  { id: 'ALL', label: 'Todos los Ambientes', count: allRooms.length },
-                  { id: 'AULA', label: '🏫 Aulas', count: allRooms.filter(r => r.categoria === 'AULA').length },
-                  { id: 'LABORATORIO', label: '🔬 Laboratorios', count: allRooms.filter(r => r.categoria === 'LABORATORIO').length },
-                  { id: 'TALLER', label: '📐 Talleres', count: allRooms.filter(r => r.categoria === 'TALLER').length },
-                  { id: 'ESPECIAL', label: '🎙️ Conferencias / Litigación', count: allRooms.filter(r => r.categoria === 'ESPECIAL').length }
+                  { id: 'ALL', label: 'Todos Libres', count: freeRoomsForModalTime.length },
+                  { id: 'AULA', label: '🏫 Aulas', count: freeRoomsForModalTime.filter(r => r.categoria === 'AULA').length },
+                  { id: 'LABORATORIO', label: '🔬 Laboratorios', count: freeRoomsForModalTime.filter(r => r.categoria === 'LABORATORIO').length },
+                  { id: 'TALLER', label: '📐 Talleres', count: freeRoomsForModalTime.filter(r => r.categoria === 'TALLER').length },
+                  { id: 'ESPECIAL', label: '🎙️ Conferencias / Litigación', count: freeRoomsForModalTime.filter(r => r.categoria === 'ESPECIAL').length }
                 ].map(cat => {
                   const active = pickerCategory === cat.id;
                   return (
