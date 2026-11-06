@@ -160,6 +160,7 @@ export default function App() {
         if (
           res.ok &&
           urlStr.includes('/api/') &&
+          !urlStr.includes('/api/onedrive/') &&
           (method === 'POST' || method === 'PUT' || method === 'DELETE')
         ) {
           triggerAutoSyncLinkedExcel();
