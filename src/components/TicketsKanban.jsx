@@ -16,7 +16,8 @@ import {
   Calendar,
   Building2,
   Grid3X3,
-  Layers
+  Layers,
+  Eye
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
@@ -128,6 +129,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   // Inline Card Signing (Zero popups!)
   const [inlineSignTicketId, setInlineSignTicketId] = useState(null);
   const [inlineReceiveTicketId, setInlineReceiveTicketId] = useState(null);
+  const [detailTicket, setDetailTicket] = useState(null);
 
   // Signature canvas refs
   const solicitanteFormSignRef = useRef(null);
@@ -1018,11 +1020,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleReopen(ticket)}
-                        className="h-8 px-2.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 border border-amber-200/80 dark:border-amber-800/80 active:scale-95"
+                        onClick={() => setDetailTicket(ticket)}
+                        className="h-8 px-2.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 border border-amber-200/80 dark:border-amber-800/80 active:scale-95"
+                        title="Ver detalles del préstamo y firmas registradas"
                       >
-                        <RotateCcw className="w-3 h-3 stroke-[2.2]" />
-                        <span>Reabrir</span>
+                        <Eye className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <span>Detalles</span>
                       </button>
                       <button
                         type="button"
@@ -1321,6 +1324,228 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {/* =========================================================================
+          MODAL DE DETALLES DEL PRÉSTAMO Y PREVISUALIZACIÓN DE FIRMAS
+          ========================================================================= */}
+      {detailTicket && typeof document !== 'undefined' && createPortal(
+        (() => {
+          const ben = parseBeneficiary(detailTicket.descripcionSolucion);
+          const cleanDetailText = (detailTicket.descripcionSolucion || '')
+            .replace(/\[(?:🎓|👨‍🏫)?\s*(?:ALUMNO|DOCENTE)(?::\s*[^\]]+)?\]\s*/i, '')
+            .trim();
+          const returnTimeMatch = (detailTicket.descripcionSolucion || '').match(/\[DEVUELTO\s+([^\]]+)\]/i);
+          const returnTimeStr = returnTimeMatch ? returnTimeMatch[1] : null;
+          const fRecepcion = detailTicket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${detailTicket.id}`) : null);
+          const fEntrega = detailTicket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${detailTicket.id}`) : null);
+
+          return (
+            <div
+              className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md animate-backdrop-fade"
+              onClick={() => setDetailTicket(null)}
+            >
+              <div
+                className="w-full max-w-lg bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-spring-up"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Encabezado */}
+                <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-zinc-900/40">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FDBA30] text-slate-950 flex items-center justify-center shadow-xs shrink-0">
+                      <Eye className="w-5 h-5 stroke-[2.5]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-lg border border-slate-700">
+                          {detailTicket.ambiente || 'DOCENCIA'}
+                        </span>
+                        <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/70 inline-flex items-center gap-1">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                          {detailTicket.estado === 'ATENDIDO' ? 'DEVUELTO / CONCLUIDO' : detailTicket.estado}
+                        </span>
+                      </div>
+                      <h3 className="text-sm sm:text-base font-black text-slate-950 dark:text-white leading-tight mt-1 truncate">
+                        Detalles del Préstamo y Firmas
+                      </h3>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDetailTicket(null)}
+                    className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0"
+                  >
+                    <X className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+
+                {/* Cuerpo con Detalles y Previsualización de Firmas */}
+                <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+                  {/* Bloque Material Principal */}
+                  <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/25 border border-amber-200/80 dark:border-amber-800/60">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-400">
+                      Material / Requerimiento Prestado
+                    </div>
+                    <div className="text-sm sm:text-base font-black text-slate-950 dark:text-white mt-0.5">
+                      {detailTicket.tipoSolicitud || 'PRÉSTAMO DE MATERIAL'}
+                    </div>
+                    {cleanDetailText && (
+                      <div className="text-xs text-slate-600 dark:text-zinc-400 mt-1">
+                        {cleanDetailText}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Grilla de Información del Solicitante y Horarios */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
+                      <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
+                        Solicitante ({ben.label})
+                      </div>
+                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5 break-words">
+                        {ben.type === 'ALUMNO' ? '🎓 ' : '👨‍🏫 '}
+                        {ben.name || detailTicket.recibidoPor || detailTicket.entregadoPor || 'Registrado en sede'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
+                      <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
+                        Ambiente / Ubicación
+                      </div>
+                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
+                        {detailTicket.ambiente || 'DOCENCIA'} · {detailTicket.piso || 'Sede'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
+                      <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
+                        Fecha y Hora de Entrega
+                      </div>
+                      <div className="text-xs font-mono font-bold text-slate-900 dark:text-white mt-0.5">
+                        {detailTicket.fecha || '--'} · {detailTicket.horaReporte || '--:--'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
+                      <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
+                        Hora de Devolución
+                      </div>
+                      <div className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                        {returnTimeStr ? `${returnTimeStr} hrs` : 'Concluido'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Previsualización de las 2 Firmas (Préstamo y Devolución) */}
+                  <div className="space-y-2">
+                    <div className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                      Previsualización de Conformidad y Firmas
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Firma 1: Préstamo / Recepción inicial */}
+                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between">
+                        <div className="flex items-center justify-between gap-1 mb-2">
+                          <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-400">
+                            1. Firma de Préstamo (Recibí)
+                          </span>
+                          {fRecepcion ? (
+                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
+                              ✓ Firmado
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-500">
+                              Sin firma
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-28 rounded-xl bg-white border border-slate-200 dark:border-zinc-700 flex items-center justify-center p-2 overflow-hidden">
+                          {fRecepcion ? (
+                            <img
+                              src={fRecepcion}
+                              alt="Firma de recepción del préstamo"
+                              className="max-h-full max-w-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">
+                              No se adjuntó firma inicial
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Firma 2: Devolución del material */}
+                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between">
+                        <div className="flex items-center justify-between gap-1 mb-2">
+                          <span className="text-[11px] font-black text-blue-700 dark:text-blue-400">
+                            2. Firma de Devolución (Entregué)
+                          </span>
+                          {fEntrega ? (
+                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300">
+                              ✓ Firmado
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-500">
+                              Sin firma
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-28 rounded-xl bg-white border border-slate-200 dark:border-zinc-700 flex items-center justify-center p-2 overflow-hidden">
+                          {fEntrega ? (
+                            <img
+                              src={fEntrega}
+                              alt="Firma de devolución del material"
+                              className="max-h-full max-w-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">
+                              Devolución registrada sin firma
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pie de Acciones */}
+                <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-[#0c0c10] flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => handleQuickDownloadPdf(e, detailTicket)}
+                      className="h-10 px-3.5 rounded-xl bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 text-xs font-bold inline-flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 transition active:scale-95"
+                    >
+                      <Download className="w-3.5 h-3.5 stroke-[2.3]" />
+                      <span>Descargar PDF</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = detailTicket;
+                        setDetailTicket(null);
+                        handleReopen(target);
+                      }}
+                      className="h-10 px-3 rounded-xl bg-slate-100 dark:bg-zinc-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-600 dark:text-zinc-400 hover:text-amber-800 dark:hover:text-amber-300 text-xs font-bold inline-flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 transition active:scale-95"
+                      title="Devolver este registro a préstamos activos"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 stroke-[2.2]" />
+                      <span>Reabrir</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setDetailTicket(null)}
+                    className="h-10 px-5 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 text-xs font-black transition active:scale-95 shadow-xs"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })(),
         document.body
       )}
     </div>
