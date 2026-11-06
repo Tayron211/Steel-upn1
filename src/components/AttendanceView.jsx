@@ -338,7 +338,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   useEffect(() => {
     loadAttendance();
-    const interval = setInterval(silentRefreshAttendance, 3000);
+    const interval = setInterval(silentRefreshAttendance, 20000);
     return () => clearInterval(interval);
   }, [selectedDia, selectedPabellon, selectedPisos, selectedHora, blockMode, search]);
 

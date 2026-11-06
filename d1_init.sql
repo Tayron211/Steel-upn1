@@ -1937,3 +1937,12 @@ CREATE TABLE sync_metadata (
 
 INSERT INTO sync_metadata (id, excel_hash, excel_mtime, last_synced_at, total_classes) VALUES (1, 'e6cb6fc176ac35a5334bebebfd40f2b4', 1793809114, '2026-11-05 00:46:55', 892);
 
+-- Índices para reducir "rows read" en D1 (plan free con límite diario)
+CREATE INDEX IF NOT EXISTS idx_asistencia_dia ON asistencia(dia);
+CREATE INDEX IF NOT EXISTS idx_asistencia_hora ON asistencia(hora_inicio_prog);
+CREATE INDEX IF NOT EXISTS idx_asistencia_nrc ON asistencia(nrc);
+CREATE INDEX IF NOT EXISTS idx_tickets_estado ON tickets(estado);
+CREATE INDEX IF NOT EXISTS idx_tickets_created ON tickets(created_at);
+CREATE INDEX IF NOT EXISTS idx_hojas_manuales_fecha ON hojas_manuales(fecha);
+CREATE INDEX IF NOT EXISTS idx_reservas_fecha ON reservas(fecha);
+

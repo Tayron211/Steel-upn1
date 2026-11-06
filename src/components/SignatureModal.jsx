@@ -129,30 +129,42 @@ export default function SignatureModal({
     const poller = setInterval(async () => {
       try {
         if (!(await dbGateRef.current())) return; // sin escrituras nuevas -> no gastar lecturas de D1
-        const res = await fetch('/api/tickets');
+
+        // 1 fila en vez de toda la tabla; si el backend local no tiene la ruta,
+        // se cae al listado completo (comportamiento anterior).
+        let current = null;
+        const res = await fetch(`/api/tickets/${encodeURIComponent(ticket.id)}`);
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
-            const current = json.data.find(t => t.id === ticket.id);
-            if (current) {
-              if (current.firmaRecepcion && current.firmaRecepcion !== firmaRecepcion) {
-                setFirmaRecepcion(current.firmaRecepcion);
-                setIsEditingRecepcion(false);
-                try { localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, current.firmaRecepcion); } catch (e) {}
-              }
-              if (current.firmaEntrega && current.firmaEntrega !== firmaEntrega) {
-                setFirmaEntrega(current.firmaEntrega);
-                setIsEditingEntrega(false);
-                try { localStorage.setItem(`upn_sign_entrega_${ticket.id}`, current.firmaEntrega); } catch (e) {}
-              }
-              if (current.recibidoPor && !senorEs) {
-                setSenorEs(current.recibidoPor);
-              }
+          if (json.success && json.data) current = json.data;
+        }
+        if (!current) {
+          const listRes = await fetch('/api/tickets');
+          if (listRes.ok) {
+            const json = await listRes.json();
+            if (json.success && Array.isArray(json.data)) {
+              current = json.data.find(t => t.id === ticket.id) || null;
             }
           }
         }
+
+        if (current) {
+          if (current.firmaRecepcion && current.firmaRecepcion !== firmaRecepcion) {
+            setFirmaRecepcion(current.firmaRecepcion);
+            setIsEditingRecepcion(false);
+            try { localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, current.firmaRecepcion); } catch (e) {}
+          }
+          if (current.firmaEntrega && current.firmaEntrega !== firmaEntrega) {
+            setFirmaEntrega(current.firmaEntrega);
+            setIsEditingEntrega(false);
+            try { localStorage.setItem(`upn_sign_entrega_${ticket.id}`, current.firmaEntrega); } catch (e) {}
+          }
+          if (current.recibidoPor && !senorEs) {
+            setSenorEs(current.recibidoPor);
+          }
+        }
       } catch (err) {}
-    }, 2500);
+    }, 15000);
 
     return () => {
       window.removeEventListener('storage', handleStorageEvent);

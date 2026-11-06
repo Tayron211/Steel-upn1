@@ -95,6 +95,21 @@ export function ensureTables(db) {
         id TEXT PRIMARY KEY, refresh_token TEXT, access_token TEXT, expires_at INTEGER,
         item_id TEXT, file_name TEXT, last_web_hash TEXT, last_excel_hash TEXT, updated_at TEXT)`).run();
       await db.prepare('CREATE TABLE IF NOT EXISTS onedrive_state (k TEXT PRIMARY KEY, v TEXT)').run();
+
+      // Índices: sin ellos cada consulta filtrada escanea la tabla completa y
+      // dispara el contador de "rows read" de D1 (límite diario del plan free).
+      const indexes = [
+        'CREATE INDEX IF NOT EXISTS idx_asistencia_dia ON asistencia(dia)',
+        'CREATE INDEX IF NOT EXISTS idx_asistencia_hora ON asistencia(hora_inicio_prog)',
+        'CREATE INDEX IF NOT EXISTS idx_asistencia_nrc ON asistencia(nrc)',
+        'CREATE INDEX IF NOT EXISTS idx_tickets_estado ON tickets(estado)',
+        'CREATE INDEX IF NOT EXISTS idx_tickets_created ON tickets(created_at)',
+        'CREATE INDEX IF NOT EXISTS idx_hojas_manuales_fecha ON hojas_manuales(fecha)',
+        'CREATE INDEX IF NOT EXISTS idx_reservas_fecha ON reservas(fecha)'
+      ];
+      for (const sql of indexes) {
+        try { await db.prepare(sql).run(); } catch (_) {}
+      }
     })().catch((err) => {
       ensuredTables.delete(db); // permitir reintento si falló
       throw err;
@@ -514,7 +529,7 @@ export async function pullFromExcel(db, token, itemId) {
 }
 
 /* ============================== PUSH (BD -> Excel) ============================== */
-async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot) {
+async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot, preRows) {
   const spec = SPECS[specName];
   let used = await loadUsed(token, itemId, spec.sheet);
   if (!used) return { skipped: 'sin hoja' };
@@ -524,7 +539,9 @@ async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot) {
   const cols = resolveCols(spec, hdr.cells).filter((c) => c.idx >= 0);
   if (cols.length === 0) return { skipped: 'sin columnas' };
 
-  let rows = ((await db.prepare(spec.select).all()).results || []).slice().sort(spec.sort);
+  // preRows: leer la tabla una sola vez para todos los archivos destino
+  const sourceRows = preRows || ((await db.prepare(spec.select).all()).results || []);
+  let rows = sourceRows.slice().sort(spec.sort);
   rows = rows.map((r) => spec.prefill(r, ctx));
 
   const minC = Math.min(...cols.map((c) => c.idx));
@@ -726,12 +743,21 @@ export async function pushToExcel(db) {
     if (lastMod && mod && mod !== lastMod) pulled = await pullFromExcel(db, token, primary.id);
     if (pulled > 0) await markDbWrite(db); // hubo Excel -> BD: avisar a los clientes
 
-    // 2) BD -> Excel (una sola lectura de asistencia: sirve para el mapa NRC y para el push de la hoja)
-    const asRows = (
-      (await db.prepare(
+    // 2) BD -> Excel (una sola lectura por tabla, compartida entre todos los archivos destino)
+    const [asRes, ticketsRes, manualesRes, reservasRes] = await Promise.all([
+      db.prepare(
         'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
-      ).all()).results || []
-    );
+      ).all(),
+      db.prepare(SPECS.tickets.select).all(),
+      db.prepare(SPECS.manuales.select).all(),
+      db.prepare(SPECS.reservas.select).all()
+    ]);
+    const asRows = asRes.results || [];
+    const preRows = {
+      tickets: ticketsRes.results || [],
+      manuales: manualesRes.results || [],
+      reservas: reservasRes.results || []
+    };
     const nrcMap = new Map();
     for (const a of asRows) {
       const k = String(a.nrc || '').trim();
@@ -744,9 +770,9 @@ export async function pushToExcel(db) {
       const r = {
         file: t.name,
         asistencia: await pushAsistencia(db, token, t.id, asRows),
-        tickets: await pushRecords(db, token, t.id, 'tickets', ctx, isPrimary),
-        manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary),
-        reservas: await pushRecords(db, token, t.id, 'reservas', ctx, isPrimary)
+        tickets: await pushRecords(db, token, t.id, 'tickets', ctx, isPrimary, preRows.tickets),
+        manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary, preRows.manuales),
+        reservas: await pushRecords(db, token, t.id, 'reservas', ctx, isPrimary, preRows.reservas)
       };
       report.push(r);
     }

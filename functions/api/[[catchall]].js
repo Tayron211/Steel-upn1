@@ -25,6 +25,37 @@ function normalizeDay(day) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function mapTicket(t) {
+  return {
+    id: t.id,
+    periodo: t.periodo,
+    fecha: t.fecha,
+    dia: t.dia,
+    horaReporte: t.hora_reporte,
+    rango: t.rango,
+    ambiente: t.ambiente,
+    piso: t.piso,
+    pabellon: t.pabellon,
+    tipoSolicitud: t.tipo_solicitud,
+    estado: t.estado,
+    usuario: t.usuario || (String(t.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE'),
+    descripcionSolucion: t.descripcion_solucion,
+    responsable: t.responsable,
+    firmaEntrega: t.firma_entrega || null,
+    firmaRecepcion: t.firma_recepcion || null,
+    firmaDevolucion: t.firma_devolucion || null,
+    entregadoPor: t.entregado_por || null,
+    recibidoPor: t.recibido_por || null,
+    fechaFirma: t.fecha_firma || null,
+    fechaDevolucion: t.fecha_devolucion || null
+  };
+}
+
+// El push a Excel lee todas las tablas de D1. Con escrituras seguidas (ronda de
+// asistencia) cada 30 s se agotaba el límite diario de filas leídas. 2 minutos
+// mantiene el Excel razonablemente al día con una fracción de las lecturas.
+const SYNC_THROTTLE_MS = 120000;
+
 // Las columnas de tickets solo se intentan agregar una vez por isolate.
 // Antes se lanzaban 8 ALTER TABLE en CADA petición a /api/tickets (aunque
 // fallaran por "columna duplicada"), gastando consultas innecesarias en D1.
@@ -71,7 +102,7 @@ export async function onRequest(context) {
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
             const lp = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_push'").first();
-            if (!lp || Date.now() - Number(lp.v || 0) >= 30000) {
+            if (!lp || Date.now() - Number(lp.v || 0) >= SYNC_THROTTLE_MS) {
               // Marcar antes de disparar: evita ráfagas de sincronizaciones concurrentes
               await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_push', ?)").bind(nowMs).run();
               await fetch(syncUrl.toString(), { method: 'POST' });
@@ -87,6 +118,10 @@ export async function onRequest(context) {
 async function handleApiRequest(context) {
   const { request, env } = context;
   const db = env.DB;
+
+  // Deja listos índices/tablas de apoyo (memorizado por isolate). No debe romper
+  // la API si algo falla: las optimizaciones son opcionales.
+  try { await ensureTables(db); } catch (_) {}
 
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -260,31 +295,17 @@ async function handleApiRequest(context) {
       const stmt = db.prepare(sql);
       const { results } = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
 
-      const mapped = results.map(t => ({
-        id: t.id,
-        periodo: t.periodo,
-        fecha: t.fecha,
-        dia: t.dia,
-        horaReporte: t.hora_reporte,
-        rango: t.rango,
-        ambiente: t.ambiente,
-        piso: t.piso,
-        pabellon: t.pabellon,
-        tipoSolicitud: t.tipo_solicitud,
-        estado: t.estado,
-        usuario: t.usuario || (String(t.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE'),
-        descripcionSolucion: t.descripcion_solucion,
-        responsable: t.responsable,
-        firmaEntrega: t.firma_entrega || null,
-        firmaRecepcion: t.firma_recepcion || null,
-        firmaDevolucion: t.firma_devolucion || null,
-        entregadoPor: t.entregado_por || null,
-        recibidoPor: t.recibido_por || null,
-        fechaFirma: t.fecha_firma || null,
-        fechaDevolucion: t.fecha_devolucion || null
-      }));
+      const mapped = results.map(mapTicket);
 
       return json({ success: true, count: mapped.length, data: mapped });
+    }
+
+    // Un solo ticket: lo usa el modal de firmas para no releer toda la tabla
+    const ticketMatch = path.match(/^\/api\/tickets\/([^/]+)$/);
+    if (ticketMatch && method === 'GET') {
+      const t = await db.prepare('SELECT * FROM tickets WHERE id = ?').bind(ticketMatch[1]).first();
+      if (!t) return json({ success: false, error: 'Ticket no encontrado' }, 404);
+      return json({ success: true, data: mapTicket(t) });
     }
 
     if (path === '/api/tickets' && method === 'POST') {
@@ -363,7 +384,6 @@ async function handleApiRequest(context) {
       return json({ success: true, data: created });
     }
 
-    const ticketMatch = path.match(/^\/api\/tickets\/([^/]+)$/);
     if (ticketMatch && method === 'PUT') {
       const id = ticketMatch[1];
       const body = await request.json();
@@ -722,7 +742,7 @@ async function handleApiRequest(context) {
       const diaParam = url.searchParams.get('dia');
       const dia = diaParam ? normalizeDay(diaParam) : todayName;
 
-      const { results: classes } = await db.prepare('SELECT puntualidad, asistencia FROM asistencia WHERE UPPER(dia) = ?').bind(dia).all();
+      const { results: classes } = await db.prepare('SELECT puntualidad, asistencia FROM asistencia WHERE dia = ?').bind(dia).all();
 
       const totalClasses = classes.length;
       let puntual = 0, tarde = 0, falta = 0, reemplazo = 0, pendientes = 0;

@@ -122,7 +122,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     loadStats();
-    const interval = setInterval(silentRefreshStats, 5000);
+    const interval = setInterval(silentRefreshStats, 60000);
     return () => clearInterval(interval);
   }, [selectedDia]);
 

@@ -146,7 +146,7 @@ export default function App() {
 
   useEffect(() => {
     updatePendingCount();
-    const interval = setInterval(updatePendingCount, 15000);
+    const interval = setInterval(updatePendingCount, 30000);
     return () => clearInterval(interval);
   }, []);
 

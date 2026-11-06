@@ -306,7 +306,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
   useEffect(() => {
     loadTickets();
-    const interval = setInterval(silentRefreshTickets, 4000);
+    const interval = setInterval(silentRefreshTickets, 30000);
     return () => clearInterval(interval);
   }, []);
 

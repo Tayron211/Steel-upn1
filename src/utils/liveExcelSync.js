@@ -257,7 +257,7 @@ function startBidirectionalWatchLoop() {
     } catch (e) {
       isSyncingNow = false;
     }
-  }, 15000);
+  }, 120000);
 }
 
 export async function linkOneDriveExcelFile() {
