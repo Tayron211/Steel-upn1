@@ -381,14 +381,27 @@ function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap, sstLis
   const rowsXml = [row1Xml, row2Xml];
 
   // Mapear las hojas manuales del periodo 2026-2 por su código (ej. LN1-001)
-  const list2026_2 = (manualSheetsList || []).filter(m => m.periodo !== '2026-1');
+  const list2026_2 = (manualSheetsList || []).filter(
+    m => m.periodo !== '2026-1' && !String(m.id || '').startsWith('manual_1_')
+  );
   const byCode = new Map();
   let maxNum = 170;
 
   list2026_2.forEach(m => {
-    const code = String(m.codigo || '').toUpperCase().trim();
+    let code = String(m.codigo || '').toUpperCase().trim().replace(/^LNI-/, 'LN1-');
     if (!code) return;
-    byCode.set(code, m);
+    const existing = byCode.get(code);
+    if (!existing) {
+      byCode.set(code, m);
+    } else {
+      // Priorizar registros nuevos o registros que tengan docente_reemplazo / motivo lleno
+      const isNew = String(m.id || '').startsWith('manual_new_');
+      const existingHasRep = Boolean(existing.docente_reemplazo || existing.docenteReemplazo);
+      const newHasRep = Boolean(m.docente_reemplazo || m.docenteReemplazo);
+      if (isNew || (newHasRep && !existingHasRep)) {
+        byCode.set(code, m);
+      }
+    }
     const matchNum = code.match(/LN1-(\d+)/i);
     if (matchNum) {
       const n = parseInt(matchNum[1], 10);
@@ -469,6 +482,7 @@ function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap, sstLis
   updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:I${lastRow}"/>`);
   updated = updated.replace(/<mergeCell ref="A1:H1"\/>/, '<mergeCell ref="A1:I1"/>');
   updated = updated.replace(/<xm:sqref>G3:G\d+<\/xm:sqref>/, `<xm:sqref>G3:G${lastRow}</xm:sqref>`);
+  updated = updated.replace(/topLeftCell="A\d+"/, 'topLeftCell="A2"');
 
   return { xml: updated, lastRow };
 }
@@ -633,9 +647,13 @@ export function buildMasterExcelFromTemplate(templateUint8, { asistencia, ticket
     const nrcKey = String(a.nrc || '').trim();
     if (!nrcKey) return;
     let repFromObs = '';
-    const obsStr = String(a.observacion || '');
+    const obsStr = String(a.observacion || '').trim();
     const obsRepMatch = obsStr.match(/Reemplazo:\s*([^|.\n]+)/i);
-    if (obsRepMatch) repFromObs = obsRepMatch[1].trim();
+    if (obsRepMatch) {
+      repFromObs = obsRepMatch[1].trim();
+    } else if (String(a.asistencia || '').toUpperCase().includes('REEMPLAZO') && obsStr) {
+      repFromObs = obsStr;
+    }
 
     if (!nrcLookupMap.has(nrcKey)) {
       nrcLookupMap.set(nrcKey, {

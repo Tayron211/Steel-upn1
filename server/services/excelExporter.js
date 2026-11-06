@@ -234,13 +234,18 @@ function exportToExcelBuffer(data) {
       }
 
       const rowsXml = [row1Xml, row2Xml];
-      const list = (data.manualSheets || []).filter(m => m.periodo !== '2026-1');
+      const list = (data.manualSheets || []).filter(
+        m => m.periodo !== '2026-1' && !String(m.id || '').startsWith('manual_1_')
+      );
       const byCode = new Map();
       let maxNum = 170;
       list.forEach(m => {
-        const code = String(m.codigo || '').toUpperCase().trim();
+        const code = String(m.codigo || '').toUpperCase().trim().replace(/^LNI-/, 'LN1-');
         if (code) {
-          byCode.set(code, m);
+          const existing = byCode.get(code);
+          if (!existing || String(m.id || '').startsWith('manual_new_') || (m.docente_reemplazo && !existing.docente_reemplazo)) {
+            byCode.set(code, m);
+          }
           const matchNum = code.match(/LN1-(\d+)/i);
           if (matchNum && parseInt(matchNum[1], 10) > maxNum) maxNum = parseInt(matchNum[1], 10);
         }

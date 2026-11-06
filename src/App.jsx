@@ -7,6 +7,10 @@ import DashboardView from './components/DashboardView';
 import FloatingActionMenu from './components/FloatingActionMenu';
 import MobileSignView from './components/MobileSignView';
 import ErrorBoundary from './components/ErrorBoundary';
+import {
+  triggerAutoSyncLinkedExcel,
+  restoreLinkedExcelIfPossible
+} from './utils/liveExcelSync';
 
 const TABS = ['attendance', 'tickets', 'operations', 'dashboard'];
 
@@ -140,6 +144,29 @@ export default function App() {
     updatePendingCount();
     const interval = setInterval(updatePendingCount, 15000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Interceptor global para sincronizar automáticamente cada cambio en tiempo real con el Excel de OneDrive vinculado
+  useEffect(() => {
+    restoreLinkedExcelIfPossible();
+    if (typeof window === 'undefined' || window.__upnFetchIntercepted) return;
+    window.__upnFetchIntercepted = true;
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const res = await origFetch(...args);
+      try {
+        const urlStr = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
+        const method = String(args[1]?.method || 'GET').toUpperCase();
+        if (
+          res.ok &&
+          urlStr.includes('/api/') &&
+          (method === 'POST' || method === 'PUT' || method === 'DELETE')
+        ) {
+          triggerAutoSyncLinkedExcel();
+        }
+      } catch (e) {}
+      return res;
+    };
   }, []);
 
   // Mobile Touch Swipe Handlers (Swipe left/right between tabs)

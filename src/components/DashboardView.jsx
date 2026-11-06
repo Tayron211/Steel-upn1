@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { buildMasterExcelFromTemplate } from '../utils/excelTemplateExporter';
 import {
+  linkOneDriveExcelFile,
+  reauthorizeSavedExcel,
+  subscribeLiveExcelStatus,
+  getLiveExcelState,
+  syncAllDataToLinkedExcel,
+  clearSavedFileHandle
+} from '../utils/liveExcelSync';
+import {
   LayoutDashboard,
   TrendingUp,
   CheckCircle2,
@@ -16,7 +24,8 @@ import {
   Database,
   FileSpreadsheet,
   Upload,
-  ChevronDown
+  ChevronDown,
+  Cloud
 } from 'lucide-react';
 
 function formatExcelTime(val) {
@@ -43,9 +52,16 @@ export default function DashboardView() {
   const [importing, setImporting] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [liveExcel, setLiveExcel] = useState(() => getLiveExcelState());
 
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    return subscribeLiveExcelStatus((nextState) => {
+      setLiveExcel((prev) => ({ ...prev, ...nextState }));
+    });
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -549,7 +565,7 @@ export default function DashboardView() {
             >
               <Database className="w-4 h-4 stroke-[2.4]" />
               <span>Base de Datos Excel</span>
-              <ChevronDown className={`w-4 h-4 stroke-[2.4] transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 stroke-[2.4] transition-transform duration-200 ${isMenuOpen ? '' : 'rotate-180'}`} />
             </button>
 
             {/* Input archivo oculto para nuevo Excel */}
@@ -561,9 +577,63 @@ export default function DashboardView() {
               className="hidden"
             />
 
-            {/* Menú Flotante Desplegable con las 3 Acciones */}
+            {/* Menú Flotante Desplegable Hacia Arriba con las 4 Acciones */}
             {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-[#121216] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-zinc-800 p-2 z-50 animate-spring-up space-y-1">
+              <div className="absolute right-0 bottom-full mb-2 w-72 sm:w-80 bg-white dark:bg-[#121216] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-zinc-800 p-2 z-50 animate-spring-up space-y-1">
+                {/* 0. Vincular Excel de OneDrive en Tiempo Real */}
+                <button
+                  type="button"
+                  disabled={syncing || importing}
+                  onClick={async () => {
+                    setIsMenuOpen(false);
+                    try {
+                      if (liveExcel.needsReauth) {
+                        await reauthorizeSavedExcel();
+                        setSyncMessage('✅ Excel de OneDrive reactivado: cada cambio se guardará automáticamente en tiempo real.');
+                      } else if (liveExcel.linked) {
+                        await syncAllDataToLinkedExcel();
+                        setSyncMessage(`✅ Archivo "${liveExcel.fileName}" actualizado en OneDrive en tiempo real.`);
+                      } else {
+                        const handle = await linkOneDriveExcelFile();
+                        if (handle) {
+                          setSyncMessage(`✅ Vinculado en tiempo real a "${handle.name}" (OneDrive). Cada cambio se guardará automáticamente.`);
+                        }
+                      }
+                      setTimeout(() => setSyncMessage(''), 6000);
+                    } catch (err) {
+                      if (err && err.name !== 'AbortError') {
+                        alert(err.message || 'No se pudo vincular el archivo de OneDrive.');
+                      }
+                    }
+                  }}
+                  className="w-full p-2.5 rounded-xl hover:bg-sky-50 dark:hover:bg-sky-950/40 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <Cloud className="w-4 h-4 stroke-[2.2]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-sky-900 dark:text-sky-300 flex items-center justify-between gap-1">
+                      <span className="truncate">
+                        {liveExcel.linked
+                          ? `OneDrive Activo (${liveExcel.fileName})`
+                          : liveExcel.needsReauth
+                            ? `Reactivar OneDrive (${liveExcel.fileName})`
+                            : 'Vincular Excel de OneDrive (En Vivo)'}
+                      </span>
+                      {liveExcel.linked && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-black shrink-0">
+                          EN VIVO
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
+                      {liveExcel.linked
+                        ? `Guarda automáticamente cada cambio en tu Excel de OneDrive${liveExcel.lastSync ? ` (Últ: ${liveExcel.lastSync})` : ''}.`
+                        : 'Selecciona tu CONTROL DOCENTE.xlsx en tu carpeta OneDrive para que cada cambio se guarde solo.'}
+                    </p>
+                  </div>
+                </button>
+
                 {/* 1. Sincronización */}
                 <button
                   type="button"
