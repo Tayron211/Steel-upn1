@@ -40,17 +40,16 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
 
       {/* Institutional Typography Descriptor */}
       <div className="flex flex-col text-left justify-center min-w-0">
-        <div className="flex items-center gap-1.5 leading-none">
-          <span className="text-[13px] sm:text-[14px] font-black tracking-tight text-slate-900 dark:text-white font-['Space_Grotesk',sans-serif] whitespace-nowrap truncate">
+        <div className="flex items-center gap-1.5 leading-tight">
+          <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white font-['Space_Grotesk',sans-serif] whitespace-nowrap truncate">
             Control Docente
           </span>
         </div>
-        <div className="flex items-center gap-1.5 mt-1">
-          <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border border-amber-200/80 dark:border-amber-800/80 px-1.5 py-0.5 rounded tracking-wide font-mono whitespace-nowrap shrink-0">
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[11px] sm:text-xs font-extrabold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border border-amber-200/80 dark:border-amber-800/80 px-2 py-0.5 rounded-md tracking-wide font-mono whitespace-nowrap shrink-0">
             SEDE COMAS
           </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-          <span className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 hidden sm:inline whitespace-nowrap">
+          <span className="text-xs sm:text-[13px] font-bold text-slate-600 dark:text-zinc-300 hidden sm:inline whitespace-nowrap">
             Operaciones
           </span>
         </div>

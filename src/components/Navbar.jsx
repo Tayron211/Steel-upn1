@@ -65,41 +65,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
             <UpnLogo variant="horizontal" />
           </div>
 
-          {/* Header Right: OneDrive Live Excel Sync + AMOLED Toggle + Apple Minimalist Live Clock Pill */}
+          {/* Header Right: AMOLED Toggle + Apple Minimalist Live Clock Pill */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Botón de Vinculación en Tiempo Real con Excel de OneDrive (Disponible en todos los navegadores) */}
-            <button
-              type="button"
-              onClick={handleOneDrivePillClick}
-              className={`h-9 px-2.5 sm:px-3 rounded-full flex items-center gap-1.5 text-[11px] font-bold transition-all active:scale-95 border shadow-2xs shrink-0 ${
-                liveExcel.status === 'syncing'
-                  ? 'bg-sky-50 dark:bg-sky-950/70 border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300'
-                  : liveExcel.linked
-                    ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300'
-                    : liveExcel.needsReauth
-                      ? 'bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
-                      : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300'
-              }`}
-              title="Configurar sincronización en tiempo real con tu Excel de OneDrive"
-            >
-              {liveExcel.status === 'syncing' ? (
-                <RefreshCw className="w-3.5 h-3.5 stroke-[2.4] animate-spin text-sky-600 dark:text-sky-400 shrink-0" />
-              ) : liveExcel.linked ? (
-                <Check className="w-3.5 h-3.5 stroke-[2.6] text-emerald-600 dark:text-emerald-400 shrink-0" />
-              ) : (
-                <Cloud className="w-3.5 h-3.5 stroke-[2.3] text-sky-600 dark:text-sky-400 shrink-0" />
-              )}
-              <span className="hidden sm:inline truncate max-w-[140px]">
-                {liveExcel.status === 'syncing'
-                  ? 'Guardando Excel...'
-                  : liveExcel.linked
-                    ? `OneDrive: ${liveExcel.fileName}`
-                    : liveExcel.needsReauth
-                      ? `Reactivar ${liveExcel.fileName}`
-                      : 'Vincular OneDrive'}
-              </span>
-            </button>
-
             {/* Dark / Light Mode Toggle Button */}
             <button
               type="button"

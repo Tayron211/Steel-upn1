@@ -283,3 +283,4 @@ interface AllDataResponse {
   success?: boolean;
   data?: AllDataPayload;
 }
+

@@ -661,17 +661,41 @@ export default function DashboardView() {
             </p>
           </div>
 
-          <div className="relative" ref={dropdownRef}>
-            {/* Botón Único Desplegable */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Botón de Sincronización con OneDrive (ubicado al final de Métricas) */}
             <button
               type="button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="h-11 px-4 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition-all active:scale-95 inline-flex items-center justify-center gap-2"
+              onClick={() => setShowOneDriveModal(true)}
+              className={`h-11 px-4 rounded-2xl flex items-center gap-2 text-xs font-black transition-all active:scale-95 border shadow-xs shrink-0 ${
+                liveExcel.status === 'syncing'
+                  ? 'bg-sky-50 dark:bg-sky-950/70 border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300'
+                  : liveExcel.linked
+                    ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-slate-200/80 dark:border-zinc-800 text-slate-800 dark:text-zinc-200'
+              }`}
+              title="Configurar sincronización en tiempo real con tu Excel de OneDrive"
             >
-              <Database className="w-4 h-4 stroke-[2.4]" />
-              <span>Base de Datos Excel</span>
-              <ChevronDown className={`w-4 h-4 stroke-[2.4] transition-transform duration-200 ${isMenuOpen ? '' : 'rotate-180'}`} />
+              <Cloud className="w-4 h-4 stroke-[2.4] text-sky-500 dark:text-sky-400 shrink-0" />
+              <span>
+                {liveExcel.status === 'syncing'
+                  ? 'Guardando Excel...'
+                  : liveExcel.linked
+                    ? `OneDrive: ${liveExcel.fileName}`
+                    : 'Vincular OneDrive'}
+              </span>
             </button>
+
+            <div className="relative" ref={dropdownRef}>
+              {/* Botón Único Desplegable */}
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="h-11 px-4 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition-all active:scale-95 inline-flex items-center justify-center gap-2"
+              >
+                <Database className="w-4 h-4 stroke-[2.4]" />
+                <span>Base de Datos Excel</span>
+                <ChevronDown className={`w-4 h-4 stroke-[2.4] transition-transform duration-200 ${isMenuOpen ? '' : 'rotate-180'}`} />
+              </button>
 
             {/* Input archivo oculto para nuevo Excel */}
             <input
@@ -787,6 +811,7 @@ export default function DashboardView() {
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
 
