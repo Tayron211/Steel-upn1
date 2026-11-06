@@ -225,7 +225,15 @@ function exportToExcelBuffer(data) {
     const row1Match = sheetXml.match(/<row r="1"[\s\S]*?<\/row>/);
     const row2Match = sheetXml.match(/<row r="2"[\s\S]*?<\/row>/);
     if (row1Match && row2Match) {
-      const rowsXml = [row1Match[0], row2Match[0]];
+      let row1Xml = row1Match[0]
+        .replace('spans="1:8"', 'spans="1:9"')
+        .replace('<c r="H1" s="339"/>', '<c r="H1" s="338"/><c r="I1" s="339"/>');
+      let row2Xml = row2Match[0].replace('spans="1:8"', 'spans="1:9"');
+      if (!row2Xml.includes('r="I2"')) {
+        row2Xml = row2Xml.replace('</row>', `${xmlCellString('I2', 26, 'DOCENTE REEMPLAZANTE')}</row>`);
+      }
+
+      const rowsXml = [row1Xml, row2Xml];
       const list = (data.manualSheets || []).filter(m => m.periodo !== '2026-1');
       const byCode = new Map();
       let maxNum = 170;
@@ -255,7 +263,8 @@ function exportToExcelBuffer(data) {
             xmlCellFormulaStr(`E${r}`, 31, fCur, ''),
             xmlCellFormulaStr(`F${r}`, 50, fCar, ''),
             xmlCellEmpty(`G${r}`, 49),
-            xmlCellEmpty(`H${r}`, 104)
+            xmlCellEmpty(`H${r}`, 104),
+            xmlCellEmpty(`I${r}`, 104)
           ].join('');
           rowsXml.push(`<row r="${r}" spans="1:9">${emptyCells}</row>`);
           continue;
@@ -264,12 +273,24 @@ function exportToExcelBuffer(data) {
         const serialDate = dateToExcelSerial(item.fecha);
         const nrcStr = String(item.nrc || '').trim();
         let rawDocente = String(item.docente || '').trim();
-        let replacementDocente = '';
+        let rawMotivo = String(item.motivo || '').trim();
+        let replacementDocente = String(item.docente_reemplazo || item.docenteReemplazo || '').trim();
+
         const repMatch = rawDocente.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
         if (repMatch) {
           rawDocente = repMatch[1].trim();
-          replacementDocente = repMatch[2].trim();
+          if (!replacementDocente) replacementDocente = repMatch[2].trim();
         }
+        const repMotivoMatch = rawMotivo.match(/REEMPLAZO\s*\(([^)]+)\)/i);
+        if (repMotivoMatch) {
+          if (!replacementDocente) replacementDocente = repMotivoMatch[1].trim();
+          rawMotivo = 'DOCENTE DE REEMPLAZO';
+        }
+        if (!replacementDocente && item.detalle) {
+          const detMatch = String(item.detalle).match(/Reemplaza:\s*(.+)$/i);
+          if (detMatch) replacementDocente = detMatch[1].trim();
+        }
+
         const nrcInfo = nrcLookupMap.get(nrcStr);
         const useVlookup = Boolean(nrcInfo);
 
@@ -280,14 +301,15 @@ function exportToExcelBuffer(data) {
           useVlookup ? xmlCellFormulaStr(`D${r}`, 31, fDoc, rawDocente || nrcInfo.docente) : xmlCellString(`D${r}`, 31, rawDocente),
           useVlookup ? xmlCellFormulaStr(`E${r}`, 31, fCur, item.curso || nrcInfo.curso) : xmlCellString(`E${r}`, 31, item.curso || ''),
           useVlookup ? xmlCellFormulaStr(`F${r}`, 50, fCar, item.carrera || nrcInfo.carrera) : xmlCellString(`F${r}`, 50, item.carrera || ''),
-          xmlCellString(`G${r}`, 49, item.motivo || ''),
-          xmlCellString(`H${r}`, 104, item.asistente || '')
+          xmlCellString(`G${r}`, 49, rawMotivo),
+          xmlCellString(`H${r}`, 104, item.asistente || ''),
+          replacementDocente ? xmlCellString(`I${r}`, 104, replacementDocente.toUpperCase()) : xmlCellEmpty(`I${r}`, 104)
         ];
-        if (replacementDocente) cells.push(xmlCellString(`I${r}`, 104, replacementDocente));
         rowsXml.push(`<row r="${r}" spans="1:9">${cells.join('')}</row>`);
       }
 
-      const updated = sheetXml.replace(/<sheetData>[\s\S]*?<\/sheetData>/, `<sheetData>${rowsXml.join('')}</sheetData>`);
+      let updated = sheetXml.replace(/<sheetData>[\s\S]*?<\/sheetData>/, `<sheetData>${rowsXml.join('')}</sheetData>`);
+      updated = updated.replace(/<mergeCell ref="A1:H1"\/>/, '<mergeCell ref="A1:I1"/>');
       archive['xl/worksheets/sheet13.xml'] = strToU8(updated);
     }
   }

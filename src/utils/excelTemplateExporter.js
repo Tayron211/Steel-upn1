@@ -272,15 +272,113 @@ function updateAtencionesXml(sheetXml, ticketsList) {
 }
 
 /**
- * Reconstruye <sheetData> de HOJA DE ASISTENCIA 2026-2 (xl/worksheets/sheet13.xml)
- * Preserva las 170 filas numeradas (LN1-001 .. LN1-170+) y las fórmulas VLOOKUP hacia CONTROL ASISTENCIA.
+ * Extrae el arreglo de cadenas compartidas (sharedStrings.xml) para recuperar valores originales del template
  */
-function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap) {
+function parseSharedStrings(sstXml) {
+  const list = [];
+  if (!sstXml) return list;
+  const reSi = /<si>([\s\S]*?)<\/si>/g;
+  let m;
+  while ((m = reSi.exec(sstXml)) !== null) {
+    const tMatches = [...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)];
+    list.push(tMatches.map(x => x[1]).join(''));
+  }
+  return list;
+}
+
+/**
+ * Extrae el mapa de valores originales de la Columna I (DOCENTE REEMPLAZANTE) en sheet13.xml
+ */
+function extractTemplateColIMap(sheetXml, sstList) {
+  const map = new Map();
+  if (!sheetXml) return map;
+  const reCell = /<c r="I(\d+)"([^>]*)>(?:<v>(\d+)<\/v>|<is><t[^>]*>([\s\S]*?)<\/t><\/is>)?<\/c>/g;
+  let m;
+  while ((m = reCell.exec(sheetXml)) !== null) {
+    const rowNum = parseInt(m[1], 10);
+    const attrs = m[2] || '';
+    if (attrs.includes('t="s"') && m[3] !== undefined) {
+      const val = sstList[parseInt(m[3], 10)];
+      if (val && val.trim()) map.set(rowNum, val.trim());
+    } else if (m[4] !== undefined && m[4].trim()) {
+      map.set(rowNum, m[4].trim());
+    }
+  }
+  return map;
+}
+
+/**
+ * Extrae el nombre del docente reemplazante desde cualquiera de los campos guardados en la BD
+ * y limpia el motivo para que en la columna MOTIVO quede "DOCENTE DE REEMPLAZO" y en la columna I el suplente.
+ */
+function extractReplacementInfo(item, nrcInfo, fallbackColI) {
+  let rawDocente = String(item?.docente || '').trim();
+  let rawMotivo = String(item?.motivo || '').trim();
+  let replacement = String(item?.docente_reemplazo || item?.docenteReemplazo || '').trim();
+
+  // 1. Si viene en docente como "TITULAR [Reemplazo: SUPLENTE]"
+  const repDocMatch = rawDocente.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
+  if (repDocMatch) {
+    rawDocente = repDocMatch[1].trim();
+    if (!replacement) replacement = repDocMatch[2].trim();
+  }
+
+  // 2. Si viene en motivo como "DOCENTE DE REEMPLAZO (SUPLENTE)"
+  const repMotivoMatch = rawMotivo.match(/REEMPLAZO\s*\(([^)]+)\)/i);
+  if (repMotivoMatch) {
+    if (!replacement) replacement = repMotivoMatch[1].trim();
+    rawMotivo = 'DOCENTE DE REEMPLAZO';
+  }
+
+  // 3. Si viene en detalle como "Docente Titular: ... | Reemplaza: SUPLENTE"
+  if (!replacement && item?.detalle) {
+    const detMatch = String(item.detalle).match(/Reemplaza:\s*(.+)$/i);
+    if (detMatch) replacement = detMatch[1].trim();
+  }
+
+  // 4. Si se registró reemplazo en CONTROL ASISTENCIA para ese NRC
+  if (!replacement && nrcInfo?.reemplazo) {
+    replacement = nrcInfo.reemplazo;
+  }
+
+  // 5. Fallback al valor histórico de la columna I en la plantilla CONTROL DOCENTE.xlsx
+  if (!replacement && fallbackColI) {
+    replacement = fallbackColI;
+  }
+
+  return {
+    cleanDocente: rawDocente,
+    cleanMotivo: rawMotivo,
+    replacementDocente: replacement.toUpperCase().trim()
+  };
+}
+
+/**
+ * Reconstruye <sheetData> de HOJA DE ASISTENCIA 2026-2 (xl/worksheets/sheet13.xml)
+ * Incluye la columna I "DOCENTE REEMPLAZANTE" con encabezado negro (s="26"), celdas con borde (s="104")
+ * y las fórmulas VLOOKUP hacia CONTROL ASISTENCIA.
+ */
+function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap, sstList = []) {
   const row1Match = sheetXml.match(/<row r="1"[\s\S]*?<\/row>/);
   const row2Match = sheetXml.match(/<row r="2"[\s\S]*?<\/row>/);
   if (!row1Match || !row2Match) return { xml: sheetXml, lastRow: 172 };
 
-  const rowsXml = [row1Match[0], row2Match[0]];
+  const templateColIMap = extractTemplateColIMap(sheetXml, sstList);
+
+  // Extender Fila 1 (banner amarillo) hasta I1 y agregar "DOCENTE REEMPLAZANTE" en I2 (encabezado negro s="26")
+  let row1Xml = row1Match[0]
+    .replace('spans="1:8"', 'spans="1:9"')
+    .replace('<c r="H1" s="339"/>', '<c r="H1" s="338"/><c r="I1" s="339"/>');
+
+  let row2Xml = row2Match[0].replace('spans="1:8"', 'spans="1:9"');
+  if (!row2Xml.includes('r="I2"')) {
+    row2Xml = row2Xml.replace(
+      '</row>',
+      `${xmlCellString('I2', 26, 'DOCENTE REEMPLAZANTE')}</row>`
+    );
+  }
+
+  const rowsXml = [row1Xml, row2Xml];
 
   // Mapear las hojas manuales del periodo 2026-2 por su código (ej. LN1-001)
   const list2026_2 = (manualSheetsList || []).filter(m => m.periodo !== '2026-1');
@@ -302,9 +400,10 @@ function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap) {
     const r = i + 2;
     const code = `LN1-${String(i).padStart(3, '0')}`;
     const item = byCode.get(code);
+    const fallbackColI = templateColIMap.get(r) || '';
 
     if (!item) {
-      // Fila pre-numerada disponible con fórmulas VLOOKUP listas para cuando se digite un NRC en Excel
+      // Fila pre-numerada disponible con fórmulas VLOOKUP listas y celda I con borde
       const fDoc = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,4,FALSE)`;
       const fCur = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,5,FALSE)`;
       const fCar = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,6,FALSE)`;
@@ -316,7 +415,8 @@ function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap) {
         xmlCellFormulaStr(`E${r}`, 31, fCur, ''),
         xmlCellFormulaStr(`F${r}`, 50, fCar, ''),
         xmlCellEmpty(`G${r}`, 49),
-        xmlCellEmpty(`H${r}`, 104)
+        xmlCellEmpty(`H${r}`, 104),
+        fallbackColI ? xmlCellString(`I${r}`, 104, fallbackColI) : xmlCellEmpty(`I${r}`, 104)
       ].join('');
       rowsXml.push(`<row r="${r}" spans="1:9">${emptyCells}</row>`);
       continue;
@@ -325,18 +425,15 @@ function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap) {
     const serialDate = dateToExcelSerial(item.fecha);
     const nrcStr = String(item.nrc || '').trim();
     const isNumericNrc = /^\d+$/.test(nrcStr);
-
-    // Extraer si tiene "[Reemplazo: NOMBRE]" guardado desde el módulo de Hojas Manuales
-    let rawDocente = String(item.docente || '').trim();
-    let replacementDocente = '';
-    const repMatch = rawDocente.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
-    if (repMatch) {
-      rawDocente = repMatch[1].trim();
-      replacementDocente = repMatch[2].trim();
-    }
-
     const nrcInfo = nrcLookupMap.get(nrcStr);
-    const cachedDocente = rawDocente || nrcInfo?.docente || '';
+
+    const { cleanDocente, cleanMotivo, replacementDocente } = extractReplacementInfo(
+      item,
+      nrcInfo,
+      fallbackColI
+    );
+
+    const cachedDocente = cleanDocente || nrcInfo?.docente || '';
     const cachedCurso = item.curso || nrcInfo?.curso || '';
     const cachedCarrera = item.carrera || nrcInfo?.carrera || '';
 
@@ -354,13 +451,12 @@ function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap) {
       useVlookup ? xmlCellFormulaStr(`D${r}`, 31, fDoc, cachedDocente) : xmlCellString(`D${r}`, 31, cachedDocente),
       useVlookup ? xmlCellFormulaStr(`E${r}`, 31, fCur, cachedCurso) : xmlCellString(`E${r}`, 31, cachedCurso),
       useVlookup ? xmlCellFormulaStr(`F${r}`, 50, fCar, cachedCarrera) : xmlCellString(`F${r}`, 50, cachedCarrera),
-      xmlCellString(`G${r}`, 49, item.motivo || ''),
-      xmlCellString(`H${r}`, 104, item.asistente || '')
+      xmlCellString(`G${r}`, 49, cleanMotivo),
+      xmlCellString(`H${r}`, 104, item.asistente || ''),
+      replacementDocente
+        ? xmlCellString(`I${r}`, 104, replacementDocente)
+        : xmlCellEmpty(`I${r}`, 104)
     ];
-
-    if (replacementDocente) {
-      cells.push(xmlCellString(`I${r}`, 104, replacementDocente));
-    }
 
     rowsXml.push(`<row r="${r}" spans="1:9">${cells.join('')}</row>`);
   }
@@ -371,6 +467,7 @@ function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap) {
     `<sheetData>${rowsXml.join('')}</sheetData>`
   );
   updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:I${lastRow}"/>`);
+  updated = updated.replace(/<mergeCell ref="A1:H1"\/>/, '<mergeCell ref="A1:I1"/>');
   updated = updated.replace(/<xm:sqref>G3:G\d+<\/xm:sqref>/, `<xm:sqref>G3:G${lastRow}</xm:sqref>`);
 
   return { xml: updated, lastRow };
@@ -526,16 +623,29 @@ function updateResumen2026Xml(sheet4Xml, asistenciaList) {
 export function buildMasterExcelFromTemplate(templateUint8, { asistencia, tickets, manualSheets, reservas }) {
   const archive = unzipSync(templateUint8);
 
-  // Construir mapa rápido de NRC -> { docente, curso, carrera } desde CONTROL ASISTENCIA
+  const sstList = archive['xl/sharedStrings.xml']
+    ? parseSharedStrings(strFromU8(archive['xl/sharedStrings.xml']))
+    : [];
+
+  // Construir mapa rápido de NRC -> { docente, curso, carrera, reemplazo } desde CONTROL ASISTENCIA
   const nrcLookupMap = new Map();
   (asistencia || []).forEach(a => {
     const nrcKey = String(a.nrc || '').trim();
-    if (nrcKey && !nrcLookupMap.has(nrcKey)) {
+    if (!nrcKey) return;
+    let repFromObs = '';
+    const obsStr = String(a.observacion || '');
+    const obsRepMatch = obsStr.match(/Reemplazo:\s*([^|.\n]+)/i);
+    if (obsRepMatch) repFromObs = obsRepMatch[1].trim();
+
+    if (!nrcLookupMap.has(nrcKey)) {
       nrcLookupMap.set(nrcKey, {
         docente: a.docente || '',
         curso: a.curso || '',
-        carrera: a.carrera || ''
+        carrera: a.carrera || '',
+        reemplazo: repFromObs
       });
+    } else if (repFromObs && !nrcLookupMap.get(nrcKey).reemplazo) {
+      nrcLookupMap.get(nrcKey).reemplazo = repFromObs;
     }
   });
 
@@ -576,7 +686,7 @@ export function buildMasterExcelFromTemplate(templateUint8, { asistencia, ticket
   // 3. Actualizar HOJA DE ASISTENCIA 2026-2 (sheet13.xml)
   if (archive['xl/worksheets/sheet13.xml']) {
     const s13 = strFromU8(archive['xl/worksheets/sheet13.xml']);
-    const { xml } = updateHojasManualesXml(s13, manualSheets, nrcLookupMap);
+    const { xml } = updateHojasManualesXml(s13, manualSheets, nrcLookupMap, sstList);
     archive['xl/worksheets/sheet13.xml'] = strToU8(xml);
   }
 

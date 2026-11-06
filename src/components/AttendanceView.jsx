@@ -436,11 +436,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     if (!activeModalItem) return;
 
     let updates = {};
-    if (replaceTeacherName.trim()) {
-      updates.docente = replaceTeacherName.trim().toUpperCase();
-      updates.asistencia = 'DOCENTE DE REEMPLAZO';
+    const suplente = replaceTeacherName.trim().toUpperCase();
+
+    if (suplente) {
+      updates.asistencia = 'SI (DOCENTE REEMPLAZO)';
       updates.puntualidad = 'PUNTUAL';
-      updates.observacion = observationText.trim() ? `Docente Reemplazo. Obs: ${observationText}` : 'Docente Reemplazo';
+      updates.observacion = observationText.trim()
+        ? `Reemplazo: ${suplente} | Obs: ${observationText.trim()}`
+        : `Reemplazo: ${suplente}`;
     } else {
       updates.observacion = observationText.trim();
     }
@@ -453,6 +456,27 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
+
+      // Si se registró un Docente de Reemplazo desde Asistencia, sincronizarlo también en Hojas Manuales
+      // para que figure automáticamente en la columna "DOCENTE REEMPLAZANTE" al exportar el Excel
+      if (suplente) {
+        await fetch('/api/manual-sheets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fecha: new Date().toISOString().split('T')[0],
+            nrc: activeModalItem.nrc || '',
+            docente: activeModalItem.docente || '',
+            curso: activeModalItem.curso || '',
+            carrera: activeModalItem.carrera || '',
+            aula: activeModalItem.aula || '',
+            motivo: `DOCENTE DE REEMPLAZO (${suplente})`,
+            docenteReemplazo: suplente,
+            detalle: `Docente Titular: ${activeModalItem.docente || ''} | Reemplaza: ${suplente}`,
+            asistente: 'Operaciones Sede'
+          })
+        });
+      }
     } catch (err) {
       console.error('Error saving observation:', err);
     }
