@@ -270,3 +270,4 @@ export function triggerAutoSyncLinkedExcel() {
     syncAllDataToLinkedExcel();
   }, 800);
 }
+

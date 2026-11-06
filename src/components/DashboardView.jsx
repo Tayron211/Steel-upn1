@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { buildMasterExcelFromTemplate } from '../utils/excelTemplateExporter';
+import OneDriveSyncModal from './OneDriveSyncModal';
 import {
   linkOneDriveExcelFile,
   reauthorizeSavedExcel,
@@ -53,6 +54,7 @@ export default function DashboardView() {
   const [syncMessage, setSyncMessage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [liveExcel, setLiveExcel] = useState(() => getLiveExcelState());
+  const [showOneDriveModal, setShowOneDriveModal] = useState(false);
 
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -584,27 +586,9 @@ export default function DashboardView() {
                 <button
                   type="button"
                   disabled={syncing || importing}
-                  onClick={async () => {
+                  onClick={() => {
                     setIsMenuOpen(false);
-                    try {
-                      if (liveExcel.needsReauth) {
-                        await reauthorizeSavedExcel();
-                        setSyncMessage('✅ Excel de OneDrive reactivado: cada cambio se guardará automáticamente en tiempo real.');
-                      } else if (liveExcel.linked) {
-                        await syncAllDataToLinkedExcel();
-                        setSyncMessage(`✅ Archivo "${liveExcel.fileName}" actualizado en OneDrive en tiempo real.`);
-                      } else {
-                        const handle = await linkOneDriveExcelFile();
-                        if (handle) {
-                          setSyncMessage(`✅ Vinculado en tiempo real a "${handle.name}" (OneDrive). Cada cambio se guardará automáticamente.`);
-                        }
-                      }
-                      setTimeout(() => setSyncMessage(''), 6000);
-                    } catch (err) {
-                      if (err && err.name !== 'AbortError') {
-                        alert(err.message || 'No se pudo vincular el archivo de OneDrive.');
-                      }
-                    }
+                    setShowOneDriveModal(true);
                   }}
                   className="w-full p-2.5 rounded-xl hover:bg-sky-50 dark:hover:bg-sky-950/40 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
                 >
@@ -715,6 +699,16 @@ export default function DashboardView() {
           </div>
         )}
       </div>
+
+      <OneDriveSyncModal
+        isOpen={showOneDriveModal}
+        onClose={() => setShowOneDriveModal(false)}
+        liveExcel={liveExcel}
+        onStatusMessage={(msg) => {
+          setSyncMessage(msg);
+          setTimeout(() => setSyncMessage(''), 6000);
+        }}
+      />
     </div>
   );
 }

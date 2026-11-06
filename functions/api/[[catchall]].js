@@ -2,6 +2,7 @@
  * Cloudflare Pages Functions API Handler
  * Handles all /api/* requests 24/7 at the edge with Cloudflare D1 (Serverless SQLite)
  */
+import { buildMasterExcelFromTemplate } from '../../src/utils/excelTemplateExporter';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -625,6 +626,158 @@ export async function onRequest(context) {
           ticketsEnProceso,
           ticketsAtendidos,
           categoryCounts
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 7. ALL DATA SNAPSHOT (para sincronización en vivo con OneDrive / Excel): /api/all-data
+    // -------------------------------------------------------------
+    if (path === '/api/all-data' && method === 'GET') {
+      const [asistRes, ticketRes, manualRes, resRes] = await Promise.all([
+        db.prepare('SELECT * FROM asistencia ORDER BY hora_inicio_prog ASC, aula ASC').all(),
+        db.prepare('SELECT * FROM tickets ORDER BY created_at DESC').all(),
+        db.prepare(`
+          SELECT * FROM hojas_manuales 
+          WHERE (docente IS NOT NULL AND docente != '') 
+             OR (nrc IS NOT NULL AND nrc != '') 
+             OR (curso IS NOT NULL AND curso != '')
+          ORDER BY fecha DESC, id DESC
+        `).all(),
+        db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all()
+      ]);
+
+      const asistencia = (asistRes.results || []).map(r => ({
+        id: r.id,
+        pisoPabellon: r.piso_pabellon,
+        sede: r.sede,
+        periodo: r.periodo,
+        dia: r.dia,
+        horaInicioProg: r.hora_inicio_prog,
+        horaFinalProg: r.hora_final_prog,
+        aula: r.aula,
+        nrc: r.nrc,
+        listaCruzada: r.lista_cruzada,
+        codigoDocente: r.codigo_docente,
+        docente: r.docente,
+        curso: r.curso,
+        carrera: r.carrera,
+        horaInicioReal: r.hora_inicio_real,
+        horaFinalReal: r.hora_final_real,
+        asistencia: r.asistencia,
+        puntualidad: r.puntualidad,
+        observacion: r.observacion,
+        real: r.real_horas,
+        ciclo: r.ciclo
+      }));
+
+      const tickets = (ticketRes.results || []).map(t => ({
+        id: t.id,
+        periodo: t.periodo,
+        fecha: t.fecha,
+        dia: t.dia,
+        horaReporte: t.hora_reporte,
+        rango: t.rango,
+        ambiente: t.ambiente,
+        piso: t.piso,
+        pabellon: t.pabellon,
+        tipoSolicitud: t.tipo_solicitud,
+        estado: t.estado,
+        descripcionSolucion: t.descripcion_solucion,
+        responsable: t.responsable
+      }));
+
+      return json({
+        success: true,
+        updatedAt: new Date().toISOString(),
+        data: {
+          asistencia,
+          tickets,
+          manualSheets: manualRes.results || [],
+          reservas: resRes.results || []
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 8. LIVE EXCEL FILE ENDPOINT: /api/export-excel
+    // Devuelve el archivo CONTROL DOCENTE.xlsx en vivo con el formato, colores y fórmulas originales
+    // -------------------------------------------------------------
+    if (path === '/api/export-excel' && method === 'GET') {
+      const tplUrl = new URL('/CONTROL_DOCENTE.xlsx', request.url);
+      const tplRes = env.ASSETS ? await env.ASSETS.fetch(tplUrl) : await fetch(tplUrl);
+      if (!tplRes.ok) {
+        return json({ error: 'No se pudo cargar la plantilla maestra CONTROL_DOCENTE.xlsx' }, 500);
+      }
+
+      const [tplBuffer, asistRes, ticketRes, manualRes, resRes] = await Promise.all([
+        tplRes.arrayBuffer(),
+        db.prepare('SELECT * FROM asistencia ORDER BY hora_inicio_prog ASC, aula ASC').all(),
+        db.prepare('SELECT * FROM tickets ORDER BY created_at DESC').all(),
+        db.prepare(`
+          SELECT * FROM hojas_manuales 
+          WHERE (docente IS NOT NULL AND docente != '') 
+             OR (nrc IS NOT NULL AND nrc != '') 
+             OR (curso IS NOT NULL AND curso != '')
+          ORDER BY fecha DESC, id DESC
+        `).all(),
+        db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all()
+      ]);
+
+      const asistencia = (asistRes.results || []).map(r => ({
+        id: r.id,
+        pisoPabellon: r.piso_pabellon,
+        sede: r.sede,
+        periodo: r.periodo,
+        dia: r.dia,
+        horaInicioProg: r.hora_inicio_prog,
+        horaFinalProg: r.hora_final_prog,
+        aula: r.aula,
+        nrc: r.nrc,
+        listaCruzada: r.lista_cruzada,
+        codigoDocente: r.codigo_docente,
+        docente: r.docente,
+        curso: r.curso,
+        carrera: r.carrera,
+        horaInicioReal: r.hora_inicio_real,
+        horaFinalReal: r.hora_final_real,
+        asistencia: r.asistencia,
+        puntualidad: r.puntualidad,
+        observacion: r.observacion,
+        real: r.real_horas,
+        ciclo: r.ciclo
+      }));
+
+      const tickets = (ticketRes.results || []).map(t => ({
+        id: t.id,
+        periodo: t.periodo,
+        fecha: t.fecha,
+        dia: t.dia,
+        horaReporte: t.hora_reporte,
+        rango: t.rango,
+        ambiente: t.ambiente,
+        piso: t.piso,
+        pabellon: t.pabellon,
+        tipoSolicitud: t.tipo_solicitud,
+        estado: t.estado,
+        descripcionSolucion: t.descripcion_solucion,
+        responsable: t.responsable
+      }));
+
+      const outputUint8 = buildMasterExcelFromTemplate(new Uint8Array(tplBuffer), {
+        asistencia,
+        tickets,
+        manualSheets: manualRes.results || [],
+        reservas: resRes.results || []
+      });
+
+      return new Response(outputUint8, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': 'attachment; filename="CONTROL DOCENTE.xlsx"',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Access-Control-Allow-Origin': '*'
         }
       });
     }
