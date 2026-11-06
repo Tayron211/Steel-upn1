@@ -3,7 +3,7 @@
  * Handles all /api/* requests 24/7 at the edge with Cloudflare D1 (Serverless SQLite)
  */
 import { buildMasterExcelFromTemplate } from '../../src/utils/excelTemplateExporter';
-import { pushToExcel, pullIfExcelChanged } from '../../src/utils/onedriveGraphSync';
+import { pushToExcel, pullIfExcelChanged, debugInspect } from '../../src/utils/onedriveGraphSync';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -990,6 +990,10 @@ async function handleApiRequest(context) {
     if (path === '/api/onedrive/sync' && method === 'POST') {
       const result = await pushToExcel(db);
       return json(result);
+    }
+
+    if (path === '/api/onedrive/debug' && method === 'GET') {
+      return json(await debugInspect(db));
     }
 
     if (path === '/api/onedrive/pull' && method === 'POST') {

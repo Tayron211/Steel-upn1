@@ -620,6 +620,32 @@ async function pushAsistencia(db, token, itemId) {
   return { updated: changed, status: res.status };
 }
 
+/* ============================== diagnóstico ============================== */
+export async function debugInspect(db) {
+  await ensureTables(db);
+  const acc = await getAccess(db);
+  if (!acc) return { error: 'sin token' };
+  const { token, row } = acc;
+  const out = { itemId: row.item_id, file: row.file_name };
+  const ws = await gfetch(token, `${G}/me/drive/items/${row.item_id}/workbook/worksheets?$select=name,visibility`);
+  out.worksheets = ws.ok ? ws.json.value : ws.json;
+  out.sheets = {};
+  for (const name of ['CONTROL ASISTENCIA', 'ATENCIONES 2026-2', 'HOJA DE ASISTENCIA 2026-2', 'RESERVAS']) {
+    const used = await loadUsed(token, row.item_id, name);
+    if (!used) {
+      out.sheets[name] = 'NO ENCONTRADA';
+      continue;
+    }
+    out.sheets[name] = {
+      rowIndex: used.rowIndex,
+      columnIndex: used.columnIndex,
+      rows: used.values.length,
+      first: used.values.slice(0, 7).map((r) => r.slice(0, 14))
+    };
+  }
+  return out;
+}
+
 /* ============================== orquestadores ============================== */
 async function withLock(db, name, fn) {
   const lockKey = `lock:${name}`;
