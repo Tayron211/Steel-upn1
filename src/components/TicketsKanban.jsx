@@ -851,6 +851,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                           title="Firma del Solicitante"
                           height={90}
                           compact={true}
+                          autoOpen={true}
                         />
                         <div className="flex items-center gap-2">
                           <button
@@ -880,6 +881,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                           subtitle="Firma directamente con el dedo en pantalla"
                           height={95}
                           compact={true}
+                          autoOpen={true}
                         />
                         <div className="flex items-center gap-2 pt-1">
                           <button
