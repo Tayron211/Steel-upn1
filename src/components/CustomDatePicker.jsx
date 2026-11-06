@@ -168,9 +168,9 @@ export default function CustomDatePicker({
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full h-10 px-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2 text-left font-medium hover:border-[#FDBA30] dark:hover:border-[#FDBA30] focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/20 transition active:scale-[0.99] ${className}`}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
           <Calendar className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0 stroke-[2.2]" />
-          <span className={`break-words ${value ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-zinc-500'}`}>
+          <span className={`truncate whitespace-nowrap ${value ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-zinc-500'}`}>
             {formatFriendlyDate(value)}
           </span>
         </div>

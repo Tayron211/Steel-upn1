@@ -1471,7 +1471,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </div>
 
             {/* Fecha y Horario */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="space-y-2.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
                   Fecha *
@@ -1482,27 +1482,29 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Hora Inicio *
-                </label>
-                <CustomSelect
-                  value={reservationForm.horaInicio}
-                  onChange={(val) => setReservationForm(f => ({ ...f, horaInicio: val }))}
-                  options={TIME_OPTIONS}
-                  placeholder="Hora Inicio"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Hora Fin *
-                </label>
-                <CustomSelect
-                  value={reservationForm.horaFin}
-                  onChange={(val) => setReservationForm(f => ({ ...f, horaFin: val }))}
-                  options={TIME_OPTIONS}
-                  placeholder="Hora Fin"
-                />
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    Hora Inicio *
+                  </label>
+                  <CustomSelect
+                    value={reservationForm.horaInicio}
+                    onChange={(val) => setReservationForm(f => ({ ...f, horaInicio: val }))}
+                    options={TIME_OPTIONS}
+                    placeholder="Hora Inicio"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    Hora Fin *
+                  </label>
+                  <CustomSelect
+                    value={reservationForm.horaFin}
+                    onChange={(val) => setReservationForm(f => ({ ...f, horaFin: val }))}
+                    options={TIME_OPTIONS}
+                    placeholder="Hora Fin"
+                  />
+                </div>
               </div>
             </div>
 
