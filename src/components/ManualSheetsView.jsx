@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  FileText, 
-  Plus, 
-  Search, 
-  Printer, 
-  CheckCircle, 
+import {
+  FileText,
+  Plus,
+  Search,
+  Printer,
+  CheckCircle,
   FileCheck2,
   User,
   UserCheck,
@@ -110,11 +110,11 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       const payload = {
         ...formData,
         docenteReemplazo: suplente,
-        motivo: isReemplazo && suplente 
-          ? `DOCENTE DE REEMPLAZO (${suplente})` 
+        motivo: isReemplazo && suplente
+          ? `DOCENTE DE REEMPLAZO (${suplente})`
           : formData.motivo,
-        detalle: isReemplazo && suplente 
-          ? `Docente Titular: ${formData.docente} | Reemplaza: ${suplente}` 
+        detalle: isReemplazo && suplente
+          ? `Docente Titular: ${formData.docente} | Reemplaza: ${suplente}`
           : (formData.detalle || '')
       };
 
@@ -326,11 +326,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <button
               onClick={() => setFilterMotivo('')}
-              className={`h-7 px-3 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
-                !filterMotivo 
-                  ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black' 
+              className={`h-7 px-3 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${!filterMotivo
+                  ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
                   : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
-              }`}
+                }`}
             >
               Todos ({validSheets.length})
             </button>
@@ -339,11 +338,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               <button
                 key={m}
                 onClick={() => setFilterMotivo(filterMotivo === m ? '' : m)}
-                className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${
-                  filterMotivo === m
+                className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${filterMotivo === m
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                     : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/70 dark:border-zinc-800'
-                }`}
+                  }`}
               >
                 {m}
               </button>
@@ -567,11 +565,11 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
       {/* Modal: New Manual Sheet - 100% Symmetrical */}
       {isModalOpen && typeof document !== 'undefined' && createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
           onClick={() => setIsModalOpen(false)}
         >
-          <div 
+          <div
             className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto animate-spring-up"
             onClick={(e) => e.stopPropagation()}
           >
@@ -620,11 +618,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       onChange={(e) => handleNrcLookup(e.target.value)}
                       onBlur={() => handleNrcLookup(formData.nrc)}
                       placeholder="Ej: 23017"
-                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-bold transition ${
-                        nrcMatchFound
+                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-bold transition ${nrcMatchFound
                           ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20'
                           : 'border-slate-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20'
-                      }`}
+                        }`}
                     />
                     {nrcMatchFound && (
                       <div className="absolute right-2.5 top-2.5 text-emerald-600 dark:text-emerald-400">
@@ -752,11 +749,11 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
         const suplenteName = getSuplente(selectedForPrint);
 
         return createPortal(
-          <div 
+          <div
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
             onClick={() => setSelectedForPrint(null)}
           >
-            <div 
+            <div
               className="bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-900 dark:text-zinc-100 animate-scale-up space-y-4 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
