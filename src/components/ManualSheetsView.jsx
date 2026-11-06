@@ -21,6 +21,19 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 
+// Detecta si la hoja es de reemplazo y extrae el nombre del docente reemplazante
+const isReemplazoSheet = (item) => (item?.motivo || '').toUpperCase().includes('REEMPLAZO');
+const getSuplente = (item) => {
+  if (!item) return '';
+  if (item.docenteReemplazo) return item.docenteReemplazo;
+  const m = (item.motivo || '').match(/REEMPLAZO\s*\(([^)]+)\)/i);
+  if (m) return m[1].trim();
+  const d = (item.detalle || '').match(/Reemplaza:\s*(.+)$/i);
+  if (d) return d[1].trim();
+  return '';
+};
+const getMotivoBase = (item) => (item?.motivo || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+
 export default function ManualSheetsView({ initialClassData, onClearInitialClass }) {
   const [sheets, setSheets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,9 +196,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   };
 
   const handleCopyVoucherText = (item) => {
-    const isReemplazo = item.motivo?.includes('DOCENTE DE REEMPLAZO');
-    const suplenteMatch = item.motivo?.match(/DOCENTE DE REEMPLAZO \(([^)]+)\)/i);
-    const suplenteName = suplenteMatch ? suplenteMatch[1] : '';
+    const isReemplazo = isReemplazoSheet(item);
+    const suplenteName = getSuplente(item);
 
     let text = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\nN° Boleta: ${item.codigo}\nFecha: ${item.fecha}\nNRC: ${item.nrc}\nDocente Titular: ${item.docente}\nCurso: ${item.curso}`;
     if (isReemplazo && suplenteName) {
@@ -228,7 +240,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
   const filtered = useMemo(() => {
     return validSheets.filter(s => {
-      if (filterMotivo && s.motivo !== filterMotivo) return false;
+      if (filterMotivo && getMotivoBase(s) !== filterMotivo) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (
@@ -373,9 +385,23 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-950 dark:text-white mb-1 break-words">
+                  {isReemplazoSheet(item) && (
+                    <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">Titular</div>
+                  )}
+                  <h3 className={`text-sm font-extrabold mb-1 break-words ${isReemplazoSheet(item) ? 'text-slate-500 dark:text-zinc-400' : 'text-slate-950 dark:text-white'}`}>
                     {item.docente}
                   </h3>
+                  {isReemplazoSheet(item) && (
+                    <div className="mb-2 p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/70">
+                      <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                        <UserCheck className="w-3 h-3 stroke-[2.4] shrink-0" />
+                        <span>Docente Reemplazante</span>
+                      </div>
+                      <div className={`text-sm font-extrabold break-words mt-0.5 ${getSuplente(item) ? 'text-purple-950 dark:text-purple-100' : 'text-slate-400 dark:text-zinc-500 italic font-semibold text-xs'}`}>
+                        {getSuplente(item) || 'No registrado'}
+                      </div>
+                    </div>
+                  )}
                   <p className="text-xs text-slate-800 dark:text-zinc-200 font-bold leading-snug break-words">
                     {item.curso}
                   </p>
@@ -390,7 +416,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500">Motivo:</span>
                     <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 break-words">
-                      {item.motivo}
+                      {getMotivoBase(item)}
                     </span>
                   </div>
 
@@ -470,13 +496,21 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
                       {/* Docente: 100% visible */}
                       <td className="py-3.5 px-4 align-top">
-                        <div className="font-extrabold text-slate-950 dark:text-white text-xs leading-snug break-words">
+                        {isReemplazoSheet(item) && (
+                          <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-0.5">Titular</div>
+                        )}
+                        <div className={`font-extrabold text-xs leading-snug break-words ${isReemplazoSheet(item) ? 'text-slate-500 dark:text-zinc-400' : 'text-slate-950 dark:text-white'}`}>
                           {item.docente}
                         </div>
-                        {item.motivo?.includes('DOCENTE DE REEMPLAZO') && (
-                          <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800/80 w-fit">
-                            <UserCheck className="w-3 h-3 stroke-[2.4] shrink-0 text-amber-600" />
-                            <span>Reemplazo</span>
+                        {isReemplazoSheet(item) && (
+                          <div className="mt-1.5 p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/70">
+                            <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                              <UserCheck className="w-3 h-3 stroke-[2.4] shrink-0" />
+                              <span>Reemplazante</span>
+                            </div>
+                            <div className={`text-xs font-extrabold leading-snug break-words mt-0.5 ${getSuplente(item) ? 'text-purple-950 dark:text-purple-100' : 'text-slate-400 dark:text-zinc-500 italic font-semibold'}`}>
+                              {getSuplente(item) || 'No registrado'}
+                            </div>
                           </div>
                         )}
                       </td>
@@ -484,7 +518,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       {/* Motivo: 100% visible */}
                       <td className="py-3.5 px-4 align-top">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 break-words leading-tight">
-                          {item.motivo}
+                          {getMotivoBase(item)}
                         </span>
                       </td>
 
@@ -711,9 +745,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
       {/* Modal de Detalles Completos de la Hoja de Asistencia Manual */}
       {selectedForPrint && typeof document !== 'undefined' && (() => {
-        const isReemplazo = selectedForPrint.motivo?.includes('DOCENTE DE REEMPLAZO');
-        const suplenteMatch = selectedForPrint.motivo?.match(/DOCENTE DE REEMPLAZO \(([^)]+)\)/i);
-        const suplenteName = suplenteMatch ? suplenteMatch[1] : (selectedForPrint.detalle || '');
+        const isReemplazo = isReemplazoSheet(selectedForPrint);
+        const suplenteName = getSuplente(selectedForPrint);
 
         return createPortal(
           <div 
@@ -763,19 +796,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                   </span>
                 </div>
                 <div className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-100 leading-snug">
-                  {selectedForPrint.motivo}
+                  {getMotivoBase(selectedForPrint)}
                 </div>
-
-                {/* Si es suplente o docente de reemplazo */}
-                {isReemplazo && suplenteName && (
-                  <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2">
-                    <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 stroke-[2.4] mt-0.5" />
-                    <div className="text-xs">
-                      <span className="text-slate-600 dark:text-zinc-400 font-semibold">Docente que asume la clase: </span>
-                      <strong className="text-purple-700 dark:text-purple-300 font-black block sm:inline">{suplenteName}</strong>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Grilla de Datos Académicos */}
@@ -796,6 +818,18 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     {selectedForPrint.docente}
                   </div>
                 </div>
+
+                {isReemplazo && (
+                  <div className="col-span-2 p-3 bg-purple-50 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/70 space-y-0.5">
+                    <span className="text-[10px] uppercase font-black text-purple-700 dark:text-purple-300 flex items-center gap-1">
+                      <UserCheck className="w-3.5 h-3.5 stroke-[2.4]" />
+                      Docente Reemplazante (dicta la clase)
+                    </span>
+                    <div className={`text-xs sm:text-sm break-words ${suplenteName ? 'font-black text-purple-950 dark:text-purple-100' : 'font-semibold italic text-slate-400 dark:text-zinc-500'}`}>
+                      {suplenteName || 'No registrado en esta hoja'}
+                    </div>
+                  </div>
+                )}
 
                 <div className="col-span-2 p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block">Curso</span>
