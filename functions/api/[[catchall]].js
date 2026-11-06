@@ -3,6 +3,7 @@
  * Handles all /api/* requests 24/7 at the edge with Cloudflare D1 (Serverless SQLite)
  */
 import { buildMasterExcelFromTemplate } from '../../src/utils/excelTemplateExporter';
+import { pushToExcel, pullIfExcelChanged } from '../../src/utils/onedriveGraphSync';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -577,103 +578,57 @@ async function handleApiRequest(context) {
         try {
           await db.prepare('ALTER TABLE tickets ADD COLUMN usuario TEXT DEFAULT "DOCENTE"').run();
         } catch (_) {}
-        if (clearExisting) {
-          await db.prepare('DELETE FROM tickets').run();
-        }
-        const chunkSize = 50;
-        for (let i = 0; i < tickets.length; i += chunkSize) {
-          const chunk = tickets.slice(i, i + chunkSize);
-          const stmts = chunk.map((t, idx) => {
-            const id = t.id || `ticket_imp_${Date.now()}_${i + idx}`;
-            const usuarioVal = String(t.usuario || 'DOCENTE').trim().toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE';
-            return db.prepare(`
-              INSERT OR REPLACE INTO tickets (
-                id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon,
-                tipo_solicitud, estado, usuario, descripcion_solucion, responsable, created_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-            `).bind(
-              id,
-              t.periodo || '2026-2',
-              t.fecha || '',
-              normalizeDay(t.dia || ''),
-              t.horaReporte || t.hora_reporte || '',
-              t.rango || '',
-              (t.ambiente || '').trim().toUpperCase(),
-              t.piso || '',
-              t.pabellon || '',
-              t.tipoSolicitud || t.tipo_solicitud || 'ASISTENCIA TÉCNICA',
-              (t.estado || 'PENDIENTE').trim().toUpperCase(),
-              usuarioVal,
-              t.descripcionSolucion || t.descripcion_solucion || '',
-              t.responsable || ''
-            );
-          });
-          await db.batch(stmts);
-        }
+        const stmts = tickets.map((t, idx) => {
+          const id = t.id || `ticket_imp_${Date.now()}_${idx}`;
+          const usuarioVal = String(t.usuario || 'DOCENTE').trim().toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE';
+          return db.prepare(`
+            INSERT OR REPLACE INTO tickets (
+              id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon,
+              tipo_solicitud, estado, usuario, descripcion_solucion, responsable, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `).bind(
+            id, t.periodo || '2026-2', t.fecha || '', normalizeDay(t.dia || ''),
+            t.horaReporte || t.hora_reporte || '', t.rango || '',
+            (t.ambiente || '').trim().toUpperCase(), t.piso || '', t.pabellon || '',
+            t.tipoSolicitud || t.tipo_solicitud || '', (t.estado || 'ATENDIDO').trim().toUpperCase(),
+            usuarioVal, t.descripcionSolucion || t.descripcion_solucion || '', t.responsable || ''
+          );
+        });
+        for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
       }
 
       if (manualSheets.length > 0) {
-        if (clearExisting) {
-          await db.prepare('DELETE FROM hojas_manuales').run();
-        }
-        const chunkSize = 50;
-        for (let i = 0; i < manualSheets.length; i += chunkSize) {
-          const chunk = manualSheets.slice(i, i + chunkSize);
-          const stmts = chunk.map((m, idx) => {
-            const id = m.id || `manual_2_${i + idx + 1}`;
+        const stmts = manualSheets
+          .filter(m => (m.codigo || m.n_hoja))
+          .map((m, idx) => {
+            const codigo = String(m.codigo || m.n_hoja).toUpperCase().replace(/^LNI-/, 'LN1-');
             return db.prepare(`
-              INSERT OR REPLACE INTO hojas_manuales (
-                id, n_hoja, fecha, aula, nrc, codigo_docente, docente, curso,
-                observacion, docente_reemplazo, motivo, estado_hoja, created_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+              INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, docente_reemplazo, created_at)
+              VALUES (?, '2026-2', ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+              ON CONFLICT(codigo) DO UPDATE SET
+                fecha = excluded.fecha, nrc = excluded.nrc, docente = excluded.docente, curso = excluded.curso,
+                carrera = excluded.carrera, motivo = excluded.motivo, asistente = excluded.asistente,
+                docente_reemplazo = excluded.docente_reemplazo
             `).bind(
-              id,
-              m.n_hoja || m.nHoja || '',
-              m.fecha || '',
-              (m.aula || '').trim().toUpperCase(),
-              m.nrc ? String(m.nrc).trim() : '',
-              m.codigo_docente || m.codigoDocente || '',
-              (m.docente || '').trim().toUpperCase(),
-              (m.curso || '').trim().toUpperCase(),
-              m.observacion || '',
-              (m.docente_reemplazo || m.docenteReemplazo || '').trim().toUpperCase(),
-              m.motivo || 'REEMPLAZO DOCENTE',
-              m.estado_hoja || m.estadoHoja || 'REGISTRADO'
+              m.id || `manual_imp_${Date.now()}_${idx}`, codigo, m.fecha || '', m.nrc ? String(m.nrc) : '',
+              (m.docente || '').trim().toUpperCase(), (m.curso || '').trim().toUpperCase(), m.carrera || '',
+              m.motivo || '', m.asistente || m.observacion || '', (m.docente_reemplazo || m.docenteReemplazo || '').trim().toUpperCase()
             );
           });
-          await db.batch(stmts);
-        }
+        for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
       }
 
       if (reservas.length > 0) {
-        if (clearExisting) {
-          await db.prepare('DELETE FROM reservas').run();
-        }
-        const chunkSize = 50;
-        for (let i = 0; i < reservas.length; i += chunkSize) {
-          const chunk = reservas.slice(i, i + chunkSize);
-          const stmts = chunk.map((r, idx) => {
-            const id = r.id || `res_imp_${Date.now()}_${i + idx}`;
-            return db.prepare(`
-              INSERT OR REPLACE INTO reservas (
-                id, responsable, fecha, dia, inicio, final, ambiente,
-                piso_pabellon, motivo, soporte, created_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-            `).bind(
-              id,
-              r.responsable || '',
-              r.fecha || '',
-              normalizeDay(r.dia || ''),
-              r.inicio || '',
-              r.final || '',
-              (r.ambiente || '').trim().toUpperCase(),
-              r.piso_pabellon || r.pisoPabellon || '',
-              r.motivo || '',
-              r.soporte || ''
-            );
-          });
-          await db.batch(stmts);
-        }
+        const stmts = reservas.map((r, idx) => db.prepare(`
+          INSERT OR REPLACE INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, usuario, prioridad, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+          r.id || `res_imp_${Date.now()}_${idx}`, r.fecha || '', (r.mes || '').toUpperCase(), normalizeDay(r.dia || ''),
+          r.inicio || '', r.final || '', (r.aula || r.ambiente || '').trim().toUpperCase(), r.ubicacion || r.piso_pabellon || '',
+          (r.docente || r.responsable || '').toUpperCase(), (r.detalle || r.motivo || '').toUpperCase(),
+          (r.usuario || 'OPERACIONES').toUpperCase(), (r.prioridad || 'NORMAL').toUpperCase()
+        ));
+        for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
       }
 
       if (ambientes.length > 0) {
@@ -941,273 +896,6 @@ async function handleApiRequest(context) {
     const TENANT_ID = 'ae544a57-aecb-4bf9-828a-5b520732b110';
     const CLIENT_ID = 'd3590ed6-52b3-4102-aeff-aad2292ab01c';
 
-    async function runOneDriveCloudSync(db) {
-      await db.prepare(`
-        CREATE TABLE IF NOT EXISTS onedrive_auth (
-          id TEXT PRIMARY KEY,
-          refresh_token TEXT,
-          access_token TEXT,
-          expires_at INTEGER,
-          item_id TEXT,
-          file_name TEXT,
-          last_web_hash TEXT,
-          last_excel_hash TEXT,
-          updated_at TEXT
-        )
-      `).run();
-
-      const authRow = await db.prepare('SELECT * FROM onedrive_auth WHERE id = ?').bind('primary').first();
-      if (!authRow || !authRow.refresh_token) {
-        return { success: false, connected: false, message: 'OneDrive aún no vinculado' };
-      }
-
-      let accessToken = authRow.access_token;
-      if (!accessToken || Date.now() > Number(authRow.expires_at || 0) - 120000) {
-        const refRes = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            client_id: CLIENT_ID,
-            refresh_token: authRow.refresh_token,
-            scope: 'https://graph.microsoft.com/.default offline_access'
-          })
-        });
-        const refJson = await refRes.json();
-        if (refRes.ok && refJson.access_token) {
-          accessToken = refJson.access_token;
-          const newExp = Date.now() + Number(refJson.expires_in || 3600) * 1000;
-          await db.prepare(`
-            UPDATE onedrive_auth
-            SET access_token = ?, refresh_token = COALESCE(?, refresh_token), expires_at = ?, updated_at = datetime('now')
-            WHERE id = 'primary'
-          `).bind(accessToken, refJson.refresh_token || null, newExp).run();
-        }
-      }
-
-      const headers = {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      };
-
-      // Buscar todos los archivos CONTROL DOCENTE*.xlsx en el OneDrive del usuario para mantenerlos todos al día
-      const targetItems = [];
-      try {
-        const searchRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='CONTROL DOCENTE')", {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        if (searchRes.ok) {
-          const sJson = await searchRes.json();
-          for (const f of (sJson.value || [])) {
-            const nm = String(f.name || '');
-            if (nm.toUpperCase().includes('CONTROL DOCENTE') && nm.toLowerCase().endsWith('.xlsx')) {
-              targetItems.push({ id: f.id, name: nm });
-            }
-          }
-        }
-      } catch (_) {}
-
-      if (targetItems.length === 0 && authRow.item_id) {
-        targetItems.push({ id: authRow.item_id, name: authRow.file_name || 'CONTROL DOCENTE.xlsx' });
-      }
-
-      if (targetItems.length === 0) {
-        return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
-      }
-
-      // Priorizar CONTROL DOCENTE - Copia.xlsx como nombre principal mostrado
-      const copiaItem = targetItems.find(x => x.name.toUpperCase().includes('COPIA')) || targetItems[0];
-      await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ?, updated_at = datetime('now') WHERE id = 'primary'")
-        .bind(copiaItem.id, copiaItem.name).run();
-
-      const [asistRes, ticketRes, manualRes, resRes] = await Promise.all([
-        db.prepare('SELECT * FROM asistencia ORDER BY hora_inicio_prog ASC, aula ASC').all(),
-        db.prepare('SELECT * FROM tickets WHERE periodo != "2026-1" ORDER BY created_at DESC').all(),
-        db.prepare("SELECT * FROM hojas_manuales WHERE id NOT LIKE 'manual_1_%' AND ((docente IS NOT NULL AND docente != '') OR (nrc IS NOT NULL AND nrc != '') OR (docente_reemplazo IS NOT NULL AND docente_reemplazo != ''))").all(),
-        db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all()
-      ]);
-
-      // Mapa auxiliar NRC -> Docente / Curso / Carrera
-      const nrcMap = new Map();
-      for (const a of (asistRes.results || [])) {
-        const nrcKey = String(a.nrc || '').trim();
-        if (nrcKey && !nrcMap.has(nrcKey)) {
-          nrcMap.set(nrcKey, {
-            docente: a.docente || '',
-            curso: a.curso || '',
-            carrera: a.carrera || ''
-          });
-        }
-      }
-
-      // 1. Preparar filas de RESERVAS (Empiezan en B5:L...)
-      const reservas = resRes.results || [];
-      const rowsRes = reservas.map(r => [
-        r.fecha || '',
-        (r.mes || 'NOVIEMBRE').toUpperCase(),
-        (r.dia || 'VIERNES').toUpperCase(),
-        r.inicio || r.hora_inicio || '14:30',
-        r.final || r.hora_fin || '16:10',
-        (r.aula || r.ambiente || 'A201').toUpperCase(),
-        r.ubicacion || r.piso_pabellon || '2DO PISO - A',
-        (r.docente || r.responsable || '').toUpperCase(),
-        (r.detalle || r.motivo || '').toUpperCase(),
-        (r.usuario || 'OPERACIONES').toUpperCase(),
-        (r.prioridad || 'NORMAL').toUpperCase()
-      ]);
-
-      // 2. Preparar filas de ATENCIONES 2026-2 (Empiezan en A3:L...)
-      const tickets = ticketRes.results || [];
-      const rowsAten = tickets.map(t => [
-        t.fecha || '',
-        (t.dia || '').toUpperCase(),
-        t.hora_reporte || '',
-        t.rango || '09:00 – 10:00',
-        (t.ambiente || '').toUpperCase(),
-        t.piso || 'PRIMER PISO',
-        t.pabellon || 'A',
-        t.tipo_solicitud || 'Equipos Tecnológicos (Audio,teclado, mouse, so)',
-        (t.estado || 'ATENDIDO').toUpperCase(),
-        t.usuario || (String(t.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE'),
-        t.descripcion_solucion || '',
-        t.responsable || 'OPERACIONES'
-      ]);
-
-      // 3. Preparar filas de HOJA DE ASISTENCIA 2026-2 (Empiezan en A3:I..., ordenadas por número de hoja LN1-001..LN1-171)
-      const manualsRaw = [...(manualRes.results || [])];
-      const parseNum = (s) => {
-        const m = String(s || '').match(/(\d+)$/);
-        return m ? parseInt(m[1], 10) : 999999;
-      };
-      manualsRaw.sort((a, b) => parseNum(a.n_hoja) - parseNum(b.n_hoja));
-      const rowsMan = manualsRaw.map((m, i) => {
-        const code = String(m.n_hoja || `LN1-${String(i + 1).padStart(3, '0')}`).toUpperCase().replace(/^LNI-/, 'LN1-');
-        const nrcStr = String(m.nrc || '').trim();
-        const info = nrcMap.get(nrcStr);
-        let rawDoc = String(m.docente || info?.docente || '').trim();
-        let repDoc = String(m.docente_reemplazo || '').trim();
-        const repMatch = rawDoc.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
-        if (repMatch) {
-          rawDoc = repMatch[1].trim();
-          if (!repDoc) repDoc = repMatch[2].trim();
-        }
-        return [
-          code,
-          m.fecha || '',
-          nrcStr,
-          rawDoc.toUpperCase(),
-          (m.curso || info?.curso || '').toUpperCase(),
-          info?.carrera || '',
-          (m.motivo || 'CLASE REGULAR').toUpperCase(),
-          (m.asistente || '').toUpperCase(),
-          repDoc.toUpperCase()
-        ];
-      });
-
-      const syncResults = [];
-
-      for (const item of targetItems) {
-        const itemId = item.id;
-        const itemStatus = { file: item.name, sheets: {} };
-
-        // A) Actualizar RESERVAS en B5:L...
-        if (rowsRes.length > 0) {
-          const endRow = rowsRes.length + 4;
-          const rRes = await fetch(
-            `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('RESERVAS')}/range(address='B5:L${endRow}')`,
-            { method: 'PATCH', headers, body: JSON.stringify({ values: rowsRes }) }
-          );
-          itemStatus.sheets.reservas = rRes.status;
-        }
-
-        // B) Actualizar ATENCIONES 2026-2 (Cabecera A2:L2 + Datos A3:L...)
-        if (rowsAten.length > 0) {
-          await fetch(
-            `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('ATENCIONES 2026-2')}/range(address='J2:L2')`,
-            { method: 'PATCH', headers, body: JSON.stringify({ values: [['USUARIO', 'DESCRIPCIÓN / SOLUCIÓN', 'RESPONSABLE']] }) }
-          );
-          const endRow = rowsAten.length + 2;
-          const rAten = await fetch(
-            `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('ATENCIONES 2026-2')}/range(address='A3:L${endRow}')`,
-            { method: 'PATCH', headers, body: JSON.stringify({ values: rowsAten }) }
-          );
-          itemStatus.sheets.atenciones = rAten.status;
-        }
-
-        // C) Actualizar HOJA DE ASISTENCIA 2026-2 (Cabecera I2 + Datos A3:I...)
-        if (rowsMan.length > 0) {
-          await fetch(
-            `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('HOJA DE ASISTENCIA 2026-2')}/range(address='I2:I2')`,
-            { method: 'PATCH', headers, body: JSON.stringify({ values: [['DOCENTE REEMPLAZANTE']] }) }
-          );
-          const endRow = rowsMan.length + 2;
-          const rMan = await fetch(
-            `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('HOJA DE ASISTENCIA 2026-2')}/range(address='A3:I${endRow}')`,
-            { method: 'PATCH', headers, body: JSON.stringify({ values: rowsMan }) }
-          );
-          itemStatus.sheets.hojasManuales = rMan.status;
-        }
-
-        // D) Actualizar CONTROL ASISTENCIA (N2:R...)
-        const usedRes = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('CONTROL ASISTENCIA')}/usedRange(valuesOnly=true)`,
-          { headers }
-        );
-        if (usedRes.ok) {
-          const usedJson = await usedRes.json();
-          const vals = usedJson.values || [];
-          if (vals.length > 1) {
-            const byKey = new Map();
-            for (const a of (asistRes.results || [])) {
-              const k = `${String(a.nrc || '').trim()}_${String(a.dia || '').trim().toUpperCase()}_${String(a.aula || '').trim().toUpperCase()}`;
-              byKey.set(k, a);
-            }
-            const colUpdates = [];
-            for (let r = 1; r < vals.length; r++) {
-              const nrc = String(vals[r][7] || '').trim();
-              const dia = String(vals[r][3] || '').trim().toUpperCase();
-              const aula = String(vals[r][6] || '').trim().toUpperCase();
-              const match = byKey.get(`${nrc}_${dia}_${aula}`);
-              if (match) {
-                colUpdates.push([
-                  match.hora_inicio_real || vals[r][13] || '',
-                  match.hora_final_real || vals[r][14] || '',
-                  match.asistencia === 'PENDIENTE' ? '' : (match.asistencia || ''),
-                  match.puntualidad === '-' ? '' : (match.puntualidad || ''),
-                  match.observacion || ''
-                ]);
-              } else {
-                colUpdates.push([
-                  vals[r][13] || '',
-                  vals[r][14] || '',
-                  vals[r][15] || '',
-                  vals[r][16] || '',
-                  vals[r][17] || ''
-                ]);
-              }
-            }
-            if (colUpdates.length > 0) {
-              const endRow = colUpdates.length + 1;
-              const rAsist = await fetch(
-                `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/workbook/worksheets/${encodeURIComponent('CONTROL ASISTENCIA')}/range(address='N2:R${endRow}')`,
-                { method: 'PATCH', headers, body: JSON.stringify({ values: colUpdates }) }
-              );
-              itemStatus.sheets.asistencia = rAsist.status;
-            }
-          }
-        }
-
-        syncResults.push(itemStatus);
-      }
-
-      return {
-        success: true,
-        connected: true,
-        filesUpdated: syncResults,
-        message: 'Sincronizado en tiempo real con OneDrive'
-      };
-    }
-
     if (path.startsWith('/api/onedrive/')) {
       await db.prepare(`
         CREATE TABLE IF NOT EXISTS onedrive_auth (
@@ -1300,7 +988,12 @@ async function handleApiRequest(context) {
     }
 
     if (path === '/api/onedrive/sync' && method === 'POST') {
-      const result = await runOneDriveCloudSync(db);
+      const result = await pushToExcel(db);
+      return json(result);
+    }
+
+    if (path === '/api/onedrive/pull' && method === 'POST') {
+      const result = await pullIfExcelChanged(db);
       return json(result);
     }
 

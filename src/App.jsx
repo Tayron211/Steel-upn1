@@ -146,6 +146,28 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Excel de OneDrive -> App: consulta cada 10 s si el Excel fue editado directamente y trae los cambios
+  useEffect(() => {
+    let stopped = false;
+    const pullExcel = async () => {
+      if (stopped || document.hidden) return;
+      try {
+        const res = await window.fetch('/api/onedrive/pull', { method: 'POST' });
+        const j = await res.json();
+        if (j && j.pulled) {
+          window.dispatchEvent(new Event('upn:excel-pulled'));
+        }
+      } catch (_) {}
+    };
+    const first = setTimeout(pullExcel, 3000);
+    const interval = setInterval(pullExcel, 10000);
+    return () => {
+      stopped = true;
+      clearTimeout(first);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Interceptor global para sincronizar automáticamente cada cambio en tiempo real con el Excel de OneDrive vinculado
   useEffect(() => {
     restoreLinkedExcelIfPossible();
