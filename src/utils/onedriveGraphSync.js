@@ -84,13 +84,14 @@ async function gfetch(token, url, init = {}) {
 }
 
 // Una sola vez por isolate: evita repetir DDL en cada petición/poll.
-const ensuredTables = new WeakMap();
+// Se guarda a nivel de módulo (no por objeto db) porque el binding env.DB puede
+// ser una instancia distinta en cada request y entonces el DDL se repetiría.
+let ensuredTablesPromise = null;
 
 export function ensureTables(db) {
   if (!db || typeof db.prepare !== 'function') return Promise.resolve();
-  let pending = ensuredTables.get(db);
-  if (!pending) {
-    pending = (async () => {
+  if (!ensuredTablesPromise) {
+    ensuredTablesPromise = (async () => {
       await db.prepare(`CREATE TABLE IF NOT EXISTS onedrive_auth (
         id TEXT PRIMARY KEY, refresh_token TEXT, access_token TEXT, expires_at INTEGER,
         item_id TEXT, file_name TEXT, last_web_hash TEXT, last_excel_hash TEXT, updated_at TEXT)`).run();
@@ -111,12 +112,11 @@ export function ensureTables(db) {
         try { await db.prepare(sql).run(); } catch (_) {}
       }
     })().catch((err) => {
-      ensuredTables.delete(db); // permitir reintento si falló
+      ensuredTablesPromise = null; // permitir reintento si falló
       throw err;
     });
-    ensuredTables.set(db, pending);
   }
-  return pending;
+  return ensuredTablesPromise;
 }
 async function getState(db, k) {
   const r = await db.prepare('SELECT v FROM onedrive_state WHERE k = ?').bind(k).first();

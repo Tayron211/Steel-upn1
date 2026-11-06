@@ -59,12 +59,11 @@ const SYNC_THROTTLE_MS = 120000;
 // Las columnas de tickets solo se intentan agregar una vez por isolate.
 // Antes se lanzaban 8 ALTER TABLE en CADA petición a /api/tickets (aunque
 // fallaran por "columna duplicada"), gastando consultas innecesarias en D1.
-const ticketColumnsReady = new WeakMap();
+let ticketColumnsReadyPromise = null;
 function ensureTicketColumns(db) {
   if (!db || typeof db.prepare !== 'function') return Promise.resolve();
-  let pending = ticketColumnsReady.get(db);
-  if (!pending) {
-    pending = (async () => {
+  if (!ticketColumnsReadyPromise) {
+    ticketColumnsReadyPromise = (async () => {
       const cols = [
         'usuario', 'firma_entrega', 'firma_recepcion', 'entregado_por',
         'recibido_por', 'fecha_firma', 'firma_devolucion', 'fecha_devolucion'
@@ -72,10 +71,12 @@ function ensureTicketColumns(db) {
       for (const col of cols) {
         try { await db.prepare(`ALTER TABLE tickets ADD COLUMN ${col} TEXT`).run(); } catch (_) {}
       }
-    })();
-    ticketColumnsReady.set(db, pending);
+    })().catch((err) => {
+      ticketColumnsReadyPromise = null;
+      throw err;
+    });
   }
-  return pending;
+  return ticketColumnsReadyPromise;
 }
 
 export async function onRequest(context) {
@@ -155,7 +156,7 @@ async function handleApiRequest(context) {
       const params = [];
 
       if (dia) {
-        query += ' AND UPPER(dia) = ?';
+        query += ' AND dia = ?';
         params.push(normalizeDay(dia));
       }
       if (pabellon) {

@@ -17,6 +17,8 @@ let syncTimer = null;
 let watchInterval = null;
 let isSyncingNow = false;
 let lastKnownFileModified = 0;
+let lastLocalSyncAt = 0;
+const LOCAL_SYNC_MIN_MS = 30000;
 const listeners = new Set();
 const dbChanged = createDbChangeGate({ fireOnFirst: false });
 
@@ -400,6 +402,7 @@ export async function syncAllDataToLinkedExcel() {
 
     const updatedFile = await cachedHandle.getFile();
     lastKnownFileModified = updatedFile.lastModified;
+    lastLocalSyncAt = Date.now();
 
     const nowStr = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     isSyncingNow = false;
@@ -423,13 +426,17 @@ export async function syncAllDataToLinkedExcel() {
 }
 
 export function triggerLiveExcelSync() {
-  if (syncTimer) clearTimeout(syncTimer);
+  if (!cachedHandle) return;
+  // Coalesce: como máximo una relectura completa (4 tablas) cada 30 s.
+  // Antes cada escritura releía las 4 tablas 600 ms después y, en una ronda de
+  // asistencia con varios docentes escribiendo, agotaba el límite diario de D1.
+  if (syncTimer) return;
+  const wait = Math.max(0, LOCAL_SYNC_MIN_MS - (Date.now() - lastLocalSyncAt));
   syncTimer = setTimeout(() => {
-    // El servidor ya sincroniza OneDrive por cada cambio; aquí solo el archivo local vinculado
-    if (cachedHandle) {
-      syncAllDataToLinkedExcel();
-    }
-  }, 600);
+    syncTimer = null;
+    lastLocalSyncAt = Date.now();
+    if (cachedHandle) syncAllDataToLinkedExcel();
+  }, wait);
 }
 
 export const triggerAutoSyncLinkedExcel = triggerLiveExcelSync;
