@@ -13,7 +13,8 @@ import {
   X,
   Share2,
   Copy,
-  Check
+  Check,
+  Eye
 } from 'lucide-react';
 import UpnLogo from './UpnLogo';
 import ToastBanner from './ToastBanner';
@@ -415,8 +416,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     onClick={() => setSelectedForPrint(item)}
                     className="h-8 px-3.5 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
                   >
-                    <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
-                    <span>Boleta Digital</span>
+                    <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
+                    <span>Detalles</span>
                   </button>
                 </div>
               </div>
@@ -511,11 +512,11 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         </button>
                         <button
                           onClick={() => setSelectedForPrint(item)}
-                          className="h-8 px-3 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shadow-2xs"
-                          title="Ver Boleta Digital"
+                          className="h-8 px-3 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
+                          title="Ver Detalles de la Hoja"
                         >
-                          <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
-                          <span>Boleta</span>
+                          <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
+                          <span>Detalles</span>
                         </button>
                       </td>
                     </tr>
@@ -708,84 +709,158 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
         document.body
       )}
 
-      {/* Printable Digital Card Modal (Apple Liquid Modal with React Portal) */}
-      {selectedForPrint && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-          onClick={() => setSelectedForPrint(null)}
-        >
+      {/* Modal de Detalles Completos de la Hoja de Asistencia Manual */}
+      {selectedForPrint && typeof document !== 'undefined' && (() => {
+        const isReemplazo = selectedForPrint.motivo?.includes('DOCENTE DE REEMPLAZO');
+        const suplenteMatch = selectedForPrint.motivo?.match(/DOCENTE DE REEMPLAZO \(([^)]+)\)/i);
+        const suplenteName = suplenteMatch ? suplenteMatch[1] : (selectedForPrint.detalle || '');
+
+        return createPortal(
           <div 
-            className="apple-liquid-modal dark:bg-[#0c0c10] dark:border-zinc-800 rounded-[28px] max-w-sm w-full p-6 shadow-2xl text-slate-900 dark:text-zinc-100 animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+            onClick={() => setSelectedForPrint(null)}
           >
-            <div className="text-center pb-3.5 border-b border-dashed border-slate-200 dark:border-zinc-800">
-              <UpnLogo variant="horizontal" className="justify-center mb-1" />
-              <div className="text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-zinc-200 mt-1">OPERACIONES ACADÉMICAS</div>
-              <div className="mt-2 inline-block bg-[#FDBA30]/15 border border-[#FDBA30]/40 text-slate-950 dark:text-amber-300 font-mono font-black text-sm px-3.5 py-1 rounded-xl shadow-2xs">
-                N° {selectedForPrint.codigo}
-              </div>
-            </div>
+            <div 
+              className="bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-900 dark:text-zinc-100 animate-scale-up space-y-4 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header del Modal */}
+              <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-center gap-3">
+                  <UpnLogo variant="symbol" className="w-10 h-10 shrink-0" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-black text-xs sm:text-sm bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-lg shadow-2xs">
+                        {selectedForPrint.codigo}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Hoja de Asistencia Manual
+                      </span>
+                    </div>
+                    <h3 className="text-base font-black text-slate-950 dark:text-white leading-tight mt-1">
+                      Detalles de la Hoja
+                    </h3>
+                  </div>
+                </div>
 
-            <div className="py-4 space-y-2.5 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 dark:text-zinc-400">Fecha:</span>
-                <span className="font-mono font-semibold text-slate-800 dark:text-zinc-200">{selectedForPrint.fecha}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedForPrint(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                >
+                  <X className="w-4 h-4 stroke-[2.5]" />
+                </button>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 dark:text-zinc-400">NRC:</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2 py-0.5 rounded-md">{selectedForPrint.nrc}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 dark:text-zinc-500 block text-[10px] uppercase font-bold">Docente:</span>
-                <span className="font-bold text-slate-900 dark:text-white block break-words">{selectedForPrint.docente}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 dark:text-zinc-500 block text-[10px] uppercase font-bold">Curso:</span>
-                <span className="font-medium text-slate-700 dark:text-zinc-300 block break-words">{selectedForPrint.curso}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 dark:text-zinc-500 block text-[10px] uppercase font-bold">Motivo:</span>
-                <span className="font-semibold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/80 px-2.5 py-1 rounded-lg inline-block mt-1 text-[11px] break-words">
+
+              {/* Motivo de Emisión destacado */}
+              <div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                    Motivo de Contingencia
+                  </span>
+                  <span className="text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 px-2 py-0.5 rounded-md">
+                    Operaciones Sede
+                  </span>
+                </div>
+                <div className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-100 leading-snug">
                   {selectedForPrint.motivo}
-                </span>
-              </div>
-              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex justify-between items-start text-xs text-slate-400 gap-2">
-                <span className="shrink-0 text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500">Asistente:</span>
-                <span className="font-bold text-slate-900 dark:text-white text-right break-words">{selectedForPrint.asistente || 'Operaciones Sede'}</span>
-              </div>
-            </div>
+                </div>
 
-            <div className="pt-3 border-t border-dashed border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-2">
-              <button
-                onClick={() => setSelectedForPrint(null)}
-                className="text-xs font-semibold px-3.5 py-2 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition inline-flex items-center justify-center"
-              >
-                Cerrar
-              </button>
+                {/* Si es suplente o docente de reemplazo */}
+                {isReemplazo && suplenteName && (
+                  <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2">
+                    <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 stroke-[2.4] mt-0.5" />
+                    <div className="text-xs">
+                      <span className="text-slate-600 dark:text-zinc-400 font-semibold">Docente que asume la clase: </span>
+                      <strong className="text-purple-700 dark:text-purple-300 font-black block sm:inline">{suplenteName}</strong>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              <div className="flex items-center gap-1.5">
+              {/* Grilla de Datos Académicos */}
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">NRC</span>
+                  <span className="font-mono font-black text-sm text-slate-950 dark:text-white">{selectedForPrint.nrc}</span>
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">Fecha</span>
+                  <span className="font-mono font-bold text-xs text-slate-800 dark:text-zinc-200">{selectedForPrint.fecha}</span>
+                </div>
+
+                <div className="col-span-2 p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80 space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block">Docente Titular</span>
+                  <div className="font-black text-xs sm:text-sm text-slate-950 dark:text-white break-words">
+                    {selectedForPrint.docente}
+                  </div>
+                </div>
+
+                <div className="col-span-2 p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block">Curso</span>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white break-words">
+                    {selectedForPrint.curso}
+                  </div>
+                  {selectedForPrint.carrera && (
+                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
+                      Carrera: {selectedForPrint.carrera}
+                    </div>
+                  )}
+                </div>
+
+                {selectedForPrint.aula && (
+                  <div className="p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">Aula</span>
+                    <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">{selectedForPrint.aula}</span>
+                  </div>
+                )}
+
+                <div className={`${selectedForPrint.aula ? '' : 'col-span-2'} p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80`}>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">Asistente Emisor</span>
+                  <span className="font-bold text-xs text-slate-900 dark:text-white break-words leading-tight block">
+                    {selectedForPrint.asistente || 'Operaciones Sede'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer con Acciones */}
+              <div className="pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <button
-                  onClick={() => handleCopyVoucherText(selectedForPrint)}
-                  className="inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition active:scale-95"
-                  title="Copiar texto para WhatsApp"
+                  type="button"
+                  onClick={() => setSelectedForPrint(null)}
+                  className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition flex items-center justify-center active:scale-95 order-2 sm:order-1"
                 >
-                  {copiedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
-                  <span>{copiedSuccess ? '¡Copiado!' : 'Copiar'}</span>
+                  Cerrar
                 </button>
 
-                <button
-                  onClick={() => window.print()}
-                  className="inline-flex items-center justify-center gap-1.5 text-xs font-bold px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl shadow-xs transition active:scale-95"
-                >
-                  <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
-                  <span>Imprimir</span>
-                </button>
+                <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyVoucherText(selectedForPrint)}
+                    className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700"
+                    title="Copiar texto resumen"
+                  >
+                    {copiedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
+                    <span>{copiedSuccess ? '¡Copiado!' : 'Copiar'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex-1 sm:flex-none h-10 px-4 text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
+                    title="Imprimir boleta física"
+                  >
+                    <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span>Imprimir Boleta</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        );
+      })()}
     </div>
   );
 }
