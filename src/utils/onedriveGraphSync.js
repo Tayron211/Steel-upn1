@@ -41,6 +41,28 @@ function serialToISO(v) {
   }
   return str;
 }
+function toExcelDate(v) {
+  if (v === null || v === undefined || v === '') return '';
+  if (typeof v === 'number' && v > 20000) {
+    const d = new Date(Math.round((v - 25569) * 86400000));
+    if (!Number.isNaN(d.getTime())) {
+      const dd = String(d.getUTCDate()).padStart(2, '0');
+      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const yyyy = d.getUTCFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+  }
+  const str = String(v).trim();
+  const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymd) {
+    return `${ymd[3].padStart(2, '0')}/${ymd[2].padStart(2, '0')}/${ymd[1]}`;
+  }
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    return `${dmy[1].padStart(2, '0')}/${dmy[2].padStart(2, '0')}/${dmy[3]}`;
+  }
+  return str;
+}
 function isoToSerial(s) {
   const str = String(s ?? '').trim();
   const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -76,7 +98,7 @@ function canon(type, v) {
 /* a celda de Excel */
 function toCell(type, v) {
   if (v === null || v === undefined) return '';
-  if (type === 'date') return isoToSerial(v);
+  if (type === 'date') return toExcelDate(v);
   if (type === 'time') return hhmmToFrac(v);
   if (type === 'num') return /^\d+$/.test(String(v).trim()) ? Number(v) : String(v);
   return String(v);

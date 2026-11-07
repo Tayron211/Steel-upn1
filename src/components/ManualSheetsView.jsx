@@ -290,7 +290,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
     const isReemplazo = isReemplazoSheet(item);
     const suplenteName = getSuplente(item);
 
-    let text = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\nN° Boleta: ${item.codigo}\nFecha: ${item.fecha}\nNRC: ${item.nrc}\nDocente Titular: ${item.docente}\nCurso: ${item.curso}`;
+    const fechaFmt = item.fecha && item.fecha.includes('-') ? item.fecha.split('-').reverse().join('/') : (item.fecha || '');
+    let text = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\nN° Boleta: ${item.codigo}\nFecha: ${fechaFmt}\nNRC: ${item.nrc}\nDocente Titular: ${item.docente}\nCurso: ${item.curso}`;
     if (isReemplazo && suplenteName) {
       text += `\n*Docente que Reemplaza:* ${suplenteName}`;
     }
@@ -542,18 +543,18 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
           {/* Desktop Table (Optimized Layout - Zero Truncation, Full Assistants and Courses) */}
           <div className="hidden md:block bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto relative scrollbar-thin">
-              <table className="w-full text-left text-xs min-w-[1020px] border-collapse">
+              <table className="w-full text-left text-xs min-w-[980px] border-collapse">
                 <thead className="bg-slate-50 dark:bg-[#121216] text-slate-600 dark:text-zinc-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200/90 dark:border-zinc-800">
                   <tr>
-                    <th className="py-3.5 px-3 whitespace-nowrap w-[92px] min-w-[92px]">CÓDIGO</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap w-[88px] min-w-[88px]">FECHA</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap w-[76px] min-w-[76px]">NRC</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[160px]">DOCENTE</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[180px]">CURSO / CARRERA</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[125px]">MOTIVO</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[130px]">ASISTENTE</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[150px]">DOCENTE REEMPLAZANTE</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap text-center w-[215px] min-w-[215px] sticky right-0 bg-slate-50 dark:bg-[#121216] z-20 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/90 dark:border-zinc-800">
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[85px] min-w-[85px]">CÓDIGO</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[85px] min-w-[85px]">FECHA</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[72px] min-w-[72px]">NRC</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[145px]">DOCENTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[160px]">CURSO / CARRERA</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[110px]">MOTIVO</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[115px]">ASISTENTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[130px]">DOCENTE REEMPLAZANTE</th>
+                    <th className="py-3.5 px-3 pr-4 whitespace-nowrap text-center w-[185px] min-w-[185px]">
                       ACCIONES
                     </th>
                   </tr>
@@ -570,7 +571,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
                       {/* FECHA */}
                       <td className="py-3.5 px-3 whitespace-nowrap align-top font-mono text-[11px] text-slate-700 dark:text-zinc-300 font-bold">
-                        {item.fecha}
+                        {item.fecha && item.fecha.includes('-') ? item.fecha.split('-').reverse().join('/') : item.fecha}
                       </td>
 
                       {/* NRC */}
@@ -630,12 +631,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         )}
                       </td>
 
-                      {/* Acciones (Sticky a la derecha: nunca se corta en ninguna resolución) */}
-                      <td className="py-3 px-3 whitespace-nowrap text-center align-middle w-[215px] min-w-[215px] sticky right-0 bg-white dark:bg-[#0c0c0f] group-hover:bg-slate-50 dark:group-hover:bg-[#15151a] z-10 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/80 dark:border-zinc-800 transition-colors">
+                      {/* Acciones (Columna fluida y 100% visible en cualquier pantalla) */}
+                      <td className="py-3 px-3 pr-4 whitespace-nowrap text-center align-middle w-[185px] min-w-[185px]">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleCopyVoucherText(item)}
-                            className="h-8 px-3 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shrink-0"
+                            className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shrink-0"
                             title="Copiar texto para WhatsApp"
                           >
                             <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -643,7 +644,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                           </button>
                           <button
                             onClick={() => setSelectedForPrint(item)}
-                            className="h-8 px-3 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs shrink-0"
+                            className="h-8 px-2.5 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs shrink-0"
                             title="Ver Detalles de la Hoja"
                           >
                             <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
@@ -983,7 +984,9 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
                 <div className="p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80">
                   <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">Fecha</span>
-                  <span className="font-mono font-bold text-xs text-slate-800 dark:text-zinc-200">{selectedForPrint.fecha}</span>
+                  <span className="font-mono font-bold text-xs text-slate-800 dark:text-zinc-200">
+                    {selectedForPrint.fecha && selectedForPrint.fecha.includes('-') ? selectedForPrint.fecha.split('-').reverse().join('/') : selectedForPrint.fecha}
+                  </span>
                 </div>
 
                 <div className="col-span-2 p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80 space-y-0.5">
