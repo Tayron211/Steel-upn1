@@ -208,7 +208,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [excelSheets, setExcelSheets] = useState([]);
   const [selectedSheet, setSelectedSheet] = useState(''); // '' = Todas las semanas
-  const [syncingExcel, setSyncingExcel] = useState(false);
 
   // Vista: 'RESERVAS' (Reservas registradas) | 'FREE_ROOMS' (Aulas libres hoy y próximos días)
   const [viewMode, setViewMode] = useState('RESERVAS');
@@ -259,7 +258,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   // Opciones de semanas formateadas para el selector estilizado Apple Liquid
   const sheetOptions = useMemo(() => [
-    { value: '', label: 'Todas las semanas / hojas de Excel' },
+    { value: '', label: 'Todas las semanas' },
     ...excelSheets.map((sh) => ({
       value: sh.name,
       label: sh.name + (sh.isCurrent ? ' ⭐ (Semana Actual)' : '')
@@ -347,28 +346,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSyncReservasExcel = async () => {
-    if (syncingExcel) return;
-    setSyncingExcel(true);
-    setToastMessage('⏳ Sincronizando con Excel de OneDrive...');
-    try {
-      const res = await fetch('/api/reservations/pull', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sheet: selectedSheet || null })
-      });
-      const j = await res.json();
-      await loadReservasAndRooms();
-      setToastMessage(`✅ Sincronizado: ${j.imported ?? 0} reservas actualizadas`);
-    } catch (err) {
-      console.error(err);
-      setToastMessage('❌ Error al sincronizar con OneDrive');
-    } finally {
-      setSyncingExcel(false);
-      setTimeout(() => setToastMessage(''), 3000);
     }
   };
 
@@ -829,21 +806,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
             <button
               type="button"
-              onClick={handleSyncReservasExcel}
-              disabled={syncingExcel}
-              className={`h-9 px-3 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 border ${
-                syncingExcel
-                  ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
-                  : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:text-amber-600 dark:hover:text-amber-400 border-slate-200/90 dark:border-zinc-700 shadow-2xs'
-              }`}
-              title="Sincronizar reservas con Excel de OneDrive (RESERVAS 2026 - TAY.xlsx)"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 stroke-[2.3] ${syncingExcel ? 'animate-spin text-amber-600' : ''}`} />
-              <span>{syncingExcel ? 'Sincronizando...' : 'Sincronizar Excel'}</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => {
                 resetForm();
                 setIsModalOpen(true);
@@ -856,12 +818,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           </div>
         </div>
 
-        {/* Selector de Hoja Semanal de Excel (Adopta las 50 hojas de RESERVAS 2026 - TAY.xlsx) */}
+        {/* Selector de Semanas */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 shrink-0 inline-flex items-center gap-1">
               <CalendarDays className="w-3.5 h-3.5 text-amber-500 stroke-[2.3]" />
-              <span>Hoja Excel:</span>
+              <span>Semana:</span>
             </span>
             <div className="flex-1 sm:w-80">
               <CustomSelect
@@ -870,7 +832,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   setSelectedSheet(val);
                   setSelectedDayOffset(null);
                 }}
-                placeholder="Todas las semanas / hojas de Excel"
+                placeholder="Todas las semanas"
                 options={sheetOptions}
                 className="h-8.5 rounded-xl text-xs font-bold"
               />
@@ -879,12 +841,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
           {selectedSheet && (
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-200 dark:border-amber-800/60 self-start sm:self-auto shrink-0">
-              <span>Filtrando hoja: <strong>{selectedSheet}</strong></span>
+              <span>Semana: <strong>{selectedSheet}</strong></span>
               <button
                 type="button"
                 onClick={() => setSelectedSheet('')}
                 className="text-amber-700 dark:text-amber-400 hover:text-amber-950 dark:hover:text-white p-0.5"
-                title="Limpiar filtro de hoja"
+                title="Limpiar filtro de semana"
               >
                 <X className="w-3 h-3 stroke-[2.5]" />
               </button>
