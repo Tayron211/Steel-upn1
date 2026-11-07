@@ -93,7 +93,6 @@ export async function onRequest(context) {
       p.startsWith('/api/') &&
       !p.startsWith('/api/onedrive/')
     ) {
-      const syncUrl = new URL('/api/onedrive/sync', request.url);
       context.waitUntil(
         (async () => {
           try {
@@ -102,13 +101,11 @@ export async function onRequest(context) {
             const nowMs = String(Date.now());
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
-            const lp = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_push'").first();
-            if (!lp || Date.now() - Number(lp.v || 0) >= SYNC_THROTTLE_MS) {
-              // Marcar antes de disparar: evita ráfagas de sincronizaciones concurrentes
-              await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_push', ?)").bind(nowMs).run();
-              await fetch(syncUrl.toString(), { method: 'POST' });
-            }
-          } catch (_) {}
+            // Disparar sincronización directa a OneDrive (pushToExcel maneja lock, snapshot y dirty)
+            await pushToExcel(db);
+          } catch (err) {
+            console.error('Auto sync to OneDrive error:', err);
+          }
         })()
       );
     }

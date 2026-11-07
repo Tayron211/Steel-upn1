@@ -505,9 +505,20 @@ async function pullRecords(db, specName, used) {
   }
 
   // Si se eliminaron filas en el Excel, eliminarlas de la base de datos
-  if (recs.length > 0 || (used.values && used.values.length <= hdr.row + 1)) {
+  // REGLA CRÍTICA: Solo eliminar filas que YA EXISTÍAN previamente en el snapshot de Excel (ids:${specName}).
+  // Las filas nuevas creadas en la app NO están en el snapshot aún y NUNCA deben ser borradas aquí.
+  let snapshotIds = new Set();
+  try {
+    const rawSnap = await getState(db, `ids:${specName}`);
+    if (rawSnap) {
+      const arr = JSON.parse(rawSnap);
+      if (Array.isArray(arr)) snapshotIds = new Set(arr);
+    }
+  } catch (_) {}
+
+  if (snapshotIds.size > 0) {
     for (const r of dbRows) {
-      if (!claimed.has(r.id)) {
+      if (snapshotIds.has(r.id) && !claimed.has(r.id)) {
         changes++;
         stmts.push(db.prepare(`DELETE FROM ${spec.table} WHERE id = ?`).bind(r.id));
       }

@@ -218,6 +218,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       resetForm();
       setToastMessage(`✅ Hoja ${json.data?.codigo || cleanCode} registrada correctamente`);
       setTimeout(() => setToastMessage(''), 3000);
+      // Sincronizar de inmediato con OneDrive
+      fetch('/api/onedrive/sync', { method: 'POST' }).catch(() => {});
     } catch (err) {
       console.error(err);
       alert('Error de conexión al registrar la hoja. Intente nuevamente.');
