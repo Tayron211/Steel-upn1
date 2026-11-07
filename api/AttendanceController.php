@@ -49,8 +49,9 @@ class AttendanceController {
         }
 
         if (!empty($search)) {
-            $sql .= " AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR nrc LIKE ?)";
+            $sql .= " AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR LOWER(carrera) LIKE ? OR nrc LIKE ?)";
             $s = '%' . strtolower($search) . '%';
+            $params[] = $s;
             $params[] = $s;
             $params[] = $s;
             $params[] = $s;

@@ -58,6 +58,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'PUNTUAL' | 'TARDE' | 'FALTA'
   const [viewMode, setViewMode] = useState('CLASSES'); // 'CLASSES' | 'FREE_ROOMS'
   const [search, setSearch] = useState(initialSearch || '');
+  const [selectedCarrera, setSelectedCarrera] = useState('');
+
+  // Carreras únicas detectadas en la data cargada (para filtro rápido por carrera/facultad)
+  const carrerasUnicas = useMemo(() => {
+    const set = new Set();
+    for (const c of data) {
+      const car = String(c.carrera || '').trim();
+      if (car) set.add(car);
+    }
+    return [...set].sort();
+  }, [data]);
 
   // Función para alternar selección múltiple de pisos
   const handleTogglePiso = (val) => {
@@ -503,6 +514,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   // Filter items by statusFilter when user clicks on counter pills
   const displayedItems = useMemo(() => {
     return data.filter(c => {
+      if (selectedCarrera && String(c.carrera || '').trim() !== selectedCarrera) return false;
       if (statusFilter === 'ALL') return true;
       if (statusFilter === 'PENDING' || statusFilter === 'PENDIENTE') {
         return c.asistencia === 'PENDIENTE' || (!c.asistencia && !c.puntualidad);
@@ -512,7 +524,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       if (statusFilter === 'FALTA') return c.asistencia === 'NO';
       return true;
     });
-  }, [data, statusFilter]);
+  }, [data, statusFilter, selectedCarrera]);
 
   // Compute Free Classrooms (Aulas Libres en este momento)
   const freeRooms = useMemo(() => {
@@ -623,6 +635,40 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             })}
           </div>
         </div>
+
+        {/* Fila 2b: Filtro rápido por Carrera / Facultad */}
+        {carrerasUnicas.length > 0 && (
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">Carrera:</span>
+            <button
+              type="button"
+              onClick={() => setSelectedCarrera('')}
+              className={`h-6 px-2 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 ${selectedCarrera === ''
+                ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
+                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+              }`}
+            >
+              Todas
+            </button>
+            {carrerasUnicas.map((car) => {
+              const isSel = selectedCarrera === car;
+              return (
+                <button
+                  key={car}
+                  type="button"
+                  onClick={() => setSelectedCarrera(isSel ? '' : car)}
+                  className={`h-6 px-2 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${isSel
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                  }`}
+                  title={car}
+                >
+                  {car.length > 14 ? car.slice(0, 14) + '…' : car}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Fila 3: Modos Rápidos + Contadores KPI de Estado en 1 Sola Línea */}
         <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-100 dark:border-zinc-800">
@@ -1015,6 +1061,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     </span>
                   </div>
 
+                  {item.carrera && (
+                    <div className="flex items-center gap-2 text-[10px] font-bold mt-1">
+                      <span className="bg-slate-50 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-300 px-2 py-0.5 rounded border border-slate-200/80 dark:border-zinc-700">
+                        Carrera
+                      </span>
+                      <span className="text-slate-700 dark:text-zinc-200 break-words leading-tight" title={item.carrera}>
+                        {item.carrera}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
                     <span className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-400 shrink-0" />
@@ -1109,7 +1166,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               </span>
               <div className="min-w-0">
                 <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{selectedClassOptions.docente}</div>
-                <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}</div>
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}{selectedClassOptions.carrera ? ' · ' + selectedClassOptions.carrera : ''}</div>
               </div>
             </div>
             <button

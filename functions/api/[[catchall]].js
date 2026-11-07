@@ -201,9 +201,9 @@ async function handleApiRequest(context) {
         params.push(nrc, nrc, `%${nrc}%`);
       }
       if (search) {
-        query += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR CAST(nrc AS TEXT) LIKE ?)';
+        query += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR LOWER(carrera) LIKE ? OR CAST(nrc AS TEXT) LIKE ?)';
         const s = `%${search.toLowerCase()}%`;
-        params.push(s, s, s, s);
+        params.push(s, s, s, s, s);
       }
 
       query += ' ORDER BY hora_inicio_prog ASC, aula ASC';
