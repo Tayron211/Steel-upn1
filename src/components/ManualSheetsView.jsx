@@ -80,7 +80,7 @@ const isCodeDuplicate = (code, currentSheets) => {
   });
 };
 
-export default function ManualSheetsView({ initialClassData, onClearInitialClass }) {
+export default function ManualSheetsView({ initialClassData, onClearInitialClass, initialOpenTrigger = null }) {
   const [sheets, setSheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -91,6 +91,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   const [toastMessage, setToastMessage] = useState('');
   const [nrcLookupLoading, setNrcLookupLoading] = useState(false);
   const [nrcMatchFound, setNrcMatchFound] = useState(null);
+
+  useEffect(() => {
+    if (initialOpenTrigger) {
+      handleOpenNewModal();
+    }
+  }, [initialOpenTrigger]);
 
   const [formData, setFormData] = useState({
     codigo: '',

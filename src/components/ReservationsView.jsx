@@ -15,7 +15,8 @@ import {
   Flame,
   X,
   Check,
-  ChevronDown
+  ChevronDown,
+  RefreshCw
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -198,13 +199,16 @@ const timeToMins = (tStr) => {
   return (h || 0) * 60 + (m || 0);
 };
 
-export default function ReservationsView() {
+export default function ReservationsView({ initialOpenTrigger = null }) {
   const [reservas, setReservas] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [dayClasses, setDayClasses] = useState([]);
   const [modalDayClasses, setModalDayClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [excelSheets, setExcelSheets] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState(''); // '' = Todas las semanas
+  const [syncingExcel, setSyncingExcel] = useState(false);
 
   // Vista: 'RESERVAS' (Reservas registradas) | 'FREE_ROOMS' (Aulas libres hoy y próximos días)
   const [viewMode, setViewMode] = useState('RESERVAS');
@@ -223,6 +227,29 @@ export default function ReservationsView() {
   const [pickerPabellon, setPickerPabellon] = useState(''); // '' | 'A' | 'B'
   const [pickerPiso, setPickerPiso] = useState(''); // '' | 'SOT' | '1ER PISO' | ...
   const [toastMessage, setToastMessage] = useState('');
+
+  const MONTHS_ABBR = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+  const computeTargetSheet = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = String(dateStr).slice(0, 10).split(/[\/\-]/).map(Number);
+    let y = parts[0], m = parts[1], d = parts[2];
+    if (parts[0] < 32 && parts[2] > 1900) { d = parts[0]; m = parts[1]; y = parts[2]; }
+    const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    if (Number.isNaN(dt.getTime())) return '';
+    const day = dt.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(dt); mon.setUTCDate(mon.getUTCDate() + diff);
+    const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
+    return `${String(mon.getUTCDate()).padStart(2, '0')} ${MONTHS_ABBR[mon.getUTCMonth()]} - ${String(sun.getUTCDate()).padStart(2, '0')} ${MONTHS_ABBR[sun.getUTCMonth()]}`;
+  };
+
+  useEffect(() => {
+    if (initialOpenTrigger) {
+      resetForm();
+      setIsModalOpen(true);
+    }
+  }, [initialOpenTrigger]);
 
   // Generar los próximos 7 días (Hoy + 6 días siguientes)
   const upcomingDays = useMemo(() => {
@@ -266,8 +293,10 @@ export default function ReservationsView() {
     aula: 'A201',
     ubicacion: '2DO PISO - A',
     docente: '',
+    motivo: '',
     detalle: '',
-    usuario: 'Operaciones',
+    usuario: 'ALESSANDRO',
+    obs: '',
     prioridad: 'NORMAL'
   });
 
@@ -284,20 +313,47 @@ export default function ReservationsView() {
   const loadReservasAndRooms = async () => {
     setLoading(true);
     try {
-      const [resReservas, resRooms] = await Promise.all([
-        fetch('/api/reservations'),
-        fetch('/api/rooms')
+      const [resReservas, resRooms, resSheets] = await Promise.all([
+        fetch(selectedSheet ? `/api/reservations?sheet=${encodeURIComponent(selectedSheet)}` : '/api/reservations'),
+        fetch('/api/rooms'),
+        fetch('/api/reservations/sheets')
       ]);
-      const [jsonReservas, jsonRooms] = await Promise.all([
+      const [jsonReservas, jsonRooms, jsonSheets] = await Promise.all([
         resReservas.json(),
-        resRooms.json()
+        resRooms.json(),
+        resSheets.json()
       ]);
       if (jsonReservas.success) setReservas(jsonReservas.data || []);
       if (jsonRooms.success) setRooms(jsonRooms.data || []);
+      if (jsonSheets.success && Array.isArray(jsonSheets.data)) {
+        setExcelSheets(jsonSheets.data);
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncReservasExcel = async () => {
+    if (syncingExcel) return;
+    setSyncingExcel(true);
+    setToastMessage('⏳ Sincronizando con Excel de OneDrive...');
+    try {
+      const res = await fetch('/api/reservations/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sheet: selectedSheet || null })
+      });
+      const j = await res.json();
+      await loadReservasAndRooms();
+      setToastMessage(`✅ Sincronizado: ${j.imported ?? 0} reservas actualizadas`);
+    } catch (err) {
+      console.error(err);
+      setToastMessage('❌ Error al sincronizar con OneDrive');
+    } finally {
+      setSyncingExcel(false);
+      setTimeout(() => setToastMessage(''), 3000);
     }
   };
 
@@ -473,13 +529,19 @@ export default function ReservationsView() {
       const computedUbicacion = rm
         ? `${rm.piso} - ${rm.pabellon}`
         : `${deducePisoFromAula(cleanAula) || 'SEDE'} - ${cleanAula.startsWith('B') ? 'B' : 'A'}`;
+      const computedSheet = computeTargetSheet(formData.fecha);
 
       const payload = {
         ...formData,
         aula: cleanAula,
         dia: computedDia,
         mes: computedMes,
-        ubicacion: computedUbicacion
+        ubicacion: computedUbicacion,
+        motivo: (formData.motivo || formData.detalle || 'RESERVA DE AULA').toUpperCase().trim(),
+        detalle: (formData.motivo || formData.detalle || 'RESERVA DE AULA').toUpperCase().trim(),
+        usuario: (formData.usuario || 'ALESSANDRO').toUpperCase().trim(),
+        obs: (formData.obs || '').trim(),
+        hoja: computedSheet
       };
 
       const res = await fetch('/api/reservations', {
@@ -489,9 +551,9 @@ export default function ReservationsView() {
       });
       const json = await res.json();
       if (json.success) {
-        setReservas(prev => [json.data, ...prev]);
-        setToastMessage(`✅ Reserva en Aula ${cleanAula} registrada (${payload.inicio} - ${payload.final})`);
-        setTimeout(() => setToastMessage(''), 3000);
+        setReservas(prev => [json.data, ...prev.filter(r => r.id !== json.data.id)]);
+        setToastMessage(`✅ Guardado en Excel: Hoja "${computedSheet}" (Aula ${cleanAula})`);
+        setTimeout(() => setToastMessage(''), 3500);
         setIsModalOpen(false);
         resetForm();
       } else {
@@ -516,8 +578,10 @@ export default function ReservationsView() {
       aula: 'A201',
       ubicacion: '2DO PISO - A',
       docente: '',
+      motivo: '',
       detalle: '',
-      usuario: 'Operaciones',
+      usuario: 'ALESSANDRO',
+      obs: '',
       prioridad: 'NORMAL'
     });
   };
@@ -534,28 +598,39 @@ export default function ReservationsView() {
       aula: room.abrv,
       ubicacion: `${room.piso} - ${room.pabellon}`,
       docente: '',
+      motivo: '',
       detalle: '',
-      usuario: 'Operaciones',
+      usuario: 'ALESSANDRO',
+      obs: '',
       prioridad: 'NORMAL'
     });
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('¿Seguro que deseas cancelar esta reserva?')) return;
+    if (!confirm('¿Seguro que deseas cancelar esta reserva? Se eliminará de la app y del Excel en OneDrive.')) return;
     setReservas(prev => prev.filter(r => r.id !== id));
-    setToastMessage('✅ Reserva cancelada');
-    setTimeout(() => setToastMessage(''), 3000);
+    setToastMessage('✅ Reserva cancelada y fila limpiada en Excel');
+    setTimeout(() => setToastMessage(''), 3500);
     await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
   };
 
-  // Filtrado de Reservas Registradas (por Día/Fecha, Pabellón, Piso, Hora y Texto)
+  // Filtrado de Reservas Registradas (por Hoja Excel, Día/Fecha, Pabellón, Piso, Hora y Texto)
   const filtered = useMemo(() => {
     return reservas.filter(r => {
       const code = (r.aula || '').toUpperCase().trim();
       const rm = roomMap[code];
       const pab = rm?.pabellon || (code.startsWith('B') ? 'B' : (code.startsWith('A') ? 'A' : ''));
       const pisoStr = rm?.piso || r.ubicacion || deducePisoFromAula(code);
+
+      // Filtro por Hoja Excel
+      if (selectedSheet) {
+        const targetWeek = selectedSheet.trim().toUpperCase();
+        const rowHoja = (r.hoja || computeTargetSheet(r.fecha) || '').trim().toUpperCase();
+        if (rowHoja !== targetWeek && !rowHoja.includes(targetWeek) && !targetWeek.includes(rowHoja)) {
+          return false;
+        }
+      }
 
       if (selectedPabellon && pab !== selectedPabellon) return false;
       if (selectedPisos.length > 0) {
@@ -577,12 +652,16 @@ export default function ReservationsView() {
         return (
           (r.aula && r.aula.toLowerCase().includes(q)) ||
           (r.docente && r.docente.toLowerCase().includes(q)) ||
-          (r.detalle && r.detalle.toLowerCase().includes(q))
+          (r.motivo && r.motivo.toLowerCase().includes(q)) ||
+          (r.detalle && r.detalle.toLowerCase().includes(q)) ||
+          (r.usuario && r.usuario.toLowerCase().includes(q)) ||
+          (r.obs && r.obs.toLowerCase().includes(q)) ||
+          (r.hoja && r.hoja.toLowerCase().includes(q))
         );
       }
       return true;
     });
-  }, [reservas, roomMap, selectedPabellon, selectedPisos, selectedDayOffset, upcomingDays, search]);
+  }, [reservas, selectedSheet, roomMap, selectedPabellon, selectedPisos, selectedDayOffset, upcomingDays, search]);
 
   // Cálculo de Aulas Libres para Hoy y los Próximos Días
   const freeRooms = useMemo(() => {
@@ -735,6 +814,21 @@ export default function ReservationsView() {
 
             <button
               type="button"
+              onClick={handleSyncReservasExcel}
+              disabled={syncingExcel}
+              className={`h-9 px-3 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 border ${
+                syncingExcel
+                  ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                  : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:text-amber-600 dark:hover:text-amber-400 border-slate-200/90 dark:border-zinc-700 shadow-2xs'
+              }`}
+              title="Sincronizar reservas con Excel de OneDrive (RESERVAS 2026 - TAY.xlsx)"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 stroke-[2.3] ${syncingExcel ? 'animate-spin text-amber-600' : ''}`} />
+              <span>{syncingExcel ? 'Sincronizando...' : 'Sincronizar Excel'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 resetForm();
                 setIsModalOpen(true);
@@ -745,6 +839,48 @@ export default function ReservationsView() {
               <span>Nueva Reserva</span>
             </button>
           </div>
+        </div>
+
+        {/* Selector de Hoja Semanal de Excel (Adopta las 50 hojas de RESERVAS 2026 - TAY.xlsx) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 shrink-0 inline-flex items-center gap-1">
+              <CalendarDays className="w-3.5 h-3.5 text-amber-500 stroke-[2.3]" />
+              <span>Hoja Excel:</span>
+            </span>
+            <div className="relative flex-1 sm:w-72">
+              <select
+                value={selectedSheet}
+                onChange={(e) => {
+                  setSelectedSheet(e.target.value);
+                  setSelectedDayOffset(null);
+                }}
+                className="w-full h-8 pl-2.5 pr-8 text-xs font-bold rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 appearance-none cursor-pointer truncate"
+              >
+                <option value="">Todas las semanas / hojas de Excel</option>
+                {excelSheets.map((sh) => (
+                  <option key={sh.name} value={sh.name}>
+                    {sh.name} {sh.isCurrent ? '⭐ (Semana Actual)' : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-[2.5]" />
+            </div>
+          </div>
+
+          {selectedSheet && (
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-200 dark:border-amber-800/60 self-start sm:self-auto shrink-0">
+              <span>Filtrando hoja: <strong>{selectedSheet}</strong></span>
+              <button
+                type="button"
+                onClick={() => setSelectedSheet('')}
+                className="text-amber-700 dark:text-amber-400 hover:text-amber-950 dark:hover:text-white p-0.5"
+                title="Limpiar filtro de hoja"
+              >
+                <X className="w-3 h-3 stroke-[2.5]" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Fila 1: Selector de Hoy y Próximos Días */}
@@ -1087,16 +1223,19 @@ export default function ReservationsView() {
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight">
+                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                        <span className="text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0">
                           {r.aula}
                         </span>
-                        <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
                           {displayUbicacion}
+                        </span>
+                        <span className="text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 px-2 py-0.5 rounded-lg shrink-0">
+                          📄 {r.hoja || computeTargetSheet(r.fecha)}
                         </span>
                       </div>
 
-                      <span className={`inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      <span className={`inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
                         isImportante 
                           ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800/80' 
                           : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-800'
@@ -1121,9 +1260,14 @@ export default function ReservationsView() {
                         <User className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 stroke-[2.2] shrink-0 mt-0.5" />
                         <span className="break-words leading-tight">{r.docente || 'Solicitante no especificado'}</span>
                       </div>
-                      <p className="text-[11px] text-slate-600 dark:text-zinc-400 pl-5 font-medium leading-relaxed break-words" title={r.detalle || r.motivo}>
-                        {r.detalle || r.motivo || 'Sin detalle de actividad.'}
+                      <p className="text-[11px] text-slate-600 dark:text-zinc-400 pl-5 font-semibold leading-relaxed break-words" title={r.motivo || r.detalle}>
+                        {r.motivo || r.detalle || 'Sin detalle de actividad.'}
                       </p>
+                      {r.obs && (
+                        <div className="text-[11px] text-amber-900 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/40 p-2 rounded-xl border border-amber-200/60 dark:border-amber-800/40 ml-5 font-medium">
+                          <strong className="font-bold">OBS:</strong> {r.obs}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1254,15 +1398,37 @@ export default function ReservationsView() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Detalle / Motivo *</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Motivo / Actividad *</label>
                 <textarea
-                  rows="2.5"
+                  rows="2"
                   required
-                  value={formData.detalle}
-                  onChange={(e) => setFormData({ ...formData, detalle: e.target.value })}
-                  placeholder="Ej: Uso de laboratorio para taller práctico de arquitectura..."
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
+                  value={formData.motivo || formData.detalle}
+                  onChange={(e) => setFormData({ ...formData, motivo: e.target.value, detalle: e.target.value })}
+                  placeholder="Ej: CHARLA PARA PADRES, CAS DE DIRECCIÓN ACADÉMICA..."
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none uppercase font-semibold"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Observaciones (OBS) - Opcional</label>
+                <input
+                  type="text"
+                  value={formData.obs || ''}
+                  onChange={(e) => setFormData({ ...formData, obs: e.target.value })}
+                  placeholder="Observaciones adicionales para la columna OBS en Excel..."
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                />
+              </div>
+
+              {/* Indicador de Hoja y Archivo de Destino en OneDrive */}
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-2.5 flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300 font-bold min-w-0">
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.5] shrink-0" />
+                  <span className="truncate">Hoja de destino en Excel:</span>
+                </div>
+                <span className="font-mono font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-lg border border-emerald-300/60 dark:border-emerald-700/60 shrink-0">
+                  {computeTargetSheet(formData.fecha) || 'Calculando...'}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -1279,12 +1445,12 @@ export default function ReservationsView() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Registrado por</label>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Registrado por (Usuario)</label>
                   <input
                     type="text"
                     value={formData.usuario}
                     onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium uppercase"
                   />
                 </div>
               </div>

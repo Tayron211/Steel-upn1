@@ -117,9 +117,11 @@ async function gfetch(token, url, init = {}) {
   return { ok: res.ok, status: res.status, json };
 }
 
-// Tablas e índices ya creados de forma permanente en Cloudflare D1
-export function ensureTables(db) {
-  return Promise.resolve();
+// Tablas e índices para Cloudflare D1
+export async function ensureTables(db) {
+  try { await db.prepare('ALTER TABLE reservas ADD COLUMN motivo TEXT').run(); } catch (_) {}
+  try { await db.prepare('ALTER TABLE reservas ADD COLUMN obs TEXT').run(); } catch (_) {}
+  try { await db.prepare('ALTER TABLE reservas ADD COLUMN hoja TEXT').run(); } catch (_) {}
 }
 async function getState(db, k) {
   const r = await db.prepare('SELECT v FROM onedrive_state WHERE k = ?').bind(k).first();
@@ -582,7 +584,7 @@ export async function pullFromExcel(db, token, itemId) {
   let total = 0;
   const as = await loadUsed(token, itemId, 'CONTROL ASISTENCIA');
   if (as) total += await pullAsistencia(db, as);
-  for (const name of ['tickets', 'manuales', 'reservas']) {
+  for (const name of ['tickets', 'manuales']) {
     const used = await loadUsed(token, itemId, SPECS[name].sheet);
     if (used) total += await pullRecords(db, name, used);
   }
@@ -780,30 +782,72 @@ async function withLock(db, name, fn) {
   }
 }
 
-/** Excel -> BD solo si el Excel fue modificado externamente desde la última sincronización */
+/** Excel -> BD si CUALQUIERA de los dos Excel (CONTROL DOCENTE o RESERVAS 2026) fue modificado externamente */
 export async function pullIfExcelChanged(db) {
   await ensureTables(db);
   const acc = await getAccess(db);
   if (!acc) return { success: false, connected: false };
   const { token, row } = acc;
-  const itemId = row.item_id;
-  if (!itemId) return { success: false, message: 'Sin archivo vinculado' };
-  const mod = await itemMod(token, itemId);
-  const last = await getState(db, 'excel_mod');
-  if (!last) {
-    await setState(db, 'excel_mod', mod);
-    return { success: true, pulled: false, baseline: true };
+  const controlId = row.item_id;
+  const resTarget = await findReservasTarget(token);
+  const reservasId = resTarget?.id;
+
+  const [modControl, modReservas] = await Promise.all([
+    controlId ? itemMod(token, controlId) : Promise.resolve(null),
+    reservasId ? itemMod(token, reservasId) : Promise.resolve(null)
+  ]);
+
+  const lastControl = (await getState(db, 'excel_mod_control')) || (await getState(db, 'excel_mod'));
+  const lastReservas = await getState(db, 'excel_mod_reservas');
+
+  if (!lastControl && modControl) await setState(db, 'excel_mod_control', modControl);
+  if (!lastReservas && modReservas) await setState(db, 'excel_mod_reservas', modReservas);
+
+  const controlChanged = Boolean(modControl && lastControl && modControl !== lastControl);
+  const reservasChanged = Boolean(modReservas && lastReservas && modReservas !== lastReservas);
+
+  if (!controlChanged && !reservasChanged) {
+    return { success: true, pulled: false };
   }
-  if (!mod || mod === last) return { success: true, pulled: false };
+
   return withLock(db, 'sync', async () => {
-    const changes = await pullFromExcel(db, token, itemId);
-    await setState(db, 'excel_mod', mod);
-    if (changes > 0) await markDbWrite(db); // el pull escribió filas: avisar a los clientes
-    return { success: true, pulled: true, changes };
+    let totalChanges = 0;
+    if (controlChanged && controlId) {
+      try {
+        const changes = await pullFromExcel(db, token, controlId);
+        totalChanges += changes;
+        await setState(db, 'excel_mod_control', modControl);
+        await setState(db, 'excel_mod', modControl);
+      } catch (err) {
+        console.error('Error pulling Control Docente:', err);
+      }
+    }
+
+    if (reservasChanged && reservasId) {
+      try {
+        const resPull = await pullReservationsFromExcel(db);
+        totalChanges += (resPull.imported || 0);
+        await setState(db, 'excel_mod_reservas', modReservas);
+      } catch (err) {
+        console.error('Error pulling Reservas:', err);
+      }
+    }
+
+    if (totalChanges > 0) {
+      await markDbWrite(db);
+    }
+
+    return { 
+      success: true, 
+      pulled: true, 
+      changes: totalChanges, 
+      controlChanged, 
+      reservasChanged 
+    };
   });
 }
 
-/** BD -> Excel (todos los archivos CONTROL DOCENTE*.xlsx). Antes importa cambios hechos en el Excel. */
+/** BD -> Excel (sincroniza AMBOS archivos: CONTROL DOCENTE y RESERVAS 2026 en OneDrive) */
 export async function pushToExcel(db) {
   await ensureTables(db);
   const acc = await getAccess(db);
@@ -817,29 +861,37 @@ export async function pushToExcel(db) {
       await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
     }
 
-    // 1) Sincronizar primero Excel -> BD para importar ediciones y eliminaciones hechas en el archivo
+    // 1) Sincronizar primero Excel -> BD de ambos archivos
     let pulled = 0;
     try {
-      pulled = await pullFromExcel(db, token, primary.id);
-      if (pulled > 0) await markDbWrite(db); // hubo Excel -> BD: avisar a los clientes
+      pulled += await pullFromExcel(db, token, primary.id);
     } catch (e) {
-      console.error('Error importando desde Excel:', e);
+      console.error('Error importando desde Control Docente:', e);
     }
 
-    // 2) BD -> Excel (una sola lectura por tabla, compartida entre todos los archivos destino)
-    const [asRes, ticketsRes, manualesRes, reservasRes] = await Promise.all([
+    let reservasPulled = 0;
+    try {
+      const resPull = await pullReservationsFromExcel(db);
+      reservasPulled = resPull.imported || 0;
+      pulled += reservasPulled;
+    } catch (e) {
+      console.error('Error importando desde Reservas:', e);
+    }
+
+    if (pulled > 0) await markDbWrite(db);
+
+    // 2) BD -> Excel (CONTROL DOCENTE: asistencia, tickets, manuales)
+    const [asRes, ticketsRes, manualesRes] = await Promise.all([
       db.prepare(
         'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
       ).all(),
       db.prepare(SPECS.tickets.select).all(),
-      db.prepare(SPECS.manuales.select).all(),
-      db.prepare(SPECS.reservas.select).all()
+      db.prepare(SPECS.manuales.select).all()
     ]);
     const asRows = asRes.results || [];
     const preRows = {
       tickets: ticketsRes.results || [],
-      manuales: manualesRes.results || [],
-      reservas: reservasRes.results || []
+      manuales: manualesRes.results || []
     };
     const nrcMap = new Map();
     const courseMap = new Map();
@@ -866,15 +918,37 @@ export async function pushToExcel(db) {
         file: t.name,
         asistencia: await pushAsistencia(db, token, t.id, asRows),
         tickets: await pushRecords(db, token, t.id, 'tickets', ctx, isPrimary, preRows.tickets),
-        manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary, preRows.manuales),
-        reservas: await pushRecords(db, token, t.id, 'reservas', ctx, isPrimary, preRows.reservas)
+        manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary, preRows.manuales)
       };
       report.push(r);
     }
-    await setState(db, 'excel_mod', await itemMod(token, primary.id));
+
+    // Actualizar timestamps de modificación de ambos archivos
+    const resTarget = await findReservasTarget(token);
+    const [modControl, modReservas] = await Promise.all([
+      itemMod(token, primary.id),
+      resTarget?.id ? itemMod(token, resTarget.id) : null
+    ]);
+
+    if (modControl) {
+      await setState(db, 'excel_mod', modControl);
+      await setState(db, 'excel_mod_control', modControl);
+    }
+    if (modReservas) {
+      await setState(db, 'excel_mod_reservas', modReservas);
+    }
     await setState(db, 'last_push', String(Date.now()));
     await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
-    return { success: true, connected: true, pulled, filesUpdated: report, message: 'Sincronizado con OneDrive' };
+
+    return { 
+      success: true, 
+      connected: true, 
+      pulled, 
+      reservasPulled,
+      filesUpdated: report, 
+      reservasFile: resTarget?.name || 'RESERVAS 2026 - TAY.xlsx',
+      message: 'Ambos archivos de OneDrive sincronizados' 
+    };
   };
 
   const result = await withLock(db, 'sync', async () => {
@@ -891,4 +965,453 @@ export async function pushToExcel(db) {
     return { success: true, queued: true };
   }
   return result;
+}
+
+/* ==========================================================================
+   SINCRONIZACIÓN EXCLUSIVA PARA RESERVAS 2026 - TAY.xlsx
+   Estructura:
+   - ~50 hojas semanales nombradas "DD MMM - DD MMM" (ej. "05 ENE - 11 ENE")
+   - Encabezado en fila 10 (idx 9):
+     [FECHA, DIA, INICIO, FINAL, AULA, UBICACIÓN, DOCENTE, MOTIVO, USUARIO, OBS]
+   ========================================================================== */
+export const RESERVAS_ITEM_ID = '01VNV6AXCOCHOMFZMOSFBKCRQ6CQPHKWUG';
+export const RESERVAS_MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+export const SPANISH_DAYS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+
+export const MONTH_MAP = {
+  ENE: 0, FEB: 1, MAR: 2, ABR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AGO: 7, SEP: 8, OCT: 9, NOV: 10, DIC: 11
+};
+
+export const DAY_OFFSETS = {
+  LUNES: 0,
+  MARTES: 1,
+  MIERCOLES: 2,
+  MIÉRCOLES: 2,
+  JUEVES: 3,
+  VIERNES: 4,
+  SABADO: 5,
+  SÁBADO: 5,
+  DOMINGO: 6
+};
+
+export function parseSheetDates(sheetName, defaultYear = 2026) {
+  const m = String(sheetName || '').trim().match(/^(\d{2})\s+([A-Z]{3})\s*-\s*(\d{2})\s+([A-Z]{3})$/i);
+  if (!m) return null;
+  const startDay = parseInt(m[1], 10);
+  const startMonth = MONTH_MAP[m[2].toUpperCase()];
+  const endDay = parseInt(m[3], 10);
+  const endMonth = MONTH_MAP[m[4].toUpperCase()];
+  if (startMonth === undefined || endMonth === undefined) return null;
+
+  let startYear = defaultYear;
+  let endYear = defaultYear;
+  if (startMonth === 11 && endMonth === 0) {
+    endYear = defaultYear + 1;
+  }
+  const startDate = new Date(Date.UTC(startYear, startMonth, startDay, 12, 0, 0));
+  const endDate = new Date(Date.UTC(endYear, endMonth, endDay, 12, 0, 0));
+  return {
+    startDateStr: startDate.toISOString().slice(0, 10),
+    endDateStr: endDate.toISOString().slice(0, 10),
+    startDate,
+    endDate
+  };
+}
+
+export function getReservasSheetNameForDate(dateStr) {
+  if (!dateStr) return null;
+  const parts = String(dateStr).slice(0, 10).split(/[\/\-]/).map(Number);
+  let year = parts[0], month = parts[1], day = parts[2];
+  if (parts[0] < 32 && parts[2] > 1900) {
+    // DD/MM/YYYY
+    day = parts[0]; month = parts[1]; year = parts[2];
+  }
+  const dt = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  if (Number.isNaN(dt.getTime())) return null;
+  const dayOfWeek = dt.getUTCDay(); // 0: Sun, 1: Mon
+  const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const mon = new Date(dt); mon.setUTCDate(mon.getUTCDate() + diffToMon);
+  const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
+  const monStr = `${String(mon.getUTCDate()).padStart(2, '0')} ${RESERVAS_MONTHS[mon.getUTCMonth()]}`;
+  const sunStr = `${String(sun.getUTCDate()).padStart(2, '0')} ${RESERVAS_MONTHS[sun.getUTCMonth()]}`;
+  return `${monStr} - ${sunStr}`;
+}
+
+export async function findReservasTarget(token) {
+  if (RESERVAS_ITEM_ID) {
+    const check = await gfetch(token, `${G}/me/drive/items/${RESERVAS_ITEM_ID}?$select=id,name`);
+    if (check.ok && check.json?.id) {
+      return { id: check.json.id, name: check.json.name };
+    }
+  }
+  const search = await gfetch(token, `${G}/me/drive/root/search(q='RESERVA')`);
+  if (search.ok && Array.isArray(search.json?.value)) {
+    const match = search.json.value.find(f => /RESERVAS.*2026/i.test(f.name) && f.name.endsWith('.xlsx')) ||
+                  search.json.value.find(f => /RESERVA/i.test(f.name) && f.name.endsWith('.xlsx'));
+    if (match) return { id: match.id, name: match.name };
+  }
+  return { id: RESERVAS_ITEM_ID, name: 'RESERVAS 2026 - TAY.xlsx' };
+}
+
+export async function getReservasSheetsList(db) {
+  const acc = await getAccess(db);
+  if (!acc) return [];
+  const { token } = acc;
+  const target = await findReservasTarget(token);
+  if (!target || !target.id) return [];
+
+  const resWs = await gfetch(token, `${G}/me/drive/items/${target.id}/workbook/worksheets?$select=name,id,visibility`);
+  if (!resWs.ok || !Array.isArray(resWs.json?.value)) return [];
+
+  const now = new Date();
+  const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+
+  const sheets = [];
+  for (const w of resWs.json.value) {
+    const parsed = parseSheetDates(w.name);
+    if (!parsed) continue;
+    const isCurrent = todayStr >= parsed.startDateStr && todayStr <= parsed.endDateStr;
+    sheets.push({
+      id: w.id,
+      name: w.name,
+      cleanName: w.name.trim(),
+      startDate: parsed.startDateStr,
+      endDate: parsed.endDateStr,
+      isCurrent
+    });
+  }
+  return sheets;
+}
+
+export async function appendReservationToExcel(db, reservation) {
+  const acc = await getAccess(db);
+  if (!acc) return { success: false, message: 'OneDrive no vinculado' };
+  const { token } = acc;
+  const target = await findReservasTarget(token);
+  if (!target || !target.id) return { success: false, message: 'No se encontró archivo RESERVAS en OneDrive' };
+
+  const targetSheetName = getReservasSheetNameForDate(reservation.fecha);
+  if (!targetSheetName) return { success: false, message: 'Fecha inválida para hoja semanal' };
+
+  // Obtener nombre exacto de la hoja (maneja espacios al final como "02 MAR - 08 MAR ")
+  const resWs = await gfetch(token, `${G}/me/drive/items/${target.id}/workbook/worksheets?$select=name`);
+  if (!resWs.ok || !Array.isArray(resWs.json?.value)) {
+    return { success: false, message: 'Error consultando hojas de reservas' };
+  }
+  const exactWs = resWs.json.value.find(w => w.name.trim() === targetSheetName);
+  if (!exactWs) {
+    return { success: false, message: `Hoja "${targetSheetName}" no existe en ${target.name}` };
+  }
+  const sheetName = exactWs.name;
+
+  const used = await loadUsed(token, target.id, sheetName);
+  if (!used || !Array.isArray(used.values)) {
+    return { success: false, message: `No se pudo leer la hoja "${sheetName}"` };
+  }
+
+  // Buscar encabezado (contiene FECHA y AULA)
+  let headerRowIdx = -1;
+  for (let r = 0; r < Math.min(used.values.length, 15); r++) {
+    const rowCells = (used.values[r] || []).map(norm);
+    if (rowCells.includes('FECHA') && rowCells.includes('AULA')) {
+      headerRowIdx = r;
+      break;
+    }
+  }
+  if (headerRowIdx < 0) headerRowIdx = 9; // Fila 10 por defecto
+
+  const startRow = headerRowIdx + 1;
+  let targetRowIdx = -1;
+  const aulaUpper = String(reservation.aula || '').toUpperCase().trim();
+  const inicioNorm = canon('time', reservation.inicio);
+  const fechaIso = reservation.fecha ? String(reservation.fecha).slice(0, 10) : '';
+
+  for (let r = startRow; r < used.values.length; r++) {
+    const row = used.values[r] || [];
+    const rFecha = canon('date', row[0]);
+    const rAula = String(row[4] ?? '').toUpperCase().trim();
+    const rInicio = canon('time', row[2]);
+
+    if (rFecha && rAula && rFecha === fechaIso && rAula === aulaUpper && rInicio === inicioNorm) {
+      targetRowIdx = r;
+      break;
+    }
+
+    if (targetRowIdx < 0) {
+      const isEmpty = !row[0] && !row[4] && !row[6] && !row[7];
+      if (isEmpty) {
+        targetRowIdx = r;
+      }
+    }
+  }
+
+  if (targetRowIdx < 0) {
+    targetRowIdx = used.values.length;
+  }
+
+  const excelRowNum = (used.rowIndex || 0) + targetRowIdx + 1;
+
+  // Preservar fórmula existente en columna F (UBICACIÓN) o columna B (DIA) si existieran
+  const existingUbicacionFormula = used?.formulas?.[targetRowIdx]?.[5];
+  const keepUbicacionFormula = typeof existingUbicacionFormula === 'string' && existingUbicacionFormula.startsWith('=');
+
+  const existingDiaFormula = used?.formulas?.[targetRowIdx]?.[1];
+  const keepDiaFormula = typeof existingDiaFormula === 'string' && existingDiaFormula.startsWith('=');
+
+  const serialFecha = isoToSerial(reservation.fecha);
+  const fracInicio = hhmmToFrac(reservation.inicio);
+  const fracFinal = hhmmToFrac(reservation.final);
+  const diaVal = reservation.dia || '';
+  const ubicacionVal = reservation.ubicacion || '';
+  const docenteVal = String(reservation.docente || '').toUpperCase().trim();
+  const motivoVal = String(reservation.motivo || reservation.detalle || '').toUpperCase().trim();
+  const usuarioVal = String(reservation.usuario || 'OPERACIONES').toUpperCase().trim();
+  const obsVal = String(reservation.obs || '').trim();
+
+  const rowValues = [
+    typeof serialFecha === 'number' ? serialFecha : toExcelDate(reservation.fecha),
+    keepDiaFormula ? existingDiaFormula : diaVal,
+    typeof fracInicio === 'number' ? fracInicio : reservation.inicio,
+    typeof fracFinal === 'number' ? fracFinal : reservation.final,
+    aulaUpper,
+    keepUbicacionFormula ? existingUbicacionFormula : ubicacionVal,
+    docenteVal,
+    motivoVal,
+    usuarioVal,
+    obsVal
+  ];
+
+  const rowFormats = [
+    'dd/mm/yyyy',
+    '@',
+    'hh:mm',
+    'hh:mm',
+    '@',
+    '@',
+    '@',
+    '@',
+    '@',
+    '@'
+  ];
+
+  const address = `A${excelRowNum}:J${excelRowNum}`;
+  const patchRes = await patchFormulas(token, target.id, sheetName, address, [rowValues], [rowFormats]);
+
+  if (reservation.id) {
+    await db.prepare('UPDATE reservas SET hoja = ? WHERE id = ?').bind(sheetName.trim(), reservation.id).run();
+  }
+
+  return {
+    success: patchRes.ok,
+    sheet: sheetName,
+    row: excelRowNum,
+    address,
+    status: patchRes.status
+  };
+}
+
+export async function deleteReservationFromExcel(db, reservation) {
+  if (!reservation || !reservation.fecha) return { success: false };
+  const acc = await getAccess(db);
+  if (!acc) return { success: false };
+  const { token } = acc;
+  const target = await findReservasTarget(token);
+  if (!target || !target.id) return { success: false };
+
+  const targetSheetName = getReservasSheetNameForDate(reservation.fecha);
+  if (!targetSheetName) return { success: false };
+
+  const resWs = await gfetch(token, `${G}/me/drive/items/${target.id}/workbook/worksheets?$select=name`);
+  if (!resWs.ok || !Array.isArray(resWs.json?.value)) return { success: false };
+  const exactWs = resWs.json.value.find(w => w.name.trim() === targetSheetName);
+  if (!exactWs) return { success: false };
+
+  const used = await loadUsed(token, target.id, exactWs.name);
+  if (!used || !Array.isArray(used.values)) return { success: false };
+
+  const aulaUpper = String(reservation.aula || '').toUpperCase().trim();
+  const inicioNorm = canon('time', reservation.inicio);
+  const fechaIso = String(reservation.fecha).slice(0, 10);
+
+  for (let r = 9; r < used.values.length; r++) {
+    const row = used.values[r] || [];
+    const rFecha = canon('date', row[0]);
+    const rAula = String(row[4] ?? '').toUpperCase().trim();
+    const rInicio = canon('time', row[2]);
+
+    if (rFecha === fechaIso && rAula === aulaUpper && rInicio === inicioNorm) {
+      const excelRowNum = (used.rowIndex || 0) + r + 1;
+      const existingUbicacionFormula = used?.formulas?.[r]?.[5];
+      const clearValues = [
+        '',
+        '',
+        '',
+        '',
+        '',
+        typeof existingUbicacionFormula === 'string' && existingUbicacionFormula.startsWith('=') ? existingUbicacionFormula : '',
+        '',
+        '',
+        '',
+        ''
+      ];
+      await patchFormulas(token, target.id, exactWs.name, `A${excelRowNum}:J${excelRowNum}`, [clearValues]);
+      return { success: true, clearedRow: excelRowNum };
+    }
+  }
+  return { success: false, message: 'Fila no encontrada en Excel' };
+}
+
+export async function pullReservationsFromSheet(db, token, fileId, sheetName) {
+  const used = await loadUsed(token, fileId, sheetName);
+  if (!used || !Array.isArray(used.values)) return 0;
+
+  let headerRowIdx = -1;
+  for (let r = 0; r < Math.min(used.values.length, 15); r++) {
+    const rowCells = (used.values[r] || []).map(norm);
+    if (rowCells.includes('FECHA') && rowCells.includes('AULA')) {
+      headerRowIdx = r;
+      break;
+    }
+  }
+  if (headerRowIdx < 0) return 0;
+
+  const parsedDates = parseSheetDates(sheetName);
+  const startDate = parsedDates?.startDate;
+
+  const stmts = [];
+  let count = 0;
+
+  for (let r = headerRowIdx + 1; r < used.values.length; r++) {
+    const row = used.values[r] || [];
+    const rawAula = String(row[4] ?? '').toUpperCase().trim();
+    const rawDocente = String(row[6] ?? '').trim();
+    const rawMotivo = String(row[7] ?? '').trim();
+    const rawDia = String(row[1] ?? '').trim().toUpperCase();
+
+    if (!rawAula && !rawDocente && !rawMotivo) continue;
+
+    let fechaIso = serialToISO(row[0]);
+    if (!fechaIso && startDate && rawDia && DAY_OFFSETS[rawDia] !== undefined) {
+      const deduced = new Date(startDate.getTime() + DAY_OFFSETS[rawDia] * 86400000);
+      fechaIso = deduced.toISOString().slice(0, 10);
+    }
+    if (!fechaIso && parsedDates) {
+      fechaIso = parsedDates.startDateStr;
+    }
+
+    const dia = rawDia || (fechaIso ? SPANISH_DAYS[new Date(fechaIso + 'T12:00:00').getDay()] : '');
+    const inicio = fracToHHMM(row[2]) || '08:00';
+    const final = fracToHHMM(row[3]) || '10:00';
+    const aula = rawAula;
+    let ubicacion = String(row[5] ?? '').trim();
+    if (ubicacion === '#N/D' || !ubicacion) {
+      ubicacion = `${aula.startsWith('B') ? 'Pabellón B' : 'Pabellón A'}`;
+    }
+    const docente = rawDocente.toUpperCase();
+    const motivo = rawMotivo.toUpperCase() || 'RESERVA DE AULA';
+    const usuario = String(row[8] ?? '').trim().toUpperCase() || 'OPERACIONES';
+    const obs = String(row[9] ?? '').trim();
+
+    const dt = fechaIso ? new Date(fechaIso + 'T12:00:00') : new Date();
+    const mes = RESERVAS_MONTHS[dt.getMonth()] || 'NOVIEMBRE';
+    const uniqueKey = `${fechaIso}_${aula}_${inicio.replace(/[^0-9]/g, '')}`;
+    const id = `res_xl_${uniqueKey}`;
+
+    stmts.push(
+      db.prepare(`
+        INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, motivo, usuario, obs, hoja, prioridad, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NORMAL', datetime('now'))
+        ON CONFLICT(id) DO UPDATE SET
+          fecha = excluded.fecha,
+          mes = excluded.mes,
+          dia = excluded.dia,
+          inicio = excluded.inicio,
+          final = excluded.final,
+          aula = excluded.aula,
+          ubicacion = excluded.ubicacion,
+          docente = excluded.docente,
+          detalle = excluded.detalle,
+          motivo = excluded.motivo,
+          usuario = excluded.usuario,
+          obs = excluded.obs,
+          hoja = excluded.hoja
+      `).bind(
+        id,
+        fechaIso,
+        mes,
+        dia,
+        inicio,
+        final,
+        aula,
+        ubicacion,
+        docente,
+        motivo,
+        motivo,
+        usuario,
+        obs,
+        sheetName.trim()
+      )
+    );
+    count++;
+  }
+
+  for (let i = 0; i < stmts.length; i += 50) {
+    await db.batch(stmts.slice(i, i + 50));
+  }
+  return count;
+}
+
+export async function pullReservationsFromExcel(db, sheetFilter = null) {
+  const acc = await getAccess(db);
+  if (!acc) return { success: false, message: 'OneDrive no vinculado' };
+  const { token } = acc;
+  const target = await findReservasTarget(token);
+  if (!target || !target.id) return { success: false, message: 'No se encontró archivo RESERVAS' };
+
+  const resWs = await gfetch(token, `${G}/me/drive/items/${target.id}/workbook/worksheets?$select=name`);
+  if (!resWs.ok || !Array.isArray(resWs.json?.value)) {
+    return { success: false, message: 'Error listando hojas' };
+  }
+
+  let sheetsToPull = [];
+  if (sheetFilter) {
+    const targetWs = resWs.json.value.find(w => w.name.trim() === sheetFilter.trim());
+    if (targetWs) sheetsToPull = [targetWs.name];
+  } else {
+    const now = new Date();
+    const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+    const allDateSheets = resWs.json.value.filter(w => /^\s*\d{2}\s+[A-Z]{3}\s*-\s*\d{2}\s+[A-Z]{3}\s*$/i.test(w.name));
+
+    let curIdx = allDateSheets.findIndex(w => {
+      const p = parseSheetDates(w.name);
+      return p && todayStr >= p.startDateStr && todayStr <= p.endDateStr;
+    });
+    if (curIdx < 0) curIdx = 0;
+
+    const startIdx = Math.max(0, curIdx - 1);
+    const endIdx = Math.min(allDateSheets.length - 1, curIdx + 2);
+    sheetsToPull = allDateSheets.slice(startIdx, endIdx + 1).map(w => w.name);
+  }
+
+  let totalImported = 0;
+  for (const sName of sheetsToPull) {
+    try {
+      const imp = await pullReservationsFromSheet(db, token, target.id, sName);
+      totalImported += imp;
+    } catch (e) {
+      console.error(`Error pulling sheet ${sName}:`, e);
+    }
+  }
+
+  if (totalImported > 0) {
+    await markDbWrite(db);
+  }
+
+  return {
+    success: true,
+    file: target.name,
+    sheets: sheetsToPull,
+    imported: totalImported
+  };
 }

@@ -71,8 +71,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
   const navItems = [
     { id: 'attendance', label: 'Ronda', icon: ClipboardCheck },
-    { id: 'tickets', label: 'Préstamos', icon: HandHelping, badge: pendingTicketsCount },
     { id: 'operations', label: 'Operaciones', icon: Layers },
+    { id: 'tickets', label: 'Préstamos', icon: HandHelping, badge: pendingTicketsCount },
     { id: 'dashboard', label: 'Métricas', icon: BarChart3 }
   ];
 

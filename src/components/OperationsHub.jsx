@@ -8,7 +8,9 @@ export default function OperationsHub({
   initialClassData, 
   onClearInitialClass, 
   onSelectRoomForSchedule,
-  defaultSubTab = 'manual'
+  defaultSubTab = 'manual',
+  openManualModalTrigger = null,
+  openReservationModalTrigger = null
 }) {
   const [subTab, setSubTab] = useState(defaultSubTab);
 
@@ -79,11 +81,12 @@ export default function OperationsHub({
         <ManualSheetsView
           initialClassData={initialClassData}
           onClearInitialClass={onClearInitialClass}
+          initialOpenTrigger={openManualModalTrigger}
         />
       )}
 
       {subTab === 'reservations' && (
-        <ReservationsView />
+        <ReservationsView initialOpenTrigger={openReservationModalTrigger} />
       )}
 
       {subTab === 'rooms' && (

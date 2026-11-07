@@ -13,7 +13,7 @@ import {
   restoreLinkedExcelIfPossible
 } from './utils/liveExcelSync';
 
-const TABS = ['attendance', 'tickets', 'operations', 'dashboard'];
+const TABS = ['attendance', 'operations', 'tickets', 'dashboard'];
 
 const TAB_HASH_MAP = {
   attendance: '#ronda',
@@ -77,6 +77,8 @@ export default function App() {
   const [newTicketPrefill, setNewTicketPrefill] = useState(null);
   const [manualSheetPrefill, setManualSheetPrefill] = useState(null);
   const [operationsSubTab, setOperationsSubTab] = useState('manual');
+  const [openManualModalTrigger, setOpenManualModalTrigger] = useState(null);
+  const [openReservationModalTrigger, setOpenReservationModalTrigger] = useState(null);
   const [attendanceSearchPrefill, setAttendanceSearchPrefill] = useState('');
 
   // Touch Swipe Gesture State
@@ -86,6 +88,28 @@ export default function App() {
     startTime: 0,
     isIgnored: false
   });
+
+  const scrollToTopGlobal = () => {
+    const doScroll = (behavior) => {
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior });
+      } catch (_) {
+        window.scrollTo(0, 0);
+      }
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      const main = document.querySelector('main');
+      if (main) main.scrollTop = 0;
+      const scrollContainers = document.querySelectorAll('.overflow-y-auto, .overflow-auto');
+      scrollContainers.forEach(el => { el.scrollTop = 0; });
+    };
+
+    doScroll('instant');
+    requestAnimationFrame(() => doScroll('smooth'));
+    setTimeout(() => doScroll('smooth'), 60);
+    setTimeout(() => doScroll('instant'), 180);
+    setTimeout(() => doScroll('instant'), 350);
+  };
 
   // History & Multi-Page Hash Routing Controller
   const navigateTab = (targetTab, pushState = true) => {
@@ -97,18 +121,14 @@ export default function App() {
     } else {
       window.history.replaceState({ tab: targetTab }, '', targetHash);
     }
-    // Siempre mandar al encabezado superior con scroll suave
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-    if (document.documentElement) document.documentElement.scrollTop = 0;
-    if (document.body) document.body.scrollTop = 0;
+    // Siempre mandar al encabezado superior
+    scrollToTopGlobal();
   };
 
   // Cada cambio de pestaña manda inmediatamente al encabezado
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-    if (document.documentElement) document.documentElement.scrollTop = 0;
-    if (document.body) document.body.scrollTop = 0;
-  }, [activeTab]);
+    scrollToTopGlobal();
+  }, [activeTab, operationsSubTab]);
 
   // Sync initial hash and handle Browser Back / Forward buttons (Multi-page experience)
   useEffect(() => {
@@ -373,6 +393,8 @@ export default function App() {
                 onClearInitialClass={() => setManualSheetPrefill(null)}
                 onSelectRoomForSchedule={handleSelectRoomForSchedule}
                 defaultSubTab={operationsSubTab}
+                openManualModalTrigger={openManualModalTrigger}
+                openReservationModalTrigger={openReservationModalTrigger}
               />
             </ErrorBoundary>
           </div>
@@ -391,10 +413,9 @@ export default function App() {
       <FloatingActionMenu
         onOpenManualSheet={() => {
           setOperationsSubTab('manual');
+          setOpenManualModalTrigger(Date.now());
           navigateTab('operations', true);
-          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-          if (document.documentElement) document.documentElement.scrollTop = 0;
-          if (document.body) document.body.scrollTop = 0;
+          scrollToTopGlobal();
         }}
         onOpenNewTicket={() => {
           setNewTicketPrefill({
@@ -405,16 +426,13 @@ export default function App() {
             descripcionSolucion: 'Préstamo de plumones y mota acrílica'
           });
           navigateTab('tickets', true);
-          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-          if (document.documentElement) document.documentElement.scrollTop = 0;
-          if (document.body) document.body.scrollTop = 0;
+          scrollToTopGlobal();
         }}
         onOpenReservation={() => {
           setOperationsSubTab('reservations');
+          setOpenReservationModalTrigger(Date.now());
           navigateTab('operations', true);
-          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-          if (document.documentElement) document.documentElement.scrollTop = 0;
-          if (document.body) document.body.scrollTop = 0;
+          scrollToTopGlobal();
         }}
       />
     </div>

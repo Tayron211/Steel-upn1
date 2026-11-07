@@ -3,7 +3,17 @@
  * Handles all /api/* requests 24/7 at the edge with Cloudflare D1 (Serverless SQLite)
  */
 import { buildMasterExcelFromTemplate } from '../../src/utils/excelTemplateExporter';
-import { pushToExcel, pullIfExcelChanged, debugInspect, ensureTables } from '../../src/utils/onedriveGraphSync';
+import { 
+  pushToExcel, 
+  pullIfExcelChanged, 
+  debugInspect, 
+  ensureTables,
+  getReservasSheetsList,
+  appendReservationToExcel,
+  deleteReservationFromExcel,
+  pullReservationsFromExcel,
+  getReservasSheetNameForDate
+} from '../../src/utils/onedriveGraphSync';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -582,10 +592,56 @@ async function handleApiRequest(context) {
     }
 
     // -------------------------------------------------------------
-    // 5. RESERVATIONS: /api/reservations
+    // 5. RESERVATIONS: /api/reservations (Vinculado a RESERVAS 2026 - TAY.xlsx)
     // -------------------------------------------------------------
+    if (path === '/api/reservations/sheets' && method === 'GET') {
+      try {
+        const sheets = await getReservasSheetsList(db);
+        return json({ success: true, count: sheets.length, data: sheets });
+      } catch (err) {
+        console.error('Error obteniendo hojas de reservas:', err);
+        return json({ success: false, error: err.message }, 500);
+      }
+    }
+
+    if (path === '/api/reservations/pull' && method === 'POST') {
+      try {
+        let reqSheet = null;
+        try {
+          const body = await request.json();
+          reqSheet = body?.sheet || null;
+        } catch (_) {}
+        const pullRes = await pullReservationsFromExcel(db, reqSheet);
+        return json(pullRes);
+      } catch (err) {
+        console.error('Error importando reservas de Excel:', err);
+        return json({ success: false, error: err.message }, 500);
+      }
+    }
+
     if (path === '/api/reservations' && method === 'GET') {
-      const { results } = await db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all();
+      const sheet = url.searchParams.get('sheet') || url.searchParams.get('hoja');
+      const fecha = url.searchParams.get('fecha');
+      const dia = url.searchParams.get('dia');
+
+      let query = 'SELECT * FROM reservas WHERE 1=1';
+      const params = [];
+
+      if (sheet) {
+        query += ' AND (TRIM(hoja) = TRIM(?) OR hoja LIKE ?)';
+        params.push(sheet, `%${sheet.trim()}%`);
+      }
+      if (fecha) {
+        query += ' AND fecha = ?';
+        params.push(fecha);
+      }
+      if (dia) {
+        query += ' AND UPPER(dia) = ?';
+        params.push(dia.toUpperCase());
+      }
+      query += ' ORDER BY fecha DESC, inicio ASC';
+
+      const { results } = await db.prepare(query).bind(...params).all();
       return json({ success: true, count: results.length, data: results });
     }
 
@@ -593,23 +649,27 @@ async function handleApiRequest(context) {
       const body = await request.json();
       const id = `res_${Date.now()}`;
       const months = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-      const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+      const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
       const fechaStr = body.fecha || new Date().toISOString().split('T')[0];
       const dt = new Date(fechaStr + 'T12:00:00');
       const mes = body.mes || months[dt.getMonth()] || 'NOVIEMBRE';
       const dia = body.dia || days[dt.getDay()] || 'LUNES';
       const inicio = body.inicio || body.hora_inicio || body.horaInicio || '08:00';
       const final = body.final || body.hora_fin || body.horaFin || '10:00';
-      const aula = (body.aula || '').toUpperCase();
+      const aula = (body.aula || '').toUpperCase().trim();
       const ubicacion = body.ubicacion || '';
-      const docente = body.docente || '';
-      const detalle = body.detalle || body.motivo || body.actividades || 'RESERVA DE AULA';
-      const usuario = body.usuario || 'OPERACIONES';
+      const docente = (body.docente || '').toUpperCase().trim();
+      const motivo = (body.motivo || body.detalle || body.actividades || 'RESERVA DE AULA').toUpperCase().trim();
+      const detalle = motivo;
+      const usuario = (body.usuario || 'OPERACIONES').toUpperCase().trim();
       const prioridad = body.prioridad || 'NORMAL';
+      const obs = (body.obs || body.observaciones || '').trim();
+      const targetSheet = getReservasSheetNameForDate(fechaStr) || '';
+      const hoja = (body.hoja || targetSheet || '').trim();
 
       await db.prepare(`
-        INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, usuario, prioridad, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, motivo, usuario, prioridad, obs, hoja, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `).bind(
         id,
         fechaStr,
@@ -621,18 +681,38 @@ async function handleApiRequest(context) {
         ubicacion,
         docente,
         detalle,
+        motivo,
         usuario,
-        prioridad
+        prioridad,
+        obs,
+        hoja
       ).run();
 
       const created = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
-      return json({ success: true, data: created });
+
+      // Guardar inmediatamente en la hoja y columna respectiva de RESERVAS 2026 - TAY.xlsx
+      let excelSync = null;
+      try {
+        excelSync = await appendReservationToExcel(db, created);
+      } catch (errSync) {
+        console.error('Error escribiendo en Excel de OneDrive:', errSync);
+      }
+
+      return json({ success: true, data: created, sheet: hoja, excelSync });
     }
 
     const reservationMatch = path.match(/^\/api\/reservations\/([^/]+)$/);
     if (reservationMatch && method === 'DELETE') {
       const id = reservationMatch[1];
+      const existing = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
       await db.prepare('DELETE FROM reservas WHERE id = ?').bind(id).run();
+      if (existing) {
+        try {
+          await deleteReservationFromExcel(db, existing);
+        } catch (errDel) {
+          console.error('Error eliminando fila en Excel:', errDel);
+        }
+      }
       return json({ success: true, message: 'Reserva eliminada' });
     }
 

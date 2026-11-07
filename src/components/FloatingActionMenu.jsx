@@ -8,6 +8,28 @@ import {
   Calendar
 } from 'lucide-react';
 
+function scrollToTopGlobal() {
+  const doScroll = (behavior) => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior });
+    } catch (_) {
+      window.scrollTo(0, 0);
+    }
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    const main = document.querySelector('main');
+    if (main) main.scrollTop = 0;
+    const scrollContainers = document.querySelectorAll('.overflow-y-auto, .overflow-auto');
+    scrollContainers.forEach(el => { el.scrollTop = 0; });
+  };
+
+  doScroll('instant');
+  requestAnimationFrame(() => doScroll('smooth'));
+  setTimeout(() => doScroll('smooth'), 60);
+  setTimeout(() => doScroll('instant'), 180);
+  setTimeout(() => doScroll('instant'), 350);
+}
+
 export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket, onOpenReservation }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -20,6 +42,13 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
+
+  const handleAction = (callback) => {
+    setIsOpen(false);
+    scrollToTopGlobal();
+    if (callback) callback();
+    scrollToTopGlobal();
+  };
 
   return (
     <>
@@ -39,13 +68,7 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
             {/* Option 1: Attention to Teacher / Loan */}
             <button
               type="button"
-              onClick={() => {
-                setIsOpen(false);
-                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                if (document.documentElement) document.documentElement.scrollTop = 0;
-                if (document.body) document.body.scrollTop = 0;
-                onOpenNewTicket();
-              }}
+              onClick={() => handleAction(onOpenNewTicket)}
               style={{ animationDelay: '120ms' }}
               className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:text-amber-800 dark:hover:text-amber-300 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 dark:border-zinc-800 hover:scale-105 select-none"
             >
@@ -58,13 +81,7 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
             {/* Option 2: Manual Sheet */}
             <button
               type="button"
-              onClick={() => {
-                setIsOpen(false);
-                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                if (document.documentElement) document.documentElement.scrollTop = 0;
-                if (document.body) document.body.scrollTop = 0;
-                onOpenManualSheet();
-              }}
+              onClick={() => handleAction(onOpenManualSheet)}
               style={{ animationDelay: '70ms' }}
               className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:text-indigo-800 dark:hover:text-indigo-300 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 dark:border-zinc-800 hover:scale-105 select-none"
             >
@@ -77,13 +94,7 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
             {/* Option 3: Room Reservation */}
             <button
               type="button"
-              onClick={() => {
-                setIsOpen(false);
-                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                if (document.documentElement) document.documentElement.scrollTop = 0;
-                if (document.body) document.body.scrollTop = 0;
-                onOpenReservation();
-              }}
+              onClick={() => handleAction(onOpenReservation)}
               style={{ animationDelay: '20ms' }}
               className="animate-speed-dial group inline-flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:text-emerald-800 dark:hover:text-emerald-300 px-4 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 shadow-xl border border-slate-200/90 dark:border-zinc-800 hover:scale-105 select-none"
             >
