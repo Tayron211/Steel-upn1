@@ -320,9 +320,20 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   useEffect(() => {
     if (initialNewTicket) {
       setActiveViewTab('ACTIVOS');
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-      if (document.documentElement) document.documentElement.scrollTop = 0;
-      if (document.body) document.body.scrollTop = 0;
+      
+      const toTop = () => {
+        try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch (_) { window.scrollTo(0, 0); }
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+        const anchor = document.getElementById('tickets-top-anchor');
+        if (anchor) anchor.scrollIntoView({ behavior: 'instant', block: 'start' });
+      };
+
+      toTop();
+      requestAnimationFrame(toTop);
+      setTimeout(toTop, 40);
+      setTimeout(toTop, 120);
+      setTimeout(toTop, 250);
 
       if (initialNewTicket.ambiente) {
         setRoomInput(initialNewTicket.ambiente);
@@ -337,13 +348,18 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         if (found) setSelectedMaterialVal(found.id);
       }
 
-      // Foco inmediato en el formulario visible superior de registro de préstamos
+      // Foco inmediato con preventScroll: true para que jamás desplace la vista hacia abajo
       setTimeout(() => {
         const input = document.getElementById('prestamo-person-name');
         if (input) {
-          input.focus();
+          try {
+            input.focus({ preventScroll: true });
+          } catch (_) {
+            input.focus();
+          }
         }
-      }, 150);
+        toTop();
+      }, 80);
 
       if (onClearInitialTicket) onClearInitialTicket();
     }
@@ -602,7 +618,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       {/* =========================================================================
           CABECERA Y PESTAÑAS (ACTIVOS / DEVUELTOS)
           ========================================================================= */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+      <div id="tickets-top-anchor" className="flex flex-wrap items-center justify-between gap-2 px-1 scroll-mt-20">
         <div className="flex items-center gap-2 min-w-0">
           <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4] shrink-0" />
           <h1 className="text-base font-black text-slate-950 dark:text-white tracking-tight whitespace-nowrap">

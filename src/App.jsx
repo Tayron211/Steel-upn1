@@ -429,7 +429,8 @@ export default function App() {
             pabellon: 'A',
             piso: '1ER PISO',
             tipoSolicitud: 'PLUMONES / MATERIALES',
-            descripcionSolucion: 'Préstamo de plumones y mota acrílica'
+            descripcionSolucion: 'Préstamo de plumones y mota acrílica',
+            _ts: Date.now()
           });
           navigateTab('tickets', true);
           scrollToTopGlobal();
