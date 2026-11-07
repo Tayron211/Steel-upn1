@@ -968,21 +968,6 @@ export async function pushToExcel(db) {
       report.push(r);
     }
 
-    // 3) BD -> RESERVAS 2026 - TAY.xlsx: sincronizar reservas a sus hojas semanales correspondientes
-    let reservasWeeklyPushed = 0;
-    try {
-      const recentReservas = (await db.prepare('SELECT * FROM reservas ORDER BY fecha DESC LIMIT 50').all()).results || [];
-      for (const resItem of recentReservas) {
-        if (!resItem.fecha) continue;
-        try {
-          const syncRes = await appendReservationToExcel(db, resItem);
-          if (syncRes && syncRes.success) reservasWeeklyPushed++;
-        } catch (_) {}
-      }
-    } catch (errRes) {
-      console.error('Error sincronizando reservas semanales:', errRes);
-    }
-
     // Actualizar timestamps de modificación de ambos archivos
     const [modControlAfter, modReservasAfter] = await Promise.all([
       itemMod(token, primary.id),
@@ -1004,7 +989,6 @@ export async function pushToExcel(db) {
       connected: true, 
       pulled, 
       reservasPulled,
-      reservasWeeklyPushed,
       filesUpdated: report, 
       reservasFile: resTarget?.name || 'RESERVAS 2026 - TAY.xlsx',
       message: 'Ambos archivos de OneDrive sincronizados' 
