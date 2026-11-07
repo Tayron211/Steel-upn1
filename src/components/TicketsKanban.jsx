@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
+import CustomSelect from './CustomSelect';
+import { useAssistants } from '../utils/assistants';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
 const CAMPUS_ROOMS = [
@@ -118,10 +120,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   const [loading, setLoading] = useState(true);
   const [activeViewTab, setActiveViewTab] = useState('ACTIVOS'); // 'ACTIVOS' | 'CONCLUIDOS'
 
+  const asistentes = useAssistants();
+
   // Form State
   const [beneficiaryType, setBeneficiaryType] = useState('DOCENTE'); // 'DOCENTE' | 'ALUMNO'
   const [personName, setPersonName] = useState('');
   const [roomInput, setRoomInput] = useState('');
+  const [loanResponsable, setLoanResponsable] = useState('TAYRON SALINAS');
   const [selectedMaterialVal, setSelectedMaterialVal] = useState('PLUMONES');
   const [manualItemText, setManualItemText] = useState('');
   const [submittingLoan, setSubmittingLoan] = useState(false);
@@ -421,7 +426,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       piso: floor,
       pabellon: pab,
       tipoSolicitud: matName,
-      responsable: 'OPERACIONES SEDE',
+      responsable: loanResponsable || 'TAYRON SALINAS',
       estado: 'EN PROCESO',
       usuario: beneficiaryType, // 'DOCENTE' o 'ALUMNO'
       descripcionSolucion: finalDesc,
@@ -672,9 +677,9 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           ========================================================================= */}
       <div className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-xs">
         <form onSubmit={handleRegisterLoan} className="space-y-2.5">
-          {/* Fila 1: Beneficiario + Nombre + Aula */}
+          {/* Fila 1: Beneficiario + Nombre + Aula + Responsable */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-            <div className="sm:col-span-4 grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
+            <div className="sm:col-span-3 grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setBeneficiaryType('DOCENTE')}
@@ -702,7 +707,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               </button>
             </div>
 
-            <div className="sm:col-span-5">
+            <div className="sm:col-span-4">
               <input
                 id="prestamo-person-name"
                 type="text"
@@ -713,7 +718,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               />
             </div>
 
-            <div className="sm:col-span-3 relative">
+            <div className="sm:col-span-2 relative">
               <button
                 type="button"
                 onClick={() => setIsRoomCalendarOpen(true)}
@@ -745,6 +750,16 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                   </span>
                 )}
               </button>
+            </div>
+
+            <div className="sm:col-span-3">
+              <CustomSelect
+                value={loanResponsable}
+                onChange={setLoanResponsable}
+                options={asistentes}
+                placeholder="Responsable / Asistente"
+                className="h-10 text-xs font-bold"
+              />
             </div>
           </div>
 

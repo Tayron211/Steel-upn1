@@ -21,6 +21,7 @@ import {
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
+import { useAssistants } from '../utils/assistants';
 
 const CAMPUS_ROOMS_CATALOG = [
   // --- PABELLÓN A ---
@@ -200,6 +201,7 @@ const timeToMins = (tStr) => {
 };
 
 export default function ReservationsView({ initialOpenTrigger = null, onConsumeTrigger = null }) {
+  const asistentes = useAssistants();
   const [reservas, setReservas] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [dayClasses, setDayClasses] = useState([]);
@@ -309,7 +311,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     docente: '',
     motivo: '',
     detalle: '',
-    usuario: 'ALESSANDRO',
+    usuario: 'TAYRON SALINAS',
     obs: '',
     prioridad: 'NORMAL'
   });
@@ -572,7 +574,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       docente: '',
       motivo: '',
       detalle: '',
-      usuario: 'ALESSANDRO',
+      usuario: 'TAYRON SALINAS',
       obs: '',
       prioridad: 'NORMAL'
     });
@@ -592,7 +594,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       docente: '',
       motivo: '',
       detalle: '',
-      usuario: 'ALESSANDRO',
+      usuario: 'TAYRON SALINAS',
       obs: '',
       prioridad: 'NORMAL'
     });
@@ -1391,11 +1393,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 />
               </div>
 
-              {/* Indicador de Hoja y Archivo de Destino en OneDrive */}
+              {/* Indicador de Semana de Destino */}
               <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-2.5 flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300 font-bold min-w-0">
                   <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.5] shrink-0" />
-                  <span className="truncate">Hoja de destino en Excel:</span>
+                  <span className="truncate">Semana correspondiente:</span>
                 </div>
                 <span className="font-mono font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-lg border border-emerald-300/60 dark:border-emerald-700/60 shrink-0">
                   {computeTargetSheet(formData.fecha) || 'Calculando...'}
@@ -1416,12 +1418,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Registrado por (Usuario)</label>
-                  <input
-                    type="text"
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Responsable / Asistente</label>
+                  <CustomSelect
                     value={formData.usuario}
-                    onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium uppercase"
+                    onChange={(val) => setFormData({ ...formData, usuario: val })}
+                    options={asistentes}
+                    placeholder="Seleccionar asistente"
                   />
                 </div>
               </div>

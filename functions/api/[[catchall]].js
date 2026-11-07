@@ -453,6 +453,55 @@ async function handleApiRequest(context) {
     }
 
     // -------------------------------------------------------------
+    // 3.5 ASISTENTES Y RESPONSABLES: /api/assistants
+    // -------------------------------------------------------------
+    if (path === '/api/assistants' && method === 'GET') {
+      const defaultList = [
+        'TAYRON SALINAS',
+        'JOSÉ CARLOS MIRANDA ROSALES',
+        'FRANCISCO ALONSO VILLAFAN COLONIA',
+        'JAVIER ALEXANDER BENITES ALBAN',
+        'ALESSANDRO PASCUAL ROMERO',
+        'JAEL ZULEMA GALLARDO CARRANZA',
+        'JANETH VIVAR PEREZ',
+        'JHONAYKER MAGUIÑA',
+        'EDUARDO ANTONIO VELASQUEZ CARRION',
+        'JUNIOR MARINO FLORES PUMACAYO',
+        'DAVID SAMUEL HUSAREZ CABRERA'
+      ];
+      const set = new Set();
+      const results = [];
+      const add = (name) => {
+        const clean = String(name || '').trim().toUpperCase();
+        if (clean && clean.length > 2 && !clean.includes('#N/D') && !clean.includes('#N/A') && !set.has(clean)) {
+          set.add(clean);
+          results.push(clean);
+        }
+      };
+
+      // TAYRON SALINAS siempre primero
+      add('TAYRON SALINAS');
+
+      try {
+        const { results: r1 } = await db.prepare(`
+          SELECT DISTINCT asistente FROM hojas_manuales WHERE asistente IS NOT NULL AND TRIM(asistente) != ''
+        `).all();
+        if (r1) r1.forEach(row => add(row.asistente));
+      } catch (_) {}
+
+      try {
+        const { results: r2 } = await db.prepare(`
+          SELECT DISTINCT responsable FROM tickets WHERE responsable IS NOT NULL AND TRIM(responsable) != ''
+        `).all();
+        if (r2) r2.forEach(row => add(row.responsable));
+      } catch (_) {}
+
+      defaultList.forEach(add);
+
+      return json({ success: true, count: results.length, data: results });
+    }
+
+    // -------------------------------------------------------------
     // 4. MANUAL SHEETS: /api/manual-sheets
     // -------------------------------------------------------------
     if (path === '/api/manual-sheets' && method === 'GET') {

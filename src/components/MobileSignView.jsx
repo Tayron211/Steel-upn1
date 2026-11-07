@@ -13,8 +13,11 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import SignatureCanvas from './SignatureCanvas';
+import CustomSelect from './CustomSelect';
+import { useAssistants } from '../utils/assistants';
 
 export default function MobileSignView({ ticketId, onBack }) {
+  const asistentes = useAssistants();
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState('recepcion'); // 'entrega' | 'recepcion'
@@ -45,7 +48,7 @@ export default function MobileSignView({ ticketId, onBack }) {
               if (match && match[2]) setPersonName(match[2].trim());
             } else if (!found.firmaEntrega && found.firmaRecepcion) {
               setRole('entrega');
-              setPersonName(found.entregadoPor || found.responsable || 'Operaciones Sede');
+              setPersonName(found.entregadoPor || found.responsable || 'TAYRON SALINAS');
             } else {
               setRole('recepcion');
               const match = (found.descripcionSolucion || '').match(/\[(🎓\s*ALUMNO|👨‍🏫\s*DOCENTE):\s*([^\]]+)\]/i);
@@ -69,7 +72,7 @@ export default function MobileSignView({ ticketId, onBack }) {
     setRole(selected);
     if (!ticket) return;
     if (selected === 'entrega') {
-      setPersonName(ticket.entregadoPor || ticket.responsable || 'Operaciones Sede');
+      setPersonName(ticket.entregadoPor || ticket.responsable || 'TAYRON SALINAS');
     } else {
       const match = (ticket.descripcionSolucion || '').match(/\[(🎓\s*ALUMNO|👨‍🏫\s*DOCENTE):\s*([^\]]+)\]/i);
       setPersonName(match && match[2] ? match[2].trim() : (ticket.recibidoPor || ''));
@@ -277,15 +280,25 @@ export default function MobileSignView({ ticketId, onBack }) {
             {/* Person Name Input */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                {role === 'entrega' ? 'Nombre del Asistente / Operador' : 'Nombre del Docente o Alumno'}
+                {role === 'entrega' ? 'Nombre del Asistente / Responsable' : 'Nombre del Docente o Alumno'}
               </label>
-              <input
-                type="text"
-                value={personName}
-                onChange={e => setPersonName(e.target.value)}
-                placeholder={role === 'entrega' ? 'Ej: Alessandro Pascual' : 'Ej: Haro Omar'}
-                className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-bold"
-              />
+              {role === 'entrega' ? (
+                <CustomSelect
+                  value={personName}
+                  onChange={setPersonName}
+                  options={asistentes}
+                  placeholder="Seleccionar Asistente"
+                  className="h-10 text-xs font-bold"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={personName}
+                  onChange={e => setPersonName(e.target.value)}
+                  placeholder="Ej: Haro Omar"
+                  className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-bold"
+                />
+              )}
             </div>
 
             {/* Canvas */}

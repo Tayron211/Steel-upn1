@@ -83,6 +83,24 @@ app.delete('/api/tickets/:id', async (req, res) => {
   }
 });
 
+// --- ASISTENTES Y RESPONSABLES ---
+app.get('/api/assistants', async (req, res) => {
+  const defaultList = [
+    'TAYRON SALINAS',
+    'JOSÉ CARLOS MIRANDA ROSALES',
+    'FRANCISCO ALONSO VILLAFAN COLONIA',
+    'JAVIER ALEXANDER BENITES ALBAN',
+    'ALESSANDRO PASCUAL ROMERO',
+    'JAEL ZULEMA GALLARDO CARRANZA',
+    'JANETH VIVAR PEREZ',
+    'JHONAYKER MAGUIÑA',
+    'EDUARDO ANTONIO VELASQUEZ CARRION',
+    'JUNIOR MARINO FLORES PUMACAYO',
+    'DAVID SAMUEL HUSAREZ CABRERA'
+  ];
+  res.json({ success: true, count: defaultList.length, data: defaultList });
+});
+
 // --- HOJAS MANUALES ---
 app.get('/api/manual-sheets', async (req, res) => {
   try {

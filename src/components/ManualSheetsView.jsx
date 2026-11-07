@@ -21,6 +21,7 @@ import UpnLogo from './UpnLogo';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
+import { useAssistants } from '../utils/assistants';
 
 // Detecta si la hoja es de reemplazo y extrae el nombre del docente reemplazante
 const isReemplazoSheet = (item) => (item?.motivo || '').toUpperCase().includes('REEMPLAZO');
@@ -112,6 +113,8 @@ export default function ManualSheetsView({
     }
   }, [initialOpenTrigger]);
 
+  const asistentes = useAssistants();
+
   const [formData, setFormData] = useState({
     codigo: '',
     fecha: new Date().toISOString().split('T')[0],
@@ -121,7 +124,7 @@ export default function ManualSheetsView({
     carrera: '',
     motivo: 'PROBLEMA CON AUTENTICADOR',
     docenteReemplazo: '',
-    asistente: 'José Carlos Miranda Rosales'
+    asistente: 'TAYRON SALINAS'
   });
 
   // Validación en tiempo real: El código es ÚNICO e IRREPETIBLE
@@ -204,7 +207,7 @@ export default function ManualSheetsView({
       carrera: '',
       motivo: 'PROBLEMA CON AUTENTICADOR',
       docenteReemplazo: '',
-      asistente: 'José Carlos Miranda Rosales'
+      asistente: formData.asistente || 'TAYRON SALINAS'
     });
     setNrcMatchFound(null);
     setIsModalOpen(true);
@@ -348,16 +351,6 @@ export default function ManualSheetsView({
     "RECUPERACIÓN DE CLASE",
     "ADELANTO DE CLASE",
     "ASISTENCIA DE ESTUDIANTES"
-  ];
-
-  const asistentes = [
-    "José Carlos Miranda Rosales",
-    "Francisco Alonso Villafan Colonia",
-    "Javier Alexander Benites Alban",
-    "Jhonayker Maguiña",
-    "Alessandro Pascual Romero",
-    "Jael Zulema Gallardo Carranza",
-    "Janeth Vivar Perez"
   ];
 
   // Exclude empty unissued placeholder sheets from Excel, sort by date descending

@@ -32,6 +32,7 @@ import {
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
+import { useAssistants } from '../utils/assistants';
 
 const TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:20', '09:00', '09:10', '10:00', '10:50',
@@ -107,6 +108,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   }, [initialSearch]);
 
   // In-situ Quick Attention Bottom Sheet (Saves 80% time by recording loan right here!)
+  const asistentes = useAssistants();
+  const [quickAttentionResponsable, setQuickAttentionResponsable] = useState('TAYRON SALINAS');
   const [quickAttentionItem, setQuickAttentionItem] = useState(null);
   const [quickAttentionBeneficiary, setQuickAttentionBeneficiary] = useState('DOCENTE');
   const [quickAttentionTipo, setQuickAttentionTipo] = useState('PLUMONES / MATERIALES');
@@ -429,7 +432,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       estado: quickAttentionStatus,
       usuario: quickAttentionBeneficiary,
       descripcionSolucion: `${personTag} ${quickAttentionNotes || `Préstamo en aula ${quickAttentionItem.aula}`}`,
-      responsable: 'Operaciones Sede'
+      responsable: quickAttentionResponsable || 'TAYRON SALINAS'
     };
 
     try {
@@ -495,7 +498,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             motivo: `DOCENTE DE REEMPLAZO (${suplente})`,
             docenteReemplazo: suplente,
             detalle: `Docente Titular: ${activeModalItem.docente || ''} | Reemplaza: ${suplente}`,
-            asistente: 'Operaciones Sede'
+            asistente: 'TAYRON SALINAS'
           })
         });
         setToastMessage(`✅ Docente de reemplazo "${suplente}" registrado en hoja manual y Excel`);
@@ -1353,8 +1356,20 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </div>
           </div>
 
-          {/* Detail notes */}
+          {/* Detail notes & Assistant selector */}
           <div className="space-y-2.5 mb-4">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
+                Responsable / Asistente
+              </label>
+              <CustomSelect
+                value={quickAttentionResponsable}
+                onChange={setQuickAttentionResponsable}
+                options={asistentes}
+                placeholder="Seleccionar asistente"
+              />
+            </div>
+
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
                 Detalle / Observación

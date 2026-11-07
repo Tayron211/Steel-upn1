@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import SignatureCanvas from './SignatureCanvas';
+import CustomSelect from './CustomSelect';
+import { useAssistants } from '../utils/assistants';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
 export default function SignatureModal({ 
@@ -25,8 +27,9 @@ export default function SignatureModal({
   isOpen, 
   onClose, 
   onSaveSignatures,
-  defaultAssistant = 'Alessandro Pascual'
+  defaultAssistant = 'TAYRON SALINAS'
 }) {
+  const asistentes = useAssistants();
   if (!isOpen || !ticket) return null;
 
   // Cargo Folio Number
@@ -452,15 +455,15 @@ export default function SignatureModal({
                   )}
 
                   <div className="w-full border-t border-slate-600 dark:border-zinc-500 mt-2 pt-1">
-                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 block">
-                      Entregué
+                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 block mb-1">
+                      Entregué (Asistente)
                     </span>
-                    <input
-                      type="text"
+                    <CustomSelect
                       value={entregadoPor}
-                      onChange={e => setEntregadoPor(e.target.value)}
-                      placeholder="Nombre del Asistente"
-                      className="text-[10px] text-center font-bold text-slate-600 dark:text-zinc-400 bg-transparent border-b border-transparent focus:border-amber-500 focus:outline-none w-full"
+                      onChange={setEntregadoPor}
+                      options={asistentes}
+                      placeholder="Seleccionar Asistente"
+                      className="h-8 text-[11px] font-bold"
                     />
                   </div>
                 </div>
