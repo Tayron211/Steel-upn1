@@ -215,14 +215,44 @@ function colOf(cells, names) {
   return -1;
 }
 
-async function patchFormulas(token, itemId, sheet, address, matrix, fmtMatrix = null) {
-  const body = { formulas: matrix };
-  if (fmtMatrix) body.numberFormat = fmtMatrix;
+async function patchRange(token, itemId, sheet, address, matrix, fmtMatrix = null) {
+  let hasFormulas = false;
+  const valuesMatrix = [];
+  const formulasMatrix = [];
+
+  for (let r = 0; r < matrix.length; r++) {
+    const vRow = [];
+    const fRow = [];
+    const row = matrix[r] || [];
+    for (let c = 0; c < row.length; c++) {
+      const cell = row[c];
+      if (typeof cell === 'string' && cell.startsWith('=')) {
+        hasFormulas = true;
+        fRow.push(cell);
+        vRow.push(null);
+      } else {
+        vRow.push(cell === undefined || cell === null ? '' : cell);
+        fRow.push(null);
+      }
+    }
+    valuesMatrix.push(vRow);
+    formulasMatrix.push(fRow);
+  }
+
+  const body = { values: valuesMatrix };
+  if (hasFormulas) {
+    body.formulas = formulasMatrix;
+  }
+  if (fmtMatrix) {
+    body.numberFormat = fmtMatrix;
+  }
+
   return gfetch(token, `${G}/me/drive/items/${itemId}/workbook/worksheets/${enc(sheet)}/range(address='${address}')`, {
     method: 'PATCH',
     body: JSON.stringify(body)
   });
 }
+const patchFormulas = patchRange;
 
 /* ---- repara encabezados dañados por versiones anteriores ---- */
 async function repairHeaders(token, itemId, spec, used) {
@@ -861,37 +891,51 @@ export async function pushToExcel(db) {
       await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
     }
 
-    // 1) Sincronizar primero Excel -> BD de ambos archivos
+    // 1) Sincronizar primero Excel -> BD de ambos archivos SOLAMENTE si fueron editados externamente en OneDrive
     let pulled = 0;
-    try {
-      pulled += await pullFromExcel(db, token, primary.id);
-    } catch (e) {
-      console.error('Error importando desde Control Docente:', e);
+    let reservasPulled = 0;
+    const resTarget = await findReservasTarget(token);
+    const [modControl, modReservas] = await Promise.all([
+      itemMod(token, primary.id),
+      resTarget?.id ? itemMod(token, resTarget.id) : null
+    ]);
+    const lastModControl = (await getState(db, 'excel_mod_control')) || (await getState(db, 'excel_mod'));
+    const lastModReservas = await getState(db, 'excel_mod_reservas');
+
+    if (modControl && lastModControl && modControl !== lastModControl) {
+      try {
+        pulled += await pullFromExcel(db, token, primary.id);
+      } catch (e) {
+        console.error('Error importando desde Control Docente:', e);
+      }
     }
 
-    let reservasPulled = 0;
-    try {
-      const resPull = await pullReservationsFromExcel(db);
-      reservasPulled = resPull.imported || 0;
-      pulled += reservasPulled;
-    } catch (e) {
-      console.error('Error importando desde Reservas:', e);
+    if (modReservas && lastModReservas && modReservas !== lastModReservas) {
+      try {
+        const resPull = await pullReservationsFromExcel(db);
+        reservasPulled = resPull.imported || 0;
+        pulled += reservasPulled;
+      } catch (e) {
+        console.error('Error importando desde Reservas:', e);
+      }
     }
 
     if (pulled > 0) await markDbWrite(db);
 
-    // 2) BD -> Excel (CONTROL DOCENTE: asistencia, tickets, manuales)
-    const [asRes, ticketsRes, manualesRes] = await Promise.all([
+    // 2) BD -> Excel (CONTROL DOCENTE: asistencia, tickets, manuales, reservas)
+    const [asRes, ticketsRes, manualesRes, reservasRes] = await Promise.all([
       db.prepare(
         'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
       ).all(),
       db.prepare(SPECS.tickets.select).all(),
-      db.prepare(SPECS.manuales.select).all()
+      db.prepare(SPECS.manuales.select).all(),
+      db.prepare(SPECS.reservas.select).all()
     ]);
     const asRows = asRes.results || [];
     const preRows = {
       tickets: ticketsRes.results || [],
-      manuales: manualesRes.results || []
+      manuales: manualesRes.results || [],
+      reservas: reservasRes.results || []
     };
     const nrcMap = new Map();
     const courseMap = new Map();
@@ -918,24 +962,39 @@ export async function pushToExcel(db) {
         file: t.name,
         asistencia: await pushAsistencia(db, token, t.id, asRows),
         tickets: await pushRecords(db, token, t.id, 'tickets', ctx, isPrimary, preRows.tickets),
-        manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary, preRows.manuales)
+        manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary, preRows.manuales),
+        reservas: await pushRecords(db, token, t.id, 'reservas', ctx, isPrimary, preRows.reservas)
       };
       report.push(r);
     }
 
+    // 3) BD -> RESERVAS 2026 - TAY.xlsx: sincronizar reservas a sus hojas semanales correspondientes
+    let reservasWeeklyPushed = 0;
+    try {
+      const recentReservas = (await db.prepare('SELECT * FROM reservas ORDER BY fecha DESC LIMIT 50').all()).results || [];
+      for (const resItem of recentReservas) {
+        if (!resItem.fecha) continue;
+        try {
+          const syncRes = await appendReservationToExcel(db, resItem);
+          if (syncRes && syncRes.success) reservasWeeklyPushed++;
+        } catch (_) {}
+      }
+    } catch (errRes) {
+      console.error('Error sincronizando reservas semanales:', errRes);
+    }
+
     // Actualizar timestamps de modificación de ambos archivos
-    const resTarget = await findReservasTarget(token);
-    const [modControl, modReservas] = await Promise.all([
+    const [modControlAfter, modReservasAfter] = await Promise.all([
       itemMod(token, primary.id),
       resTarget?.id ? itemMod(token, resTarget.id) : null
     ]);
 
-    if (modControl) {
-      await setState(db, 'excel_mod', modControl);
-      await setState(db, 'excel_mod_control', modControl);
+    if (modControlAfter) {
+      await setState(db, 'excel_mod', modControlAfter);
+      await setState(db, 'excel_mod_control', modControlAfter);
     }
-    if (modReservas) {
-      await setState(db, 'excel_mod_reservas', modReservas);
+    if (modReservasAfter) {
+      await setState(db, 'excel_mod_reservas', modReservasAfter);
     }
     await setState(db, 'last_push', String(Date.now()));
     await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
@@ -945,6 +1004,7 @@ export async function pushToExcel(db) {
       connected: true, 
       pulled, 
       reservasPulled,
+      reservasWeeklyPushed,
       filesUpdated: report, 
       reservasFile: resTarget?.name || 'RESERVAS 2026 - TAY.xlsx',
       message: 'Ambos archivos de OneDrive sincronizados' 

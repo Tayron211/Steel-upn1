@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createDbChangeGate } from '../utils/webSignGate';
-import { 
-  X, 
-  Check, 
-  PenTool, 
-  QrCode, 
-  FileText, 
-  Printer, 
-  Copy, 
-  Download, 
+import {
+  X,
+  Check,
+  PenTool,
+  QrCode,
+  FileText,
+  Printer,
+  Copy,
+  Download,
   RotateCcw,
-  CheckCircle2, 
+  CheckCircle2,
   ExternalLink,
   ShieldCheck,
   ChevronDown,
@@ -22,10 +22,10 @@ import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
-export default function SignatureModal({ 
-  ticket, 
-  isOpen, 
-  onClose, 
+export default function SignatureModal({
+  ticket,
+  isOpen,
+  onClose,
   onSaveSignatures,
   defaultAssistant = 'TAYRON SALINAS'
 }) {
@@ -155,18 +155,18 @@ export default function SignatureModal({
           if (current.firmaRecepcion && current.firmaRecepcion !== firmaRecepcion) {
             setFirmaRecepcion(current.firmaRecepcion);
             setIsEditingRecepcion(false);
-            try { localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, current.firmaRecepcion); } catch (e) {}
+            try { localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, current.firmaRecepcion); } catch (e) { }
           }
           if (current.firmaEntrega && current.firmaEntrega !== firmaEntrega) {
             setFirmaEntrega(current.firmaEntrega);
             setIsEditingEntrega(false);
-            try { localStorage.setItem(`upn_sign_entrega_${ticket.id}`, current.firmaEntrega); } catch (e) {}
+            try { localStorage.setItem(`upn_sign_entrega_${ticket.id}`, current.firmaEntrega); } catch (e) { }
           }
           if (current.recibidoPor && !senorEs) {
             setSenorEs(current.recibidoPor);
           }
         }
-      } catch (err) {}
+      } catch (err) { }
     }, 15000);
 
     return () => {
@@ -183,7 +183,7 @@ export default function SignatureModal({
         localStorage.setItem(`upn_sign_entrega_${ticket.id}`, dataUrl);
         localStorage.setItem('upn_staff_signature', dataUrl); // save staff default
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const handleFirmaRecepcionChange = (dataUrl) => {
@@ -192,7 +192,7 @@ export default function SignatureModal({
       if (dataUrl) {
         localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, dataUrl);
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Save changes
@@ -221,7 +221,7 @@ export default function SignatureModal({
     try {
       if (finalEntrega) localStorage.setItem(`upn_sign_entrega_${ticket.id}`, finalEntrega);
       if (finalRecepcion) localStorage.setItem(`upn_sign_recepcion_${ticket.id}`, finalRecepcion);
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       await onSaveSignatures(ticket.id, payload);
@@ -266,14 +266,14 @@ export default function SignatureModal({
   const hasBothSignatures = !!(firmaEntrega && firmaRecepcion);
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center z-[9999] p-2 sm:p-4 animate-backdrop-fade"
       onClick={onClose}
       onTouchStart={e => e.stopPropagation()}
       onTouchMove={e => e.stopPropagation()}
       onTouchEnd={e => e.stopPropagation()}
     >
-      <div 
+      <div
         className="bg-white dark:bg-[#0c0c0f] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[96vh] flex flex-col animate-spring-up overflow-hidden"
         onClick={e => e.stopPropagation()}
         onTouchStart={e => e.stopPropagation()}
@@ -364,7 +364,7 @@ export default function SignatureModal({
         <div className="flex-1 overflow-y-auto pr-1 my-3">
           <div className="p-1 rounded-3xl bg-slate-100 dark:bg-zinc-900 border-2 border-slate-700 dark:border-zinc-700 shadow-sm">
             <div className="p-4 sm:p-5 rounded-[22px] bg-white dark:bg-[#0c0c0f] border border-slate-400 dark:border-zinc-700 flex flex-col justify-between space-y-4">
-              
+
               {/* Header: University & Cargo Number */}
               <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 pb-2.5">
                 <div className="flex items-center gap-1.5">
@@ -421,7 +421,7 @@ export default function SignatureModal({
 
               {/* Integrated Signatures Row: Entregué (Left) | Fecha/Hora (Center) | Recibí conforme (Right) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200 dark:border-zinc-800 items-end">
-                
+
                 {/* 1. ENTREGUÉ (OPERACIONES / ASISTENTE) */}
                 <div className="flex flex-col items-center text-center p-2 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-zinc-800">
                   <div className="w-full flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-zinc-400 mb-1 px-1">
