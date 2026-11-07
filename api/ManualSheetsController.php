@@ -67,16 +67,21 @@ class ManualSheetsController {
         $carrera = Security::sanitizeString($input['carrera'] ?? '');
         $motivo = Security::sanitizeString($input['motivo'] ?? 'DOCENTE SIN ACCESOS');
         $asistente = Security::sanitizeString($input['asistente'] ?? 'Operaciones');
+        $detalle = Security::sanitizeString($input['detalle'] ?? '');
+        $aula = Security::sanitizeString($input['aula'] ?? '');
+        $horaInicio = Security::sanitizeString($input['hora_inicio'] ?? '');
+        $horaFin = Security::sanitizeString($input['hora_fin'] ?? '');
+        $docenteReemplazo = Security::sanitizeString($input['docente_reemplazo'] ?? '');
         $id = 'manual_new_' . round(microtime(true) * 1000);
         $now = date('Y-m-d H:i:s');
 
         $sql = "INSERT INTO hojas_manuales (
-            id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, detalle, aula, hora_inicio, hora_fin, docente_reemplazo, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $ins = $pdo->prepare($sql);
         $ins->execute([
-            $id, '2026-2', $codigo, $fecha, $nrc, $docente, $curso, $carrera, $motivo, $asistente, $now
+            $id, '2026-2', $codigo, $fecha, $nrc, $docente, $curso, $carrera, $motivo, $asistente, $detalle, $aula, $horaInicio, $horaFin, $docenteReemplazo, $now
         ]);
 
         http_response_code(201);
@@ -93,6 +98,11 @@ class ManualSheetsController {
                 'carrera' => $carrera,
                 'motivo' => $motivo,
                 'asistente' => $asistente,
+                'detalle' => $detalle,
+                'aula' => $aula,
+                'hora_inicio' => $horaInicio,
+                'hora_fin' => $horaFin,
+                'docente_reemplazo' => $docenteReemplazo,
                 'created_at' => $now
             ]
         ], JSON_UNESCAPED_UNICODE);

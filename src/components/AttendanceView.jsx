@@ -486,12 +486,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             curso: activeModalItem.curso || '',
             carrera: activeModalItem.carrera || '',
             aula: activeModalItem.aula || '',
+            hora_inicio: activeModalItem.horaInicioProg || '',
+            hora_fin: activeModalItem.horaFinalProg || '',
+            periodo: activeModalItem.periodo || '2026-2',
             motivo: `DOCENTE DE REEMPLAZO (${suplente})`,
             docenteReemplazo: suplente,
             detalle: `Docente Titular: ${activeModalItem.docente || ''} | Reemplaza: ${suplente}`,
             asistente: 'Operaciones Sede'
           })
         });
+        setToastMessage(`✅ Docente de reemplazo "${suplente}" registrado en hoja manual y Excel`);
+        setTimeout(() => setToastMessage(''), 3500);
       }
     } catch (err) {
       console.error('Error saving observation:', err);
