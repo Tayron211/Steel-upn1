@@ -516,7 +516,7 @@ async function handleApiRequest(context) {
         if (existing) {
           return json({
             success: false,
-            error: `El código "${codigo}" ya está registrado y no puede repetirse. El código debe ser único e irrepetible.`
+            error: `El código "${codigo}" ya está registrado y no puede repetirse.`
           }, 409);
         }
       } else {

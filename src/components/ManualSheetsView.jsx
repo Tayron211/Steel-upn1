@@ -185,7 +185,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       return;
     }
     if (isDuplicate) {
-      alert(`⚠️ El código "${cleanCode}" ya fue utilizado. Este código es ÚNICO e IRREPETIBLE, no puede haber duplicidad.`);
+      alert(`⚠️ El código "${cleanCode}" ya fue utilizado.`);
       return;
     }
 
@@ -541,8 +541,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
           {/* Desktop Table (Optimized Layout - Zero Truncation, Full Assistants and Courses) */}
           <div className="hidden md:block bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs">
-            <div className="overflow-x-auto relative">
-              <table className="w-full text-left text-xs min-w-[960px] border-collapse">
+            <div className="overflow-x-auto relative scrollbar-thin">
+              <table className="w-full text-left text-xs min-w-[1020px] border-collapse">
                 <thead className="bg-slate-50 dark:bg-[#121216] text-slate-600 dark:text-zinc-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200/90 dark:border-zinc-800">
                   <tr>
                     <th className="py-3.5 px-3 whitespace-nowrap w-[92px] min-w-[92px]">CÓDIGO</th>
@@ -553,7 +553,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     <th className="py-3.5 px-3 whitespace-nowrap min-w-[125px]">MOTIVO</th>
                     <th className="py-3.5 px-3 whitespace-nowrap min-w-[130px]">ASISTENTE</th>
                     <th className="py-3.5 px-3 whitespace-nowrap min-w-[150px]">DOCENTE REEMPLAZANTE</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap text-center w-[165px] min-w-[165px] sticky right-0 bg-slate-50 dark:bg-[#121216] z-20 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/90 dark:border-zinc-800">
+                    <th className="py-3.5 px-3 whitespace-nowrap text-center w-[215px] min-w-[215px] sticky right-0 bg-slate-50 dark:bg-[#121216] z-20 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/90 dark:border-zinc-800">
                       ACCIONES
                     </th>
                   </tr>
@@ -561,7 +561,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map(item => (
                     <tr key={item.id} className="group hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 transition-colors">
-                      {/* CÓDIGO (Único e Irrepetible) */}
+                      {/* CÓDIGO */}
                       <td className="py-3.5 px-3 whitespace-nowrap align-top">
                         <span className="font-mono font-black text-xs bg-amber-100/90 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 px-2.5 py-1 rounded-lg shadow-2xs inline-block tracking-tight">
                           {item.codigo}
@@ -630,12 +630,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         )}
                       </td>
 
-                      {/* Acciones (Sticky a la derecha: nunca se corta) */}
-                      <td className="py-3 px-3 whitespace-nowrap text-center align-middle w-[165px] min-w-[165px] sticky right-0 bg-white dark:bg-[#0c0c0f] group-hover:bg-slate-50 dark:group-hover:bg-[#15151a] z-10 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/80 dark:border-zinc-800 transition-colors">
-                        <div className="flex items-center justify-center gap-1.5">
+                      {/* Acciones (Sticky a la derecha: nunca se corta en ninguna resolución) */}
+                      <td className="py-3 px-3 whitespace-nowrap text-center align-middle w-[215px] min-w-[215px] sticky right-0 bg-white dark:bg-[#0c0c0f] group-hover:bg-slate-50 dark:group-hover:bg-[#15151a] z-10 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/80 dark:border-zinc-800 transition-colors">
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleCopyVoucherText(item)}
-                            className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shrink-0"
+                            className="h-8 px-3 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shrink-0"
                             title="Copiar texto para WhatsApp"
                           >
                             <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -643,7 +643,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                           </button>
                           <button
                             onClick={() => setSelectedForPrint(item)}
-                            className="h-8 px-2.5 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shadow-2xs shrink-0"
+                            className="h-8 px-3 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs shrink-0"
                             title="Ver Detalles de la Hoja"
                           >
                             <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
@@ -695,12 +695,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
-              {/* Fila 1: Código (ÚNICO e IRREPETIBLE) y Fecha */}
+              {/* Fila 1: Código y Fecha */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300">
-                      Código de Hoja * <span className="font-black text-amber-600 dark:text-amber-400 text-[10px]">(Único)</span>
+                      Código de Hoja *
                     </label>
                   </div>
                   <div className="relative flex items-center">
@@ -749,11 +749,11 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                   </div>
                   {isDuplicate ? (
                     <div className="mt-1 text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-800/60 leading-tight">
-                      ⚠️ Código ya utilizado. Es único e irrepetible.
+                      ⚠️ Código ya registrado anteriormente.
                     </div>
                   ) : formData.codigo.trim() ? (
                     <div className="mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60 leading-tight">
-                      ✓ Código LN1-{extractNumber(formData.codigo).padStart(3, '0')} disponible (Único)
+                      ✓ Código LN1-{extractNumber(formData.codigo).padStart(3, '0')} disponible
                     </div>
                   ) : null}
                 </div>
