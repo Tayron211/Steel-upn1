@@ -813,7 +813,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-colors"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
                 >
                   <div>
                     {/* Header: Aula, Beneficiario y Hora */}
@@ -864,7 +864,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
                     {/* Panel de Firma Inicial si faltaba firmar */}
                     {isSigningInline && (
-                      <div className="my-2 p-2 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-2">
+                      <div className="my-2 p-2 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-2 overflow-hidden">
                         <SignatureCanvas
                           ref={cardSignCanvasRef}
                           title="Firma del Solicitante"
@@ -872,18 +872,18 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                           compact={true}
                           autoOpen={true}
                         />
-                        <div className="flex items-center gap-2">
+                        <div className="grid grid-cols-2 gap-1.5 pt-1">
                           <button
                             type="button"
                             onClick={() => handleSaveCardSignature(ticket.id)}
-                            className="flex-1 h-7.5 bg-[#FDBA30] hover:bg-amber-400 text-slate-950 font-black text-xs rounded-lg transition"
+                            className="h-8 bg-[#FDBA30] hover:bg-amber-400 active:bg-amber-500 text-slate-950 font-black text-xs rounded-lg transition flex items-center justify-center whitespace-nowrap active:scale-95 shadow-2xs"
                           >
                             Guardar Firma
                           </button>
                           <button
                             type="button"
                             onClick={() => setInlineSignTicketId(null)}
-                            className="h-7.5 px-3 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-lg transition"
+                            className="h-8 bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-bold text-xs rounded-lg transition flex items-center justify-center active:scale-95"
                           >
                             Cancelar
                           </button>
@@ -891,9 +891,9 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       </div>
                     )}
 
-                    {/* PASO 2: Panel de Devolución */}
+                    {/* PASO 2: Panel de Devolución (Diseño adaptable 100% contenido en tarjeta) */}
                     {isReceivingInline && (
-                      <div className="my-2 p-2 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-2">
+                      <div className="my-2 p-2 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-2 overflow-hidden">
                         <SignatureCanvas
                           ref={returnSignCanvasRef}
                           title="Firma de Devolución"
@@ -902,30 +902,32 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                           compact={true}
                           autoOpen={true}
                         />
-                        <div className="flex items-center gap-1.5 pt-1">
+                        <div className="space-y-1.5 pt-1">
                           <button
                             type="button"
                             onClick={() => handleConfirmReturnWithSignature(ticket)}
-                            className="flex-1 h-7.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-xs"
+                            className="w-full h-8 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-lg transition flex items-center justify-center gap-1.5 active:scale-95 shadow-xs"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
                             <span>Confirmar Devolución</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMarkReturnedDirect(ticket)}
-                            className="h-7.5 px-2 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-[10px] rounded-lg transition"
-                            title="Recibir sin requerir firma"
-                          >
-                            Sin firma
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setInlineReceiveTicketId(null)}
-                            className="h-7.5 px-2 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-[10px] rounded-lg transition"
-                          >
-                            Cancelar
-                          </button>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleMarkReturnedDirect(ticket)}
+                              className="h-7.5 bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-bold text-[11px] rounded-lg transition flex items-center justify-center active:scale-95"
+                              title="Recibir sin requerir firma"
+                            >
+                              Sin firma
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setInlineReceiveTicketId(null)}
+                              className="h-7.5 bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-bold text-[11px] rounded-lg transition flex items-center justify-center active:scale-95"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -970,7 +972,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between opacity-95 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between opacity-95 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
                 >
                   <div>
                     {/* Header: Aula, Beneficiario y Estado Devuelto */}

@@ -346,7 +346,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   }, [validSheets, search, filterMotivo]);
 
   return (
-    <div className="space-y-4 pb-36 md:pb-12 w-full mx-auto">
+    <div className="space-y-4 pb-36 md:pb-24 w-full mx-auto">
       {/* Toast Alert - Portaled to viewport body so it's 100% visible regardless of scroll position */}
       {(copiedSuccess || toastMessage) && (
         <ToastBanner
@@ -540,21 +540,20 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
             ))}
           </div>
 
-          {/* Desktop Table (Optimized Layout - Zero Truncation, Full Assistants and Courses) */}
+          {/* Desktop Table (Optimized Layout - Adaptable a Cualquier Pantalla sin Cortarse) */}
           <div className="hidden md:block bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto relative scrollbar-thin">
-              <table className="w-full text-left text-xs min-w-[980px] border-collapse">
+              <table className="w-full text-left text-xs min-w-[880px] border-collapse">
                 <thead className="bg-slate-50 dark:bg-[#121216] text-slate-600 dark:text-zinc-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200/90 dark:border-zinc-800">
                   <tr>
-                    <th className="py-3.5 px-3 whitespace-nowrap w-[85px] min-w-[85px]">CÓDIGO</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap w-[85px] min-w-[85px]">FECHA</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap w-[72px] min-w-[72px]">NRC</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[145px]">DOCENTE</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[160px]">CURSO / CARRERA</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[110px]">MOTIVO</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[115px]">ASISTENTE</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[180px]">DOCENTE REEMPLAZANTE</th>
-                    <th className="py-3.5 px-3 pr-4 whitespace-nowrap text-center w-[185px] min-w-[185px]">
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[95px] min-w-[95px]">CÓDIGO / FECHA</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[70px] min-w-[70px]">NRC</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[130px]">DOCENTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[140px]">CURSO / CARRERA</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[100px]">MOTIVO</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[105px]">ASISTENTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[145px]">DOCENTE REEMPLAZANTE</th>
+                    <th className="py-3.5 px-3 pr-4 whitespace-nowrap text-center w-[165px] min-w-[165px] sticky right-0 bg-slate-50 dark:bg-[#121216] z-20 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.6)] border-l border-slate-200/90 dark:border-zinc-800">
                       ACCIONES
                     </th>
                   </tr>
@@ -562,16 +561,14 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map(item => (
                     <tr key={item.id} className="group hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 transition-colors">
-                      {/* CÓDIGO */}
+                      {/* CÓDIGO / FECHA */}
                       <td className="py-3.5 px-3 whitespace-nowrap align-top">
-                        <span className="font-mono font-black text-xs bg-amber-100/90 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 px-2.5 py-1 rounded-lg shadow-2xs inline-block tracking-tight">
+                        <span className="font-mono font-black text-xs bg-amber-100/90 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 px-2 py-0.5 rounded-lg shadow-2xs inline-block tracking-tight">
                           {item.codigo}
                         </span>
-                      </td>
-
-                      {/* FECHA */}
-                      <td className="py-3.5 px-3 whitespace-nowrap align-top font-mono text-[11px] text-slate-700 dark:text-zinc-300 font-bold">
-                        {item.fecha && item.fecha.includes('-') ? item.fecha.split('-').reverse().join('/') : item.fecha}
+                        <div className="font-mono text-[10px] text-slate-500 dark:text-zinc-400 font-bold mt-1">
+                          {item.fecha && item.fecha.includes('-') ? item.fecha.split('-').reverse().join('/') : item.fecha}
+                        </div>
                       </td>
 
                       {/* NRC */}
@@ -631,12 +628,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         )}
                       </td>
 
-                      {/* Acciones (Columna fluida y 100% visible en cualquier pantalla) */}
-                      <td className="py-3 px-3 pr-4 whitespace-nowrap text-center align-middle w-[185px] min-w-[185px]">
-                        <div className="flex items-center justify-center gap-2">
+                      {/* Acciones (Sticky a la derecha: NUNCA se corta en ninguna resolución o ventana) */}
+                      <td className="py-3 px-3 pr-4 whitespace-nowrap text-center align-middle w-[165px] min-w-[165px] sticky right-0 bg-white dark:bg-[#0c0c0f] group-hover:bg-slate-50 dark:group-hover:bg-[#15151a] z-10 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.6)] border-l border-slate-200/80 dark:border-zinc-800 transition-colors">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => handleCopyVoucherText(item)}
-                            className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shrink-0"
+                            className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shrink-0"
                             title="Copiar texto para WhatsApp"
                           >
                             <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -644,7 +641,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                           </button>
                           <button
                             onClick={() => setSelectedForPrint(item)}
-                            className="h-8 px-2.5 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs shrink-0"
+                            className="h-8 px-2.5 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shadow-2xs shrink-0"
                             title="Ver Detalles de la Hoja"
                           >
                             <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
