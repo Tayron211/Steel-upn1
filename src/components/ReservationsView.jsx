@@ -257,6 +257,15 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     }
   }, [initialOpenTrigger]);
 
+  // Opciones de semanas formateadas para el selector estilizado Apple Liquid
+  const sheetOptions = useMemo(() => [
+    { value: '', label: 'Todas las semanas / hojas de Excel' },
+    ...excelSheets.map((sh) => ({
+      value: sh.name,
+      label: sh.name + (sh.isCurrent ? ' ⭐ (Semana Actual)' : '')
+    }))
+  ], [excelSheets]);
+
   // Generar los próximos 7 días (Hoy + 6 días siguientes)
   const upcomingDays = useMemo(() => {
     const list = [];
@@ -854,23 +863,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               <CalendarDays className="w-3.5 h-3.5 text-amber-500 stroke-[2.3]" />
               <span>Hoja Excel:</span>
             </span>
-            <div className="relative flex-1 sm:w-72">
-              <select
+            <div className="flex-1 sm:w-80">
+              <CustomSelect
                 value={selectedSheet}
-                onChange={(e) => {
-                  setSelectedSheet(e.target.value);
+                onChange={(val) => {
+                  setSelectedSheet(val);
                   setSelectedDayOffset(null);
                 }}
-                className="w-full h-8 pl-2.5 pr-8 text-xs font-bold rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 appearance-none cursor-pointer truncate"
-              >
-                <option value="">Todas las semanas / hojas de Excel</option>
-                {excelSheets.map((sh) => (
-                  <option key={sh.name} value={sh.name}>
-                    {sh.name} {sh.isCurrent ? '⭐ (Semana Actual)' : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-[2.5]" />
+                placeholder="Todas las semanas / hojas de Excel"
+                options={sheetOptions}
+                className="h-8.5 rounded-xl text-xs font-bold"
+              />
             </div>
           </div>
 
