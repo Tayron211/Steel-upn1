@@ -97,7 +97,18 @@ export default function App() {
     } else {
       window.history.replaceState({ tab: targetTab }, '', targetHash);
     }
+    // Siempre mandar al encabezado superior con scroll suave
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
   };
+
+  // Cada cambio de pestaña manda inmediatamente al encabezado
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, [activeTab]);
 
   // Sync initial hash and handle Browser Back / Forward buttons (Multi-page experience)
   useEffect(() => {
@@ -381,6 +392,9 @@ export default function App() {
         onOpenManualSheet={() => {
           setOperationsSubTab('manual');
           navigateTab('operations', true);
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+          if (document.documentElement) document.documentElement.scrollTop = 0;
+          if (document.body) document.body.scrollTop = 0;
         }}
         onOpenNewTicket={() => {
           setNewTicketPrefill({
@@ -391,10 +405,16 @@ export default function App() {
             descripcionSolucion: 'Préstamo de plumones y mota acrílica'
           });
           navigateTab('tickets', true);
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+          if (document.documentElement) document.documentElement.scrollTop = 0;
+          if (document.body) document.body.scrollTop = 0;
         }}
         onOpenReservation={() => {
           setOperationsSubTab('reservations');
           navigateTab('operations', true);
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+          if (document.documentElement) document.documentElement.scrollTop = 0;
+          if (document.body) document.body.scrollTop = 0;
         }}
       />
     </div>

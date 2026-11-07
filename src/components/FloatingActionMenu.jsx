@@ -41,6 +41,9 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
               type="button"
               onClick={() => {
                 setIsOpen(false);
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                if (document.documentElement) document.documentElement.scrollTop = 0;
+                if (document.body) document.body.scrollTop = 0;
                 onOpenNewTicket();
               }}
               style={{ animationDelay: '120ms' }}
@@ -57,6 +60,9 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
               type="button"
               onClick={() => {
                 setIsOpen(false);
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                if (document.documentElement) document.documentElement.scrollTop = 0;
+                if (document.body) document.body.scrollTop = 0;
                 onOpenManualSheet();
               }}
               style={{ animationDelay: '70ms' }}
@@ -73,6 +79,9 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
               type="button"
               onClick={() => {
                 setIsOpen(false);
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                if (document.documentElement) document.documentElement.scrollTop = 0;
+                if (document.body) document.body.scrollTop = 0;
                 onOpenReservation();
               }}
               style={{ animationDelay: '20ms' }}

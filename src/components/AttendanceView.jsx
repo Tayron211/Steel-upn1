@@ -709,7 +709,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </button>
 
             <button
-              onClick={() => setViewMode(viewMode === 'FREE_ROOMS' ? 'CLASSES' : 'FREE_ROOMS')}
+              onClick={() => {
+                setViewMode(viewMode === 'FREE_ROOMS' ? 'CLASSES' : 'FREE_ROOMS');
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              }}
               className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${viewMode === 'FREE_ROOMS'
                   ? 'bg-emerald-600 text-white font-black shadow-2xs'
                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
@@ -893,7 +896,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </div>
           </div>
           <button
-            onClick={() => setViewMode('CLASSES')}
+            onClick={() => {
+              setViewMode('CLASSES');
+              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+            }}
             className="text-xs font-bold bg-white dark:bg-zinc-800 text-emerald-900 dark:text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xs whitespace-nowrap shrink-0 self-start sm:self-auto"
           >
             Volver a Clases

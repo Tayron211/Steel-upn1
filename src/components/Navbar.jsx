@@ -84,7 +84,16 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
       <header className="sticky top-0 z-40 bg-white/70 dark:bg-black/70 backdrop-blur-2xl backdrop-saturate-180 border-b border-slate-200/70 dark:border-zinc-800/80 safe-top shadow-2xs supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/60 print:hidden">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
           {/* Official UPN Identity Brand */}
-          <div className="flex items-center min-w-0">
+          <div
+            className="flex items-center min-w-0 cursor-pointer active:scale-98 transition-transform"
+            onClick={() => {
+              setActiveTab('attendance');
+              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              if (document.documentElement) document.documentElement.scrollTop = 0;
+              if (document.body) document.body.scrollTop = 0;
+            }}
+            title="Ir al inicio (Ronda Académica)"
+          >
             <UpnLogo variant="horizontal" />
           </div>
 
@@ -148,7 +157,12 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    if (document.documentElement) document.documentElement.scrollTop = 0;
+                    if (document.body) document.body.scrollTop = 0;
+                  }}
                   className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap shrink-0 ${
                     isActive
                       ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_10px_rgba(253,186,48,0.35)] font-extrabold scale-[1.02]'
@@ -202,7 +216,12 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    if (document.documentElement) document.documentElement.scrollTop = 0;
+                    if (document.body) document.body.scrollTop = 0;
+                  }}
                   className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
                 >
                   <Icon 

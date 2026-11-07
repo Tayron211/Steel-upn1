@@ -15,15 +15,30 @@ export default function OperationsHub({
   useEffect(() => {
     if (initialClassData) {
       setSubTab('manual');
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
   }, [initialClassData]);
+
+  useEffect(() => {
+    if (defaultSubTab) {
+      setSubTab(defaultSubTab);
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
+  }, [defaultSubTab]);
+
+  const switchSubTab = (target) => {
+    setSubTab(target);
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  };
 
   return (
     <div className="space-y-4">
       {/* Sleek Apple-Style Segmented Sub-Navigation for Operations Hub */}
       <div className="apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm">
         <button
-          onClick={() => setSubTab('manual')}
+          onClick={() => switchSubTab('manual')}
           className={`flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'manual'
               ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_12px_rgba(253,186,48,0.4)] font-black scale-[1.02]'
@@ -35,7 +50,7 @@ export default function OperationsHub({
         </button>
 
         <button
-          onClick={() => setSubTab('reservations')}
+          onClick={() => switchSubTab('reservations')}
           className={`flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'reservations'
               ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_12px_rgba(253,186,48,0.4)] font-black scale-[1.02]'
@@ -47,7 +62,7 @@ export default function OperationsHub({
         </button>
 
         <button
-          onClick={() => setSubTab('rooms')}
+          onClick={() => switchSubTab('rooms')}
           className={`flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'rooms'
               ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_12px_rgba(253,186,48,0.4)] font-black scale-[1.02]'

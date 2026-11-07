@@ -598,7 +598,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
         <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shrink-0">
           <button
-            onClick={() => setActiveViewTab('ACTIVOS')}
+            onClick={() => {
+              setActiveViewTab('ACTIVOS');
+              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              if (document.documentElement) document.documentElement.scrollTop = 0;
+              if (document.body) document.body.scrollTop = 0;
+            }}
             className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
               activeViewTab === 'ACTIVOS'
                 ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
@@ -612,7 +617,12 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
           </button>
 
           <button
-            onClick={() => setActiveViewTab('CONCLUIDOS')}
+            onClick={() => {
+              setActiveViewTab('CONCLUIDOS');
+              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              if (document.documentElement) document.documentElement.scrollTop = 0;
+              if (document.body) document.body.scrollTop = 0;
+            }}
             className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
               activeViewTab === 'CONCLUIDOS'
                 ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
