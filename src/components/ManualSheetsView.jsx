@@ -194,9 +194,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
         ...formData,
         codigo: cleanCode,
         docenteReemplazo: suplente,
-        motivo: isReemplazo && suplente
-          ? `DOCENTE DE REEMPLAZO (${suplente})`
-          : formData.motivo,
+        motivo: formData.motivo,
         detalle: isReemplazo && suplente
           ? `Docente Titular: ${formData.docente} | Reemplaza: ${suplente}`
           : (formData.detalle || '')

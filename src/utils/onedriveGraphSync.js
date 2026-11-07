@@ -332,11 +332,13 @@ const SPECS = {
         const mDet = String(r.detalle).match(/Reemplaza:\s*([^|]+)/i);
         if (mDet) rep = mDet[1].trim();
       }
+      const cleanMotivo = String(r.motivo || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
       return {
         ...r,
         docente: doc,
         curso: r.curso || info.curso || '',
         carrera: r.carrera || info.carrera || '',
+        motivo: cleanMotivo,
         docente_reemplazo: rep ? rep.toUpperCase() : ''
       };
     },

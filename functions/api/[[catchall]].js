@@ -540,6 +540,13 @@ async function handleApiRequest(context) {
 
       const id = `manual_new_${Date.now()}`;
       const fecha = body.fecha || new Date().toISOString().split('T')[0];
+      let motivo = String(body.motivo || 'DOCENTE SIN ACCESOS').trim();
+      let suplente = String(body.docenteReemplazo || body.docente_reemplazo || '').trim().toUpperCase();
+      if (!suplente) {
+        const m = motivo.match(/REEMPLAZO\s*\(([^)]+)\)/i);
+        if (m) suplente = m[1].trim().toUpperCase();
+      }
+      motivo = motivo.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
       await db.prepare(`
         INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, detalle, aula, hora_inicio, hora_fin, firma_docente, docente_reemplazo, created_at)
@@ -553,14 +560,14 @@ async function handleApiRequest(context) {
         body.docente || '',
         body.curso || '',
         body.carrera || '',
-        body.motivo || 'DOCENTE SIN ACCESOS',
+        motivo,
         body.asistente || 'OPERACIONES',
         body.detalle || '',
         body.aula || '',
         body.hora_inicio || '',
         body.hora_fin || '',
         body.firma_docente || '',
-        body.docenteReemplazo || body.docente_reemplazo || ''
+        suplente
       ).run();
 
       const created = await db.prepare('SELECT * FROM hojas_manuales WHERE id = ?').bind(id).first();
