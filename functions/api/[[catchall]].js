@@ -479,16 +479,30 @@ async function handleApiRequest(context) {
 
     if (path === '/api/manual-sheets' && method === 'POST') {
       const body = await request.json();
-      // Siguiente código según el mayor LN1-XXX existente (evita duplicados)
-      const { results: codes } = await db.prepare('SELECT codigo FROM hojas_manuales').all();
-      const maxNum = codes.reduce((max, r) => {
-        const m = String(r.codigo || '').match(/LN\d*-(\d+)/i);
-        const n = m ? parseInt(m[1], 10) : 0;
-        return n > max ? n : max;
-      }, 0);
-      const codigo = `LN1-${String(maxNum + 1).padStart(3, '0')}`;
+      
+      let codigo = (body.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+      if (codigo) {
+        // Validación estricta: El código es ÚNICO e IRREPETIBLE, no puede haber duplicidad
+        const existing = await db.prepare("SELECT id, codigo FROM hojas_manuales WHERE UPPER(TRIM(REPLACE(codigo, 'LNI-', 'LN1-'))) = ?").bind(codigo).first();
+        if (existing) {
+          return json({
+            success: false,
+            error: `El código "${codigo}" ya está registrado y no puede repetirse. El código debe ser único e irrepetible.`
+          }, 409);
+        }
+      } else {
+        // Siguiente código según el mayor LN1-XXX existente (evita duplicados)
+        const { results: codes } = await db.prepare('SELECT codigo FROM hojas_manuales').all();
+        const maxNum = codes.reduce((max, r) => {
+          const m = String(r.codigo || '').match(/LN\d*-(\d+)/i);
+          const n = m ? parseInt(m[1], 10) : 0;
+          return n > max ? n : max;
+        }, 0);
+        codigo = `LN1-${String(maxNum + 1).padStart(3, '0')}`;
+      }
+
       const id = `manual_new_${Date.now()}`;
-      const fecha = new Date().toISOString().split('T')[0];
+      const fecha = body.fecha || new Date().toISOString().split('T')[0];
 
       await db.prepare(`
         INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, detalle, aula, hora_inicio, hora_fin, firma_docente, docente_reemplazo, created_at)
@@ -497,7 +511,7 @@ async function handleApiRequest(context) {
         id,
         body.periodo || '2026-2',
         codigo,
-        body.fecha || fecha,
+        fecha,
         body.nrc ? String(body.nrc) : '',
         body.docente || '',
         body.curso || '',

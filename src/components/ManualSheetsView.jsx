@@ -14,7 +14,8 @@ import {
   Share2,
   Copy,
   Check,
-  Eye
+  Eye,
+  AlertTriangle
 } from 'lucide-react';
 import UpnLogo from './UpnLogo';
 import ToastBanner from './ToastBanner';
@@ -26,6 +27,7 @@ const isReemplazoSheet = (item) => (item?.motivo || '').toUpperCase().includes('
 const getSuplente = (item) => {
   if (!item) return '';
   if (item.docenteReemplazo) return item.docenteReemplazo;
+  if (item.docente_reemplazo) return item.docente_reemplazo;
   const m = (item.motivo || '').match(/REEMPLAZO\s*\(([^)]+)\)/i);
   if (m) return m[1].trim();
   const d = (item.detalle || '').match(/Reemplaza:\s*(.+)$/i);
@@ -33,6 +35,26 @@ const getSuplente = (item) => {
   return '';
 };
 const getMotivoBase = (item) => (item?.motivo || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+
+// Genera el siguiente código LN1-XXX disponible
+const getNextCode = (currentSheets) => {
+  const maxNum = (currentSheets || []).reduce((max, r) => {
+    const m = String(r.codigo || '').match(/LN\d*-(\d+)/i);
+    const n = m ? parseInt(m[1], 10) : 0;
+    return n > max ? n : max;
+  }, 0);
+  return `LN1-${String(maxNum + 1).padStart(3, '0')}`;
+};
+
+// Verifica duplicidad estricta (el código es ÚNICO e IRREPETIBLE)
+const isCodeDuplicate = (code, currentSheets) => {
+  if (!code || !code.trim()) return false;
+  const target = code.trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+  return (currentSheets || []).some(s => {
+    const existing = String(s.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+    return existing === target;
+  });
+};
 
 export default function ManualSheetsView({ initialClassData, onClearInitialClass }) {
   const [sheets, setSheets] = useState([]);
@@ -57,6 +79,9 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
     docenteReemplazo: '',
     asistente: 'José Carlos Miranda Rosales'
   });
+
+  // Validación en tiempo real: El código es ÚNICO e IRREPETIBLE
+  const isDuplicate = useMemo(() => isCodeDuplicate(formData.codigo, sheets), [formData.codigo, sheets]);
 
   const loadSheets = async () => {
     setLoading(true);
@@ -90,8 +115,10 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
   useEffect(() => {
     if (initialClassData) {
+      const nextCode = getNextCode(sheets);
       setFormData(prev => ({
         ...prev,
+        codigo: prev.codigo || nextCode,
         nrc: initialClassData.nrc || '',
         docente: initialClassData.docente || '',
         curso: initialClassData.curso || '',
@@ -100,16 +127,44 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       setIsModalOpen(true);
       if (onClearInitialClass) onClearInitialClass();
     }
-  }, [initialClassData]);
+  }, [initialClassData, sheets]);
+
+  const handleOpenNewModal = () => {
+    const nextCode = getNextCode(sheets);
+    setFormData({
+      codigo: nextCode,
+      fecha: new Date().toISOString().split('T')[0],
+      nrc: '',
+      docente: '',
+      curso: '',
+      carrera: '',
+      motivo: 'PROBLEMA CON AUTENTICADOR',
+      docenteReemplazo: '',
+      asistente: 'José Carlos Miranda Rosales'
+    });
+    setNrcMatchFound(null);
+    setIsModalOpen(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const cleanCode = (formData.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+    if (!cleanCode) {
+      alert('Debe ingresar el código de la hoja (ej. LN1-097).');
+      return;
+    }
+    if (isDuplicate) {
+      alert(`⚠️ El código "${cleanCode}" ya fue utilizado. Este código es ÚNICO e IRREPETIBLE, no puede haber duplicidad.`);
+      return;
+    }
+
     try {
       const isReemplazo = formData.motivo === 'DOCENTE DE REEMPLAZO';
       const suplente = (formData.docenteReemplazo || '').trim().toUpperCase();
 
       const payload = {
         ...formData,
+        codigo: cleanCode,
         docenteReemplazo: suplente,
         motivo: isReemplazo && suplente
           ? `DOCENTE DE REEMPLAZO (${suplente})`
@@ -132,7 +187,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       setSheets(prev => [json.data, ...prev]);
       setIsModalOpen(false);
       resetForm();
-      setToastMessage(`✅ Hoja ${json.data?.codigo || ''} registrada correctamente`);
+      setToastMessage(`✅ Hoja ${json.data?.codigo || cleanCode} registrada correctamente`);
       setTimeout(() => setToastMessage(''), 3000);
     } catch (err) {
       console.error(err);
@@ -293,10 +348,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
             </span>
 
             <button
-              onClick={() => {
-                resetForm();
-                setIsModalOpen(true);
-              }}
+              onClick={handleOpenNewModal}
               className="h-10 px-4 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0"
             >
               <Plus className="w-4 h-4 stroke-[2.8] shrink-0" />
@@ -459,37 +511,51 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
           {/* Desktop Table (Optimized Layout - Zero Truncation, Full Assistants and Courses) */}
           <div className="hidden md:block bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs min-w-[860px]">
+              <table className="w-full text-left text-xs min-w-[980px]">
                 <thead className="bg-slate-50 dark:bg-[#121216] text-slate-600 dark:text-zinc-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200/90 dark:border-zinc-800">
                   <tr>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[120px]">Hoja / Fecha</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[240px]">NRC · Curso / Carrera</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Docente</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px]">Motivo</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[200px]">Asistente Emisor</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap text-right min-w-[150px]">Acciones</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[100px]">CÓDIGO</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[95px]">FECHA</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[90px]">NRC</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[170px]">DOCENTE</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[200px]">CURSO / CARRERA</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[140px]">MOTIVO</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[150px]">ASISTENTE</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[170px]">DOCENTE REEMPLAZANTE</th>
+                    <th className="py-3.5 px-3.5 whitespace-nowrap text-right min-w-[120px]">ACCIONES</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 transition-colors">
-                      {/* Hoja y Fecha */}
-                      <td className="py-3.5 px-4 whitespace-nowrap align-top">
+                      {/* CÓDIGO (Único e Irrepetible) */}
+                      <td className="py-3.5 px-3.5 whitespace-nowrap align-top">
                         <span className="font-mono font-black text-xs bg-amber-100/90 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 px-2.5 py-1 rounded-lg shadow-2xs inline-block tracking-tight">
                           {item.codigo}
                         </span>
-                        <div className="font-mono text-[11px] text-slate-500 dark:text-zinc-400 font-semibold mt-1.5">
-                          {item.fecha}
+                      </td>
+
+                      {/* FECHA */}
+                      <td className="py-3.5 px-3.5 whitespace-nowrap align-top font-mono text-[11px] text-slate-700 dark:text-zinc-300 font-bold">
+                        {item.fecha}
+                      </td>
+
+                      {/* NRC */}
+                      <td className="py-3.5 px-3.5 whitespace-nowrap align-top">
+                        <span className="font-mono font-black text-xs text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-900 px-2.5 py-1 rounded-lg border border-slate-200/90 dark:border-zinc-700 inline-block shadow-2xs">
+                          {item.nrc}
+                        </span>
+                      </td>
+
+                      {/* DOCENTE */}
+                      <td className="py-3.5 px-3.5 align-top">
+                        <div className="font-extrabold text-xs text-slate-950 dark:text-white leading-snug break-words">
+                          {item.docente}
                         </div>
                       </td>
 
-                      {/* NRC, Curso y Carrera: 100% visible, no truncations! */}
-                      <td className="py-3.5 px-4 align-top">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <span className="font-mono font-black text-xs text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-900 px-2.5 py-1 rounded-lg border border-slate-200/90 dark:border-zinc-700 inline-block shadow-2xs">
-                            NRC {item.nrc}
-                          </span>
-                        </div>
+                      {/* CURSO / CARRERA */}
+                      <td className="py-3.5 px-3.5 align-top">
                         <div className="font-bold text-slate-900 dark:text-white text-xs leading-snug break-words">
                           {item.curso}
                         </div>
@@ -500,36 +566,15 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         )}
                       </td>
 
-                      {/* Docente: 100% visible */}
-                      <td className="py-3.5 px-4 align-top">
-                        {isReemplazoSheet(item) && (
-                          <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-0.5">Titular</div>
-                        )}
-                        <div className={`font-extrabold text-xs leading-snug break-words ${isReemplazoSheet(item) ? 'text-slate-500 dark:text-zinc-400' : 'text-slate-950 dark:text-white'}`}>
-                          {item.docente}
-                        </div>
-                        {isReemplazoSheet(item) && (
-                          <div className="mt-1.5 p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/70">
-                            <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-300">
-                              <UserCheck className="w-3 h-3 stroke-[2.4] shrink-0" />
-                              <span>Reemplazante</span>
-                            </div>
-                            <div className={`text-xs font-extrabold leading-snug break-words mt-0.5 ${getSuplente(item) ? 'text-purple-950 dark:text-purple-100' : 'text-slate-400 dark:text-zinc-500 italic font-semibold'}`}>
-                              {getSuplente(item) || 'No registrado'}
-                            </div>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Motivo: 100% visible */}
-                      <td className="py-3.5 px-4 align-top">
+                      {/* MOTIVO */}
+                      <td className="py-3.5 px-3.5 align-top">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 break-words leading-tight">
                           {getMotivoBase(item)}
                         </span>
                       </td>
 
-                      {/* Asistente Emisor: 100% visible, NEVER cut off! */}
-                      <td className="py-3.5 px-4 align-top">
+                      {/* ASISTENTE */}
+                      <td className="py-3.5 px-3.5 align-top">
                         <div className="flex items-start gap-1.5">
                           <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-300 flex items-center justify-center shrink-0 font-black text-[10px] mt-0.5">
                             {(item.asistente || 'A').charAt(0)}
@@ -540,8 +585,20 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         </div>
                       </td>
 
+                      {/* DOCENTE REEMPLAZANTE (Columna I) */}
+                      <td className="py-3.5 px-3.5 align-top">
+                        {getSuplente(item) ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/80 text-purple-950 dark:text-purple-200 font-extrabold text-xs">
+                            <UserCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0 stroke-[2.4]" />
+                            <span className="break-words">{getSuplente(item)}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 dark:text-zinc-600 text-xs font-semibold">-</span>
+                        )}
+                      </td>
+
                       {/* Acciones */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-right align-top space-x-1.5">
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-right align-top space-x-1.5">
                         <button
                           onClick={() => handleCopyVoucherText(item)}
                           className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95"
@@ -603,6 +660,61 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
+              {/* Fila 1: Código (ÚNICO e IRREPETIBLE) y Fecha */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+                      Código de Hoja * <span className="font-black text-amber-600 dark:text-amber-400 text-[10px]">(Único)</span>
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={formData.codigo}
+                      onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase().replace(/\s+/g, '') })}
+                      placeholder="Ej: LN1-097"
+                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-black transition ${
+                        isDuplicate
+                          ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200'
+                          : formData.codigo.trim()
+                          ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20'
+                          : 'border-slate-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20'
+                      }`}
+                    />
+                    {isDuplicate ? (
+                      <div className="absolute right-2.5 top-2.5 text-rose-600 dark:text-rose-400">
+                        <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </div>
+                    ) : formData.codigo.trim() ? (
+                      <div className="absolute right-2.5 top-2.5 text-emerald-600 dark:text-emerald-400">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                    ) : null}
+                  </div>
+                  {isDuplicate ? (
+                    <div className="mt-1 text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-800/60 leading-tight">
+                      ⚠️ Código ya utilizado. Es único e irrepetible.
+                    </div>
+                  ) : formData.codigo.trim() ? (
+                    <div className="mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60 leading-tight">
+                      ✓ Código disponible (Único)
+                    </div>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Fecha *</label>
+                  <CustomDatePicker
+                    value={formData.fecha}
+                    onChange={(val) => setFormData({ ...formData, fecha: val })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Fila 2: NRC y Carrera */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -611,7 +723,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     </label>
                     {nrcLookupLoading && (
                       <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold animate-pulse">
-                        Buscando clase...
+                        Buscando...
                       </span>
                     )}
                   </div>
@@ -622,11 +734,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       value={formData.nrc}
                       onChange={(e) => handleNrcLookup(e.target.value)}
                       onBlur={() => handleNrcLookup(formData.nrc)}
-                      placeholder="Ej: 23017"
-                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-bold transition ${nrcMatchFound
+                      placeholder="Ej: 20476"
+                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-bold transition ${
+                        nrcMatchFound
                           ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20'
                           : 'border-slate-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20'
-                        }`}
+                      }`}
                     />
                     {nrcMatchFound && (
                       <div className="absolute right-2.5 top-2.5 text-emerald-600 dark:text-emerald-400">
@@ -642,17 +755,20 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Fecha *</label>
-                  <CustomDatePicker
-                    value={formData.fecha}
-                    onChange={(val) => setFormData({ ...formData, fecha: val })}
-                    required
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Carrera</label>
+                  <input
+                    type="text"
+                    value={formData.carrera}
+                    onChange={(e) => setFormData({ ...formData, carrera: e.target.value })}
+                    placeholder="Ej: Arq. y Diseño de Interiores"
+                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
                   />
                 </div>
               </div>
 
+              {/* Fila 3: Docente (Titular) */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Docente *</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Docente (Titular) *</label>
                 <input
                   type="text"
                   required
@@ -663,29 +779,20 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Curso *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.curso}
-                    onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Carrera</label>
-                  <input
-                    type="text"
-                    value={formData.carrera}
-                    onChange={(e) => setFormData({ ...formData, carrera: e.target.value })}
-                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                  />
-                </div>
+              {/* Fila 4: Curso */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Curso *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.curso}
+                  onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
+                  placeholder="Nombre de la asignatura"
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                />
               </div>
 
+              {/* Fila 5: Motivo */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Motivo *</label>
                 <CustomSelect
@@ -696,12 +803,12 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 />
               </div>
 
-              {/* Si es DOCENTE DE REEMPLAZO, se habilita campo obligatorio para ingresar el docente que reemplazará */}
+              {/* Fila 6: Si es DOCENTE DE REEMPLAZO, campo obligatorio para el docente que dictará */}
               {formData.motivo === 'DOCENTE DE REEMPLAZO' && (
-                <div className="p-3 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-2xl space-y-1.5 animate-in fade-in duration-200">
-                  <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-300">
+                <div className="p-3 bg-purple-50/90 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/80 rounded-2xl space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-300">
                     <UserCheck className="w-4 h-4 stroke-[2.4]" />
-                    <label className="text-xs font-black uppercase tracking-tight">Docente que reemplazará (Suplente) *</label>
+                    <label className="text-xs font-black uppercase tracking-tight">Docente Reemplazante (Suplente) *</label>
                   </div>
                   <input
                     type="text"
@@ -709,14 +816,15 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     value={formData.docenteReemplazo}
                     onChange={(e) => setFormData({ ...formData, docenteReemplazo: e.target.value.toUpperCase() })}
                     placeholder="Apellidos y Nombres del docente que dictará la clase"
-                    className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                    className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-purple-300 dark:border-purple-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
-                  <p className="text-[10px] text-amber-800 dark:text-amber-400 font-medium">
-                    Indica quién asumirá el dictado en lugar del docente titular.
+                  <p className="text-[10px] text-purple-800 dark:text-purple-400 font-medium">
+                    Se registrará en la Columna I "DOCENTE REEMPLAZANTE" del Excel de OneDrive.
                   </p>
                 </div>
               )}
 
+              {/* Fila 7: Asistente Emisor */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Asistente Emisor *</label>
                 <CustomSelect
@@ -737,12 +845,16 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                 </button>
                 <button
                   type="submit"
-                  className="h-11 sm:h-12 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95"
+                  disabled={isDuplicate || !formData.codigo.trim()}
+                  className={`h-11 sm:h-12 rounded-2xl text-xs font-black transition flex items-center justify-center text-center shadow-xs ${
+                    isDuplicate || !formData.codigo.trim()
+                      ? 'bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-not-allowed'
+                      : 'bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 active:scale-95'
+                  }`}
                 >
                   Generar y Registrar
                 </button>
-              </div>
-            </form>
+              </div></form>
           </div>
         </div>,
         document.body
