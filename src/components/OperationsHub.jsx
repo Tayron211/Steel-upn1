@@ -10,7 +10,9 @@ export default function OperationsHub({
   onSelectRoomForSchedule,
   defaultSubTab = 'manual',
   openManualModalTrigger = null,
-  openReservationModalTrigger = null
+  openReservationModalTrigger = null,
+  onConsumeManualModalTrigger = null,
+  onConsumeReservationModalTrigger = null
 }) {
   const [subTab, setSubTab] = useState(defaultSubTab);
 
@@ -29,6 +31,10 @@ export default function OperationsHub({
   }, [defaultSubTab]);
 
   const switchSubTab = (target) => {
+    // Al dar clic en una subpestaña (Hojas Manuales, Reservas, Ambientes),
+    // NUNCA debe abrirse una ventana modal a menos que se use su respectivo botón de registro.
+    if (onConsumeManualModalTrigger) onConsumeManualModalTrigger();
+    if (onConsumeReservationModalTrigger) onConsumeReservationModalTrigger();
     setSubTab(target);
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     if (document.documentElement) document.documentElement.scrollTop = 0;
@@ -82,11 +88,15 @@ export default function OperationsHub({
           initialClassData={initialClassData}
           onClearInitialClass={onClearInitialClass}
           initialOpenTrigger={openManualModalTrigger}
+          onConsumeTrigger={onConsumeManualModalTrigger}
         />
       )}
 
       {subTab === 'reservations' && (
-        <ReservationsView initialOpenTrigger={openReservationModalTrigger} />
+        <ReservationsView 
+          initialOpenTrigger={openReservationModalTrigger} 
+          onConsumeTrigger={onConsumeReservationModalTrigger}
+        />
       )}
 
       {subTab === 'rooms' && (

@@ -43,7 +43,7 @@ const extractNumber = (code) => {
   return m ? m[1] : code.replace(/[^0-9]/g, '');
 };
 
-// Genera el siguiente código LN1-XXX disponible entre hojas REALES
+// Genera el siguiente código LN1-XXX disponible entre hojas REALES garantizando correlativo sin duplicados
 const getNextCode = (currentSheets) => {
   const realSheets = (currentSheets || []).filter(r => {
     const doc = String(r.docente || '').trim();
@@ -52,35 +52,43 @@ const getNextCode = (currentSheets) => {
     return (nrc !== '') || (fec !== '') || (doc !== '' && !doc.includes('#N/D') && !doc.includes('#N/A'));
   });
   const maxNum = realSheets.reduce((max, r) => {
-    const m = String(r.codigo || '').match(/LN\d*-(\d+)/i);
+    // Extraer la parte numérica final de manera infalible (LN1-096 -> 96, LNI-096 -> 96, 096 -> 96)
+    const m = String(r.codigo || '').match(/(\d+)(?!.*\d)/);
     const n = m ? parseInt(m[1], 10) : 0;
     return n > max ? n : max;
   }, 0);
-  return `LN1-${String(maxNum + 1).padStart(3, '0')}`;
+  let candidateNum = maxNum + 1;
+  while (isCodeDuplicate(`LN1-${String(candidateNum).padStart(3, '0')}`, currentSheets)) {
+    candidateNum++;
+  }
+  return `LN1-${String(candidateNum).padStart(3, '0')}`;
 };
 
 // Verifica duplicidad estricta entre hojas REALES emitidas
 const isCodeDuplicate = (code, currentSheets) => {
   if (!code || !code.trim()) return false;
-  let target = code.trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
-  const m = target.match(/^(?:LN\d*-)?(\d+)$/i);
-  if (m) {
-    target = `LN1-${m[1].padStart(3, '0')}`;
-  }
+  const numMatch = String(code).trim().match(/(\d+)(?!.*\d)/);
+  if (!numMatch) return false;
+  const targetNum = parseInt(numMatch[1], 10);
+
   return (currentSheets || []).some(s => {
     const doc = String(s.docente || '').trim();
     const nrc = String(s.nrc || '').trim();
     const fec = String(s.fecha || '').trim();
     const isReal = (nrc !== '') || (fec !== '') || (doc !== '' && !doc.includes('#N/D') && !doc.includes('#N/A'));
     if (!isReal) return false;
-    let existing = String(s.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
-    const em = existing.match(/^(?:LN\d*-)?(\d+)$/i);
-    if (em) existing = `LN1-${em[1].padStart(3, '0')}`;
-    return existing === target;
+    const sMatch = String(s.codigo || '').trim().match(/(\d+)(?!.*\d)/);
+    if (!sMatch) return false;
+    return parseInt(sMatch[1], 10) === targetNum;
   });
 };
 
-export default function ManualSheetsView({ initialClassData, onClearInitialClass, initialOpenTrigger = null }) {
+export default function ManualSheetsView({ 
+  initialClassData, 
+  onClearInitialClass, 
+  initialOpenTrigger = null,
+  onConsumeTrigger = null
+}) {
   const [sheets, setSheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -92,9 +100,15 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   const [nrcLookupLoading, setNrcLookupLoading] = useState(false);
   const [nrcMatchFound, setNrcMatchFound] = useState(null);
 
+  const closeModal = () => {
+    setIsModalOpen(false);
+    if (onConsumeTrigger) onConsumeTrigger();
+  };
+
   useEffect(() => {
     if (initialOpenTrigger) {
       handleOpenNewModal();
+      if (onConsumeTrigger) onConsumeTrigger();
     }
   }, [initialOpenTrigger]);
 
@@ -118,14 +132,26 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
     try {
       const res = await fetch('/api/manual-sheets');
       const json = await res.json();
-      if (json.success) {
+      if (json && json.success && Array.isArray(json.data)) {
         setSheets(json.data);
+        // Si el formulario ya está abierto y tiene el correlativo por defecto inicial o repetido, recalcular inmediatamente
+        setFormData(prev => {
+          if (!prev.codigo || prev.codigo === 'LN1-001' || isCodeDuplicate(prev.codigo, json.data)) {
+            return {
+              ...prev,
+              codigo: getNextCode(json.data)
+            };
+          }
+          return prev;
+        });
+        return json.data;
       }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
+    return [];
   };
 
   useEffect(() => {
@@ -138,7 +164,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        if (isModalOpen) setIsModalOpen(false);
+        if (isModalOpen) closeModal();
         if (selectedForPrint) setSelectedForPrint(null);
       }
     };
@@ -159,11 +185,16 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       }));
       setIsModalOpen(true);
       if (onClearInitialClass) onClearInitialClass();
+      if (onConsumeTrigger) onConsumeTrigger();
     }
   }, [initialClassData, sheets]);
 
-  const handleOpenNewModal = () => {
-    const nextCode = getNextCode(sheets);
+  const handleOpenNewModal = async () => {
+    let currentSheets = sheets;
+    if (!currentSheets || currentSheets.length === 0) {
+      currentSheets = await loadSheets(false);
+    }
+    const nextCode = getNextCode(currentSheets);
     setFormData({
       codigo: nextCode,
       fecha: new Date().toISOString().split('T')[0],
@@ -220,7 +251,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
         return;
       }
       setSheets(prev => [json.data, ...prev]);
-      setIsModalOpen(false);
+      closeModal();
       resetForm();
       setToastMessage(`✅ Hoja ${json.data?.codigo || cleanCode} registrada correctamente`);
       setTimeout(() => setToastMessage(''), 3000);
@@ -668,7 +699,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
       {isModalOpen && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => closeModal()}
         >
           <div
             className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto animate-spring-up"
@@ -690,7 +721,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => closeModal()}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
@@ -896,7 +927,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => closeModal()}
                   className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
                 >
                   Cancelar

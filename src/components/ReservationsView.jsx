@@ -199,7 +199,7 @@ const timeToMins = (tStr) => {
   return (h || 0) * 60 + (m || 0);
 };
 
-export default function ReservationsView({ initialOpenTrigger = null }) {
+export default function ReservationsView({ initialOpenTrigger = null, onConsumeTrigger = null }) {
   const [reservas, setReservas] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [dayClasses, setDayClasses] = useState([]);
@@ -228,6 +228,11 @@ export default function ReservationsView({ initialOpenTrigger = null }) {
   const [pickerPiso, setPickerPiso] = useState(''); // '' | 'SOT' | '1ER PISO' | ...
   const [toastMessage, setToastMessage] = useState('');
 
+  const closeModal = () => {
+    setIsModalOpen(false);
+    if (onConsumeTrigger) onConsumeTrigger();
+  };
+
   const MONTHS_ABBR = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
   const computeTargetSheet = (dateStr) => {
@@ -248,6 +253,7 @@ export default function ReservationsView({ initialOpenTrigger = null }) {
     if (initialOpenTrigger) {
       resetForm();
       setIsModalOpen(true);
+      if (onConsumeTrigger) onConsumeTrigger();
     }
   }, [initialOpenTrigger]);
 
@@ -388,7 +394,7 @@ export default function ReservationsView({ initialOpenTrigger = null }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isModalOpen) {
-        setIsModalOpen(false);
+        closeModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -554,7 +560,7 @@ export default function ReservationsView({ initialOpenTrigger = null }) {
         setReservas(prev => [json.data, ...prev.filter(r => r.id !== json.data.id)]);
         setToastMessage(`✅ Guardado en Excel: Hoja "${computedSheet}" (Aula ${cleanAula})`);
         setTimeout(() => setToastMessage(''), 3500);
-        setIsModalOpen(false);
+        closeModal();
         resetForm();
       } else {
         alert('Error al guardar reserva: ' + (json.error || 'intente nuevamente'));
@@ -1292,7 +1298,7 @@ export default function ReservationsView({ initialOpenTrigger = null }) {
       {isModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
           className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => closeModal()}
         >
           <div 
             className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto animate-spring-up"
@@ -1314,7 +1320,7 @@ export default function ReservationsView({ initialOpenTrigger = null }) {
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => closeModal()}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
@@ -1458,7 +1464,7 @@ export default function ReservationsView({ initialOpenTrigger = null }) {
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => closeModal()}
                   className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
                 >
                   Cancelar

@@ -319,6 +319,11 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   // Prefill from external views directly into inline form inputs (NO WINDOW OPENS!)
   useEffect(() => {
     if (initialNewTicket) {
+      setActiveViewTab('ACTIVOS');
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+
       if (initialNewTicket.ambiente) {
         setRoomInput(initialNewTicket.ambiente);
       }
@@ -331,6 +336,15 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         const found = CORE_MATERIALS.find(m => initialNewTicket.tipoSolicitud.toUpperCase().includes(m.id));
         if (found) setSelectedMaterialVal(found.id);
       }
+
+      // Foco inmediato en el formulario visible superior de registro de préstamos
+      setTimeout(() => {
+        const input = document.getElementById('prestamo-person-name');
+        if (input) {
+          input.focus();
+        }
+      }, 150);
+
       if (onClearInitialTicket) onClearInitialTicket();
     }
   }, [initialNewTicket]);
@@ -674,6 +688,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
             <div className="sm:col-span-5">
               <input
+                id="prestamo-person-name"
                 type="text"
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}

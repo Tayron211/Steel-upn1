@@ -114,6 +114,10 @@ export default function App() {
   // History & Multi-Page Hash Routing Controller
   const navigateTab = (targetTab, pushState = true) => {
     if (!TABS.includes(targetTab)) return;
+    if (targetTab !== 'operations') {
+      setOpenManualModalTrigger(null);
+      setOpenReservationModalTrigger(null);
+    }
     setActiveTab(targetTab);
     const targetHash = TAB_HASH_MAP[targetTab] || '#ronda';
     if (pushState) {
@@ -360,7 +364,7 @@ export default function App() {
       />
 
       {/* Main Fluid App Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5 pb-28 md:pb-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5 pb-32 md:pb-24">
         {activeTab === 'attendance' && (
           <div key="attendance" className="animate-tab-view">
             <ErrorBoundary>
@@ -395,6 +399,8 @@ export default function App() {
                 defaultSubTab={operationsSubTab}
                 openManualModalTrigger={openManualModalTrigger}
                 openReservationModalTrigger={openReservationModalTrigger}
+                onConsumeManualModalTrigger={() => setOpenManualModalTrigger(null)}
+                onConsumeReservationModalTrigger={() => setOpenReservationModalTrigger(null)}
               />
             </ErrorBoundary>
           </div>
