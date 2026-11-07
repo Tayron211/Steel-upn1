@@ -34,12 +34,24 @@ function serialToISO(v) {
     const d = new Date(Math.round((v - 25569) * 86400000));
     if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
   }
-  return String(v ?? '').trim();
+  const str = String(v ?? '').trim();
+  const m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m) {
+    return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  return str;
 }
 function isoToSerial(s) {
-  const m = String(s ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return s ?? '';
-  return Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000 + 25569;
+  const str = String(s ?? '').trim();
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    return Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000 + 25569;
+  }
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    return Date.UTC(+dmy[3], +dmy[2] - 1, +dmy[1]) / 86400000 + 25569;
+  }
+  return s ?? '';
 }
 function fracToHHMM(v) {
   if (typeof v === 'number') {
@@ -210,10 +222,12 @@ function colOf(cells, names) {
   return -1;
 }
 
-async function patchFormulas(token, itemId, sheet, address, matrix) {
+async function patchFormulas(token, itemId, sheet, address, matrix, fmtMatrix = null) {
+  const body = { formulas: matrix };
+  if (fmtMatrix) body.numberFormat = fmtMatrix;
   return gfetch(token, `${G}/me/drive/items/${itemId}/workbook/worksheets/${enc(sheet)}/range(address='${address}')`, {
     method: 'PATCH',
-    body: JSON.stringify({ formulas: matrix })
+    body: JSON.stringify(body)
   });
 }
 
@@ -579,13 +593,18 @@ async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot, preRo
   const firstAbsRow = used.rowIndex + firstData + 1;
 
   const matrix = [];
+  const fmtMatrix = [];
   for (let i = 0; i < totalRows; i++) {
     const relRow = firstData + i;
     const baseF = used.formulas[relRow] || [];
     const line = [];
+    const fmtLine = [];
     for (let c = minC; c <= maxC; c++) {
       const col = cols.find((x) => x.idx === c);
       const base = baseF[c] !== undefined ? baseF[c] : '';
+      const cellFmt = col && col.t === 'date' ? 'dd/mm/yyyy' : col && col.t === 'time' ? 'hh:mm' : 'General';
+      fmtLine.push(cellFmt);
+
       if (i >= rows.length) {
         // fila sobrante: se vacía (fórmulas incluidas) para no dejar datos de registros eliminados
         line.push('');
@@ -607,27 +626,14 @@ async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot, preRo
       }
     }
     matrix.push(line);
+    fmtMatrix.push(fmtLine);
   }
   if (matrix.length === 0) return { updated: 0 };
 
   const startAbs = used.rowIndex + firstData + 1;
   const endAbs = startAbs + matrix.length - 1;
   const address = `${colLetter(used.columnIndex + minC)}${startAbs}:${colLetter(used.columnIndex + maxC)}${endAbs}`;
-  const res = await patchFormulas(token, itemId, spec.sheet, address, matrix);
-  if (rows.length > existingRows) {
-    // filas nuevas al final: darles formato de fecha / hora como el resto de la hoja
-    const nStart = startAbs + existingRows;
-    const nAddr = `${colLetter(used.columnIndex + minC)}${nStart}:${colLetter(used.columnIndex + maxC)}${endAbs}`;
-    const fmtRow = [];
-    for (let c = minC; c <= maxC; c++) {
-      const col = cols.find((x) => x.idx === c);
-      fmtRow.push(col && col.t === 'date' ? 'dd/mm/yyyy' : col && col.t === 'time' ? 'hh:mm' : 'General');
-    }
-    await gfetch(token, `${G}/me/drive/items/${itemId}/workbook/worksheets/${enc(spec.sheet)}/range(address='${nAddr}')`, {
-      method: 'PATCH',
-      body: JSON.stringify({ numberFormat: Array.from({ length: endAbs - nStart + 1 }, () => fmtRow) })
-    });
-  }
+  const res = await patchFormulas(token, itemId, spec.sheet, address, matrix, fmtMatrix);
   if (saveSnapshot) await setState(db, `ids:${specName}`, JSON.stringify(rows.map((r) => r.id)));
   return { updated: rows.length, status: res.status };
 }
