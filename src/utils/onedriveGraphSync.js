@@ -734,7 +734,7 @@ export async function debugInspect(db) {
       sheetsData: {}
     };
     if (resWs.ok && Array.isArray(resWs.json.value)) {
-      for (const w of resWs.json.value) {
+      for (const w of resWs.json.value.slice(0, 3)) {
         const u = await loadUsed(token, resItemId, w.name);
         if (u) {
           out.reservasWorkbook.sheetsData[w.name] = {
