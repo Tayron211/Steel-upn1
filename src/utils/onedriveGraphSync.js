@@ -293,7 +293,7 @@ const SPECS = {
     required: ['codigo'],
     key: (r) => norm(String(r.codigo || '').replace(/^LNI-/i, 'LN1-')),
     table: 'hojas_manuales',
-    select: "SELECT * FROM hojas_manuales WHERE codigo IS NOT NULL AND codigo != ''",
+    select: "SELECT * FROM hojas_manuales WHERE codigo IS NOT NULL AND codigo != '' AND ((docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%') OR (nrc IS NOT NULL AND TRIM(nrc) != '') OR (fecha IS NOT NULL AND TRIM(fecha) != ''))",
     sort: (a, b) => {
       const n = (s) => {
         const m = String(s || '').match(/(\d+)$/);
@@ -430,6 +430,15 @@ async function pullRecords(db, specName, used) {
     }
     if (spec.required.some((k) => !rec[k])) {
       continue;
+    }
+    // Para hojas manuales: ignorar filas de plantilla vacía en Excel (#N/D y sin nrc/fecha)
+    if (specName === 'manuales') {
+      const doc = String(rec.docente || '').trim();
+      const nrc = String(rec.nrc || '').trim();
+      const fec = String(rec.fecha || '').trim();
+      if ((!nrc || nrc === '') && (!fec || fec === '') && (!doc || doc === '' || doc.includes('#N/D') || doc.includes('#N/A'))) {
+        continue;
+      }
     }
     recs.push(rec);
   }

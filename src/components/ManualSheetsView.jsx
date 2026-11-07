@@ -36,9 +36,22 @@ const getSuplente = (item) => {
 };
 const getMotivoBase = (item) => (item?.motivo || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
 
-// Genera el siguiente código LN1-XXX disponible
+// Extrae el número del código (ej: LN1-097 -> 097)
+const extractNumber = (code) => {
+  if (!code) return '';
+  const m = String(code).match(/LN\d*-?(\d+)/i);
+  return m ? m[1] : code.replace(/[^0-9]/g, '');
+};
+
+// Genera el siguiente código LN1-XXX disponible entre hojas REALES
 const getNextCode = (currentSheets) => {
-  const maxNum = (currentSheets || []).reduce((max, r) => {
+  const realSheets = (currentSheets || []).filter(r => {
+    const doc = String(r.docente || '').trim();
+    const nrc = String(r.nrc || '').trim();
+    const fec = String(r.fecha || '').trim();
+    return (nrc !== '') || (fec !== '') || (doc !== '' && !doc.includes('#N/D') && !doc.includes('#N/A'));
+  });
+  const maxNum = realSheets.reduce((max, r) => {
     const m = String(r.codigo || '').match(/LN\d*-(\d+)/i);
     const n = m ? parseInt(m[1], 10) : 0;
     return n > max ? n : max;
@@ -46,12 +59,23 @@ const getNextCode = (currentSheets) => {
   return `LN1-${String(maxNum + 1).padStart(3, '0')}`;
 };
 
-// Verifica duplicidad estricta (el código es ÚNICO e IRREPETIBLE)
+// Verifica duplicidad estricta entre hojas REALES emitidas
 const isCodeDuplicate = (code, currentSheets) => {
   if (!code || !code.trim()) return false;
-  const target = code.trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+  let target = code.trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+  const m = target.match(/^(?:LN\d*-)?(\d+)$/i);
+  if (m) {
+    target = `LN1-${m[1].padStart(3, '0')}`;
+  }
   return (currentSheets || []).some(s => {
-    const existing = String(s.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+    const doc = String(s.docente || '').trim();
+    const nrc = String(s.nrc || '').trim();
+    const fec = String(s.fecha || '').trim();
+    const isReal = (nrc !== '') || (fec !== '') || (doc !== '' && !doc.includes('#N/D') && !doc.includes('#N/A'));
+    if (!isReal) return false;
+    let existing = String(s.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+    const em = existing.match(/^(?:LN\d*-)?(\d+)$/i);
+    if (em) existing = `LN1-${em[1].padStart(3, '0')}`;
     return existing === target;
   });
 };
@@ -148,9 +172,13 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const cleanCode = (formData.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
-    if (!cleanCode) {
-      alert('Debe ingresar el código de la hoja (ej. LN1-097).');
+    let cleanCode = (formData.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
+    const numMatch = cleanCode.match(/^(?:LN\d*-)?(\d+)$/i);
+    if (numMatch) {
+      cleanCode = `LN1-${numMatch[1].padStart(3, '0')}`;
+    }
+    if (!cleanCode || cleanCode === 'LN1-') {
+      alert('Debe ingresar el número del código de la hoja (ej. 095).');
       return;
     }
     if (isDuplicate) {
@@ -510,52 +538,54 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
           {/* Desktop Table (Optimized Layout - Zero Truncation, Full Assistants and Courses) */}
           <div className="hidden md:block bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs min-w-[980px]">
+            <div className="overflow-x-auto relative">
+              <table className="w-full text-left text-xs min-w-[960px] border-collapse">
                 <thead className="bg-slate-50 dark:bg-[#121216] text-slate-600 dark:text-zinc-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200/90 dark:border-zinc-800">
                   <tr>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[100px]">CÓDIGO</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[95px]">FECHA</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[90px]">NRC</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[170px]">DOCENTE</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[200px]">CURSO / CARRERA</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[140px]">MOTIVO</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[150px]">ASISTENTE</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[170px]">DOCENTE REEMPLAZANTE</th>
-                    <th className="py-3.5 px-3.5 whitespace-nowrap text-right min-w-[120px]">ACCIONES</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[92px] min-w-[92px]">CÓDIGO</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[88px] min-w-[88px]">FECHA</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap w-[76px] min-w-[76px]">NRC</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[160px]">DOCENTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[180px]">CURSO / CARRERA</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[125px]">MOTIVO</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[130px]">ASISTENTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[150px]">DOCENTE REEMPLAZANTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap text-center w-[165px] min-w-[165px] sticky right-0 bg-slate-50 dark:bg-[#121216] z-20 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/90 dark:border-zinc-800">
+                      ACCIONES
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map(item => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 transition-colors">
+                    <tr key={item.id} className="group hover:bg-slate-50/80 dark:hover:bg-zinc-900/60 transition-colors">
                       {/* CÓDIGO (Único e Irrepetible) */}
-                      <td className="py-3.5 px-3.5 whitespace-nowrap align-top">
+                      <td className="py-3.5 px-3 whitespace-nowrap align-top">
                         <span className="font-mono font-black text-xs bg-amber-100/90 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 px-2.5 py-1 rounded-lg shadow-2xs inline-block tracking-tight">
                           {item.codigo}
                         </span>
                       </td>
 
                       {/* FECHA */}
-                      <td className="py-3.5 px-3.5 whitespace-nowrap align-top font-mono text-[11px] text-slate-700 dark:text-zinc-300 font-bold">
+                      <td className="py-3.5 px-3 whitespace-nowrap align-top font-mono text-[11px] text-slate-700 dark:text-zinc-300 font-bold">
                         {item.fecha}
                       </td>
 
                       {/* NRC */}
-                      <td className="py-3.5 px-3.5 whitespace-nowrap align-top">
+                      <td className="py-3.5 px-3 whitespace-nowrap align-top">
                         <span className="font-mono font-black text-xs text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-900 px-2.5 py-1 rounded-lg border border-slate-200/90 dark:border-zinc-700 inline-block shadow-2xs">
                           {item.nrc}
                         </span>
                       </td>
 
                       {/* DOCENTE */}
-                      <td className="py-3.5 px-3.5 align-top">
+                      <td className="py-3.5 px-3 align-top">
                         <div className="font-extrabold text-xs text-slate-950 dark:text-white leading-snug break-words">
                           {item.docente}
                         </div>
                       </td>
 
                       {/* CURSO / CARRERA */}
-                      <td className="py-3.5 px-3.5 align-top">
+                      <td className="py-3.5 px-3 align-top">
                         <div className="font-bold text-slate-900 dark:text-white text-xs leading-snug break-words">
                           {item.curso}
                         </div>
@@ -567,14 +597,14 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       </td>
 
                       {/* MOTIVO */}
-                      <td className="py-3.5 px-3.5 align-top">
+                      <td className="py-3.5 px-3 align-top">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 break-words leading-tight">
                           {getMotivoBase(item)}
                         </span>
                       </td>
 
                       {/* ASISTENTE */}
-                      <td className="py-3.5 px-3.5 align-top">
+                      <td className="py-3.5 px-3 align-top">
                         <div className="flex items-start gap-1.5">
                           <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-300 flex items-center justify-center shrink-0 font-black text-[10px] mt-0.5">
                             {(item.asistente || 'A').charAt(0)}
@@ -586,7 +616,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       </td>
 
                       {/* DOCENTE REEMPLAZANTE (Columna I) */}
-                      <td className="py-3.5 px-3.5 align-top">
+                      <td className="py-3.5 px-3 align-top">
                         {getSuplente(item) ? (
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/80 text-purple-950 dark:text-purple-200 font-extrabold text-xs">
                             <UserCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0 stroke-[2.4]" />
@@ -597,24 +627,26 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                         )}
                       </td>
 
-                      {/* Acciones */}
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-right align-top space-x-1.5">
-                        <button
-                          onClick={() => handleCopyVoucherText(item)}
-                          className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95"
-                          title="Copiar texto para WhatsApp"
-                        >
-                          <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                          <span>Copiar</span>
-                        </button>
-                        <button
-                          onClick={() => setSelectedForPrint(item)}
-                          className="h-8 px-3 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
-                          title="Ver Detalles de la Hoja"
-                        >
-                          <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
-                          <span>Detalles</span>
-                        </button>
+                      {/* Acciones (Sticky a la derecha: nunca se corta) */}
+                      <td className="py-3 px-3 whitespace-nowrap text-center align-middle w-[165px] min-w-[165px] sticky right-0 bg-white dark:bg-[#0c0c0f] group-hover:bg-slate-50 dark:group-hover:bg-[#15151a] z-10 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.5)] border-l border-slate-200/80 dark:border-zinc-800 transition-colors">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleCopyVoucherText(item)}
+                            className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shrink-0"
+                            title="Copiar texto para WhatsApp"
+                          >
+                            <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                            <span>Copiar</span>
+                          </button>
+                          <button
+                            onClick={() => setSelectedForPrint(item)}
+                            className="h-8 px-2.5 text-xs font-black text-slate-950 bg-[#FDBA30] hover:bg-[#ffc642] rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shadow-2xs shrink-0"
+                            title="Ver Detalles de la Hoja"
+                          >
+                            <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
+                            <span>Detalles</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -668,14 +700,33 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       Código de Hoja * <span className="font-black text-amber-600 dark:text-amber-400 text-[10px]">(Único)</span>
                     </label>
                   </div>
-                  <div className="relative">
+                  <div className="relative flex items-center">
+                    <div className="h-9 px-3 bg-amber-100/90 dark:bg-amber-950/70 border border-r-0 border-amber-300 dark:border-amber-800/80 rounded-l-xl flex items-center justify-center font-mono font-black text-xs text-amber-950 dark:text-amber-300 select-none shrink-0 shadow-2xs">
+                      LN1-
+                    </div>
                     <input
                       type="text"
                       required
-                      value={formData.codigo}
-                      onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase().replace(/\s+/g, '') })}
-                      placeholder="Ej: LN1-097"
-                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-black transition ${
+                      value={extractNumber(formData.codigo)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                        setFormData({
+                          ...formData,
+                          codigo: raw ? `LN1-${raw}` : ''
+                        });
+                      }}
+                      onBlur={() => {
+                        const num = extractNumber(formData.codigo);
+                        if (num) {
+                          setFormData(prev => ({
+                            ...prev,
+                            codigo: `LN1-${num.padStart(3, '0')}`
+                          }));
+                        }
+                      }}
+                      placeholder="095"
+                      maxLength={4}
+                      className={`w-full h-9 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border rounded-r-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-black transition ${
                         isDuplicate
                           ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200'
                           : formData.codigo.trim()
@@ -684,11 +735,11 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       }`}
                     />
                     {isDuplicate ? (
-                      <div className="absolute right-2.5 top-2.5 text-rose-600 dark:text-rose-400">
+                      <div className="absolute right-2.5 text-rose-600 dark:text-rose-400 pointer-events-none">
                         <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
                     ) : formData.codigo.trim() ? (
-                      <div className="absolute right-2.5 top-2.5 text-emerald-600 dark:text-emerald-400">
+                      <div className="absolute right-2.5 text-emerald-600 dark:text-emerald-400 pointer-events-none">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                     ) : null}
@@ -699,7 +750,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     </div>
                   ) : formData.codigo.trim() ? (
                     <div className="mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60 leading-tight">
-                      ✓ Código disponible (Único)
+                      ✓ Código LN1-{extractNumber(formData.codigo).padStart(3, '0')} disponible (Único)
                     </div>
                   ) : null}
                 </div>

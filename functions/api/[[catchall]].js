@@ -467,11 +467,21 @@ async function handleApiRequest(context) {
     // 4. MANUAL SHEETS: /api/manual-sheets
     // -------------------------------------------------------------
     if (path === '/api/manual-sheets' && method === 'GET') {
+      // Limpiar automáticamente filas fantasma de plantilla vacía en Excel (#N/D y sin nrc/fecha)
+      try {
+        await db.prepare(`
+          DELETE FROM hojas_manuales 
+          WHERE (nrc IS NULL OR TRIM(nrc) = '') 
+            AND (fecha IS NULL OR TRIM(fecha) = '') 
+            AND (docente IS NULL OR TRIM(docente) = '' OR docente LIKE '%#N/D%' OR docente LIKE '%#N/A%')
+        `).run();
+      } catch (_) {}
+
       const { results } = await db.prepare(`
         SELECT * FROM hojas_manuales 
-        WHERE (docente IS NOT NULL AND docente != '') 
-           OR (nrc IS NOT NULL AND nrc != '') 
-           OR (curso IS NOT NULL AND curso != '')
+        WHERE (docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%' AND docente NOT LIKE '%#N/A%') 
+           OR (nrc IS NOT NULL AND TRIM(nrc) != '') 
+           OR (fecha IS NOT NULL AND TRIM(fecha) != '')
         ORDER BY fecha DESC, id DESC
       `).all();
       return json({ success: true, count: results.length, data: results });
@@ -480,10 +490,32 @@ async function handleApiRequest(context) {
     if (path === '/api/manual-sheets' && method === 'POST') {
       const body = await request.json();
       
+      // Limpiar filas fantasma si las hubiera
+      try {
+        await db.prepare(`
+          DELETE FROM hojas_manuales 
+          WHERE (nrc IS NULL OR TRIM(nrc) = '') 
+            AND (fecha IS NULL OR TRIM(fecha) = '') 
+            AND (docente IS NULL OR TRIM(docente) = '' OR docente LIKE '%#N/D%' OR docente LIKE '%#N/A%')
+        `).run();
+      } catch (_) {}
+
       let codigo = (body.codigo || '').trim().toUpperCase().replace(/^LNI-/i, 'LN1-');
       if (codigo) {
-        // Validación estricta: El código es ÚNICO e IRREPETIBLE, no puede haber duplicidad
-        const existing = await db.prepare("SELECT id, codigo FROM hojas_manuales WHERE UPPER(TRIM(REPLACE(codigo, 'LNI-', 'LN1-'))) = ?").bind(codigo).first();
+        // Asegurar formato LN1-XXX
+        const m = codigo.match(/^(?:LN\d*-)?(\d+)$/i);
+        if (m) {
+          codigo = `LN1-${m[1].padStart(3, '0')}`;
+        }
+        // Validación estricta: El código es ÚNICO e IRREPETIBLE entre hojas REALES
+        const existing = await db.prepare(`
+          SELECT id, codigo FROM hojas_manuales 
+          WHERE UPPER(TRIM(REPLACE(codigo, 'LNI-', 'LN1-'))) = ?
+            AND ((docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%' AND docente NOT LIKE '%#N/A%') 
+                 OR (nrc IS NOT NULL AND TRIM(nrc) != '') 
+                 OR (fecha IS NOT NULL AND TRIM(fecha) != ''))
+        `).bind(codigo).first();
+
         if (existing) {
           return json({
             success: false,
@@ -491,9 +523,14 @@ async function handleApiRequest(context) {
           }, 409);
         }
       } else {
-        // Siguiente código según el mayor LN1-XXX existente (evita duplicados)
-        const { results: codes } = await db.prepare('SELECT codigo FROM hojas_manuales').all();
-        const maxNum = codes.reduce((max, r) => {
+        // Siguiente código según el mayor LN1-XXX de hojas REALES
+        const { results: codes } = await db.prepare(`
+          SELECT codigo FROM hojas_manuales 
+          WHERE (docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%' AND docente NOT LIKE '%#N/A%') 
+             OR (nrc IS NOT NULL AND TRIM(nrc) != '') 
+             OR (fecha IS NOT NULL AND TRIM(fecha) != '')
+        `).all();
+        const maxNum = (codes || []).reduce((max, r) => {
           const m = String(r.codigo || '').match(/LN\d*-(\d+)/i);
           const n = m ? parseInt(m[1], 10) : 0;
           return n > max ? n : max;
