@@ -509,7 +509,7 @@ async function handleApiRequest(context) {
         body.hora_inicio || '',
         body.hora_fin || '',
         body.firma_docente || '',
-        body.docenteReemplazo || ''
+        body.docenteReemplazo || body.docente_reemplazo || ''
       ).run();
 
       const created = await db.prepare('SELECT * FROM hojas_manuales WHERE id = ?').bind(id).first();

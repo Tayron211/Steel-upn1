@@ -195,8 +195,8 @@ async function loadUsed(token, itemId, sheet) {
 function findHeader(used, musts) {
   const vals = used?.values || [];
   for (let r = 0; r < Math.min(vals.length, 12); r++) {
-    const cells = vals[r].map(norm);
-    if (musts.every((m) => cells.some((c) => c === m || c.startsWith(m)))) return { row: r, cells };
+    const cells = (vals[r] || []).map(norm);
+    if (musts.every((m) => cells.some((c) => c === m || c.startsWith(m) || c.includes(m)))) return { row: r, cells };
   }
   return null;
 }
@@ -204,6 +204,7 @@ function colOf(cells, names) {
   for (const n of names) {
     let i = cells.findIndex((c) => c === n);
     if (i < 0) i = cells.findIndex((c) => c.startsWith(n));
+    if (i < 0) i = cells.findIndex((c) => c.includes(n));
     if (i >= 0) return i;
   }
   return -1;
@@ -292,7 +293,7 @@ const SPECS = {
     required: ['codigo'],
     key: (r) => norm(String(r.codigo || '').replace(/^LNI-/i, 'LN1-')),
     table: 'hojas_manuales',
-    select: "SELECT * FROM hojas_manuales WHERE id NOT LIKE 'manual_1_%' AND codigo IS NOT NULL AND codigo != ''",
+    select: "SELECT * FROM hojas_manuales WHERE codigo IS NOT NULL AND codigo != ''",
     sort: (a, b) => {
       const n = (s) => {
         const m = String(s || '').match(/(\d+)$/);
@@ -303,21 +304,55 @@ const SPECS = {
     prefill: (r, ctx) => {
       const info = ctx.nrcMap.get(String(r.nrc || '').trim()) || {};
       let doc = String(r.docente || info.docente || '');
-      let rep = String(r.docente_reemplazo || '');
-      const m = doc.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
-      if (m) {
-        doc = m[1].trim();
-        if (!rep) rep = m[2].trim();
+      let rep = String(r.docente_reemplazo || r.docenteReemplazo || '').trim();
+      const mDoc = doc.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
+      if (mDoc) {
+        doc = mDoc[1].trim();
+        if (!rep) rep = mDoc[2].trim();
       }
-      return { ...r, docente: doc, curso: r.curso || info.curso || '', carrera: r.carrera || info.carrera || '', docente_reemplazo: rep };
+      if (!rep && r.motivo) {
+        const mMot = String(r.motivo).match(/DOCENTE DE REEMPLAZO\s*\((.*?)\)/i);
+        if (mMot) rep = mMot[1].trim();
+      }
+      if (!rep && r.detalle) {
+        const mDet = String(r.detalle).match(/Reemplaza:\s*([^|]+)/i);
+        if (mDet) rep = mDet[1].trim();
+      }
+      return {
+        ...r,
+        docente: doc,
+        curso: r.curso || info.curso || '',
+        carrera: r.carrera || info.carrera || '',
+        docente_reemplazo: rep ? rep.toUpperCase() : ''
+      };
     },
     insert: (db, id, r) =>
       db
         .prepare(
-          `INSERT OR IGNORE INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, docente_reemplazo, created_at)
-           VALUES (?, '2026-2', ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+          `INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, docente_reemplazo, created_at)
+           VALUES (?, '2026-2', ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+           ON CONFLICT(codigo) DO UPDATE SET
+             fecha = excluded.fecha,
+             nrc = excluded.nrc,
+             docente = excluded.docente,
+             curso = excluded.curso,
+             carrera = excluded.carrera,
+             motivo = excluded.motivo,
+             asistente = excluded.asistente,
+             docente_reemplazo = excluded.docente_reemplazo`
         )
-        .bind(id, String(r.codigo).replace(/^LNI-/i, 'LN1-'), r.fecha, r.nrc, r.docente, r.curso, r.carrera, r.motivo, r.asistente, r.docente_reemplazo)
+        .bind(
+          id,
+          String(r.codigo).replace(/^LNI-/i, 'LN1-'),
+          r.fecha,
+          r.nrc,
+          r.docente,
+          r.curso,
+          r.carrera,
+          r.motivo,
+          r.asistente,
+          r.docente_reemplazo || ''
+        )
   },
   reservas: {
     sheet: 'RESERVAS',
@@ -377,17 +412,11 @@ async function pullRecords(db, specName, used) {
   const cols = resolveCols(spec, hdr.cells);
   const dbRows = (await db.prepare(spec.select).all()).results || [];
   const byKey = new Map();
-  const byId = new Map();
   for (const r of dbRows) {
-    byId.set(r.id, r);
     const k = spec.key(r);
     if (!byKey.has(k)) byKey.set(k, []);
     byKey.get(k).push(r);
   }
-  let snapshot = [];
-  try {
-    snapshot = JSON.parse((await getState(db, `ids:${specName}`)) || '[]');
-  } catch (_) {}
 
   const recs = [];
   for (let r = hdr.row + 1; r < used.values.length; r++) {
@@ -400,7 +429,6 @@ async function pullRecords(db, specName, used) {
       rec[c.k] = v;
     }
     if (spec.required.some((k) => !rec[k])) {
-      recs.push(null);
       continue;
     }
     recs.push(rec);
@@ -410,11 +438,10 @@ async function pullRecords(db, specName, used) {
   const claimed = new Set();
   const stmts = [];
   let changes = 0;
-  const unmatched = [];
 
-  recs.forEach((rec, i) => {
-    if (!rec) return;
-    const q = byKey.get(spec.key(rec));
+  for (const rec of recs) {
+    const k = spec.key(rec);
+    const q = byKey.get(k);
     const hit = q && q.find((d) => !claimed.has(d.id));
     if (hit) {
       claimed.add(hit.id);
@@ -422,6 +449,7 @@ async function pullRecords(db, specName, used) {
       const vals = [];
       for (const c of cols) {
         if (c.idx < 0) continue;
+        if (c.k === 'codigo' && specName === 'manuales') continue;
         const dbv = canon(c.t, hit[c.k]);
         const cmp = c.up ? dbv.toUpperCase() : dbv;
         if (cmp !== rec[c.k]) {
@@ -434,34 +462,19 @@ async function pullRecords(db, specName, used) {
         stmts.push(db.prepare(`UPDATE ${spec.table} SET ${sets.join(', ')}${upd} WHERE id = ?`).bind(...vals, hit.id));
       }
     } else {
-      unmatched.push({ rec, i });
-    }
-  });
-
-  const dataIdx = [];
-  recs.forEach((r, i) => dataIdx.push(i));
-  for (const { rec, i } of unmatched) {
-    const sid = snapshot[i];
-    const cand = sid && byId.get(sid);
-    if (cand && !claimed.has(cand.id)) {
-      claimed.add(cand.id);
-      const sets = [];
-      const vals = [];
-      for (const c of cols) {
-        if (c.idx < 0) continue;
-        sets.push(`${c.k} = ?`);
-        vals.push(rec[c.k]);
-      }
       changes++;
-      stmts.push(db.prepare(`UPDATE ${spec.table} SET ${sets.join(', ')}${upd} WHERE id = ?`).bind(...vals, cand.id));
-    } else {
-      changes++;
-      const id = `xl_${specName}_${Date.now()}_${i}`;
+      const id = `xl_${specName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       stmts.push(spec.insert(db, id, rec));
     }
   }
 
-  for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
+  for (let i = 0; i < stmts.length; i += 50) {
+    try {
+      await db.batch(stmts.slice(i, i + 50));
+    } catch (err) {
+      console.error(`Error in batch ${specName}:`, err);
+    }
+  }
   return changes;
 }
 
