@@ -316,7 +316,15 @@ const SPECS = {
       return n(a.codigo) - n(b.codigo);
     },
     prefill: (r, ctx) => {
-      const info = ctx.nrcMap.get(String(r.nrc || '').trim()) || {};
+      const rawNrc = String(r.nrc || '').trim();
+      const paddedNrc = rawNrc ? rawNrc.padStart(5, '0') : '';
+      const unpaddedNrc = rawNrc ? rawNrc.replace(/^0+/, '') : '';
+      const cleanCurso = String(r.curso || '').trim().toUpperCase();
+
+      const info = (ctx.nrcMap && (ctx.nrcMap.get(rawNrc) || ctx.nrcMap.get(paddedNrc) || ctx.nrcMap.get(unpaddedNrc)))
+        || (ctx.courseMap && ctx.courseMap.get(cleanCurso))
+        || {};
+
       let doc = String(r.docente || info.docente || '');
       let rep = String(r.docente_reemplazo || r.docenteReemplazo || '').trim();
       const mDoc = doc.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
@@ -352,7 +360,10 @@ const SPECS = {
              nrc = excluded.nrc,
              docente = excluded.docente,
              curso = excluded.curso,
-             carrera = excluded.carrera,
+             carrera = CASE 
+               WHEN excluded.carrera IS NOT NULL AND TRIM(excluded.carrera) != '' THEN excluded.carrera 
+               ELSE hojas_manuales.carrera 
+             END,
              motivo = excluded.motivo,
              asistente = excluded.asistente,
              docente_reemplazo = excluded.docente_reemplazo`
@@ -801,11 +812,23 @@ export async function pushToExcel(db) {
       reservas: reservasRes.results || []
     };
     const nrcMap = new Map();
+    const courseMap = new Map();
     for (const a of asRows) {
       const k = String(a.nrc || '').trim();
-      if (k && !nrcMap.has(k)) nrcMap.set(k, { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' });
+      const unpadded = k ? k.replace(/^0+/, '') : '';
+      const padded = k ? k.padStart(5, '0') : '';
+      const cursoUpper = String(a.curso || '').trim().toUpperCase();
+      const obj = { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' };
+
+      if (k && (!nrcMap.has(k) || (!nrcMap.get(k).carrera && obj.carrera))) nrcMap.set(k, obj);
+      if (unpadded && (!nrcMap.has(unpadded) || (!nrcMap.get(unpadded).carrera && obj.carrera))) nrcMap.set(unpadded, obj);
+      if (padded && (!nrcMap.has(padded) || (!nrcMap.get(padded).carrera && obj.carrera))) nrcMap.set(padded, obj);
+
+      if (cursoUpper && (!courseMap.has(cursoUpper) || (!courseMap.get(cursoUpper).carrera && obj.carrera))) {
+        courseMap.set(cursoUpper, obj);
+      }
     }
-    const ctx = { nrcMap };
+    const ctx = { nrcMap, courseMap };
     const report = [];
     for (const t of targets) {
       const isPrimary = t.id === primary.id;

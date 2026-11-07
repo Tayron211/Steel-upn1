@@ -548,6 +548,34 @@ async function handleApiRequest(context) {
       }
       motivo = motivo.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
+      let carrera = String(body.carrera || '').trim();
+      let curso = String(body.curso || '').trim();
+      let docente = String(body.docente || '').trim();
+
+      // Si carrera o datos clave vienen vacíos, resolver automáticamente desde la tabla asistencia por NRC o Curso
+      if ((!carrera || !curso || !docente) && (body.nrc || curso)) {
+        const cleanNrc = String(body.nrc || '').trim();
+        const paddedNrc = cleanNrc ? cleanNrc.padStart(5, '0') : '';
+        const unpaddedNrc = cleanNrc ? cleanNrc.replace(/^0+/, '') : '';
+        const match = await db.prepare(`
+          SELECT carrera, curso, docente FROM asistencia 
+          WHERE (
+            (? != '' AND (nrc = ? OR nrc = ? OR nrc = ? OR nrc LIKE ?))
+            OR (? != '' AND UPPER(TRIM(curso)) = UPPER(TRIM(?)))
+          ) AND carrera IS NOT NULL AND TRIM(carrera) != ''
+          LIMIT 1
+        `).bind(
+          cleanNrc, cleanNrc, paddedNrc, unpaddedNrc, `%${cleanNrc}%`,
+          curso, curso
+        ).first();
+
+        if (match) {
+          if (!carrera && match.carrera) carrera = String(match.carrera).trim();
+          if (!curso && match.curso) curso = String(match.curso).trim();
+          if (!docente && match.docente) docente = String(match.docente).trim();
+        }
+      }
+
       await db.prepare(`
         INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, detalle, aula, hora_inicio, hora_fin, firma_docente, docente_reemplazo, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
@@ -557,9 +585,9 @@ async function handleApiRequest(context) {
         codigo,
         fecha,
         body.nrc ? String(body.nrc) : '',
-        body.docente || '',
-        body.curso || '',
-        body.carrera || '',
+        docente,
+        curso,
+        carrera,
         motivo,
         body.asistente || 'OPERACIONES',
         body.detalle || '',
