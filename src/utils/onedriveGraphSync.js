@@ -117,40 +117,9 @@ async function gfetch(token, url, init = {}) {
   return { ok: res.ok, status: res.status, json };
 }
 
-// Una sola vez por isolate: evita repetir DDL en cada petición/poll.
-// Se guarda a nivel de módulo (no por objeto db) porque el binding env.DB puede
-// ser una instancia distinta en cada request y entonces el DDL se repetiría.
-let ensuredTablesPromise = null;
-
+// Tablas e índices ya creados de forma permanente en Cloudflare D1
 export function ensureTables(db) {
-  if (!db || typeof db.prepare !== 'function') return Promise.resolve();
-  if (!ensuredTablesPromise) {
-    ensuredTablesPromise = (async () => {
-      await db.prepare(`CREATE TABLE IF NOT EXISTS onedrive_auth (
-        id TEXT PRIMARY KEY, refresh_token TEXT, access_token TEXT, expires_at INTEGER,
-        item_id TEXT, file_name TEXT, last_web_hash TEXT, last_excel_hash TEXT, updated_at TEXT)`).run();
-      await db.prepare('CREATE TABLE IF NOT EXISTS onedrive_state (k TEXT PRIMARY KEY, v TEXT)').run();
-
-      // Índices: sin ellos cada consulta filtrada escanea la tabla completa y
-      // dispara el contador de "rows read" de D1 (límite diario del plan free).
-      const indexes = [
-        'CREATE INDEX IF NOT EXISTS idx_asistencia_dia ON asistencia(dia)',
-        'CREATE INDEX IF NOT EXISTS idx_asistencia_hora ON asistencia(hora_inicio_prog)',
-        'CREATE INDEX IF NOT EXISTS idx_asistencia_nrc ON asistencia(nrc)',
-        'CREATE INDEX IF NOT EXISTS idx_tickets_estado ON tickets(estado)',
-        'CREATE INDEX IF NOT EXISTS idx_tickets_created ON tickets(created_at)',
-        'CREATE INDEX IF NOT EXISTS idx_hojas_manuales_fecha ON hojas_manuales(fecha)',
-        'CREATE INDEX IF NOT EXISTS idx_reservas_fecha ON reservas(fecha)'
-      ];
-      for (const sql of indexes) {
-        try { await db.prepare(sql).run(); } catch (_) {}
-      }
-    })().catch((err) => {
-      ensuredTablesPromise = null; // permitir reintento si falló
-      throw err;
-    });
-  }
-  return ensuredTablesPromise;
+  return Promise.resolve();
 }
 async function getState(db, k) {
   const r = await db.prepare('SELECT v FROM onedrive_state WHERE k = ?').bind(k).first();

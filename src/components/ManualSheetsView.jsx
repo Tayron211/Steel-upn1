@@ -107,8 +107,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   // Validación en tiempo real: El código es ÚNICO e IRREPETIBLE
   const isDuplicate = useMemo(() => isCodeDuplicate(formData.codigo, sheets), [formData.codigo, sheets]);
 
-  const loadSheets = async () => {
-    setLoading(true);
+  const loadSheets = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const res = await fetch('/api/manual-sheets');
       const json = await res.json();
@@ -123,8 +123,8 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
   };
 
   useEffect(() => {
-    loadSheets();
-    const handlePulled = () => loadSheets();
+    loadSheets(true);
+    const handlePulled = () => loadSheets(false);
     window.addEventListener('upn:excel-pulled', handlePulled);
     return () => window.removeEventListener('upn:excel-pulled', handlePulled);
   }, []);

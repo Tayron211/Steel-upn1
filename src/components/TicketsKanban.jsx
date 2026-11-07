@@ -233,7 +233,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   };
 
   const parseBeneficiary = (desc = '') => {
-    const matchAlumno = desc.match(/\[🎓?\s*ALUMNO(?::\s*([^\]]+))?\]/i);
+    const raw = String(desc || '');
+    const matchAlumno = raw.match(/\[🎓?\s*ALUMNO(?::\s*([^\]]+))?\]/i);
     if (matchAlumno) {
       return {
         type: 'ALUMNO',
@@ -241,7 +242,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         name: matchAlumno[1] ? matchAlumno[1].trim() : ''
       };
     }
-    const matchDocente = desc.match(/\[👨‍🏫?\s*DOCENTE(?::\s*([^\]]+))?\]/i);
+    const matchDocente = raw.match(/\[👨‍🏫?\s*DOCENTE(?::\s*([^\]]+))?\]/i);
     if (matchDocente) {
       return {
         type: 'DOCENTE',
@@ -249,7 +250,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         name: matchDocente[1] ? matchDocente[1].trim() : ''
       };
     }
-    if (desc.toUpperCase().includes('ALUMNO')) {
+    if (raw.toUpperCase().includes('ALUMNO')) {
       return { type: 'ALUMNO', label: 'Alumno', name: '' };
     }
     return { type: 'DOCENTE', label: 'Docente', name: '' };
@@ -276,8 +277,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     });
   };
 
-  const loadTickets = async () => {
-    setLoading(true);
+  const loadTickets = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const res = await fetch('/api/tickets');
       const json = await res.json();
@@ -305,8 +306,8 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   };
 
   useEffect(() => {
-    loadTickets();
-    const handlePulled = () => loadTickets();
+    loadTickets(true);
+    const handlePulled = () => loadTickets(false);
     window.addEventListener('upn:excel-pulled', handlePulled);
     const interval = setInterval(silentRefreshTickets, 30000);
     return () => {
