@@ -726,6 +726,26 @@ export async function debugInspect(db) {
     out.foundReservasFiles = searchRes.ok ? (searchRes.json.value || []).map(f => ({ id: f.id, name: f.name, lastModifiedDateTime: f.lastModifiedDateTime })) : searchRes.json;
     const searchXlsx = await gfetch(token, `${G}/me/drive/root/search(q='.xlsx')`);
     out.allExcelFiles = searchXlsx.ok ? (searchXlsx.json.value || []).map(f => ({ id: f.id, name: f.name, lastModifiedDateTime: f.lastModifiedDateTime })) : searchXlsx.json;
+
+    const resItemId = '01VNV6AXCOCHOMFZMOSFBKCRQ6CQPHKWUG';
+    const resWs = await gfetch(token, `${G}/me/drive/items/${resItemId}/workbook/worksheets?$select=name,visibility`);
+    out.reservasWorkbook = {
+      worksheets: resWs.ok ? resWs.json.value : resWs.json,
+      sheetsData: {}
+    };
+    if (resWs.ok && Array.isArray(resWs.json.value)) {
+      for (const w of resWs.json.value) {
+        const u = await loadUsed(token, resItemId, w.name);
+        if (u) {
+          out.reservasWorkbook.sheetsData[w.name] = {
+            rowIndex: u.rowIndex,
+            columnIndex: u.columnIndex,
+            rowCount: u.values.length,
+            preview: u.values.slice(0, 8)
+          };
+        }
+      }
+    }
   } catch (e) {
     out.searchError = e.message;
   }
