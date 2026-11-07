@@ -734,16 +734,14 @@ export async function debugInspect(db) {
       sheetsData: {}
     };
     if (resWs.ok && Array.isArray(resWs.json.value)) {
-      for (const w of resWs.json.value.slice(0, 3)) {
-        const u = await loadUsed(token, resItemId, w.name);
-        if (u) {
-          out.reservasWorkbook.sheetsData[w.name] = {
-            rowIndex: u.rowIndex,
-            columnIndex: u.columnIndex,
-            rowCount: u.values.length,
-            preview: u.values.slice(0, 8)
-          };
-        }
+      const u = await loadUsed(token, resItemId, '05 ENE - 11 ENE');
+      if (u) {
+        out.reservasWorkbook.sheetsData['05 ENE - 11 ENE'] = {
+          rowIndex: u.rowIndex,
+          columnIndex: u.columnIndex,
+          rowCount: u.values.length,
+          headerAndRows: u.values.slice(8, 22)
+        };
       }
     }
   } catch (e) {
