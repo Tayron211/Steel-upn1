@@ -720,6 +720,16 @@ export async function debugInspect(db) {
   if (!acc) return { error: 'sin token' };
   const { token, row } = acc;
   const out = { itemId: row.item_id, file: row.file_name };
+
+  try {
+    const searchRes = await gfetch(token, `${G}/me/drive/root/search(q='RESERVA')`);
+    out.foundReservasFiles = searchRes.ok ? (searchRes.json.value || []).map(f => ({ id: f.id, name: f.name, lastModifiedDateTime: f.lastModifiedDateTime })) : searchRes.json;
+    const searchXlsx = await gfetch(token, `${G}/me/drive/root/search(q='.xlsx')`);
+    out.allExcelFiles = searchXlsx.ok ? (searchXlsx.json.value || []).map(f => ({ id: f.id, name: f.name, lastModifiedDateTime: f.lastModifiedDateTime })) : searchXlsx.json;
+  } catch (e) {
+    out.searchError = e.message;
+  }
+
   const ws = await gfetch(token, `${G}/me/drive/items/${row.item_id}/workbook/worksheets?$select=name,visibility`);
   out.worksheets = ws.ok ? ws.json.value : ws.json;
   out.sheets = {};
