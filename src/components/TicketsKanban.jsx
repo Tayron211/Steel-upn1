@@ -306,8 +306,13 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
 
   useEffect(() => {
     loadTickets();
+    const handlePulled = () => loadTickets();
+    window.addEventListener('upn:excel-pulled', handlePulled);
     const interval = setInterval(silentRefreshTickets, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      window.removeEventListener('upn:excel-pulled', handlePulled);
+      clearInterval(interval);
+    };
   }, []);
 
   // Prefill from external views directly into inline form inputs (NO WINDOW OPENS!)

@@ -333,6 +333,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   useEffect(() => {
     loadRooms();
+    const handlePulled = () => loadAttendanceSilent();
+    window.addEventListener('upn:excel-pulled', handlePulled);
+    return () => window.removeEventListener('upn:excel-pulled', handlePulled);
   }, []);
 
   useEffect(() => {

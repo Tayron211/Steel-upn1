@@ -124,6 +124,9 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
 
   useEffect(() => {
     loadSheets();
+    const handlePulled = () => loadSheets();
+    window.addEventListener('upn:excel-pulled', handlePulled);
+    return () => window.removeEventListener('upn:excel-pulled', handlePulled);
   }, []);
 
   useEffect(() => {

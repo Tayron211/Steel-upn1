@@ -26,6 +26,29 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [time, setTime] = useState(new Date());
   const [liveExcel, setLiveExcel] = useState(() => getLiveExcelState());
   const [showOneDriveModal, setShowOneDriveModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+
+  const handleSyncOneDrive = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const res = await fetch('/api/onedrive/sync', { method: 'POST' });
+      const json = await res.json();
+      if (json && json.success) {
+        setSyncSuccess(true);
+        setTimeout(() => setSyncSuccess(false), 2500);
+        window.dispatchEvent(new Event('upn:excel-pulled'));
+      } else {
+        alert(json?.message || 'No se pudo sincronizar con OneDrive. Verifique la vinculación.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión al sincronizar con OneDrive.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -65,8 +88,32 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
             <UpnLogo variant="horizontal" />
           </div>
 
-          {/* Header Right: AMOLED Toggle + Apple Minimalist Live Clock Pill */}
+          {/* Header Right: OneDrive Sync + AMOLED Toggle + Apple Minimalist Live Clock Pill */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Quick OneDrive Sync Icon Button */}
+            <button
+              type="button"
+              onClick={handleSyncOneDrive}
+              disabled={isSyncing}
+              className={`h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xs shrink-0 ${
+                isSyncing
+                  ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                  : syncSuccess
+                  ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-200 hover:text-sky-600 dark:hover:text-sky-400'
+              }`}
+              title="Sincronizar con OneDrive (Excel ↔ App)"
+              aria-label="Sincronizar con OneDrive"
+            >
+              {isSyncing ? (
+                <RefreshCw className="w-4 h-4 stroke-[2.4] text-amber-500 animate-spin" />
+              ) : syncSuccess ? (
+                <Check className="w-4 h-4 stroke-[3] text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Cloud className="w-4 h-4 stroke-[2.3] text-sky-600 dark:text-sky-400" />
+              )}
+            </button>
+
             {/* Dark / Light Mode Toggle Button */}
             <button
               type="button"

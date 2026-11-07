@@ -493,6 +493,16 @@ async function pullRecords(db, specName, used) {
     }
   }
 
+  // Si se eliminaron filas en el Excel, eliminarlas de la base de datos
+  if (recs.length > 0 || (used.values && used.values.length <= hdr.row + 1)) {
+    for (const r of dbRows) {
+      if (!claimed.has(r.id)) {
+        changes++;
+        stmts.push(db.prepare(`DELETE FROM ${spec.table} WHERE id = ?`).bind(r.id));
+      }
+    }
+  }
+
   for (let i = 0; i < stmts.length; i += 50) {
     try {
       await db.batch(stmts.slice(i, i + 50));
@@ -766,12 +776,14 @@ export async function pushToExcel(db) {
       await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
     }
 
-    // 1) si alguien editó el Excel, primero traemos sus cambios para no pisarlos
-    const lastMod = await getState(db, 'excel_mod');
-    const mod = await itemMod(token, primary.id);
+    // 1) Sincronizar primero Excel -> BD para importar ediciones y eliminaciones hechas en el archivo
     let pulled = 0;
-    if (lastMod && mod && mod !== lastMod) pulled = await pullFromExcel(db, token, primary.id);
-    if (pulled > 0) await markDbWrite(db); // hubo Excel -> BD: avisar a los clientes
+    try {
+      pulled = await pullFromExcel(db, token, primary.id);
+      if (pulled > 0) await markDbWrite(db); // hubo Excel -> BD: avisar a los clientes
+    } catch (e) {
+      console.error('Error importando desde Excel:', e);
+    }
 
     // 2) BD -> Excel (una sola lectura por tabla, compartida entre todos los archivos destino)
     const [asRes, ticketsRes, manualesRes, reservasRes] = await Promise.all([

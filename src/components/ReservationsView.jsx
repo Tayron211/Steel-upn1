@@ -320,6 +320,9 @@ export default function ReservationsView() {
 
   useEffect(() => {
     loadReservasAndRooms();
+    const handlePulled = () => loadReservasAndRooms();
+    window.addEventListener('upn:excel-pulled', handlePulled);
+    return () => window.removeEventListener('upn:excel-pulled', handlePulled);
   }, []);
 
   useEffect(() => {
