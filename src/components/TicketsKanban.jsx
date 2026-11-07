@@ -839,18 +839,25 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       </div>
 
                       {ticket.firmaRecepcion ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 shrink-0">
-                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        <button
+                          type="button"
+                          onClick={() => setDetailTicket(ticket)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800 transition active:scale-95 shrink-0"
+                          title="Ver firma registrada"
+                        >
+                          <Check className="w-3 h-3 stroke-[3]" />
                           <span>Firmado</span>
-                        </span>
+                          <Eye className="w-2.5 h-2.5 ml-0.5 opacity-75" />
+                        </button>
                       ) : isSigningInline ? null : (
                         <button
                           type="button"
                           onClick={() => setInlineSignTicketId(ticket.id)}
-                          className="text-[9px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/60 transition inline-flex items-center gap-1 active:scale-95 shrink-0"
+                          className="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800/70 transition inline-flex items-center gap-1 active:scale-95 shrink-0"
+                          title="Firmar préstamo"
                         >
-                          <PenTool className="w-2.5 h-2.5 text-amber-500" />
-                          <span>✍️ Firmar</span>
+                          <PenTool className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                          <span>Firmar</span>
                         </button>
                       )}
                     </div>
@@ -924,35 +931,25 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     )}
                   </div>
 
-                  {/* Acciones de la Tarjeta (PDF deshabilitado en activos, solo habilitado en devoluciones) */}
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
-                    <button
-                      type="button"
-                      disabled
-                      className="h-8 px-2.5 bg-slate-100/40 dark:bg-zinc-900/30 text-slate-400 dark:text-zinc-600 rounded-lg text-xs font-bold inline-flex items-center gap-1 border border-slate-200/50 dark:border-zinc-800/50 cursor-not-allowed opacity-40 shrink-0"
-                      title="El PDF solo se habilita en devoluciones"
-                    >
-                      <Download className="w-3 h-3 stroke-[2]" />
-                      <span>PDF</span>
-                    </button>
-
+                  {/* Acciones de la Tarjeta en Activos (Sin PDF: el botón de devolución se expande y nunca se corta) */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
                     <button
                       type="button"
                       onClick={() => setInlineReceiveTicketId(ticket.id)}
-                      className="flex-1 h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-lg shadow-2xs transition inline-flex items-center justify-center gap-1 active:scale-95 truncate"
+                      className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-2 active:scale-95 whitespace-nowrap"
                       title="Registrar devolución con firma"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.4] shrink-0" />
-                      <span className="truncate">Recibir Devolución</span>
+                      <CheckCircle2 className="w-4 h-4 stroke-[2.5] shrink-0" />
+                      <span>Recibir Devolución</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleDelete(ticket.id)}
-                      className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95 shrink-0"
-                      title="Eliminar"
+                      className="w-9 h-9 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95 shrink-0"
+                      title="Eliminar préstamo"
                     >
-                      <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                      <Trash2 className="w-4 h-4 stroke-[2.2]" />
                     </button>
                   </div>
                 </div>
@@ -1021,7 +1018,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     </div>
                   </div>
 
-                  {/* Acciones de la Tarjeta en Devoluciones (PDF habilitado) */}
+                  {/* Acciones de la Tarjeta en Devoluciones (PDF habilitado exclusivamente aquí) */}
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs">
                     <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">
                       {ticket.fecha} · {ticket.horaReporte}
@@ -1030,28 +1027,28 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       <button
                         type="button"
                         onClick={(e) => handleQuickDownloadPdf(e, ticket)}
-                        className="h-8 px-2.5 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 border border-slate-200 dark:border-zinc-800 active:scale-95"
+                        className="h-8 px-2.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-900 dark:text-zinc-100 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 border border-slate-200 dark:border-zinc-700 active:scale-95"
                         title="Descargar Acta de Devolución en PDF"
                       >
-                        <Download className="w-3 h-3 stroke-[2.2]" />
+                        <Download className="w-3.5 h-3.5 stroke-[2.2]" />
                         <span>PDF</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setDetailTicket(ticket)}
-                        className="h-8 px-2.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 border border-amber-200/80 dark:border-amber-800/80 active:scale-95"
-                        title="Ver detalles del préstamo y firmas registradas"
+                        className="h-8 px-2.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-black transition inline-flex items-center gap-1 border border-amber-300 dark:border-amber-800/80 active:scale-95"
+                        title="Ver firmas y detalles del préstamo"
                       >
                         <Eye className="w-3.5 h-3.5 stroke-[2.2]" />
-                        <span>Detalles</span>
+                        <span>Firmas</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(ticket.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition"
-                        title="Eliminar"
+                        className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95"
+                        title="Eliminar registro"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
                       </button>
                     </div>
                   </div>
@@ -1463,7 +1460,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Firma 1: Préstamo / Recepción inicial */}
-                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between">
+                      <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between shadow-2xs">
                         <div className="flex items-center justify-between gap-1 mb-2">
                           <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-400">
                             1. Firma de Préstamo (Recibí)
@@ -1478,15 +1475,15 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                             </span>
                           )}
                         </div>
-                        <div className="h-28 rounded-xl bg-white border border-slate-200 dark:border-zinc-700 flex items-center justify-center p-2 overflow-hidden">
+                        <div className="h-32 rounded-xl bg-white border border-slate-300 dark:border-zinc-700 flex items-center justify-center p-3 shadow-inner overflow-hidden">
                           {fRecepcion ? (
                             <img
                               src={fRecepcion}
                               alt="Firma de recepción del préstamo"
-                              className="max-h-full max-w-full object-contain"
+                              className="max-h-full max-w-full object-contain filter contrast-125"
                             />
                           ) : (
-                            <span className="text-[11px] text-slate-400 italic">
+                            <span className="text-xs text-slate-400 italic">
                               No se adjuntó firma inicial
                             </span>
                           )}
@@ -1494,7 +1491,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                       </div>
 
                       {/* Firma 2: Devolución del material */}
-                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between">
+                      <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between shadow-2xs">
                         <div className="flex items-center justify-between gap-1 mb-2">
                           <span className="text-[11px] font-black text-blue-700 dark:text-blue-400">
                             2. Firma de Devolución (Entregué)
@@ -1509,15 +1506,15 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                             </span>
                           )}
                         </div>
-                        <div className="h-28 rounded-xl bg-white border border-slate-200 dark:border-zinc-700 flex items-center justify-center p-2 overflow-hidden">
+                        <div className="h-32 rounded-xl bg-white border border-slate-300 dark:border-zinc-700 flex items-center justify-center p-3 shadow-inner overflow-hidden">
                           {fEntrega ? (
                             <img
                               src={fEntrega}
                               alt="Firma de devolución del material"
-                              className="max-h-full max-w-full object-contain"
+                              className="max-h-full max-w-full object-contain filter contrast-125"
                             />
                           ) : (
-                            <span className="text-[11px] text-slate-400 italic">
+                            <span className="text-xs text-slate-400 italic">
                               Devolución registrada sin firma
                             </span>
                           )}
@@ -1530,14 +1527,16 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                 {/* Pie de Acciones */}
                 <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-[#0c0c10] flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => handleQuickDownloadPdf(e, detailTicket)}
-                      className="h-10 px-3.5 rounded-xl bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 text-xs font-bold inline-flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 transition active:scale-95"
-                    >
-                      <Download className="w-3.5 h-3.5 stroke-[2.3]" />
-                      <span>Descargar PDF</span>
-                    </button>
+                    {detailTicket.estado === 'ATENDIDO' && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleQuickDownloadPdf(e, detailTicket)}
+                        className="h-10 px-3.5 rounded-xl bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 text-xs font-bold inline-flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 transition active:scale-95"
+                      >
+                        <Download className="w-3.5 h-3.5 stroke-[2.3]" />
+                        <span>Descargar PDF</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {

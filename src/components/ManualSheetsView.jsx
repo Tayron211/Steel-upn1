@@ -553,7 +553,7 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                     <th className="py-3.5 px-3 whitespace-nowrap min-w-[160px]">CURSO / CARRERA</th>
                     <th className="py-3.5 px-3 whitespace-nowrap min-w-[110px]">MOTIVO</th>
                     <th className="py-3.5 px-3 whitespace-nowrap min-w-[115px]">ASISTENTE</th>
-                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[130px]">DOCENTE REEMPLAZANTE</th>
+                    <th className="py-3.5 px-3 whitespace-nowrap min-w-[180px]">DOCENTE REEMPLAZANTE</th>
                     <th className="py-3.5 px-3 pr-4 whitespace-nowrap text-center w-[185px] min-w-[185px]">
                       ACCIONES
                     </th>
@@ -620,11 +620,11 @@ export default function ManualSheetsView({ initialClassData, onClearInitialClass
                       </td>
 
                       {/* DOCENTE REEMPLAZANTE (Columna I) */}
-                      <td className="py-3.5 px-3 align-top">
+                      <td className="py-3.5 px-3 whitespace-nowrap align-middle">
                         {getSuplente(item) ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/80 text-purple-950 dark:text-purple-200 font-extrabold text-xs">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/80 text-purple-950 dark:text-purple-200 font-extrabold text-xs whitespace-nowrap">
                             <UserCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0 stroke-[2.4]" />
-                            <span className="break-words">{getSuplente(item)}</span>
+                            <span className="whitespace-nowrap">{getSuplente(item)}</span>
                           </div>
                         ) : (
                           <span className="text-slate-400 dark:text-zinc-600 text-xs font-semibold">-</span>
