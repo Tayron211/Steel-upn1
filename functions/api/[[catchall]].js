@@ -263,11 +263,14 @@ async function handleApiRequest(context) {
 
     if (path === '/api/tickets' && method === 'GET') {
       const estado = url.searchParams.get('estado');
+      const activeOnly = url.searchParams.get('active') === '1';
       if (url.searchParams.get('count') === '1') {
         // Solo devuelve el número, sin traer todas las filas al cliente (contador del header)
         let csql = 'SELECT COUNT(*) AS c FROM tickets WHERE 1=1';
         const cparams = [];
-        if (estado) {
+        if (activeOnly || estado === 'PENDIENTE') {
+          csql += " AND (estado = 'PENDIENTE' OR estado = 'EN PROCESO' OR (estado != 'ATENDIDO' AND estado != 'DEVUELTO' AND estado != 'RESUELTO'))";
+        } else if (estado) {
           csql += ' AND estado = ?';
           cparams.push(estado);
         }

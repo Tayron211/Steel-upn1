@@ -170,7 +170,7 @@ export default function App() {
   const updatePendingCount = async (force = false) => {
     try {
       if (!force && !(await dbChanged())) return; // sin escrituras nuevas -> no gastar lecturas de D1
-      const res = await fetch('/api/tickets?estado=PENDIENTE&count=1');
+      const res = await fetch('/api/tickets?active=1&count=1');
       const json = await res.json();
       if (json.success) {
         setPendingTicketsCount(json.count);
@@ -387,6 +387,7 @@ export default function App() {
                 onClearInitialTicket={() => setNewTicketPrefill(null)}
                 openModalTrigger={openNewLoanModalTrigger}
                 onConsumeModalTrigger={() => setOpenNewLoanModalTrigger(null)}
+                onPendingCountChange={setPendingTicketsCount}
               />
             </ErrorBoundary>
           </div>

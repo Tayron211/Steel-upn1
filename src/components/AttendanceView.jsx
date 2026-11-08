@@ -870,8 +870,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 type="button"
                 onClick={() => setSelectedDia(d)}
                 className={`h-7 sm:h-8 text-[11px] sm:text-xs font-bold rounded-lg transition-all inline-flex items-center justify-center active:scale-95 ${isSelected
-                    ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
               >
                 <span>{d === 'MIERCOLES' ? 'MIÉ' : d === 'SABADO' ? 'SÁB' : d === 'DOMINGO' ? 'DOM' : d.slice(0, 3)}</span>
@@ -953,7 +953,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               type="button"
               onClick={() => setSelectedCarrera('')}
               className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${selectedCarrera === ''
-                ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black shadow-xs'
+                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                 : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
               }`}
             >
@@ -1002,7 +1002,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setSelectedHora('');
               }}
               className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${blockMode === 'NEXT'
-                  ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
+                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                   : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
                 }`}
             >
@@ -1071,8 +1071,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE');
               }}
               className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'PENDIENTE'
-                  ? 'bg-slate-900 text-white dark:bg-zinc-700 font-black'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
+                  ? 'bg-slate-800 text-white dark:bg-zinc-700 font-black shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
                 }`}
             >
               Pend: {countPendiente}
@@ -1087,9 +1087,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               setBlockMode('ALL');
               setSelectedHora('');
             }}
-            className={`h-6 px-2 rounded-md font-bold transition whitespace-nowrap active:scale-95 ${blockMode === 'ALL' && !selectedHora
-                ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400'
+            className={`h-6 px-2.5 rounded-md font-bold transition whitespace-nowrap active:scale-95 ${blockMode === 'ALL' && !selectedHora
+                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
               }`}
           >
             Todo
@@ -1330,7 +1330,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                           e.stopPropagation();
                           handleCopyAttendanceRow(item);
                         }}
-                        className="h-6 px-2 rounded-lg text-[10px] font-black bg-amber-400/15 hover:bg-[#FDBA30] text-amber-500 hover:text-slate-950 border border-amber-400/40 transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                        className="h-6 px-2 rounded-lg text-[10px] font-black bg-amber-100 hover:bg-[#FDBA30] text-amber-950 hover:text-slate-950 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-700/80 transition flex items-center gap-1 active:scale-95 shadow-2xs"
                         title="Copiar fila para Excel / correo"
                       >
                         <Copy className="w-3 h-3 stroke-[2.4]" />
@@ -1441,17 +1441,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </div>
               </div>
 
-              {/* Fila Única y Simétrica de Toma de Asistencia (Estilo exacto de la foto del usuario) */}
+              {/* Fila Única y Simétrica de Toma de Asistencia (100% Adaptada a Modo Claro y Oscuro AMOLED) */}
               <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   onClick={() => handleQuickStatus(item, 'PUNTUAL')}
                   className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isPuntual
                       ? 'bg-[#00875A] text-white border border-[#00875A] shadow-md font-black'
-                      : 'bg-[#061d15] text-[#10b981] border border-[#059669]/60 hover:bg-[#059669]/20'
+                      : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 dark:bg-[#061d15] dark:text-[#10b981] dark:border-[#059669]/60 dark:hover:bg-[#059669]/20'
                     }`}
                   title={isPuntual ? 'Toca para desmarcar' : 'Marcar puntual'}
                 >
-                  <CheckCircle2 className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isPuntual ? 'text-white' : 'text-[#10b981]'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isPuntual ? 'text-white' : 'text-emerald-700 dark:text-[#10b981]'}`} />
                   <span>Puntual</span>
                 </button>
 
@@ -1459,19 +1459,19 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   onClick={() => handleQuickStatus(item, 'TARDE')}
                   className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isTarde
                       ? 'bg-[#FDBA30] text-slate-950 border border-[#FDBA30] font-black shadow-md'
-                      : 'bg-[#1c1204] text-[#f59e0b] border border-[#d97706] hover:bg-[#d97706]/20'
+                      : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 dark:bg-[#1c1204] dark:text-[#f59e0b] dark:border-[#d97706] dark:hover:bg-[#d97706]/20'
                     }`}
                   title={isTarde ? 'Toca para desmarcar' : 'Marcar tardanza'}
                 >
-                  <Clock className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isTarde ? 'text-slate-950' : 'text-[#f59e0b]'}`} />
+                  <Clock className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isTarde ? 'text-slate-950' : 'text-amber-800 dark:text-[#f59e0b]'}`} />
                   <span>{isTarde && item.horaInicioReal ? `Tarde (${item.horaInicioReal})` : 'Tarde'}</span>
                 </button>
 
                 <button
                   onClick={() => handleQuickStatus(item, 'FALTA')}
                   className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isFalta
-                      ? 'bg-zinc-900 text-white border border-zinc-500 font-black shadow-md'
-                      : 'bg-[#1e0810] text-[#fda4af] border border-[#9f1239] hover:bg-[#9f1239]/20'
+                      ? 'bg-rose-600 text-white border border-rose-600 font-black shadow-md'
+                      : 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 dark:bg-[#1e0810] dark:text-[#fda4af] dark:border-[#9f1239] dark:hover:bg-[#9f1239]/20'
                     }`}
                   title={isFalta ? 'Toca para desmarcar' : 'Marcar falta'}
                 >
@@ -1479,7 +1479,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     <span className="text-white font-mono font-black text-base">-</span>
                   ) : (
                     <>
-                      <XCircle className="w-3.5 h-3.5 stroke-[2.4] shrink-0 text-[#fda4af]" />
+                      <XCircle className="w-3.5 h-3.5 stroke-[2.4] shrink-0 text-rose-700 dark:text-[#fda4af]" />
                       <span>Falta</span>
                     </>
                   )}

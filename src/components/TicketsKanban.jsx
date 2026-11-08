@@ -188,7 +188,8 @@ export default function TicketsKanban({
   initialNewTicket, 
   onClearInitialTicket,
   openModalTrigger = null,
-  onConsumeModalTrigger = null
+  onConsumeModalTrigger = null,
+  onPendingCountChange = null
 }) {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -869,6 +870,13 @@ export default function TicketsKanban({
       });
   }, [filteredTickets]);
 
+  // Sincronizar el contador de alertas de préstamos exactamente con las tarjetas activas
+  useEffect(() => {
+    if (typeof onPendingCountChange === 'function') {
+      onPendingCountChange(activeLoans.length);
+    }
+  }, [activeLoans.length, onPendingCountChange]);
+
   const concludedLoans = useMemo(() => {
     return filteredTickets
       .filter(t => t.estado === 'ATENDIDO')
@@ -1015,25 +1023,25 @@ export default function TicketsKanban({
                   className="bg-white dark:bg-[#0c0c0f] border-2 border-amber-400/70 dark:border-amber-500/40 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between hover:border-amber-500 transition-all overflow-hidden relative"
                 >
                   <div className="space-y-2.5">
-                    {/* Alerta de Estado Pendiente / Firma Faltante */}
+                    {/* Alerta Destacada en Tarjeta: Cada préstamo activo constituye 1 Alerta que coincide con el contador superior */}
                     {!ticket.firmaRecepcion ? (
-                      <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-[11px] font-black">
+                      <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-300 text-[11px] font-black">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5] text-amber-500 shrink-0 animate-pulse" />
-                          <span className="truncate">Pendiente · Falta Firma de Solicitante</span>
+                          <span className="truncate">Falta Firma de Solicitante</span>
                         </div>
-                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black shrink-0">
+                        <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black shrink-0 tracking-wider">
                           ALERTA
                         </span>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 text-[11px] font-bold">
+                      <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-300 text-[11px] font-black">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <Clock className="w-3.5 h-3.5 stroke-[2.3] text-amber-500 shrink-0" />
-                          <span className="truncate">En Préstamo · Pendiente de Devolución</span>
+                          <Clock className="w-3.5 h-3.5 stroke-[2.4] text-amber-500 shrink-0" />
+                          <span className="truncate">Pendiente de Devolución</span>
                         </div>
-                        <span className="px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold shrink-0">
-                          ACTIVO
+                        <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black shrink-0 tracking-wider">
+                          ALERTA
                         </span>
                       </div>
                     )}
