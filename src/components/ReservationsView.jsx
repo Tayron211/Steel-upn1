@@ -501,23 +501,31 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       const cleanAula = (formData.aula || '').toUpperCase().trim();
       const rm = roomMap[cleanAula];
       const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
-      const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
-      const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
-      const computedUbicacion = rm
+      const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
+      const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes || 'OCTUBRE';
+      const userUbicacion = (formData.ubicacion || '').trim();
+      const fallbackUbicacion = rm
         ? `${rm.piso} - ${rm.pabellon}`
         : `${deducePisoFromAula(cleanAula) || 'SEDE'} - ${cleanAula.startsWith('B') ? 'B' : 'A'}`;
-      const computedSheet = 'RESERVAS';
+      const finalUbicacion = (userUbicacion || fallbackUbicacion).toUpperCase();
+      const finalDetalle = (formData.detalle || formData.motivo || 'USO DE LABORATORIO').toUpperCase().trim();
+      const finalDocente = (formData.docente || '').toUpperCase().trim();
+      const finalUsuario = (formData.usuario || 'TAYRON SALINAS').toUpperCase().trim();
+      const finalPrioridad = (formData.prioridad || 'NORMAL').toUpperCase().trim();
 
       const payload = {
-        ...formData,
-        aula: cleanAula,
-        dia: computedDia,
+        fecha: formData.fecha,
         mes: computedMes,
-        ubicacion: computedUbicacion,
-        motivo: (formData.motivo || formData.detalle || 'RESERVA DE AULA').toUpperCase().trim(),
-        detalle: (formData.motivo || formData.detalle || 'RESERVA DE AULA').toUpperCase().trim(),
-        usuario: (formData.usuario || 'TAYRON SALINAS').toUpperCase().trim(),
-        obs: (formData.obs || '').trim(),
+        dia: computedDia,
+        inicio: formData.inicio,
+        final: formData.final,
+        aula: cleanAula,
+        ubicacion: finalUbicacion,
+        docente: finalDocente,
+        detalle: finalDetalle,
+        motivo: finalDetalle,
+        usuario: finalUsuario,
+        prioridad: finalPrioridad,
         hoja: 'RESERVAS'
       };
 
@@ -555,10 +563,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       aula: 'A201',
       ubicacion: '2DO PISO - A',
       docente: '',
-      motivo: '',
       detalle: '',
       usuario: 'TAYRON SALINAS',
-      obs: '',
       prioridad: 'NORMAL'
     });
   };
@@ -573,12 +579,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       inicio: blockObj.start,
       final: blockObj.end,
       aula: room.abrv,
-      ubicacion: `${room.piso} - ${room.pabellon}`,
+      ubicacion: room.piso ? `${room.piso} - ${room.pabellon}` : (deducePisoFromAula(room.abrv) || 'SEDE'),
       docente: '',
-      motivo: '',
       detalle: '',
       usuario: 'TAYRON SALINAS',
-      obs: '',
       prioridad: 'NORMAL'
     });
     setIsModalOpen(true);
@@ -1283,10 +1287,87 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
+              {/* Fila 1: FECHA, DÍA Y MES (Columnas FECHA, MES, DIA) */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div className="sm:col-span-6">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    1. FECHA *
+                  </label>
+                  <CustomDatePicker
+                    value={formData.fecha}
+                    onChange={(val) => {
+                      if (!val) return;
+                      const dt = new Date(val + 'T12:00:00');
+                      const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
+                      const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
+                      setFormData(prev => ({
+                        ...prev,
+                        fecha: val,
+                        dia: computedDia,
+                        mes: computedMes
+                      }));
+                    }}
+                    required
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    2. MES
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={formData.mes || 'OCTUBRE'}
+                    className="w-full h-10 px-3 text-xs bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-700 dark:text-zinc-300 font-bold font-mono uppercase cursor-default"
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    3. DIA
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={formData.dia || 'JUEVES'}
+                    className="w-full h-10 px-3 text-xs bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-700 dark:text-zinc-300 font-bold font-mono uppercase cursor-default"
+                  />
+                </div>
+              </div>
+
+              {/* Fila 2: HORAS (Columnas INICIO y FINAL) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    4. INICIO (Hora) *
+                  </label>
+                  <CustomSelect
+                    value={formData.inicio}
+                    onChange={(val) => setFormData({ ...formData, inicio: val })}
+                    options={TIME_OPTIONS}
+                    placeholder="Hora Inicio"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    5. FINAL (Hora) *
+                  </label>
+                  <CustomSelect
+                    value={formData.final}
+                    onChange={(val) => setFormData({ ...formData, final: val })}
+                    options={TIME_OPTIONS}
+                    placeholder="Hora Final"
+                  />
+                </div>
+              </div>
+
+              {/* Fila 3: AULA Y UBICACIÓN (Columnas AULA y UBICACIÓN) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    <span>Aula / Laboratorio Libre *</span>
+                    <span>6. AULA *</span>
                     <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
                       {freeRoomsForModalTime.length} libres
                     </span>
@@ -1306,7 +1387,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                       <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-300 truncate">
                         {roomMap[(formData.aula || '').toUpperCase().trim()]?.tipo ||
                           roomMap[(formData.aula || '').toUpperCase().trim()]?.nombre ||
-                          'Ver menú de aulas y labs'}
+                          'Seleccionar aula o lab'}
                       </span>
                     </div>
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0 stroke-[2.5]" />
@@ -1314,86 +1395,68 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Fecha *</label>
-                  <CustomDatePicker
-                    value={formData.fecha}
-                    onChange={(val) => setFormData({ ...formData, fecha: val })}
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    7. UBICACIÓN *
+                  </label>
+                  <input
+                    type="text"
                     required
+                    value={formData.ubicacion}
+                    onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value.toUpperCase() })}
+                    placeholder="Ej: 5TO PISO - A, 1ER PISO - B"
+                    className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Hora Inicio *</label>
-                  <CustomSelect
-                    value={formData.inicio}
-                    onChange={(val) => setFormData({ ...formData, inicio: val })}
-                    options={TIME_OPTIONS}
-                    placeholder="Hora Inicio"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Hora Final *</label>
-                  <CustomSelect
-                    value={formData.final}
-                    onChange={(val) => setFormData({ ...formData, final: val })}
-                    options={TIME_OPTIONS}
-                    placeholder="Hora Final"
-                  />
-                </div>
-              </div>
-
+              {/* Fila 4: DOCENTE (Columna DOCENTE) */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Docente / Solicitante *</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  8. DOCENTE *
+                </label>
                 <input
                   type="text"
                   required
                   value={formData.docente}
-                  onChange={(e) => setFormData({ ...formData, docente: e.target.value })}
-                  placeholder="Apellidos y Nombres"
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
+                  onChange={(e) => setFormData({ ...formData, docente: e.target.value.toUpperCase() })}
+                  placeholder="Apellidos y Nombres completos del docente solicitante"
+                  className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
                 />
               </div>
 
+              {/* Fila 5: DETALLE (Columna DETALLE) */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Motivo / Actividad *</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  9. DETALLE (Actividad / Motivo) *
+                </label>
                 <textarea
                   rows="2"
                   required
-                  value={formData.motivo || formData.detalle}
-                  onChange={(e) => setFormData({ ...formData, motivo: e.target.value, detalle: e.target.value })}
-                  placeholder="Ej: CHARLA PARA PADRES, CAS DE DIRECCIÓN ACADÉMICA..."
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none uppercase font-semibold"
+                  value={formData.detalle || formData.motivo}
+                  onChange={(e) => setFormData({ ...formData, detalle: e.target.value.toUpperCase(), motivo: e.target.value.toUpperCase() })}
+                  placeholder="Ej: USO DE LABORATORIO, TALLER CULTURAL, CHARLA PARA PADRES..."
+                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none uppercase font-bold"
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Observaciones (OBS) - Opcional</label>
-                <input
-                  type="text"
-                  value={formData.obs || ''}
-                  onChange={(e) => setFormData({ ...formData, obs: e.target.value })}
-                  placeholder="Observaciones adicionales para la columna OBS en Excel..."
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-medium"
-                />
-              </div>
-
-              {/* Indicador de Hoja y Archivo de Destino en OneDrive */}
-              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-2.5 flex items-center justify-between text-[11px]">
-                <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300 font-bold min-w-0">
-                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.5] shrink-0" />
-                  <span className="truncate">Hoja de destino (CONTROL DOCENTE):</span>
-                </div>
-                <span className="font-mono font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-lg border border-emerald-300/60 dark:border-emerald-700/60 shrink-0">
-                  RESERVAS
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              {/* Fila 6: USUARIO Y PRIORIDAD (Columnas USUARIO y PRIORIDAD) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Prioridad</label>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    10. USUARIO (Asistente / Responsable) *
+                  </label>
+                  <CustomSelect
+                    value={formData.usuario}
+                    onChange={(val) => setFormData({ ...formData, usuario: val })}
+                    options={asistentes}
+                    placeholder="Seleccionar asistente"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    11. PRIORIDAD *
+                  </label>
                   <CustomSelect
                     value={formData.prioridad}
                     onChange={(val) => setFormData({ ...formData, prioridad: val })}
@@ -1403,16 +1466,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     ]}
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Responsable / Asistente</label>
-                  <CustomSelect
-                    value={formData.usuario}
-                    onChange={(val) => setFormData({ ...formData, usuario: val })}
-                    options={asistentes}
-                    placeholder="Seleccionar asistente"
-                  />
+              {/* Indicador de Hoja y Archivo de Destino en OneDrive */}
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-2.5 flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300 font-bold min-w-0">
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.5] shrink-0" />
+                  <span className="truncate">Destino Excel: CONTROL DOCENTE - TAY.xlsx · Hoja <strong>RESERVAS</strong></span>
                 </div>
+                <span className="font-mono font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-lg border border-emerald-300/60 dark:border-emerald-700/60 shrink-0 text-[10px]">
+                  B:L (11 Col.)
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
