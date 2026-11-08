@@ -218,13 +218,19 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     { label: 'Piso 5', short: 'P5', val: '5TO PISO' }
   ];
 
-  // Quick Loan Chips for Attention Drawer
+  // Quick Loan Chips for Attention Drawer (11 Materiales exactos solicitados)
   const commonLoanChips = [
-    { label: "🖊️ Plumones y Mota", tipo: "PLUMONES / MATERIALES", desc: "Entrega de plumones y mota de acrílico" },
-    { label: "🔌 Cable HDMI / Extensión", tipo: "CABLES / ADAPTADORES", desc: "Préstamo de cable HDMI y extensión eléctrica" },
-    { label: "🖱️ Mouse / Teclado / Puntero", tipo: "PC / PERIFERICOS", desc: "Préstamo de periférico para clase" },
-    { label: "📽️ Control Proyector / Encendido", tipo: "PROYECCIÓN", desc: "Entrega de control remoto y encendido de proyector" },
-    { label: "🚪 Apertura de Aula", tipo: "APERTURA DE AMBIENTE", desc: "Desbloqueo y apertura de aula por inicio de sesión" }
+    { label: "📽️ Proyector", tipo: "PROYECTOR", desc: "Préstamo de Proyector Multimedia" },
+    { label: "🎯 Puntero", tipo: "PUNTERO", desc: "Préstamo de Puntero Láser" },
+    { label: "🔌 Cable HDMI", tipo: "CABLE HDMI", desc: "Préstamo de Cable HDMI" },
+    { label: "⚡ Adaptador", tipo: "ADAPTADOR", desc: "Préstamo de Adaptador" },
+    { label: "🔪 Cutting", tipo: "CUTTING", desc: "Préstamo de Cutting" },
+    { label: "🖱️ Mouse", tipo: "MOUSE", desc: "Préstamo de Mouse" },
+    { label: "📷 Cámara Web", tipo: "CAMARA WEB", desc: "Préstamo de Cámara Web" },
+    { label: "🌐 Cable de Red", tipo: "CABLE DE RED", desc: "Préstamo de Cable de Red" },
+    { label: "🎧 Audífonos", tipo: "AUDIFONOS", desc: "Préstamo de Audífonos" },
+    { label: "🔌 Adaptador VGA/HDMI", tipo: "ADAPTADOR VGA/HDMI", desc: "Préstamo de Adaptador VGA/HDMI" },
+    { label: "📸 Cámara Digital", tipo: "CAMARA DIGITAL", desc: "Préstamo de Cámara Digital" }
   ];
 
   // Official UPN Class Blocks matching SQLite CONTROL DOCENTE
@@ -649,14 +655,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
         {/* Fila 2b: Filtro rápido por Carrera / Facultad */}
         {carrerasUnicas.length > 0 && (
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
             <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">Carrera:</span>
             <button
               type="button"
               onClick={() => setSelectedCarrera('')}
-              className={`h-6 px-2 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 ${selectedCarrera === ''
-                ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+              className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${selectedCarrera === ''
+                ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black shadow-xs'
+                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
               }`}
             >
               Todas
@@ -668,13 +674,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   key={car}
                   type="button"
                   onClick={() => setSelectedCarrera(isSel ? '' : car)}
-                  className={`h-6 px-2 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${isSel
+                  className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${isSel
                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
                   }`}
                   title={car}
                 >
-                  {car.length > 14 ? car.slice(0, 14) + '…' : car}
+                  {car}
                 </button>
               );
             })}

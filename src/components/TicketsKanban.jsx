@@ -141,6 +141,54 @@ const getDayOfWeek = (dateStr) => {
   return days[date.getUTCDay()] || 'LUNES';
 };
 
+const deduceFloor = (roomStr) => {
+  const s = String(roomStr || '').toUpperCase().trim();
+  if (s.startsWith('AS')) return 'SÓTANO';
+  const num = s.replace(/\D/g, '');
+  if (!num) return '1ER PISO';
+  const firstDigit = num.charAt(0);
+  const floors = {
+    '1': '1ER PISO',
+    '2': '2DO PISO',
+    '3': '3ER PISO',
+    '4': '4TO PISO',
+    '5': '5TO PISO',
+    '6': '6TO PISO'
+  };
+  return floors[firstDigit] || '1ER PISO';
+};
+
+const cleanExcelVal = (val) => {
+  if (!val) return '';
+  const s = String(val).trim();
+  if (s.includes('#') || s.toUpperCase().includes('REF') || s.toUpperCase().includes('N/D') || s.toUpperCase().includes('VAL')) return '';
+  return s;
+};
+
+const getTicketPabPisoText = (ticket) => {
+  if (!ticket) return '';
+  const room = (ticket.ambiente || '').toUpperCase().trim();
+  let pab = cleanExcelVal(ticket.pabellon);
+  let piso = cleanExcelVal(ticket.piso);
+
+  // Si pabellon o piso vinieron con error de fórmula de Excel (#¡REF!), deducirlos limpiamente del aula
+  if (!pab && room) {
+    if (room.startsWith('B')) pab = 'B';
+    else if (room.startsWith('A')) pab = 'A';
+  }
+  if (!piso && room && room !== 'DOCENCIA' && room !== 'SEDE') {
+    piso = deduceFloor(room);
+  }
+
+  pab = cleanExcelVal(pab);
+  piso = cleanExcelVal(piso);
+
+  const parts = [];
+  if (pab && pab !== 'SEDE') parts.push(`Pab. ${pab}`);
+  if (piso && piso !== 'Sede' && piso !== 'SEDE') parts.push(`(${piso})`);
+  return parts.join(' ');
+};
+
 export default function TicketsKanban({ 
   initialNewTicket, 
   onClearInitialTicket,
@@ -164,8 +212,8 @@ export default function TicketsKanban({
   const [loanRango, setLoanRango] = useState(() => computeRango(new Date().toTimeString().slice(0, 5)));
   // Columna 5, 6, 7: AMBIENTE, PISO y PABELLÓN
   const [roomInput, setRoomInput] = useState('');
-  // Columna 8: TIPO DE SOLICITUD
-  const [selectedMaterialVal, setSelectedMaterialVal] = useState('PROYECTOR');
+  // Columna 8: TIPO DE SOLICITUD (Multiselección + opción manual)
+  const [selectedMaterials, setSelectedMaterials] = useState(['PROYECTOR']);
   const [manualItemText, setManualItemText] = useState('');
   // Columna 9: ESTADO
   const [loanStatus, setLoanStatus] = useState('EN PROCESO'); // 'EN PROCESO' | 'ATENDIDO' | 'PENDIENTE'
@@ -179,6 +227,17 @@ export default function TicketsKanban({
 
   const [submittingLoan, setSubmittingLoan] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Helper para multiselección de materiales
+  const toggleMaterial = (id) => {
+    setSelectedMaterials(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(m => m !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
 
   // Inline Card Signing (Zero popups!)
   const [inlineSignTicketId, setInlineSignTicketId] = useState(null);
@@ -269,21 +328,6 @@ export default function TicketsKanban({
       return true;
     });
   }, [roomsList, calendarPabellon, calendarPiso, calendarCategory, calendarSearch]);
-
-  const deduceFloor = (roomStr) => {
-    const num = roomStr.replace(/\D/g, '');
-    if (!num) return '1ER PISO';
-    const firstDigit = num.charAt(0);
-    const floors = {
-      '1': '1ER PISO',
-      '2': '2DO PISO',
-      '3': '3ER PISO',
-      '4': '4TO PISO',
-      '5': '5TO PISO',
-      '6': '6TO PISO'
-    };
-    return floors[firstDigit] || '1ER PISO';
-  };
 
   const parseBeneficiary = (desc = '') => {
     const raw = String(desc || '');
@@ -383,7 +427,7 @@ export default function TicketsKanban({
       }
       if (initialNewTicket.tipoSolicitud) {
         const found = CORE_MATERIALS.find(m => initialNewTicket.tipoSolicitud.toUpperCase().includes(m.id));
-        if (found) setSelectedMaterialVal(found.id);
+        if (found) setSelectedMaterials([found.id]);
       }
       setIsNewLoanModalOpen(true);
       if (onClearInitialTicket) onClearInitialTicket();
@@ -461,23 +505,31 @@ export default function TicketsKanban({
   const handleRegisterLoan = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
-    // Material / Tipo de Solicitud
-    let matName = '';
-    let matDesc = '';
-    if (selectedMaterialVal === 'MANUAL') {
-      const cleanManual = manualItemText.trim();
-      if (!cleanManual) {
+    // Material / Tipo de Solicitud (Multiselección + Manual)
+    const selectedList = Array.isArray(selectedMaterials) ? [...selectedMaterials] : [];
+    const hasManual = selectedList.includes('MANUAL');
+    const standardMaterials = selectedList.filter(id => id !== 'MANUAL');
+
+    let allSelectedNames = [...standardMaterials];
+    if (hasManual) {
+      const cleanManual = manualItemText.trim().toUpperCase();
+      if (cleanManual) {
+        allSelectedNames.push(cleanManual);
+      } else if (standardMaterials.length === 0) {
         setToastMessage('⚠️ Escribe el material que estás prestando');
         setTimeout(() => setToastMessage(''), 2500);
         return;
       }
-      matName = cleanManual.toUpperCase();
-      matDesc = `Préstamo de ${cleanManual}`;
-    } else {
-      const item = CORE_MATERIALS.find(m => m.id === selectedMaterialVal) || CORE_MATERIALS[0];
-      matName = item.id;
-      matDesc = item.desc;
     }
+
+    if (allSelectedNames.length === 0) {
+      setToastMessage('⚠️ Selecciona al menos un material');
+      setTimeout(() => setToastMessage(''), 2500);
+      return;
+    }
+
+    const matName = allSelectedNames.join(', ');
+    const matDesc = `Préstamo de ${matName}`;
 
     const rawRoom = roomInput.trim().toUpperCase();
     const cleanRoom = rawRoom || (beneficiaryType === 'DOCENTE' ? 'DOCENCIA' : 'SEDE');
@@ -542,7 +594,7 @@ export default function TicketsKanban({
         setRoomInput('');
         setManualItemText('');
         setLoanDescription('');
-        setSelectedMaterialVal('PROYECTOR');
+        setSelectedMaterials(['PROYECTOR']);
         setLoanStatus('EN PROCESO');
         if (solicitanteFormSignRef.current) solicitanteFormSignRef.current.clear();
         setIsNewLoanModalOpen(false);
@@ -852,11 +904,15 @@ export default function TicketsKanban({
                         <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-amber-400 dark:text-amber-400 px-2.5 py-0.5 rounded-xl shrink-0 shadow-2xs tracking-tight">
                           {ticket.ambiente || 'DOCENCIA'}
                         </span>
-                        {(ticket.pabellon || ticket.piso) && (
-                          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
-                            {ticket.pabellon ? `Pab. ${ticket.pabellon}` : ''} {ticket.piso ? `(${ticket.piso})` : ''}
-                          </span>
-                        )}
+                        {(() => {
+                          const pabPisoStr = getTicketPabPisoText(ticket);
+                          if (!pabPisoStr) return null;
+                          return (
+                            <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
+                              {pabPisoStr}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 px-2 py-0.5 rounded-lg border border-slate-200/60 dark:border-zinc-800 shrink-0 flex items-center gap-1">
                         <Clock className="w-3 h-3 text-amber-500 stroke-[2.3]" />
@@ -1052,11 +1108,15 @@ export default function TicketsKanban({
                         <span className="font-mono font-bold text-xs sm:text-sm bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2.5 py-0.5 rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
                           {ticket.ambiente || 'DOCENCIA'}
                         </span>
-                        {(ticket.pabellon || ticket.piso) && (
-                          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
-                            {ticket.pabellon ? `Pab. ${ticket.pabellon}` : ''} {ticket.piso ? `(${ticket.piso})` : ''}
-                          </span>
-                        )}
+                        {(() => {
+                          const pabPisoStr = getTicketPabPisoText(ticket);
+                          if (!pabPisoStr) return null;
+                          return (
+                            <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
+                              {pabPisoStr}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 inline-flex items-center gap-1 shrink-0">
                         <Check className="w-3 h-3 stroke-[3]" />
@@ -1873,25 +1933,25 @@ export default function TicketsKanban({
                   </div>
                 </div>
 
-                {/* 4. Columna: TIPO DE SOLICITUD (11 Materiales exactos + OTRO / MANUAL) */}
+                {/* 4. Columna: TIPO DE SOLICITUD (11 Materiales exactos + OTRO / MANUAL con MULTISELECCIÓN) */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Tipo de Solicitud (Material a Prestar)
+                      Tipo de Solicitud (Multiselección de Materiales)
                     </label>
-                    <span className="text-[10px] font-mono font-bold text-amber-500">
-                      {selectedMaterialVal}
+                    <span className="text-[10px] font-mono font-bold text-amber-500 truncate max-w-[200px]">
+                      {selectedMaterials.length > 0 ? selectedMaterials.join(', ') : 'Ninguno seleccionado'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
                     {CORE_MATERIALS.map(item => {
-                      const isSelected = selectedMaterialVal === item.id;
+                      const isSelected = selectedMaterials.includes(item.id);
                       return (
                         <button
                           key={item.id}
                           type="button"
-                          onClick={() => setSelectedMaterialVal(item.id)}
+                          onClick={() => toggleMaterial(item.id)}
                           className={`h-9 px-2.5 rounded-xl text-[11px] font-bold transition flex items-center justify-between gap-1 active:scale-95 border ${
                             isSelected
                               ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/50'
@@ -1905,7 +1965,7 @@ export default function TicketsKanban({
                     })}
                   </div>
 
-                  {selectedMaterialVal === 'MANUAL' && (
+                  {selectedMaterials.includes('MANUAL') && (
                     <div className="mt-2">
                       <input
                         type="text"

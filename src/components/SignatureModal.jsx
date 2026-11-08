@@ -48,7 +48,7 @@ export default function SignatureModal({
     const cleanDesc = (ticket.descripcionSolucion || ticket.tipoSolicitud || '')
       .replace(/\[(🎓|👨‍🏫)?\s*(ALUMNO|DOCENTE)(?::[^\]]+)?\]/gi, '')
       .trim();
-    return cleanDesc || ticket.tipoSolicitud || 'Plumones y mota acrílica';
+    return cleanDesc || ticket.tipoSolicitud || 'PROYECTOR';
   });
 
   // Names for Entregué & Recibí
