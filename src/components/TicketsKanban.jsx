@@ -18,7 +18,8 @@ import {
   Building2,
   Grid3X3,
   Layers,
-  Eye
+  Eye,
+  Plus
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
@@ -115,12 +116,20 @@ const CORE_MATERIALS = [
   { id: 'MANUAL', label: '✏️ Otro', desc: '' }
 ];
 
-export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }) {
+export default function TicketsKanban({ 
+  initialNewTicket, 
+  onClearInitialTicket,
+  openModalTrigger = null,
+  onConsumeModalTrigger = null
+}) {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeViewTab, setActiveViewTab] = useState('ACTIVOS'); // 'ACTIVOS' | 'CONCLUIDOS'
 
   const asistentes = useAssistants();
+
+  // Modal State para Registrar Préstamo de Material
+  const [isNewLoanModalOpen, setIsNewLoanModalOpen] = useState(false);
 
   // Form State
   const [beneficiaryType, setBeneficiaryType] = useState('DOCENTE'); // 'DOCENTE' | 'ALUMNO'
@@ -321,25 +330,10 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
     };
   }, []);
 
-  // Prefill from external views directly into inline form inputs (NO WINDOW OPENS!)
+  // Prefill desde vistas externas y apertura automática del modal
   useEffect(() => {
     if (initialNewTicket) {
       setActiveViewTab('ACTIVOS');
-      
-      const toTop = () => {
-        try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch (_) { window.scrollTo(0, 0); }
-        if (document.documentElement) document.documentElement.scrollTop = 0;
-        if (document.body) document.body.scrollTop = 0;
-        const anchor = document.getElementById('tickets-top-anchor');
-        if (anchor) anchor.scrollIntoView({ behavior: 'instant', block: 'start' });
-      };
-
-      toTop();
-      requestAnimationFrame(toTop);
-      setTimeout(toTop, 40);
-      setTimeout(toTop, 120);
-      setTimeout(toTop, 250);
-
       if (initialNewTicket.ambiente) {
         setRoomInput(initialNewTicket.ambiente);
       }
@@ -352,23 +346,18 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         const found = CORE_MATERIALS.find(m => initialNewTicket.tipoSolicitud.toUpperCase().includes(m.id));
         if (found) setSelectedMaterialVal(found.id);
       }
-
-      // Foco inmediato con preventScroll: true para que jamás desplace la vista hacia abajo
-      setTimeout(() => {
-        const input = document.getElementById('prestamo-person-name');
-        if (input) {
-          try {
-            input.focus({ preventScroll: true });
-          } catch (_) {
-            input.focus();
-          }
-        }
-        toTop();
-      }, 80);
-
+      setIsNewLoanModalOpen(true);
       if (onClearInitialTicket) onClearInitialTicket();
     }
   }, [initialNewTicket]);
+
+  useEffect(() => {
+    if (openModalTrigger) {
+      setActiveViewTab('ACTIVOS');
+      setIsNewLoanModalOpen(true);
+      if (onConsumeModalTrigger) onConsumeModalTrigger();
+    }
+  }, [openModalTrigger]);
 
   // 1-Tap PDF download (directly downloads official slip voucher, NO MODAL!)
   const handleQuickDownloadPdf = (e, ticket) => {
@@ -462,6 +451,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
         setManualItemText('');
         setSelectedMaterialVal('PLUMONES');
         if (solicitanteFormSignRef.current) solicitanteFormSignRef.current.clear();
+        setIsNewLoanModalOpen(false);
         setActiveViewTab('ACTIVOS');
         setTimeout(() => setToastMessage(''), 2500);
       }
@@ -641,204 +631,74 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
       )}
 
       {/* =========================================================================
-          CABECERA Y PESTAÑAS (ACTIVOS / DEVUELTOS)
+          CABECERA, CONMUTADOR (ACTIVOS / DEVUELTOS) Y BOTÓN REGISTRAR PRÉSTAMO
           ========================================================================= */}
-      <div id="tickets-top-anchor" className="flex flex-wrap items-center justify-between gap-2 px-1 scroll-mt-20">
-        <div className="flex items-center gap-2 min-w-0">
-          <HandHelping className="w-5 h-5 text-amber-500 stroke-[2.4] shrink-0" />
-          <h1 className="text-base font-black text-slate-950 dark:text-white tracking-tight whitespace-nowrap">
-            Préstamos de Material
-          </h1>
+      <div id="tickets-top-anchor" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 scroll-mt-20">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 text-amber-500 flex items-center justify-center shrink-0">
+            <HandHelping className="w-5 h-5 stroke-[2.4]" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-black text-slate-950 dark:text-white tracking-tight truncate">
+              Préstamos de Material
+            </h1>
+            <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium hidden sm:block">
+              Control de entrega y devolución de recursos académicos
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shrink-0">
-          <button
-            onClick={() => {
-              setActiveViewTab('ACTIVOS');
-              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-              if (document.documentElement) document.documentElement.scrollTop = 0;
-              if (document.body) document.body.scrollTop = 0;
-            }}
-            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
-              activeViewTab === 'ACTIVOS'
-                ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
-                : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>Activos</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-[#FDBA30] text-slate-950">
-              {activeLoans.length}
-            </span>
-          </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shrink-0">
+            <button
+              onClick={() => {
+                setActiveViewTab('ACTIVOS');
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                if (document.documentElement) document.documentElement.scrollTop = 0;
+                if (document.body) document.body.scrollTop = 0;
+              }}
+              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
+                activeViewTab === 'ACTIVOS'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>Activos</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-[#FDBA30] text-slate-950">
+                {activeLoans.length}
+              </span>
+            </button>
 
+            <button
+              onClick={() => {
+                setActiveViewTab('CONCLUIDOS');
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                if (document.documentElement) document.documentElement.scrollTop = 0;
+                if (document.body) document.body.scrollTop = 0;
+              }}
+              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
+                activeViewTab === 'CONCLUIDOS'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>Devoluciones</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-emerald-500 text-white">
+                {concludedLoans.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Botón Principal: Registrar Préstamo (Abre ventana modal para aprovechar los espacios) */}
           <button
-            onClick={() => {
-              setActiveViewTab('CONCLUIDOS');
-              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-              if (document.documentElement) document.documentElement.scrollTop = 0;
-              if (document.body) document.body.scrollTop = 0;
-            }}
-            className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
-              activeViewTab === 'CONCLUIDOS'
-                ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
-                : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            type="button"
+            onClick={() => setIsNewLoanModalOpen(true)}
+            className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0"
           >
-            <span>Devoluciones</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-emerald-500 text-white">
-              {concludedLoans.length}
-            </span>
+            <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
+            <span>Registrar Préstamo</span>
           </button>
         </div>
-      </div>
-
-      {/* =========================================================================
-          FORMULARIO ÁGIL: PASO 1 (DOCENTE O ALUMNO FIRMA QUE RECIBIÓ EL OBJETO)
-          ========================================================================= */}
-      <div className="bg-white dark:bg-[#0c0c0f] border border-slate-200 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-xs">
-        <form onSubmit={handleRegisterLoan} className="space-y-2.5">
-          {/* Fila 1: Beneficiario + Nombre + Aula + Responsable */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-            <div className="sm:col-span-3 grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setBeneficiaryType('DOCENTE')}
-                className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
-                  beneficiaryType === 'DOCENTE'
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                    : 'text-slate-500 dark:text-zinc-400'
-                }`}
-              >
-                <User className="w-3.5 h-3.5 stroke-[2.4]" />
-                <span>Docente</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setBeneficiaryType('ALUMNO')}
-                className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
-                  beneficiaryType === 'ALUMNO'
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                    : 'text-slate-500 dark:text-zinc-400'
-                }`}
-              >
-                <GraduationCap className="w-3.5 h-3.5 stroke-[2.4]" />
-                <span>Alumno</span>
-              </button>
-            </div>
-
-            <div className="sm:col-span-4">
-              <input
-                id="prestamo-person-name"
-                type="text"
-                value={personName}
-                onChange={(e) => setPersonName(e.target.value)}
-                placeholder={beneficiaryType === 'DOCENTE' ? 'Nombre del Docente' : 'Nombre o Código del Alumno'}
-                className="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:border-[#FDBA30]"
-              />
-            </div>
-
-            <div className="sm:col-span-2 relative">
-              <button
-                type="button"
-                onClick={() => setIsRoomCalendarOpen(true)}
-                className={`w-full h-10 px-2.5 text-xs font-mono font-bold rounded-xl border transition flex items-center justify-between active:scale-98 ${
-                  roomInput
-                    ? 'bg-amber-100/80 dark:bg-amber-950/50 border-amber-400 dark:border-amber-700 text-amber-950 dark:text-amber-200'
-                    : 'bg-slate-50 dark:bg-[#141418] border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 hover:border-amber-400 dark:hover:border-amber-500'
-                }`}
-                title="Abrir mapa de aulas estilo calendario"
-              >
-                <div className="flex items-center gap-1.5 truncate">
-                  <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Aula'}</span>
-                </div>
-                {roomInput ? (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setRoomInput('');
-                    }}
-                    className="p-1 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
-                    title="Quitar aula"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-black uppercase tracking-tight bg-slate-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-zinc-300">
-                    Elegir
-                  </span>
-                )}
-              </button>
-            </div>
-
-            <div className="sm:col-span-3">
-              <CustomSelect
-                value={loanResponsable}
-                onChange={setLoanResponsable}
-                options={asistentes}
-                placeholder="Responsable / Asistente"
-                className="h-10 text-xs font-bold"
-              />
-            </div>
-          </div>
-
-          {/* Fila 2: Materiales Rápidos */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {CORE_MATERIALS.map(item => {
-              const isSelected = selectedMaterialVal === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelectedMaterialVal(item.id)}
-                  className={`h-8 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 border ${
-                    isSelected
-                      ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
-                      : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {isSelected && <Check className="w-3 h-3 stroke-[3] text-amber-400 shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Campo de Material Manual si seleccionó "Otro" */}
-          {selectedMaterialVal === 'MANUAL' && (
-            <input
-              type="text"
-              required
-              autoFocus
-              value={manualItemText}
-              onChange={(e) => setManualItemText(e.target.value)}
-              placeholder="Escribe el material a prestar: Extensión, Parlante, Puntero..."
-              className="w-full h-9 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
-            />
-          )}
-
-          {/* Fila 3: Firma del Solicitante */}
-          <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-1">
-            <SignatureCanvas
-              ref={solicitanteFormSignRef}
-              title="Firma del Solicitante"
-              subtitle="Firma directamente con el dedo en pantalla"
-              height={100}
-              compact={true}
-            />
-          </div>
-
-          {/* Botón Único de Registro (1 Toque) */}
-          <button
-            type="submit"
-            disabled={submittingLoan}
-            className="w-full h-11 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-98"
-          >
-            <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-            <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo'}</span>
-          </button>
-        </form>
       </div>
 
       {/* =========================================================================
@@ -1700,6 +1560,232 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             </div>
           );
         })(),
+        document.body
+      )}
+
+      {/* =========================================================================
+          MODAL FLOTANTE: REGISTRAR PRÉSTAMO DE MATERIAL (Paso 1)
+          Aprovecha el 100% del espacio en pantalla y solo se abre al hacer clic
+          ========================================================================= */}
+      {isNewLoanModalOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsNewLoanModalOpen(false)}
+        >
+          <div 
+            className="w-full max-w-xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabecera del Modal */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-zinc-900/40">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-[#FDBA30] text-slate-950 flex items-center justify-center shadow-xs shrink-0">
+                  <HandHelping className="w-5 h-5 stroke-[2.4]" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base font-black text-slate-950 dark:text-white leading-tight truncate">
+                    Registrar Préstamo de Material
+                  </h2>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold truncate">
+                    Paso 1: Entrega de recurso y firma del solicitante
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsNewLoanModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-90 shrink-0"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Contenido del Formulario Scrolleable */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+              <form id="new-loan-modal-form" onSubmit={handleRegisterLoan} className="space-y-3.5">
+                {/* Beneficiario Toggle */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Tipo de Solicitante
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-zinc-900 p-1 rounded-2xl border border-slate-200/80 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => setBeneficiaryType('DOCENTE')}
+                      className={`h-9 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
+                        beneficiaryType === 'DOCENTE'
+                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <User className="w-4 h-4 stroke-[2.4]" />
+                      <span>Docente</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setBeneficiaryType('ALUMNO')}
+                      className={`h-9 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
+                        beneficiaryType === 'ALUMNO'
+                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <GraduationCap className="w-4 h-4 stroke-[2.4]" />
+                      <span>Alumno</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Nombre del Solicitante */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                    {beneficiaryType === 'DOCENTE' ? 'Nombre del Docente' : 'Nombre o Código del Alumno'}
+                  </label>
+                  <input
+                    id="prestamo-person-name"
+                    type="text"
+                    required
+                    value={personName}
+                    onChange={(e) => setPersonName(e.target.value)}
+                    placeholder={beneficiaryType === 'DOCENTE' ? 'Ingresa el nombre completo...' : 'Ingresa nombre o código de estudiante...'}
+                    className="w-full h-10 px-3.5 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:border-[#FDBA30] transition"
+                  />
+                </div>
+
+                {/* Aula y Responsable */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Aula Destino
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsRoomCalendarOpen(true)}
+                      className={`w-full h-10 px-3 text-xs font-mono font-bold rounded-xl border transition flex items-center justify-between active:scale-98 ${
+                        roomInput
+                          ? 'bg-amber-100/80 dark:bg-amber-950/50 border-amber-400 dark:border-amber-700 text-amber-950 dark:text-amber-200'
+                          : 'bg-slate-50 dark:bg-[#141418] border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 hover:border-amber-400 dark:hover:border-amber-500'
+                      }`}
+                      title="Abrir mapa de aulas estilo calendario"
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Seleccionar Aula'}</span>
+                      </div>
+                      {roomInput ? (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRoomInput('');
+                          }}
+                          className="p-1 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                          title="Quitar aula"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-black uppercase tracking-tight bg-slate-200 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-slate-700 dark:text-zinc-300">
+                          Elegir
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Responsable / Asistente
+                    </label>
+                    <CustomSelect
+                      value={loanResponsable}
+                      onChange={setLoanResponsable}
+                      options={asistentes}
+                      placeholder="Responsable"
+                      className="h-10 text-xs font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Materiales Rápidos */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Material a Prestar
+                  </label>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {CORE_MATERIALS.map(item => {
+                      const isSelected = selectedMaterialVal === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setSelectedMaterialVal(item.id)}
+                          className={`h-8 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 border ${
+                            isSelected
+                              ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
+                              : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          {isSelected && <Check className="w-3 h-3 stroke-[3] text-amber-400 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {selectedMaterialVal === 'MANUAL' && (
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={manualItemText}
+                      onChange={(e) => setManualItemText(e.target.value)}
+                      placeholder="Escribe el material a prestar: Extensión, Parlante, Puntero..."
+                      className="w-full h-9 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 mt-2"
+                    />
+                  )}
+                </div>
+
+                {/* Firma del Solicitante */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Firma del Solicitante
+                  </label>
+                  <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-slate-200 dark:border-zinc-800 space-y-1">
+                    <SignatureCanvas
+                      ref={solicitanteFormSignRef}
+                      title="Firma del Solicitante"
+                      subtitle="Firma directamente con el dedo en pantalla"
+                      height={100}
+                      compact={true}
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Footer con Botón Registrar */}
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsNewLoanModalOpen(false)}
+                className="h-10 px-4 rounded-xl text-xs font-bold text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800 transition active:scale-95"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                form="new-loan-modal-form"
+                disabled={submittingLoan}
+                className="h-10 px-5 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition inline-flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo'}</span>
+              </button>
+            </div>
+          </div>
+        </div>,
         document.body
       )}
     </div>

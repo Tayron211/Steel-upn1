@@ -75,6 +75,7 @@ export default function App() {
 
   // Cross-module states
   const [newTicketPrefill, setNewTicketPrefill] = useState(null);
+  const [openNewLoanModalTrigger, setOpenNewLoanModalTrigger] = useState(null);
   const [manualSheetPrefill, setManualSheetPrefill] = useState(null);
   const [operationsSubTab, setOperationsSubTab] = useState('manual');
   const [openManualModalTrigger, setOpenManualModalTrigger] = useState(null);
@@ -196,7 +197,7 @@ export default function App() {
         if (j && j.pulled) {
           window.dispatchEvent(new Event('upn:excel-pulled'));
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     const first = setTimeout(pullExcel, 3000);
     const interval = setInterval(pullExcel, 30000);
@@ -228,7 +229,7 @@ export default function App() {
           // Solo los cambios de tickets alteran el contador de pendientes
           if (urlStr.includes('/api/tickets')) updatePendingCount(true);
         }
-      } catch (e) {}
+      } catch (e) { }
       return res;
     };
   }, []);
@@ -266,7 +267,7 @@ export default function App() {
           isIgnored = true;
           break;
         }
-      } catch (err) {}
+      } catch (err) { }
       target = target.parentElement;
     }
 
@@ -348,7 +349,7 @@ export default function App() {
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -384,6 +385,8 @@ export default function App() {
               <TicketsKanban
                 initialNewTicket={newTicketPrefill}
                 onClearInitialTicket={() => setNewTicketPrefill(null)}
+                openModalTrigger={openNewLoanModalTrigger}
+                onConsumeModalTrigger={() => setOpenNewLoanModalTrigger(null)}
               />
             </ErrorBoundary>
           </div>
@@ -424,6 +427,7 @@ export default function App() {
         }}
         onOpenNewTicket={() => {
           navigateTab('tickets', true);
+          setOpenNewLoanModalTrigger(Date.now());
           scrollToTopGlobal();
         }}
         onOpenReservation={() => {
