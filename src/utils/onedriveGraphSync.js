@@ -735,10 +735,15 @@ async function pushAsistencia(db, token, itemId, preRows) {
   const iAula = colOf(c, ['AULA']);
   const iNrc = colOf(c, ['NRC']);
   const managed = [
-    { idx: colOf(c, ['HORA INICIO REAL']), get: (d) => hhmmToFrac(d.hora_inicio_real) },
+    { idx: colOf(c, ['HORA INICIO REAL']), get: (d) => {
+        if (!d.hora_inicio_real) return '';
+        if (d.hora_inicio_real === '-') return '-';
+        return hhmmToFrac(d.hora_inicio_real);
+      } 
+    },
     { idx: colOf(c, ['HORA FINAL REAL']), get: (d) => hhmmToFrac(d.hora_final_real) },
     { idx: colOf(c, ['ASISTENCIA']), get: (d) => (String(d.asistencia || '').toUpperCase() === 'PENDIENTE' ? '' : d.asistencia || '') },
-    { idx: colOf(c, ['PUNTUALIDAD']), get: (d) => (d.puntualidad === '-' ? '' : d.puntualidad || '') },
+    { idx: colOf(c, ['PUNTUALIDAD']), get: (d) => (d.puntualidad || '') },
     { idx: colOf(c, ['OBSERVACION']), get: (d) => d.observacion || '' }
   ].filter((m) => m.idx >= 0);
   if (managed.length === 0) return { skipped: 'sin columnas' };

@@ -26,85 +26,8 @@ import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 
-const CAMPUS_ROOMS_CATALOG = [
-  // --- PABELLÓN A ---
-  // Sótano
-  { abrv: 'AS01', nombre: 'Laboratorio ZAM AS-01', pabellon: 'A', piso: 'SÓTANO', categoria: 'LABORATORIO', tipo: 'Laboratorio ZAM', aforo: 30 },
-  { abrv: 'AS02', nombre: 'Taller de Audio AS-02', pabellon: 'A', piso: 'SÓTANO', categoria: 'TALLER', tipo: 'Taller de Audio', aforo: 10 },
-  { abrv: 'AS03', nombre: 'Taller de Audio AS-03', pabellon: 'A', piso: 'SÓTANO', categoria: 'TALLER', tipo: 'Taller de Audio', aforo: 10 },
-  { abrv: 'AS04', nombre: 'Laboratorio de Fotografía AS-04', pabellon: 'A', piso: 'SÓTANO', categoria: 'LABORATORIO', tipo: 'Lab. Fotografía', aforo: 20 },
-  { abrv: 'AS05', nombre: 'Laboratorio de Fotografía AS-05', pabellon: 'A', piso: 'SÓTANO', categoria: 'LABORATORIO', tipo: 'Lab. Fotografía', aforo: 20 },
-  // 1er Piso
-  { abrv: 'A101', nombre: 'Taller de Edición A-101', pabellon: 'A', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller de Edición', aforo: 21 },
-  // 2do Piso
-  { abrv: 'A201', nombre: 'Aula A-201', pabellon: 'A', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A202', nombre: 'Aula A-202', pabellon: 'A', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  // 3er Piso
-  { abrv: 'A301', nombre: 'Aula A-301', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A302', nombre: 'Aula A-302', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A303', nombre: 'Aula A-303', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A304', nombre: 'Aula A-304', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A305', nombre: 'Aula A-305', pabellon: 'A', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A306', nombre: 'Sala de Conferencias A-306', pabellon: 'A', piso: '3ER PISO', categoria: 'ESPECIAL', tipo: 'Sala de Conferencias', aforo: 60 },
-  // 4to Piso
-  { abrv: 'A401', nombre: 'Aula A-401', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A402', nombre: 'Aula A-402', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A403', nombre: 'Laboratorio de Diseño y Producción Digital A-403', pabellon: 'A', piso: '4TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. Diseño Digital', aforo: 40 },
-  { abrv: 'A404', nombre: 'Aula A-404', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A405', nombre: 'Aula A-405', pabellon: 'A', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
-  { abrv: 'A406', nombre: 'Aula de Litigación A-406', pabellon: 'A', piso: '4TO PISO', categoria: 'ESPECIAL', tipo: 'Aula de Litigación', aforo: 37 },
-  { abrv: 'A407', nombre: 'Sala de Conferencias A-407', pabellon: 'A', piso: '4TO PISO', categoria: 'ESPECIAL', tipo: 'Sala de Conferencias', aforo: 60 },
-  // 5to Piso
-  { abrv: 'A501', nombre: 'Aula A-501', pabellon: 'A', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A502', nombre: 'Aula A-502', pabellon: 'A', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'A503', nombre: 'Laboratorio de Diseño Gráfico A-503', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. Diseño Gráfico', aforo: 40 },
-  { abrv: 'A504', nombre: 'Laboratorio de Diseño Gráfico A-504', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. Diseño Gráfico', aforo: 40 },
-  { abrv: 'A505', nombre: 'Laboratorio de Cómputo A-505', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
-  { abrv: 'A506', nombre: 'Laboratorio de Cómputo A-506', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
-  { abrv: 'A507', nombre: 'Aula Multifuncional A-507', pabellon: 'A', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula Multifuncional', aforo: 16 },
-  { abrv: 'A508', nombre: 'Laboratorio de Cómputo A-508', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
-  { abrv: 'A509', nombre: 'Laboratorio de Cómputo A-509', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
-  { abrv: 'A510', nombre: 'Laboratorio de Cómputo A-510', pabellon: 'A', piso: '5TO PISO', categoria: 'LABORATORIO', tipo: 'Lab. de Cómputo', aforo: 40 },
-
-  // --- PABELLÓN B ---
-  // 1er Piso
-  { abrv: 'B101', nombre: 'Laboratorio de Impresión 3D B-101', pabellon: 'B', piso: '1ER PISO', categoria: 'LABORATORIO', tipo: 'Lab. Impresión 3D', aforo: 5 },
-  { abrv: 'B102', nombre: 'Taller de Creatividad B-102', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Creatividad', aforo: 40 },
-  { abrv: 'B103', nombre: 'Taller de Diseño Industrial B-103', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Diseño Ind.', aforo: 30 },
-  { abrv: 'B104', nombre: 'Taller de Arquitectura y Dibujo B-104', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B105', nombre: 'Taller de Materiales de Construcción B-105', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Materiales', aforo: 28 },
-  { abrv: 'B106', nombre: 'Taller de Soldadura B-106', pabellon: 'B', piso: '1ER PISO', categoria: 'TALLER', tipo: 'Taller Soldadura', aforo: 20 },
-  // 2do Piso
-  { abrv: 'B201', nombre: 'Aula B-201', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B202', nombre: 'Aula B-202', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B203', nombre: 'Taller de Arquitectura y Dibujo B-203', pabellon: 'B', piso: '2DO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B204', nombre: 'Taller de Arquitectura y Dibujo B-204', pabellon: 'B', piso: '2DO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B205', nombre: 'Taller de Arquitectura y Dibujo B-205', pabellon: 'B', piso: '2DO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B206', nombre: 'Aula B-206', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B207', nombre: 'Aula B-207', pabellon: 'B', piso: '2DO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  // 3er Piso
-  { abrv: 'B301', nombre: 'Aula B-301', pabellon: 'B', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B302', nombre: 'Aula B-302', pabellon: 'B', piso: '3ER PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B303', nombre: 'Taller de Arquitectura y Dibujo B-303', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B304', nombre: 'Taller de Arquitectura y Dibujo B-304', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B305', nombre: 'Taller de Arquitectura y Dibujo B-305', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B306', nombre: 'Taller de Arquitectura y Dibujo B-306', pabellon: 'B', piso: '3ER PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  // 4to Piso
-  { abrv: 'B401', nombre: 'Aula B-401', pabellon: 'B', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
-  { abrv: 'B402', nombre: 'Aula B-402', pabellon: 'B', piso: '4TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
-  { abrv: 'B403', nombre: 'Taller de Arquitectura y Dibujo B-403', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B404', nombre: 'Taller de Arquitectura y Dibujo B-404', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B405', nombre: 'Taller de Arquitectura y Dibujo B-405', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B406', nombre: 'Taller de Arquitectura y Dibujo B-406', pabellon: 'B', piso: '4TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  // 5to Piso
-  { abrv: 'B501', nombre: 'Aula B-501', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B502', nombre: 'Aula B-502', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B503', nombre: 'Aula B-503', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 20 },
-  { abrv: 'B504', nombre: 'Aula B-504', pabellon: 'B', piso: '5TO PISO', categoria: 'AULA', tipo: 'Aula', aforo: 40 },
-  { abrv: 'B505', nombre: 'Taller de Arquitectura y Dibujo B-505', pabellon: 'B', piso: '5TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B506', nombre: 'Taller de Arquitectura y Dibujo B-506', pabellon: 'B', piso: '5TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 },
-  { abrv: 'B507', nombre: 'Taller de Arquitectura y Dibujo B-507', pabellon: 'B', piso: '5TO PISO', categoria: 'TALLER', tipo: 'Taller Arquitectura', aforo: 40 }
-];
+import { CAMPUS_ROOMS } from '../utils/campusRooms';
+const CAMPUS_ROOMS_CATALOG = CAMPUS_ROOMS;
 
 const inferCategoria = (rm) => {
   if (rm.categoria) return rm.categoria;

@@ -391,7 +391,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       updates = {
         asistencia: 'SI',
         puntualidad: 'PUNTUAL',
-        horaInicioReal: ''
+        horaInicioReal: item.horaInicioProg || getCurrentTimeStr()
       };
     } else if (targetStatus === 'TARDE') {
       updates = {
@@ -403,7 +403,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       updates = {
         asistencia: 'NO',
         puntualidad: '-',
-        horaInicioReal: '',
+        horaInicioReal: '-',
         horaFinalReal: ''
       };
     }
@@ -1031,21 +1031,20 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
                   <div className="flex items-center gap-1 shrink-0">
                     {isPuntual && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/70">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 stroke-[2.4] shrink-0" />
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                        <CheckCircle2 className="w-3 h-3 text-white stroke-[2.4] shrink-0" />
                         <span>PUNTUAL</span>
                       </span>
                     )}
                     {isTarde && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/70">
-                        <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.4] shrink-0" />
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-full shadow-xs">
+                        <Clock className="w-3 h-3 text-slate-950 stroke-[2.4] shrink-0" />
                         <span>TARDE{item.horaInicioReal ? ` (${item.horaInicioReal})` : ''}</span>
                       </span>
                     )}
                     {isFalta && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800/70">
-                        <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400 stroke-[2.4] shrink-0" />
-                        <span>FALTA</span>
+                      <span className="inline-flex items-center justify-center font-mono font-bold text-xs text-white bg-zinc-800 dark:bg-zinc-800 border border-zinc-600 px-3 py-0.5 rounded-full shadow-xs" title="Falta (-)">
+                        -
                       </span>
                     )}
                     {isReemplazo && (
@@ -1101,8 +1100,18 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                       <span className="text-slate-700 dark:text-zinc-300 font-bold">{item.horaInicioProg} - {item.horaFinalProg}</span>
                     </span>
                     {isTarde && item.horaInicioReal && (
-                      <span className="text-amber-900 dark:text-amber-200 font-bold bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-md text-[10px] border border-amber-300/80 dark:border-amber-800/80">
-                        Hora real: {item.horaInicioReal}
+                      <span className="text-amber-950 dark:text-amber-300 font-extrabold bg-[#FDBA30]/20 dark:bg-amber-950/80 px-2 py-0.5 rounded-md text-[10px] border border-amber-400/80 dark:border-amber-700 shadow-2xs">
+                        Inicio Real: {item.horaInicioReal}
+                      </span>
+                    )}
+                    {isPuntual && item.horaInicioReal && (
+                      <span className="text-emerald-700 dark:text-emerald-400 font-extrabold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md text-[10px] border border-emerald-300 dark:border-emerald-800 shadow-2xs">
+                        Inicio Real: {item.horaInicioReal}
+                      </span>
+                    )}
+                    {isFalta && (
+                      <span className="text-white font-mono font-bold bg-zinc-800 px-2 py-0.5 rounded-md text-[10px] border border-zinc-700 shadow-2xs">
+                        Inicio Real: -
                       </span>
                     )}
                   </div>

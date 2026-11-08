@@ -332,17 +332,17 @@ export default function DashboardView() {
       const parsedAmbientes = [];
       if (ambSheetName && wb.Sheets[ambSheetName]) {
         const ambRows = XLSX.utils.sheet_to_json(wb.Sheets[ambSheetName], { header: 1 });
-        for (let r = 1; r < ambRows.length; r++) {
+        for (let r = 2; r < ambRows.length; r++) {
           const row = ambRows[r];
-          if (!row || !row[3]) continue;
+          if (!row || !row[2]) continue;
           parsedAmbientes.push({
-            abrv: String(row[3]).trim().toUpperCase(),
+            abrv: String(row[2]).trim().toUpperCase(),
             nombre: row[1] ? String(row[1]).trim() : '',
-            tipo: row[2] ? String(row[2]).trim().toUpperCase() : 'AULA',
-            aforo: row[4] ? Number(row[4]) : 30,
-            pabellon: row[5] ? String(row[5]).trim().toUpperCase() : '',
-            piso: row[6] ? String(row[6]).trim().toUpperCase() : '',
-            ubicacion: row[7] ? String(row[7]).trim() : ''
+            tipo: row[7] ? String(row[7]).trim().toUpperCase() : 'AULA',
+            aforo: row[3] ? Number(row[3]) : 30,
+            pabellon: row[4] ? String(row[4]).trim().toUpperCase() : '',
+            piso: row[5] ? String(row[5]).trim().toUpperCase() : '',
+            ubicacion: row[6] ? String(row[6]).trim() : ''
           });
         }
       }
