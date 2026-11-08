@@ -990,6 +990,10 @@ export function getReservasSheetNameForDate() {
   return 'RESERVAS';
 }
 
+export async function pullReservationsFromExcel(db) {
+  return await pullIfExcelChanged(db);
+}
+
 export async function appendReservationToExcel(db, reservation) {
   const acc = await getAccess(db);
   if (!acc) return { success: false, message: 'OneDrive no vinculado' };

@@ -1,0 +1,4317 @@
+------formdata-undici-042105260117
+Content-Disposition: form-data; name="metadata"
+
+{"main_module":"functionsWorker-0.6017629224548429.js"}
+------formdata-undici-042105260117
+Content-Disposition: form-data; name="functionsWorker-0.6017629224548429.js"; filename="functionsWorker-0.6017629224548429.js"
+Content-Type: application/javascript+module
+
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// ../node_modules/fflate/esm/browser.js
+var u8 = Uint8Array;
+var u16 = Uint16Array;
+var i32 = Int32Array;
+var fleb = new u8([
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  1,
+  1,
+  1,
+  2,
+  2,
+  2,
+  2,
+  3,
+  3,
+  3,
+  3,
+  4,
+  4,
+  4,
+  4,
+  5,
+  5,
+  5,
+  5,
+  0,
+  /* unused */
+  0,
+  0,
+  /* impossible */
+  0
+]);
+var fdeb = new u8([
+  0,
+  0,
+  0,
+  0,
+  1,
+  1,
+  2,
+  2,
+  3,
+  3,
+  4,
+  4,
+  5,
+  5,
+  6,
+  6,
+  7,
+  7,
+  8,
+  8,
+  9,
+  9,
+  10,
+  10,
+  11,
+  11,
+  12,
+  12,
+  13,
+  13,
+  /* unused */
+  0,
+  0
+]);
+var clim = new u8([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+var freb = /* @__PURE__ */ __name(function(eb, start) {
+  var b = new u16(31);
+  for (var i2 = 0; i2 < 31; ++i2) {
+    b[i2] = start += 1 << eb[i2 - 1];
+  }
+  var r = new i32(b[30]);
+  for (var i2 = 1; i2 < 30; ++i2) {
+    for (var j = b[i2]; j < b[i2 + 1]; ++j) {
+      r[j] = j - b[i2] << 5 | i2;
+    }
+  }
+  return { b, r };
+}, "freb");
+var _a = freb(fleb, 2);
+var fl = _a.b;
+var revfl = _a.r;
+fl[28] = 258, revfl[258] = 28;
+var _b = freb(fdeb, 0);
+var fd = _b.b;
+var revfd = _b.r;
+var rev = new u16(32768);
+for (i = 0; i < 32768; ++i) {
+  x = (i & 43690) >> 1 | (i & 21845) << 1;
+  x = (x & 52428) >> 2 | (x & 13107) << 2;
+  x = (x & 61680) >> 4 | (x & 3855) << 4;
+  rev[i] = ((x & 65280) >> 8 | (x & 255) << 8) >> 1;
+}
+var x;
+var i;
+var hMap = /* @__PURE__ */ __name((function(cd, mb, r) {
+  var s = cd.length;
+  var i2 = 0;
+  var l = new u16(mb);
+  for (; i2 < s; ++i2) {
+    if (cd[i2])
+      ++l[cd[i2] - 1];
+  }
+  var le = new u16(mb);
+  for (i2 = 1; i2 < mb; ++i2) {
+    le[i2] = le[i2 - 1] + l[i2 - 1] << 1;
+  }
+  var co;
+  if (r) {
+    co = new u16(1 << mb);
+    var rvb = 15 - mb;
+    for (i2 = 0; i2 < s; ++i2) {
+      if (cd[i2]) {
+        var sv = i2 << 4 | cd[i2];
+        var r_1 = mb - cd[i2];
+        var v = le[cd[i2] - 1]++ << r_1;
+        for (var m = v | (1 << r_1) - 1; v <= m; ++v) {
+          co[rev[v] >> rvb] = sv;
+        }
+      }
+    }
+  } else {
+    co = new u16(s);
+    for (i2 = 0; i2 < s; ++i2) {
+      if (cd[i2]) {
+        co[i2] = rev[le[cd[i2] - 1]++] >> 15 - cd[i2];
+      }
+    }
+  }
+  return co;
+}), "hMap");
+var flt = new u8(288);
+for (i = 0; i < 144; ++i)
+  flt[i] = 8;
+var i;
+for (i = 144; i < 256; ++i)
+  flt[i] = 9;
+var i;
+for (i = 256; i < 280; ++i)
+  flt[i] = 7;
+var i;
+for (i = 280; i < 288; ++i)
+  flt[i] = 8;
+var i;
+var fdt = new u8(32);
+for (i = 0; i < 32; ++i)
+  fdt[i] = 5;
+var i;
+var flm = /* @__PURE__ */ hMap(flt, 9, 0);
+var flrm = /* @__PURE__ */ hMap(flt, 9, 1);
+var fdm = /* @__PURE__ */ hMap(fdt, 5, 0);
+var fdrm = /* @__PURE__ */ hMap(fdt, 5, 1);
+var max = /* @__PURE__ */ __name(function(a) {
+  var m = a[0];
+  for (var i2 = 1; i2 < a.length; ++i2) {
+    if (a[i2] > m)
+      m = a[i2];
+  }
+  return m;
+}, "max");
+var bits = /* @__PURE__ */ __name(function(d, p, m) {
+  var o = p / 8 | 0;
+  return (d[o] | d[o + 1] << 8) >> (p & 7) & m;
+}, "bits");
+var bits16 = /* @__PURE__ */ __name(function(d, p) {
+  var o = p / 8 | 0;
+  return (d[o] | d[o + 1] << 8 | d[o + 2] << 16) >> (p & 7);
+}, "bits16");
+var shft = /* @__PURE__ */ __name(function(p) {
+  return (p + 7) / 8 | 0;
+}, "shft");
+var slc = /* @__PURE__ */ __name(function(v, s, e) {
+  if (s == null || s < 0)
+    s = 0;
+  if (e == null || e > v.length)
+    e = v.length;
+  return new u8(v.subarray(s, e));
+}, "slc");
+var ec = [
+  "unexpected EOF",
+  "invalid block type",
+  "invalid length/literal",
+  "invalid distance",
+  "stream finished",
+  "no stream handler",
+  ,
+  // determined by compression function
+  "no callback",
+  "invalid UTF-8 data",
+  "extra field too long",
+  "date not in range 1980-2099",
+  "filename too long",
+  "stream finishing",
+  "invalid zip data"
+  // determined by unknown compression method
+];
+var err = /* @__PURE__ */ __name(function(ind, msg, nt) {
+  var e = new Error(msg || ec[ind]);
+  e.code = ind;
+  if (Error.captureStackTrace)
+    Error.captureStackTrace(e, err);
+  if (!nt)
+    throw e;
+  return e;
+}, "err");
+var inflt = /* @__PURE__ */ __name(function(dat, st, buf, dict) {
+  var sl = dat.length, dl = dict ? dict.length : 0;
+  if (!sl || st.f && !st.l)
+    return buf || new u8(0);
+  var noBuf = !buf;
+  var resize = noBuf || st.i != 2;
+  var noSt = st.i;
+  if (noBuf)
+    buf = new u8(sl * 3);
+  var cbuf = /* @__PURE__ */ __name(function(l2) {
+    var bl = buf.length;
+    if (l2 > bl) {
+      var nbuf = new u8(Math.max(bl * 2, l2));
+      nbuf.set(buf);
+      buf = nbuf;
+    }
+  }, "cbuf");
+  var final = st.f || 0, pos = st.p || 0, bt = st.b || 0, lm = st.l, dm = st.d, lbt = st.m, dbt = st.n;
+  var tbts = sl * 8;
+  do {
+    if (!lm) {
+      final = bits(dat, pos, 1);
+      var type = bits(dat, pos + 1, 3);
+      pos += 3;
+      if (!type) {
+        var s = shft(pos) + 4, l = dat[s - 4] | dat[s - 3] << 8, t = s + l;
+        if (t > sl) {
+          if (noSt)
+            err(0);
+          break;
+        }
+        if (resize)
+          cbuf(bt + l);
+        buf.set(dat.subarray(s, t), bt);
+        st.b = bt += l, st.p = pos = t * 8, st.f = final;
+        continue;
+      } else if (type == 1)
+        lm = flrm, dm = fdrm, lbt = 9, dbt = 5;
+      else if (type == 2) {
+        var hLit = bits(dat, pos, 31) + 257, hcLen = bits(dat, pos + 10, 15) + 4;
+        var tl = hLit + bits(dat, pos + 5, 31) + 1;
+        pos += 14;
+        var ldt = new u8(tl);
+        var clt = new u8(19);
+        for (var i2 = 0; i2 < hcLen; ++i2) {
+          clt[clim[i2]] = bits(dat, pos + i2 * 3, 7);
+        }
+        pos += hcLen * 3;
+        var clb = max(clt), clbmsk = (1 << clb) - 1;
+        var clm = hMap(clt, clb, 1);
+        for (var i2 = 0; i2 < tl; ) {
+          var r = clm[bits(dat, pos, clbmsk)];
+          pos += r & 15;
+          var s = r >> 4;
+          if (s < 16) {
+            ldt[i2++] = s;
+          } else {
+            var c = 0, n = 0;
+            if (s == 16)
+              n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i2 - 1];
+            else if (s == 17)
+              n = 3 + bits(dat, pos, 7), pos += 3;
+            else if (s == 18)
+              n = 11 + bits(dat, pos, 127), pos += 7;
+            while (n--)
+              ldt[i2++] = c;
+          }
+        }
+        var lt = ldt.subarray(0, hLit), dt = ldt.subarray(hLit);
+        lbt = max(lt);
+        dbt = max(dt);
+        lm = hMap(lt, lbt, 1);
+        dm = hMap(dt, dbt, 1);
+      } else
+        err(1);
+      if (pos > tbts) {
+        if (noSt)
+          err(0);
+        break;
+      }
+    }
+    if (resize)
+      cbuf(bt + 131072);
+    var lms = (1 << lbt) - 1, dms = (1 << dbt) - 1;
+    var lpos = pos;
+    for (; ; lpos = pos) {
+      var c = lm[bits16(dat, pos) & lms], sym = c >> 4;
+      pos += c & 15;
+      if (pos > tbts) {
+        if (noSt)
+          err(0);
+        break;
+      }
+      if (!c)
+        err(2);
+      if (sym < 256)
+        buf[bt++] = sym;
+      else if (sym == 256) {
+        lpos = pos, lm = null;
+        break;
+      } else {
+        var add = sym - 254;
+        if (sym > 264) {
+          var i2 = sym - 257, b = fleb[i2];
+          add = bits(dat, pos, (1 << b) - 1) + fl[i2];
+          pos += b;
+        }
+        var d = dm[bits16(dat, pos) & dms], dsym = d >> 4;
+        if (!d)
+          err(3);
+        pos += d & 15;
+        var dt = fd[dsym];
+        if (dsym > 3) {
+          var b = fdeb[dsym];
+          dt += bits16(dat, pos) & (1 << b) - 1, pos += b;
+        }
+        if (pos > tbts) {
+          if (noSt)
+            err(0);
+          break;
+        }
+        if (resize)
+          cbuf(bt + 131072);
+        var end = bt + add;
+        if (bt < dt) {
+          var shift = dl - dt, dend = Math.min(dt, end);
+          if (shift + bt < 0)
+            err(3);
+          for (; bt < dend; ++bt)
+            buf[bt] = dict[shift + bt];
+        }
+        for (; bt < end; ++bt)
+          buf[bt] = buf[bt - dt];
+      }
+    }
+    st.l = lm, st.p = lpos, st.b = bt, st.f = final;
+    if (lm)
+      final = 1, st.m = lbt, st.d = dm, st.n = dbt;
+  } while (!final);
+  return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
+}, "inflt");
+var wbits = /* @__PURE__ */ __name(function(d, p, v) {
+  v <<= p & 7;
+  var o = p / 8 | 0;
+  d[o] |= v;
+  d[o + 1] |= v >> 8;
+}, "wbits");
+var wbits16 = /* @__PURE__ */ __name(function(d, p, v) {
+  v <<= p & 7;
+  var o = p / 8 | 0;
+  d[o] |= v;
+  d[o + 1] |= v >> 8;
+  d[o + 2] |= v >> 16;
+}, "wbits16");
+var hTree = /* @__PURE__ */ __name(function(d, mb) {
+  var t = [];
+  for (var i2 = 0; i2 < d.length; ++i2) {
+    if (d[i2])
+      t.push({ s: i2, f: d[i2] });
+  }
+  var s = t.length;
+  var t2 = t.slice();
+  if (!s)
+    return { t: et, l: 0 };
+  if (s == 1) {
+    var v = new u8(t[0].s + 1);
+    v[t[0].s] = 1;
+    return { t: v, l: 1 };
+  }
+  t.sort(function(a, b) {
+    return a.f - b.f;
+  });
+  t.push({ s: -1, f: 25001 });
+  var l = t[0], r = t[1], i0 = 0, i1 = 1, i22 = 2;
+  t[0] = { s: -1, f: l.f + r.f, l, r };
+  while (i1 != s - 1) {
+    l = t[t[i0].f < t[i22].f ? i0++ : i22++];
+    r = t[i0 != i1 && t[i0].f < t[i22].f ? i0++ : i22++];
+    t[i1++] = { s: -1, f: l.f + r.f, l, r };
+  }
+  var maxSym = t2[0].s;
+  for (var i2 = 1; i2 < s; ++i2) {
+    if (t2[i2].s > maxSym)
+      maxSym = t2[i2].s;
+  }
+  var tr = new u16(maxSym + 1);
+  var mbt = ln(t[i1 - 1], tr, 0);
+  if (mbt > mb) {
+    var i2 = 0, dt = 0;
+    var lft = mbt - mb, cst = 1 << lft;
+    t2.sort(function(a, b) {
+      return tr[b.s] - tr[a.s] || a.f - b.f;
+    });
+    for (; i2 < s; ++i2) {
+      var i2_1 = t2[i2].s;
+      if (tr[i2_1] > mb) {
+        dt += cst - (1 << mbt - tr[i2_1]);
+        tr[i2_1] = mb;
+      } else
+        break;
+    }
+    dt >>= lft;
+    while (dt > 0) {
+      var i2_2 = t2[i2].s;
+      if (tr[i2_2] < mb)
+        dt -= 1 << mb - tr[i2_2]++ - 1;
+      else
+        ++i2;
+    }
+    for (; i2 >= 0 && dt; --i2) {
+      var i2_3 = t2[i2].s;
+      if (tr[i2_3] == mb) {
+        --tr[i2_3];
+        ++dt;
+      }
+    }
+    mbt = mb;
+  }
+  return { t: new u8(tr), l: mbt };
+}, "hTree");
+var ln = /* @__PURE__ */ __name(function(n, l, d) {
+  return n.s == -1 ? Math.max(ln(n.l, l, d + 1), ln(n.r, l, d + 1)) : l[n.s] = d;
+}, "ln");
+var lc = /* @__PURE__ */ __name(function(c) {
+  var s = c.length;
+  while (s && !c[--s])
+    ;
+  var cl = new u16(++s);
+  var cli = 0, cln = c[0], cls = 1;
+  var w = /* @__PURE__ */ __name(function(v) {
+    cl[cli++] = v;
+  }, "w");
+  for (var i2 = 1; i2 <= s; ++i2) {
+    if (c[i2] == cln && i2 != s)
+      ++cls;
+    else {
+      if (!cln && cls > 2) {
+        for (; cls > 138; cls -= 138)
+          w(32754);
+        if (cls > 2) {
+          w(cls > 10 ? cls - 11 << 5 | 28690 : cls - 3 << 5 | 12305);
+          cls = 0;
+        }
+      } else if (cls > 3) {
+        w(cln), --cls;
+        for (; cls > 6; cls -= 6)
+          w(8304);
+        if (cls > 2)
+          w(cls - 3 << 5 | 8208), cls = 0;
+      }
+      while (cls--)
+        w(cln);
+      cls = 1;
+      cln = c[i2];
+    }
+  }
+  return { c: cl.subarray(0, cli), n: s };
+}, "lc");
+var clen = /* @__PURE__ */ __name(function(cf, cl) {
+  var l = 0;
+  for (var i2 = 0; i2 < cl.length; ++i2)
+    l += cf[i2] * cl[i2];
+  return l;
+}, "clen");
+var wfblk = /* @__PURE__ */ __name(function(out, pos, dat) {
+  var s = dat.length;
+  var o = shft(pos + 2);
+  out[o] = s & 255;
+  out[o + 1] = s >> 8;
+  out[o + 2] = out[o] ^ 255;
+  out[o + 3] = out[o + 1] ^ 255;
+  for (var i2 = 0; i2 < s; ++i2)
+    out[o + i2 + 4] = dat[i2];
+  return (o + 4 + s) * 8;
+}, "wfblk");
+var wblk = /* @__PURE__ */ __name(function(dat, out, final, syms, lf, df, eb, li, bs, bl, p) {
+  wbits(out, p++, final);
+  ++lf[256];
+  var _a2 = hTree(lf, 15), dlt = _a2.t, mlb = _a2.l;
+  var _b2 = hTree(df, 15), ddt = _b2.t, mdb = _b2.l;
+  var _c = lc(dlt), lclt = _c.c, nlc = _c.n;
+  var _d = lc(ddt), lcdt = _d.c, ndc = _d.n;
+  var lcfreq = new u16(19);
+  for (var i2 = 0; i2 < lclt.length; ++i2)
+    ++lcfreq[lclt[i2] & 31];
+  for (var i2 = 0; i2 < lcdt.length; ++i2)
+    ++lcfreq[lcdt[i2] & 31];
+  var _e = hTree(lcfreq, 7), lct = _e.t, mlcb = _e.l;
+  var nlcc = 19;
+  for (; nlcc > 4 && !lct[clim[nlcc - 1]]; --nlcc)
+    ;
+  var flen = bl + 5 << 3;
+  var ftlen = clen(lf, flt) + clen(df, fdt) + eb;
+  var dtlen = clen(lf, dlt) + clen(df, ddt) + eb + 14 + 3 * nlcc + clen(lcfreq, lct) + 2 * lcfreq[16] + 3 * lcfreq[17] + 7 * lcfreq[18];
+  if (bs >= 0 && flen <= ftlen && flen <= dtlen)
+    return wfblk(out, p, dat.subarray(bs, bs + bl));
+  var lm, ll, dm, dl;
+  wbits(out, p, 1 + (dtlen < ftlen)), p += 2;
+  if (dtlen < ftlen) {
+    lm = hMap(dlt, mlb, 0), ll = dlt, dm = hMap(ddt, mdb, 0), dl = ddt;
+    var llm = hMap(lct, mlcb, 0);
+    wbits(out, p, nlc - 257);
+    wbits(out, p + 5, ndc - 1);
+    wbits(out, p + 10, nlcc - 4);
+    p += 14;
+    for (var i2 = 0; i2 < nlcc; ++i2)
+      wbits(out, p + 3 * i2, lct[clim[i2]]);
+    p += 3 * nlcc;
+    var lcts = [lclt, lcdt];
+    for (var it = 0; it < 2; ++it) {
+      var clct = lcts[it];
+      for (var i2 = 0; i2 < clct.length; ++i2) {
+        var len = clct[i2] & 31;
+        wbits(out, p, llm[len]), p += lct[len];
+        if (len > 15)
+          wbits(out, p, clct[i2] >> 5 & 127), p += clct[i2] >> 12;
+      }
+    }
+  } else {
+    lm = flm, ll = flt, dm = fdm, dl = fdt;
+  }
+  for (var i2 = 0; i2 < li; ++i2) {
+    var sym = syms[i2];
+    if (sym > 255) {
+      var len = sym >> 18 & 31;
+      wbits16(out, p, lm[len + 257]), p += ll[len + 257];
+      if (len > 7)
+        wbits(out, p, sym >> 23 & 31), p += fleb[len];
+      var dst = sym & 31;
+      wbits16(out, p, dm[dst]), p += dl[dst];
+      if (dst > 3)
+        wbits16(out, p, sym >> 5 & 8191), p += fdeb[dst];
+    } else {
+      wbits16(out, p, lm[sym]), p += ll[sym];
+    }
+  }
+  wbits16(out, p, lm[256]);
+  return p + ll[256];
+}, "wblk");
+var deo = /* @__PURE__ */ new i32([65540, 131080, 131088, 131104, 262176, 1048704, 1048832, 2114560, 2117632]);
+var et = /* @__PURE__ */ new u8(0);
+var dflt = /* @__PURE__ */ __name(function(dat, lvl, plvl, pre, post, st) {
+  var s = st.z || dat.length;
+  var o = new u8(pre + s + 5 * (1 + Math.ceil(s / 7e3)) + post);
+  var w = o.subarray(pre, o.length - post);
+  var lst = st.l;
+  var pos = (st.r || 0) & 7;
+  if (lvl) {
+    if (pos)
+      w[0] = st.r >> 3;
+    var opt = deo[lvl - 1];
+    var n = opt >> 13, c = opt & 8191;
+    var msk_1 = (1 << plvl) - 1;
+    var prev = st.p || new u16(32768), head = st.h || new u16(msk_1 + 1);
+    var bs1_1 = Math.ceil(plvl / 3), bs2_1 = 2 * bs1_1;
+    var hsh = /* @__PURE__ */ __name(function(i3) {
+      return (dat[i3] ^ dat[i3 + 1] << bs1_1 ^ dat[i3 + 2] << bs2_1) & msk_1;
+    }, "hsh");
+    var syms = new i32(25e3);
+    var lf = new u16(288), df = new u16(32);
+    var lc_1 = 0, eb = 0, i2 = st.i || 0, li = 0, wi = st.w || 0, bs = 0;
+    for (; i2 + 2 < s; ++i2) {
+      var hv = hsh(i2);
+      var imod = i2 & 32767, pimod = head[hv];
+      prev[imod] = pimod;
+      head[hv] = imod;
+      if (wi <= i2) {
+        var rem = s - i2;
+        if ((lc_1 > 7e3 || li > 24576) && (rem > 423 || !lst)) {
+          pos = wblk(dat, w, 0, syms, lf, df, eb, li, bs, i2 - bs, pos);
+          li = lc_1 = eb = 0, bs = i2;
+          for (var j = 0; j < 286; ++j)
+            lf[j] = 0;
+          for (var j = 0; j < 30; ++j)
+            df[j] = 0;
+        }
+        var l = 2, d = 0, ch_1 = c, dif = imod - pimod & 32767;
+        if (rem > 2 && hv == hsh(i2 - dif)) {
+          var maxn = Math.min(n, rem) - 1;
+          var maxd = Math.min(32767, i2);
+          var ml = Math.min(258, rem);
+          while (dif <= maxd && --ch_1 && imod != pimod) {
+            if (dat[i2 + l] == dat[i2 + l - dif]) {
+              var nl = 0;
+              for (; nl < ml && dat[i2 + nl] == dat[i2 + nl - dif]; ++nl)
+                ;
+              if (nl > l) {
+                l = nl, d = dif;
+                if (nl > maxn)
+                  break;
+                var mmd = Math.min(dif, nl - 2);
+                var md = 0;
+                for (var j = 0; j < mmd; ++j) {
+                  var ti = i2 - dif + j & 32767;
+                  var pti = prev[ti];
+                  var cd = ti - pti & 32767;
+                  if (cd > md)
+                    md = cd, pimod = ti;
+                }
+              }
+            }
+            imod = pimod, pimod = prev[imod];
+            dif += imod - pimod & 32767;
+          }
+        }
+        if (d) {
+          syms[li++] = 268435456 | revfl[l] << 18 | revfd[d];
+          var lin = revfl[l] & 31, din = revfd[d] & 31;
+          eb += fleb[lin] + fdeb[din];
+          ++lf[257 + lin];
+          ++df[din];
+          wi = i2 + l;
+          ++lc_1;
+        } else {
+          syms[li++] = dat[i2];
+          ++lf[dat[i2]];
+        }
+      }
+    }
+    for (i2 = Math.max(i2, wi); i2 < s; ++i2) {
+      syms[li++] = dat[i2];
+      ++lf[dat[i2]];
+    }
+    pos = wblk(dat, w, lst, syms, lf, df, eb, li, bs, i2 - bs, pos);
+    if (!lst) {
+      st.r = pos & 7 | w[pos / 8 | 0] << 3;
+      pos -= 7;
+      st.h = head, st.p = prev, st.i = i2, st.w = wi;
+    }
+  } else {
+    for (var i2 = st.w || 0; i2 < s + lst; i2 += 65535) {
+      var e = i2 + 65535;
+      if (e >= s) {
+        w[pos / 8 | 0] = lst;
+        e = s;
+      }
+      pos = wfblk(w, pos + 1, dat.subarray(i2, e));
+    }
+    st.i = s;
+  }
+  return slc(o, 0, pre + shft(pos) + post);
+}, "dflt");
+var crct = /* @__PURE__ */ (function() {
+  var t = new Int32Array(256);
+  for (var i2 = 0; i2 < 256; ++i2) {
+    var c = i2, k = 9;
+    while (--k)
+      c = (c & 1 && -306674912) ^ c >>> 1;
+    t[i2] = c;
+  }
+  return t;
+})();
+var crc = /* @__PURE__ */ __name(function() {
+  var c = -1;
+  return {
+    p: /* @__PURE__ */ __name(function(d) {
+      var cr = c;
+      for (var i2 = 0; i2 < d.length; ++i2)
+        cr = crct[cr & 255 ^ d[i2]] ^ cr >>> 8;
+      c = cr;
+    }, "p"),
+    d: /* @__PURE__ */ __name(function() {
+      return ~c;
+    }, "d")
+  };
+}, "crc");
+var dopt = /* @__PURE__ */ __name(function(dat, opt, pre, post, st) {
+  if (!st) {
+    st = { l: 1 };
+    if (opt.dictionary) {
+      var dict = opt.dictionary.subarray(-32768);
+      var newDat = new u8(dict.length + dat.length);
+      newDat.set(dict);
+      newDat.set(dat, dict.length);
+      dat = newDat;
+      st.w = dict.length;
+    }
+  }
+  return dflt(dat, opt.level == null ? 6 : opt.level, opt.mem == null ? st.l ? Math.ceil(Math.max(8, Math.min(13, Math.log(dat.length))) * 1.5) : 20 : 12 + opt.mem, pre, post, st);
+}, "dopt");
+var mrg = /* @__PURE__ */ __name(function(a, b) {
+  var o = {};
+  for (var k in a)
+    o[k] = a[k];
+  for (var k in b)
+    o[k] = b[k];
+  return o;
+}, "mrg");
+var b2 = /* @__PURE__ */ __name(function(d, b) {
+  return d[b] | d[b + 1] << 8;
+}, "b2");
+var b4 = /* @__PURE__ */ __name(function(d, b) {
+  return (d[b] | d[b + 1] << 8 | d[b + 2] << 16 | d[b + 3] << 24) >>> 0;
+}, "b4");
+var b8 = /* @__PURE__ */ __name(function(d, b) {
+  return b4(d, b) + b4(d, b + 4) * 4294967296;
+}, "b8");
+var wbytes = /* @__PURE__ */ __name(function(d, b, v) {
+  for (; v; ++b)
+    d[b] = v, v >>>= 8;
+}, "wbytes");
+function deflateSync(data, opts) {
+  return dopt(data, opts || {}, 0, 0);
+}
+__name(deflateSync, "deflateSync");
+function inflateSync(data, opts) {
+  return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
+}
+__name(inflateSync, "inflateSync");
+var fltn = /* @__PURE__ */ __name(function(d, p, t, o) {
+  for (var k in d) {
+    var val = d[k], n = p + k, op = o;
+    if (Array.isArray(val))
+      op = mrg(o, val[1]), val = val[0];
+    if (ArrayBuffer.isView(val))
+      t[n] = [val, op];
+    else {
+      t[n += "/"] = [new u8(0), op];
+      fltn(val, n, t, o);
+    }
+  }
+}, "fltn");
+var te = typeof TextEncoder != "undefined" && /* @__PURE__ */ new TextEncoder();
+var td = typeof TextDecoder != "undefined" && /* @__PURE__ */ new TextDecoder();
+var tds = 0;
+try {
+  td.decode(et, { stream: true });
+  tds = 1;
+} catch (e) {
+}
+var dutf8 = /* @__PURE__ */ __name(function(d) {
+  for (var r = "", i2 = 0; ; ) {
+    var c = d[i2++];
+    var eb = (c > 127) + (c > 223) + (c > 239);
+    if (i2 + eb > d.length)
+      return { s: r, r: slc(d, i2 - 1) };
+    if (!eb)
+      r += String.fromCharCode(c);
+    else if (eb == 3) {
+      c = ((c & 15) << 18 | (d[i2++] & 63) << 12 | (d[i2++] & 63) << 6 | d[i2++] & 63) - 65536, r += String.fromCharCode(55296 | c >> 10, 56320 | c & 1023);
+    } else if (eb & 1)
+      r += String.fromCharCode((c & 31) << 6 | d[i2++] & 63);
+    else
+      r += String.fromCharCode((c & 15) << 12 | (d[i2++] & 63) << 6 | d[i2++] & 63);
+  }
+}, "dutf8");
+function strToU8(str, latin1) {
+  if (latin1) {
+    var ar_1 = new u8(str.length);
+    for (var i2 = 0; i2 < str.length; ++i2)
+      ar_1[i2] = str.charCodeAt(i2);
+    return ar_1;
+  }
+  if (te)
+    return te.encode(str);
+  var l = str.length;
+  var ar = new u8(str.length + (str.length >> 1));
+  var ai = 0;
+  var w = /* @__PURE__ */ __name(function(v) {
+    ar[ai++] = v;
+  }, "w");
+  for (var i2 = 0; i2 < l; ++i2) {
+    if (ai + 5 > ar.length) {
+      var n = new u8(ai + 8 + (l - i2 << 1));
+      n.set(ar);
+      ar = n;
+    }
+    var c = str.charCodeAt(i2);
+    if (c < 128 || latin1)
+      w(c);
+    else if (c < 2048)
+      w(192 | c >> 6), w(128 | c & 63);
+    else if (c > 55295 && c < 57344)
+      c = 65536 + (c & 1023 << 10) | str.charCodeAt(++i2) & 1023, w(240 | c >> 18), w(128 | c >> 12 & 63), w(128 | c >> 6 & 63), w(128 | c & 63);
+    else
+      w(224 | c >> 12), w(128 | c >> 6 & 63), w(128 | c & 63);
+  }
+  return slc(ar, 0, ai);
+}
+__name(strToU8, "strToU8");
+function strFromU8(dat, latin1) {
+  if (latin1) {
+    var r = "";
+    for (var i2 = 0; i2 < dat.length; i2 += 16384)
+      r += String.fromCharCode.apply(null, dat.subarray(i2, i2 + 16384));
+    return r;
+  } else if (td) {
+    return td.decode(dat);
+  } else {
+    var _a2 = dutf8(dat), s = _a2.s, r = _a2.r;
+    if (r.length)
+      err(8);
+    return s;
+  }
+}
+__name(strFromU8, "strFromU8");
+var slzh = /* @__PURE__ */ __name(function(d, b) {
+  return b + 30 + b2(d, b + 26) + b2(d, b + 28);
+}, "slzh");
+var zh = /* @__PURE__ */ __name(function(d, b, z) {
+  var fnl = b2(d, b + 28), efl = b2(d, b + 30), fn = strFromU8(d.subarray(b + 46, b + 46 + fnl), !(b2(d, b + 8) & 2048)), es = b + 46 + fnl;
+  var _a2 = z64hs(d, es, efl, z, b4(d, b + 20), b4(d, b + 24), b4(d, b + 42)), sc = _a2[0], su = _a2[1], off = _a2[2];
+  return [b2(d, b + 10), sc, su, fn, es + efl + b2(d, b + 32), off];
+}, "zh");
+var z64hs = /* @__PURE__ */ __name(function(d, b, l, z, sc, su, off) {
+  var nsc = sc == 4294967295, nsu = su == 4294967295, noff = off == 4294967295, e = b + l;
+  var nf = nsc + nsu + noff;
+  if (z && nf) {
+    for (; b + 4 < e; b += 4 + b2(d, b + 2)) {
+      if (b2(d, b) == 1) {
+        return [
+          nsc ? b8(d, b + 4 + 8 * nsu) : sc,
+          nsu ? b8(d, b + 4) : su,
+          noff ? b8(d, b + 4 + 8 * (nsu + nsc)) : off,
+          1
+        ];
+      }
+    }
+    if (z < 2)
+      err(13);
+  }
+  return [sc, su, off, 0];
+}, "z64hs");
+var exfl = /* @__PURE__ */ __name(function(ex) {
+  var le = 0;
+  if (ex) {
+    for (var k in ex) {
+      var l = ex[k].length;
+      if (l > 65535)
+        err(9);
+      le += l + 4;
+    }
+  }
+  return le;
+}, "exfl");
+var wzh = /* @__PURE__ */ __name(function(d, b, f, fn, u, c, ce, co) {
+  var fl2 = fn.length, ex = f.extra, col = co && co.length;
+  var exl = exfl(ex);
+  wbytes(d, b, ce != null ? 33639248 : 67324752), b += 4;
+  if (ce != null)
+    d[b++] = 20, d[b++] = f.os;
+  d[b] = 20, b += 2;
+  d[b++] = f.flag << 1 | (c < 0 && 8), d[b++] = u && 8;
+  d[b++] = f.compression & 255, d[b++] = f.compression >> 8;
+  var dt = new Date(f.mtime == null ? Date.now() : f.mtime), y = dt.getFullYear() - 1980;
+  if (y < 0 || y > 119)
+    err(10);
+  wbytes(d, b, y << 25 | dt.getMonth() + 1 << 21 | dt.getDate() << 16 | dt.getHours() << 11 | dt.getMinutes() << 5 | dt.getSeconds() >> 1), b += 4;
+  if (c != -1) {
+    wbytes(d, b, f.crc);
+    wbytes(d, b + 4, c < 0 ? -c - 2 : c);
+    wbytes(d, b + 8, f.size);
+  }
+  wbytes(d, b + 12, fl2);
+  wbytes(d, b + 14, exl), b += 16;
+  if (ce != null) {
+    wbytes(d, b, col);
+    wbytes(d, b + 6, f.attrs);
+    wbytes(d, b + 10, ce), b += 14;
+  }
+  d.set(fn, b);
+  b += fl2;
+  if (exl) {
+    for (var k in ex) {
+      var exf = ex[k], l = exf.length;
+      wbytes(d, b, +k);
+      wbytes(d, b + 2, l);
+      d.set(exf, b + 4), b += 4 + l;
+    }
+  }
+  if (col)
+    d.set(co, b), b += col;
+  return b;
+}, "wzh");
+var wzf = /* @__PURE__ */ __name(function(o, b, c, d, e) {
+  wbytes(o, b, 101010256);
+  wbytes(o, b + 8, c);
+  wbytes(o, b + 10, c);
+  wbytes(o, b + 12, d);
+  wbytes(o, b + 16, e);
+}, "wzf");
+function zipSync(data, opts) {
+  if (!opts)
+    opts = {};
+  var r = {};
+  var files = [];
+  fltn(data, "", r, opts);
+  var o = 0;
+  var tot = 0;
+  for (var fn in r) {
+    var _a2 = r[fn], file = _a2[0], p = _a2[1];
+    var compression = p.level == 0 ? 0 : 8;
+    var f = strToU8(fn), s = f.length;
+    var com = p.comment, m = com && strToU8(com), ms = m && m.length;
+    var exl = exfl(p.extra);
+    if (s > 65535)
+      err(11);
+    var d = compression ? deflateSync(file, p) : file, l = d.length;
+    var c = crc();
+    c.p(file);
+    files.push(mrg(p, {
+      size: file.length,
+      crc: c.d(),
+      c: d,
+      f,
+      m,
+      u: s != fn.length || m && com.length != ms,
+      o,
+      compression
+    }));
+    o += 30 + s + exl + l;
+    tot += 76 + 2 * (s + exl) + (ms || 0) + l;
+  }
+  var out = new u8(tot + 22), oe = o, cdl = tot - o;
+  for (var i2 = 0; i2 < files.length; ++i2) {
+    var f = files[i2];
+    wzh(out, f.o, f, f.f, f.u, f.c.length);
+    var badd = 30 + f.f.length + exfl(f.extra);
+    out.set(f.c, f.o + badd);
+    wzh(out, o, f, f.f, f.u, f.c.length, f.o, f.m), o += 16 + badd + (f.m ? f.m.length : 0);
+  }
+  wzf(out, o, files.length, cdl, oe);
+  return out;
+}
+__name(zipSync, "zipSync");
+function unzipSync(data, opts) {
+  var files = {};
+  var e = data.length - 22;
+  for (; b4(data, e) != 101010256; --e) {
+    if (!e || data.length - e > 65558)
+      err(13);
+  }
+  ;
+  var c = b2(data, e + 8);
+  if (!c)
+    return {};
+  var o = b4(data, e + 16);
+  var z = b4(data, e - 20) == 117853008;
+  if (z) {
+    var ze = b4(data, e - 12);
+    z = b4(data, ze) == 101075792;
+    if (z) {
+      c = b4(data, ze + 32);
+      o = b4(data, ze + 48);
+    }
+  }
+  var fltr = opts && opts.filter;
+  for (var i2 = 0; i2 < c; ++i2) {
+    var _a2 = zh(data, o, z), c_2 = _a2[0], sc = _a2[1], su = _a2[2], fn = _a2[3], no = _a2[4], off = _a2[5], b = slzh(data, off);
+    o = no;
+    if (!fltr || fltr({
+      name: fn,
+      size: sc,
+      originalSize: su,
+      compression: c_2
+    })) {
+      if (!c_2)
+        files[fn] = slc(data, b, b + sc);
+      else if (c_2 == 8)
+        files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
+      else
+        err(14, "unknown compression type " + c_2);
+    }
+  }
+  return files;
+}
+__name(unzipSync, "unzipSync");
+
+// ../src/utils/excelTemplateExporter.js
+var DAYS_ES = ["DOMINGO", "LUNES", "MARTES", "MI\xC9RCOLES", "JUEVES", "VIERNES", "S\xC1BADO"];
+var MONTHS_ES = [
+  "ENERO",
+  "FEBRERO",
+  "MARZO",
+  "ABRIL",
+  "MAYO",
+  "JUNIO",
+  "JULIO",
+  "AGOSTO",
+  "SETIEMBRE",
+  "OCTUBRE",
+  "NOVIEMBRE",
+  "DICIEMBRE"
+];
+function escapeXml(val) {
+  if (val === void 0 || val === null) return "";
+  return String(val).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+__name(escapeXml, "escapeXml");
+function dateToExcelSerial(dateStr) {
+  if (!dateStr) return null;
+  if (typeof dateStr === "number") return dateStr;
+  const s = String(dateStr).trim();
+  let yyyy, mm, dd;
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    [yyyy, mm, dd] = s.split("T")[0].split("-").map(Number);
+  } else if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
+    [dd, mm, yyyy] = s.split("/").map(Number);
+  } else {
+    return null;
+  }
+  if (!yyyy || !mm || !dd) return null;
+  const utcMs = Date.UTC(yyyy, mm - 1, dd);
+  return Math.round(utcMs / 864e5) + 25569;
+}
+__name(dateToExcelSerial, "dateToExcelSerial");
+function timeToExcelFraction(timeStr) {
+  if (timeStr === void 0 || timeStr === null || timeStr === "") return null;
+  if (typeof timeStr === "number") return timeStr;
+  const s = String(timeStr).trim();
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const hh = parseInt(m[1], 10);
+  const mm = parseInt(m[2], 10);
+  if (isNaN(hh) || isNaN(mm)) return null;
+  return (hh * 60 + mm) / (24 * 60);
+}
+__name(timeToExcelFraction, "timeToExcelFraction");
+function computeRangoStr(timeStr) {
+  const s = String(timeStr || "").trim();
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return "";
+  const hh = parseInt(m[1], 10);
+  const nextH = (hh + 1) % 24;
+  return `${String(hh).padStart(2, "0")}:00 \u2013 ${String(nextH).padStart(2, "0")}:00`;
+}
+__name(computeRangoStr, "computeRangoStr");
+function getDayAndMonthFromDateStr(dateStr) {
+  if (!dateStr) return { dia: "", mes: "" };
+  const s = String(dateStr).trim().split("T")[0];
+  const parts = s.split("-").map(Number);
+  if (parts.length !== 3) return { dia: "", mes: "" };
+  const dt = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+  return {
+    dia: DAYS_ES[dt.getDay()] || "",
+    mes: MONTHS_ES[dt.getMonth()] || ""
+  };
+}
+__name(getDayAndMonthFromDateStr, "getDayAndMonthFromDateStr");
+function xmlCellEmpty(ref, styleId) {
+  return `<c r="${ref}" s="${styleId}"/>`;
+}
+__name(xmlCellEmpty, "xmlCellEmpty");
+function xmlCellString(ref, styleId, text) {
+  if (text === void 0 || text === null || String(text) === "") {
+    return xmlCellEmpty(ref, styleId);
+  }
+  const str = String(text);
+  const preserve = /^\s|\s$|\n/.test(str) ? ' xml:space="preserve"' : "";
+  return `<c r="${ref}" s="${styleId}" t="inlineStr"><is><t${preserve}>${escapeXml(str)}</t></is></c>`;
+}
+__name(xmlCellString, "xmlCellString");
+function xmlCellNumber(ref, styleId, num) {
+  if (num === void 0 || num === null || num === "" || Number.isNaN(Number(num))) {
+    return xmlCellEmpty(ref, styleId);
+  }
+  return `<c r="${ref}" s="${styleId}"><v>${Number(num)}</v></c>`;
+}
+__name(xmlCellNumber, "xmlCellNumber");
+function xmlCellFormulaStr(ref, styleId, formulaXml, cachedText) {
+  const cached = cachedText !== void 0 && cachedText !== null ? `<v>${escapeXml(String(cachedText))}</v>` : "";
+  return `<c r="${ref}" s="${styleId}" t="str"><f>${formulaXml}</f>${cached}</c>`;
+}
+__name(xmlCellFormulaStr, "xmlCellFormulaStr");
+function updateControlAsistenciaXml(sheetXml, asistenciaList) {
+  const row1Match = sheetXml.match(/<row r="1"[\s\S]*?<\/row>/);
+  if (!row1Match) return { xml: sheetXml, lastRow: 2 };
+  const row1Xml = row1Match[0];
+  const sorted = [...asistenciaList || []].sort((a, b) => {
+    const na = parseInt(String(a.id || "").replace(/\D+/g, ""), 10) || 999999;
+    const nb = parseInt(String(b.id || "").replace(/\D+/g, ""), 10) || 999999;
+    return na - nb;
+  });
+  const rowsXml = [row1Xml];
+  sorted.forEach((item, idx) => {
+    const r = idx + 2;
+    const isEven = r % 2 === 0;
+    const st = isEven ? { A: 114, B: 253, C: 253, D: 253, E: 112, F: 112, G: 253, H: 253, I: 253, J: 256, K: 256, L: 260, M: 266, N: 274, O: 112, P: 258, Q: 205, R: 309, S: 254, T: 259 } : { A: 254, B: 113, C: 113, D: 113, E: 255, F: 255, G: 113, H: 113, I: 113, J: 257, K: 257, L: 261, M: 266, N: 274, O: 112, P: 258, Q: 205, R: 56, S: 254, T: 259 };
+    const pisoPab = item.pisoPabellon || item.piso_pabellon || "";
+    const sede = item.sede || "Comas";
+    const periodoRaw = item.periodo || "226434";
+    const dia = item.dia || "";
+    const hIniProg = timeToExcelFraction(item.horaInicioProg || item.hora_inicio_prog);
+    const hFinProg = timeToExcelFraction(item.horaFinalProg || item.hora_final_prog);
+    const aula = item.aula || "";
+    const nrcRaw = item.nrc ?? "";
+    const listaCruzada = item.listaCruzada || item.lista_cruzada || "\xA0";
+    const codDoc = item.codigoDocente || item.codigo_docente || "";
+    const docente = item.docente || "";
+    const curso = item.curso || "";
+    const carrera = item.carrera || "";
+    const hIniReal = timeToExcelFraction(item.horaInicioReal || item.hora_inicio_real);
+    const hFinReal = timeToExcelFraction(item.horaFinalReal || item.hora_final_real);
+    let asistVal = (item.asistencia || "").toUpperCase().trim();
+    if (asistVal === "PENDIENTE") asistVal = "";
+    else if (asistVal.includes("REEMPLAZO")) asistVal = "SI (DOCENTE REEMPLAZO)";
+    let puntVal = (item.puntualidad || "").toUpperCase().trim();
+    if (!asistVal && puntVal === "-") puntVal = "";
+    const obs = item.observacion || "";
+    const realCount = item.real !== void 0 && item.real !== null && item.real !== "" ? Number(item.real) : null;
+    const ciclo = item.ciclo || "";
+    const cPeriodo = /^\d+$/.test(String(periodoRaw).trim()) ? xmlCellNumber(`C${r}`, st.C, Number(periodoRaw)) : xmlCellString(`C${r}`, st.C, periodoRaw);
+    const cNrc = /^\d+$/.test(String(nrcRaw).trim()) ? xmlCellNumber(`H${r}`, st.H, Number(nrcRaw)) : xmlCellString(`H${r}`, st.H, nrcRaw);
+    const cells = [
+      xmlCellString(`A${r}`, st.A, pisoPab),
+      xmlCellString(`B${r}`, st.B, sede),
+      cPeriodo,
+      xmlCellString(`D${r}`, st.D, dia),
+      hIniProg !== null ? xmlCellNumber(`E${r}`, st.E, hIniProg) : xmlCellString(`E${r}`, st.E, item.horaInicioProg || ""),
+      hFinProg !== null ? xmlCellNumber(`F${r}`, st.F, hFinProg) : xmlCellString(`F${r}`, st.F, item.horaFinalProg || ""),
+      xmlCellString(`G${r}`, st.G, aula),
+      cNrc,
+      xmlCellString(`I${r}`, st.I, listaCruzada),
+      xmlCellString(`J${r}`, st.J, codDoc),
+      xmlCellString(`K${r}`, st.K, docente),
+      xmlCellString(`L${r}`, st.L, curso),
+      xmlCellString(`M${r}`, st.M, carrera),
+      hIniReal !== null ? xmlCellNumber(`N${r}`, st.N, hIniReal) : xmlCellEmpty(`N${r}`, st.N),
+      hFinReal !== null ? xmlCellNumber(`O${r}`, st.O, hFinReal) : xmlCellEmpty(`O${r}`, st.O),
+      xmlCellString(`P${r}`, st.P, asistVal),
+      xmlCellString(`Q${r}`, st.Q, puntVal),
+      xmlCellString(`R${r}`, st.R, obs),
+      realCount !== null ? xmlCellNumber(`S${r}`, st.S, realCount) : xmlCellEmpty(`S${r}`, st.S),
+      xmlCellString(`T${r}`, st.T, ciclo)
+    ].join("");
+    rowsXml.push(`<row r="${r}" spans="1:20">${cells}</row>`);
+  });
+  const lastRow = Math.max(2, sorted.length + 1);
+  let updated = sheetXml.replace(
+    /<sheetData>[\s\S]*?<\/sheetData>/,
+    `<sheetData>${rowsXml.join("")}</sheetData>`
+  );
+  updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:T${lastRow}"/>`);
+  updated = updated.replace(/sqref="Q2:Q\d+"/, `sqref="Q2:Q${lastRow}"`);
+  updated = updated.replace(/<xm:sqref>P2:P\d+<\/xm:sqref>/, `<xm:sqref>P2:P${lastRow}</xm:sqref>`);
+  updated = updated.replace(/<xm:sqref>Q2:Q\d+<\/xm:sqref>/, `<xm:sqref>Q2:Q${lastRow}</xm:sqref>`);
+  return { xml: updated, lastRow };
+}
+__name(updateControlAsistenciaXml, "updateControlAsistenciaXml");
+function extractTicketUsuarioAndDesc(t) {
+  let rawDesc = String(t.descripcionSolucion || t.descripcion_solucion || "").trim();
+  let usuario = String(t.usuario || "").toUpperCase().trim();
+  if (!usuario) {
+    if (/\[?\s*🎓?\s*ALUMNO/i.test(rawDesc) || rawDesc.toUpperCase().includes("ALUMNO") || rawDesc.toUpperCase().includes("ESTUDIANTE")) {
+      usuario = "ALUMNO";
+    } else {
+      usuario = "DOCENTE";
+    }
+  }
+  return {
+    usuario: usuario === "ALUMNO" ? "ALUMNO" : "DOCENTE",
+    desc: rawDesc
+  };
+}
+__name(extractTicketUsuarioAndDesc, "extractTicketUsuarioAndDesc");
+function updateAtencionesXml(sheetXml, ticketsList) {
+  const row1Match = sheetXml.match(/<row r="1"[\s\S]*?<\/row>/);
+  const row2Match = sheetXml.match(/<row r="2"[\s\S]*?<\/row>/);
+  if (!row1Match || !row2Match) return { xml: sheetXml, lastRow: 3 };
+  let row1Xml = row1Match[0].replace('spans="1:15"', 'spans="1:16"');
+  if (!row1Xml.includes('r="L1"')) {
+    row1Xml = row1Xml.replace('<c r="K1" s="346"/>', '<c r="K1" s="346"/><c r="L1" s="346"/>');
+  }
+  const row2Xml = [
+    '<row r="2" spans="1:16" ht="30" x14ac:dyDescent="0.25">',
+    xmlCellString("A2", 147, "FECHA"),
+    xmlCellString("B2", 148, "DIA"),
+    xmlCellString("C2", 149, "HORA DE REPORTE"),
+    xmlCellString("D2", 148, "RANGO"),
+    xmlCellString("E2", 150, "AMBIENTE"),
+    xmlCellString("F2", 148, "PISO"),
+    xmlCellString("G2", 148, "PABELL\xD3N"),
+    xmlCellString("H2", 150, "TIPO DE SOLICITUD"),
+    xmlCellString("I2", 150, "ESTADO"),
+    xmlCellString("J2", 150, "USUARIO"),
+    xmlCellString("K2", 150, "DESCRIPCI\xD3N / SOLUCI\xD3N"),
+    xmlCellString("L2", 151, "RESPONSABLE"),
+    xmlCellEmpty("M2", 207),
+    xmlCellEmpty("N2", 207),
+    xmlCellEmpty("O2", 207),
+    xmlCellEmpty("P2", 207),
+    "</row>"
+  ].join("");
+  const rowsXml = [row1Xml, row2Xml];
+  const list = (ticketsList || []).filter((t) => t.periodo !== "2026-1");
+  list.forEach((t, idx) => {
+    const r = idx + 3;
+    const fechaStr = t.fecha || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+    const serialDate = dateToExcelSerial(fechaStr);
+    const { dia: diaCalc } = getDayAndMonthFromDateStr(fechaStr);
+    const diaCached = (t.dia || diaCalc || "LUNES").toUpperCase();
+    const horaStr = t.horaReporte || t.hora_reporte || "09:00";
+    const timeFrac = timeToExcelFraction(horaStr);
+    const rangoCached = t.rango || computeRangoStr(horaStr) || "09:00 \u2013 10:00";
+    const ambiente = (t.ambiente || "A201").toUpperCase().trim();
+    const pisoCached = (t.piso || "SEGUNDO PISO").toUpperCase().trim();
+    const pabellon = (t.pabellon || (ambiente.startsWith("B") ? "B" : "A")).toUpperCase().trim();
+    const tipoSol = t.tipoSolicitud || t.tipo_solicitud || "Soporte General";
+    const estado = (t.estado || "ATENDIDO").toUpperCase().trim();
+    const { usuario, desc } = extractTicketUsuarioAndDesc(t);
+    const resp = t.responsable || "Operaciones";
+    const fDia = `UPPER(TEXT(A${r},"dddd"))`;
+    const fRango = `TEXT(HOUR(C${r}),"00")&amp;":00 \u2013 "&amp;TEXT(MOD(HOUR(C${r})+1,24),"00")&amp;":00"`;
+    const fPiso = `VLOOKUP($E${r},AMBIENTES!$C$3:$H$66,4,FALSE)`;
+    const cells = [
+      serialDate !== null ? xmlCellNumber(`A${r}`, 202, serialDate) : xmlCellString(`A${r}`, 202, fechaStr),
+      xmlCellFormulaStr(`B${r}`, 196, fDia, diaCached),
+      timeFrac !== null ? xmlCellNumber(`C${r}`, 198, timeFrac) : xmlCellString(`C${r}`, 198, horaStr),
+      xmlCellFormulaStr(`D${r}`, 200, fRango, rangoCached),
+      xmlCellString(`E${r}`, 200, ambiente),
+      xmlCellFormulaStr(`F${r}`, 182, fPiso, pisoCached),
+      xmlCellString(`G${r}`, 182, pabellon),
+      xmlCellString(`H${r}`, 179, tipoSol),
+      xmlCellString(`I${r}`, 193, estado),
+      xmlCellString(`J${r}`, 196, usuario),
+      xmlCellString(`K${r}`, 182, desc),
+      xmlCellString(`L${r}`, 196, resp),
+      xmlCellEmpty(`M${r}`, 207),
+      xmlCellEmpty(`N${r}`, 207),
+      xmlCellEmpty(`O${r}`, 207),
+      xmlCellEmpty(`P${r}`, 207)
+    ].join("");
+    rowsXml.push(`<row r="${r}" spans="1:16">${cells}</row>`);
+  });
+  const lastRow = Math.max(3, list.length + 2);
+  let updated = sheetXml.replace(
+    /<sheetData>[\s\S]*?<\/sheetData>/,
+    `<sheetData>${rowsXml.join("")}</sheetData>`
+  );
+  updated = updated.replace(
+    /<cols>[\s\S]*?<\/cols>/,
+    '<cols><col min="1" max="1" width="11.42578125" style="146" bestFit="1" customWidth="1"/><col min="2" max="2" width="10.85546875" style="146" bestFit="1" customWidth="1"/><col min="3" max="3" width="13.42578125" style="146" bestFit="1" customWidth="1"/><col min="4" max="4" width="15.85546875" style="146" customWidth="1"/><col min="5" max="5" width="14.85546875" style="146" bestFit="1" customWidth="1"/><col min="6" max="6" width="16.85546875" style="146" customWidth="1"/><col min="7" max="7" width="12.5703125" style="146" customWidth="1"/><col min="8" max="8" width="47.28515625" style="146" bestFit="1" customWidth="1"/><col min="9" max="10" width="17.42578125" style="146" customWidth="1"/><col min="11" max="11" width="75" style="146" bestFit="1" customWidth="1"/><col min="12" max="12" width="22.140625" style="146" bestFit="1" customWidth="1"/><col min="13" max="16384" width="11.42578125" style="146"/></cols>'
+  );
+  updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:P${lastRow}"/>`);
+  updated = updated.replace(/<mergeCell ref="A1:[KL]1"\/>/, '<mergeCell ref="A1:L1"/>');
+  updated = updated.replace(/sqref="I3:I\d+"/, `sqref="I3:I${lastRow}"`);
+  updated = updated.replace(/<xm:sqref>I3:I\d+<\/xm:sqref>/, `<xm:sqref>I3:I${lastRow}</xm:sqref>`);
+  updated = updated.replace(/<xm:sqref>[KL]3:[KL]\d+<\/xm:sqref>/, `<xm:sqref>L3:L${lastRow}</xm:sqref>`);
+  updated = updated.replace(/<xm:sqref>E3:E\d+<\/xm:sqref>/, `<xm:sqref>E3:E${lastRow}</xm:sqref>`);
+  return { xml: updated, lastRow };
+}
+__name(updateAtencionesXml, "updateAtencionesXml");
+function parseSharedStrings(sstXml) {
+  const list = [];
+  if (!sstXml) return list;
+  const reSi = /<si>([\s\S]*?)<\/si>/g;
+  let m;
+  while ((m = reSi.exec(sstXml)) !== null) {
+    const tMatches = [...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)];
+    list.push(tMatches.map((x2) => x2[1]).join(""));
+  }
+  return list;
+}
+__name(parseSharedStrings, "parseSharedStrings");
+function extractTemplateColIMap(sheetXml, sstList) {
+  const map = /* @__PURE__ */ new Map();
+  if (!sheetXml) return map;
+  const reCell = /<c r="I(\d+)"([^>]*)>(?:<v>(\d+)<\/v>|<is><t[^>]*>([\s\S]*?)<\/t><\/is>)?<\/c>/g;
+  let m;
+  while ((m = reCell.exec(sheetXml)) !== null) {
+    const rowNum = parseInt(m[1], 10);
+    const attrs = m[2] || "";
+    if (attrs.includes('t="s"') && m[3] !== void 0) {
+      const val = sstList[parseInt(m[3], 10)];
+      if (val && val.trim()) map.set(rowNum, val.trim());
+    } else if (m[4] !== void 0 && m[4].trim()) {
+      map.set(rowNum, m[4].trim());
+    }
+  }
+  return map;
+}
+__name(extractTemplateColIMap, "extractTemplateColIMap");
+function extractReplacementInfo(item, nrcInfo, fallbackColI) {
+  let rawDocente = String(item?.docente || "").trim();
+  let rawMotivo = String(item?.motivo || "").trim();
+  let replacement = String(item?.docente_reemplazo || item?.docenteReemplazo || "").trim();
+  const repDocMatch = rawDocente.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
+  if (repDocMatch) {
+    rawDocente = repDocMatch[1].trim();
+    if (!replacement) replacement = repDocMatch[2].trim();
+  }
+  const repMotivoMatch = rawMotivo.match(/REEMPLAZO\s*\(([^)]+)\)/i);
+  if (repMotivoMatch) {
+    if (!replacement) replacement = repMotivoMatch[1].trim();
+    rawMotivo = "DOCENTE DE REEMPLAZO";
+  }
+  if (!replacement && item?.detalle) {
+    const detMatch = String(item.detalle).match(/Reemplaza:\s*(.+)$/i);
+    if (detMatch) replacement = detMatch[1].trim();
+  }
+  if (!replacement && nrcInfo?.reemplazo) {
+    replacement = nrcInfo.reemplazo;
+  }
+  if (!replacement && fallbackColI) {
+    replacement = fallbackColI;
+  }
+  return {
+    cleanDocente: rawDocente,
+    cleanMotivo: rawMotivo,
+    replacementDocente: replacement.toUpperCase().trim()
+  };
+}
+__name(extractReplacementInfo, "extractReplacementInfo");
+function updateHojasManualesXml(sheetXml, manualSheetsList, nrcLookupMap, sstList = []) {
+  const row1Match = sheetXml.match(/<row r="1"[\s\S]*?<\/row>/);
+  const row2Match = sheetXml.match(/<row r="2"[\s\S]*?<\/row>/);
+  if (!row1Match || !row2Match) return { xml: sheetXml, lastRow: 172 };
+  const templateColIMap = extractTemplateColIMap(sheetXml, sstList);
+  let row1Xml = row1Match[0].replace('spans="1:8"', 'spans="1:9"').replace('<c r="H1" s="339"/>', '<c r="H1" s="338"/><c r="I1" s="339"/>');
+  let row2Xml = row2Match[0].replace('spans="1:8"', 'spans="1:9"');
+  if (!row2Xml.includes('r="I2"')) {
+    row2Xml = row2Xml.replace(
+      "</row>",
+      `${xmlCellString("I2", 26, "DOCENTE REEMPLAZANTE")}</row>`
+    );
+  }
+  const rowsXml = [row1Xml, row2Xml];
+  const list2026_2 = (manualSheetsList || []).filter(
+    (m) => m.periodo !== "2026-1" && !String(m.id || "").startsWith("manual_1_")
+  );
+  const byCode = /* @__PURE__ */ new Map();
+  let maxNum = 170;
+  list2026_2.forEach((m) => {
+    let code = String(m.codigo || "").toUpperCase().trim().replace(/^LNI-/, "LN1-");
+    if (!code) return;
+    const existing = byCode.get(code);
+    if (!existing) {
+      byCode.set(code, m);
+    } else {
+      const isNew = String(m.id || "").startsWith("manual_new_");
+      const existingHasRep = Boolean(existing.docente_reemplazo || existing.docenteReemplazo);
+      const newHasRep = Boolean(m.docente_reemplazo || m.docenteReemplazo);
+      if (isNew || newHasRep && !existingHasRep) {
+        byCode.set(code, m);
+      }
+    }
+    const matchNum = code.match(/LN1-(\d+)/i);
+    if (matchNum) {
+      const n = parseInt(matchNum[1], 10);
+      if (n > maxNum) maxNum = n;
+    }
+  });
+  for (let i2 = 1; i2 <= maxNum; i2++) {
+    const r = i2 + 2;
+    const code = `LN1-${String(i2).padStart(3, "0")}`;
+    const item = byCode.get(code);
+    const fallbackColI = templateColIMap.get(r) || "";
+    if (!item) {
+      const fDoc2 = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,4,FALSE)`;
+      const fCur2 = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,5,FALSE)`;
+      const fCar2 = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,6,FALSE)`;
+      const emptyCells = [
+        xmlCellString(`A${r}`, 27, code),
+        xmlCellEmpty(`B${r}`, 143),
+        xmlCellEmpty(`C${r}`, 142),
+        xmlCellFormulaStr(`D${r}`, 31, fDoc2, ""),
+        xmlCellFormulaStr(`E${r}`, 31, fCur2, ""),
+        xmlCellFormulaStr(`F${r}`, 50, fCar2, ""),
+        xmlCellEmpty(`G${r}`, 49),
+        xmlCellEmpty(`H${r}`, 104),
+        fallbackColI ? xmlCellString(`I${r}`, 104, fallbackColI) : xmlCellEmpty(`I${r}`, 104)
+      ].join("");
+      rowsXml.push(`<row r="${r}" spans="1:9">${emptyCells}</row>`);
+      continue;
+    }
+    const serialDate = dateToExcelSerial(item.fecha);
+    const nrcStr = String(item.nrc || "").trim();
+    const isNumericNrc = /^\d+$/.test(nrcStr);
+    const nrcInfo = nrcLookupMap.get(nrcStr);
+    const { cleanDocente, cleanMotivo, replacementDocente } = extractReplacementInfo(
+      item,
+      nrcInfo,
+      fallbackColI
+    );
+    const cachedDocente = cleanDocente || nrcInfo?.docente || "";
+    const cachedCurso = item.curso || nrcInfo?.curso || "";
+    const cachedCarrera = item.carrera || nrcInfo?.carrera || "";
+    const fDoc = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,4,FALSE)`;
+    const fCur = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,5,FALSE)`;
+    const fCar = `VLOOKUP(C${r},'CONTROL ASISTENCIA'!H:M,6,FALSE)`;
+    const useVlookup = Boolean(nrcInfo);
+    const cells = [
+      xmlCellString(`A${r}`, 27, code),
+      serialDate !== null ? xmlCellNumber(`B${r}`, 143, serialDate) : xmlCellString(`B${r}`, 143, item.fecha || ""),
+      isNumericNrc ? xmlCellNumber(`C${r}`, 142, Number(nrcStr)) : xmlCellString(`C${r}`, 142, nrcStr),
+      useVlookup ? xmlCellFormulaStr(`D${r}`, 31, fDoc, cachedDocente) : xmlCellString(`D${r}`, 31, cachedDocente),
+      useVlookup ? xmlCellFormulaStr(`E${r}`, 31, fCur, cachedCurso) : xmlCellString(`E${r}`, 31, cachedCurso),
+      useVlookup ? xmlCellFormulaStr(`F${r}`, 50, fCar, cachedCarrera) : xmlCellString(`F${r}`, 50, cachedCarrera),
+      xmlCellString(`G${r}`, 49, cleanMotivo),
+      xmlCellString(`H${r}`, 104, item.asistente || ""),
+      replacementDocente ? xmlCellString(`I${r}`, 104, replacementDocente) : xmlCellEmpty(`I${r}`, 104)
+    ];
+    rowsXml.push(`<row r="${r}" spans="1:9">${cells.join("")}</row>`);
+  }
+  const lastRow = maxNum + 2;
+  let updated = sheetXml.replace(
+    /<sheetData>[\s\S]*?<\/sheetData>/,
+    `<sheetData>${rowsXml.join("")}</sheetData>`
+  );
+  updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:I${lastRow}"/>`);
+  updated = updated.replace(/<mergeCell ref="A1:H1"\/>/, '<mergeCell ref="A1:I1"/>');
+  updated = updated.replace(/<xm:sqref>G3:G\d+<\/xm:sqref>/, `<xm:sqref>G3:G${lastRow}</xm:sqref>`);
+  updated = updated.replace(/topLeftCell="A\d+"/, 'topLeftCell="A2"');
+  return { xml: updated, lastRow };
+}
+__name(updateHojasManualesXml, "updateHojasManualesXml");
+function updateReservasXml(sheetXml, reservasList) {
+  const headerRows = [];
+  for (let r = 1; r <= 4; r++) {
+    const m = sheetXml.match(new RegExp(`<row r="${r}"[\\s\\S]*?<\\/row>`));
+    if (m) headerRows.push(m[0]);
+  }
+  if (headerRows.length < 4) return { xml: sheetXml, lastRow: 5 };
+  const rowsXml = [...headerRows];
+  const list = reservasList || [];
+  list.forEach((res, idx) => {
+    const r = idx + 5;
+    const fechaStr = res.fecha || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+    const serialDate = dateToExcelSerial(fechaStr);
+    const { dia: diaCalc, mes: mesCalc } = getDayAndMonthFromDateStr(fechaStr);
+    const mesCached = (res.mes || mesCalc || "NOVIEMBRE").toUpperCase();
+    const diaCached = (res.dia || diaCalc || "LUNES").toUpperCase();
+    const hIni = timeToExcelFraction(res.inicio || res.hora_inicio || "14:30");
+    const hFin = timeToExcelFraction(res.final || res.hora_fin || "16:10");
+    const aula = (res.aula || "A201").toUpperCase().trim();
+    const ubicCached = res.ubicacion || "2DO PISO - A";
+    const docente = (res.docente || "").toUpperCase().trim();
+    const detalle = (res.detalle || res.motivo || "").toUpperCase().trim();
+    const usuario = (res.usuario || "OPERACIONES").toUpperCase().trim();
+    const prioridad = (res.prioridad || "NORMAL").toUpperCase().trim();
+    const fMes = `UPPER(TEXT(B${r},"MMMM"))`;
+    const fDia = `UPPER(TEXT(B${r},"dddd"))`;
+    const fUbic = `VLOOKUP(G${r},UBICACION[ABRV.]:UBICACION[UBICACION],2,FALSE)`;
+    const cells = [
+      serialDate !== null ? xmlCellNumber(`B${r}`, 219, serialDate) : xmlCellString(`B${r}`, 219, fechaStr),
+      xmlCellFormulaStr(`C${r}`, 220, fMes, mesCached),
+      xmlCellFormulaStr(`D${r}`, 220, fDia, diaCached),
+      hIni !== null ? xmlCellNumber(`E${r}`, 222, hIni) : xmlCellString(`E${r}`, 222, res.inicio || ""),
+      hFin !== null ? xmlCellNumber(`F${r}`, 221, hFin) : xmlCellString(`F${r}`, 221, res.final || ""),
+      xmlCellString(`G${r}`, 220, aula),
+      xmlCellFormulaStr(`H${r}`, 224, fUbic, ubicCached),
+      xmlCellString(`I${r}`, 295, docente),
+      xmlCellString(`J${r}`, 223, detalle),
+      xmlCellString(`K${r}`, 220, usuario),
+      xmlCellString(`L${r}`, 223, prioridad)
+    ].join("");
+    rowsXml.push(`<row r="${r}" spans="1:12" ht="15">${cells}</row>`);
+  });
+  const lastRow = Math.max(5, list.length + 4);
+  let updated = sheetXml.replace(
+    /<sheetData>[\s\S]*?<\/sheetData>/,
+    `<sheetData>${rowsXml.join("")}</sheetData>`
+  );
+  updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:N${lastRow}"/>`);
+  updated = updated.replace(/sqref="L5:L\d+"/, `sqref="L5:L${lastRow}"`);
+  updated = updated.replace(/sqref="K5:K\d+"/, `sqref="K5:K${lastRow}"`);
+  return { xml: updated, lastRow };
+}
+__name(updateReservasXml, "updateReservasXml");
+function updateResumen2026Xml(sheet4Xml, asistenciaList) {
+  const dayBlocks = [
+    { dia: "LUNES", startRow: 5 },
+    { dia: "MARTES", startRow: 18 },
+    { dia: "MIERCOLES", startRow: 31 },
+    { dia: "JUEVES", startRow: 44 },
+    { dia: "VIERNES", startRow: 57 },
+    { dia: "SABADO", startRow: 70 }
+  ];
+  const blockTimes = ["07:30", "09:10", "10:50", "12:30", "14:30", "16:10", "17:50", "19:30", "21:10"];
+  const normalizeDayStr = /* @__PURE__ */ __name((d) => String(d || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(), "normalizeDayStr");
+  let updated = sheet4Xml;
+  dayBlocks.forEach(({ dia, startRow }) => {
+    blockTimes.forEach((timeStr, idx) => {
+      const r = startRow + idx;
+      const matching = (asistenciaList || []).filter((a) => {
+        const dNorm = normalizeDayStr(a.dia);
+        const hProg = String(a.horaInicioProg || a.hora_inicio_prog || "").trim();
+        return dNorm === dia && hProg === timeStr;
+      });
+      if (matching.length === 0) return;
+      const totalClases = matching.length;
+      let asistioPuntual = 0;
+      let tardeCount = 0;
+      let faltaCount = 0;
+      matching.forEach((c) => {
+        const asist = String(c.asistencia || "").toUpperCase().trim();
+        const punt = String(c.puntualidad || "").toUpperCase().trim();
+        if (asist === "NO") {
+          faltaCount++;
+        } else if (punt === "TARDE") {
+          tardeCount++;
+        } else if (asist === "SI" || asist.includes("REEMPLAZO")) {
+          asistioPuntual++;
+        }
+      });
+      if (asistioPuntual + tardeCount + faltaCount > 0) {
+        updated = updated.replace(
+          new RegExp(`<c r="E${r}" s="(\\d+)"><v>\\d+<\\/v><\\/c>`),
+          `<c r="E${r}" s="$1"><v>${totalClases}</v></c>`
+        );
+        updated = updated.replace(
+          new RegExp(`<c r="F${r}" s="(\\d+)"><v>\\d+<\\/v><\\/c>`),
+          `<c r="F${r}" s="$1"><v>${asistioPuntual}</v></c>`
+        );
+        updated = updated.replace(
+          new RegExp(`<c r="G${r}" s="(\\d+)"><v>\\d+<\\/v><\\/c>`),
+          `<c r="G${r}" s="$1"><v>${tardeCount}</v></c>`
+        );
+        updated = updated.replace(
+          new RegExp(`<c r="H${r}" s="(\\d+)"><v>\\d+<\\/v><\\/c>`),
+          `<c r="H${r}" s="$1"><v>${faltaCount}</v></c>`
+        );
+      }
+    });
+  });
+  return updated;
+}
+__name(updateResumen2026Xml, "updateResumen2026Xml");
+function buildMasterExcelFromTemplate(templateUint8, { asistencia, tickets, manualSheets, reservas }) {
+  const archive = unzipSync(templateUint8);
+  const sstList = archive["xl/sharedStrings.xml"] ? parseSharedStrings(strFromU8(archive["xl/sharedStrings.xml"])) : [];
+  const nrcLookupMap = /* @__PURE__ */ new Map();
+  (asistencia || []).forEach((a) => {
+    const nrcKey = String(a.nrc || "").trim();
+    if (!nrcKey) return;
+    let repFromObs = "";
+    const obsStr = String(a.observacion || "").trim();
+    const obsRepMatch = obsStr.match(/Reemplazo:\s*([^|.\n]+)/i);
+    if (obsRepMatch) {
+      repFromObs = obsRepMatch[1].trim();
+    } else if (String(a.asistencia || "").toUpperCase().includes("REEMPLAZO") && obsStr) {
+      repFromObs = obsStr;
+    }
+    if (!nrcLookupMap.has(nrcKey)) {
+      nrcLookupMap.set(nrcKey, {
+        docente: a.docente || "",
+        curso: a.curso || "",
+        carrera: a.carrera || "",
+        reemplazo: repFromObs
+      });
+    } else if (repFromObs && !nrcLookupMap.get(nrcKey).reemplazo) {
+      nrcLookupMap.get(nrcKey).reemplazo = repFromObs;
+    }
+  });
+  if (archive["xl/worksheets/sheet4.xml"]) {
+    const s4 = strFromU8(archive["xl/worksheets/sheet4.xml"]);
+    archive["xl/worksheets/sheet4.xml"] = strToU8(updateResumen2026Xml(s4, asistencia));
+  }
+  if (archive["xl/worksheets/sheet5.xml"]) {
+    const s5 = strFromU8(archive["xl/worksheets/sheet5.xml"]);
+    const { xml, lastRow } = updateControlAsistenciaXml(s5, asistencia);
+    archive["xl/worksheets/sheet5.xml"] = strToU8(xml);
+    if (archive["xl/tables/table2.xml"]) {
+      let t2 = strFromU8(archive["xl/tables/table2.xml"]);
+      t2 = t2.replace(/ref="A1:T\d+"/g, `ref="A1:T${lastRow}"`);
+      t2 = t2.replace(/ref="A2:T\d+"/g, `ref="A2:T${lastRow}"`);
+      t2 = t2.replace(/ref="E1:E\d+"/g, `ref="E1:E${lastRow}"`);
+      archive["xl/tables/table2.xml"] = strToU8(t2);
+    }
+  }
+  if (archive["xl/worksheets/sheet12.xml"]) {
+    const s12 = strFromU8(archive["xl/worksheets/sheet12.xml"]);
+    const { xml, lastRow } = updateAtencionesXml(s12, tickets);
+    archive["xl/worksheets/sheet12.xml"] = strToU8(xml);
+    if (archive["xl/tables/table4.xml"]) {
+      let t4 = strFromU8(archive["xl/tables/table4.xml"]);
+      t4 = t4.replace(/ref="A2:[KL]\d+"/g, `ref="A2:L${lastRow}"`);
+      if (!t4.includes('name="USUARIO"')) {
+        t4 = t4.replace('count="11"', 'count="12"').replace(
+          '<tableColumn id="10"',
+          '<tableColumn id="12" name="USUARIO" dataDxfId="26"/><tableColumn id="10"'
+        );
+      }
+      archive["xl/tables/table4.xml"] = strToU8(t4);
+    }
+  }
+  if (archive["xl/worksheets/sheet10.xml"]) {
+    let s10 = strFromU8(archive["xl/worksheets/sheet10.xml"]);
+    s10 = s10.replace(/<row r="(\d+)"([\s\S]*?)<\/row>/g, (fullRow, rNumStr, inner) => {
+      const rNum = parseInt(rNumStr, 10);
+      if (rNum < 3) return fullRow;
+      const kMatch = inner.match(/<c r="K\d+"[^>]*><v>(\d+)<\/v><\/c>/);
+      const kText = kMatch && sstList[parseInt(kMatch[1], 10)] ? sstList[parseInt(kMatch[1], 10)].toUpperCase() : "";
+      const userType = kText.includes("ESTUDIANTE") || kText.includes("ALUMNO") || kText.includes("DELEGADO") ? "ALUMNO" : "DOCENTE";
+      return fullRow.replace(
+        new RegExp(`<c r="J${rNum}" s="(\\d+)"\\/>`),
+        `<c r="J${rNum}" s="$1" t="inlineStr"><is><t>${userType}</t></is></c>`
+      );
+    });
+    archive["xl/worksheets/sheet10.xml"] = strToU8(s10);
+  }
+  if (archive["xl/worksheets/sheet13.xml"]) {
+    const s13 = strFromU8(archive["xl/worksheets/sheet13.xml"]);
+    const { xml } = updateHojasManualesXml(s13, manualSheets, nrcLookupMap, sstList);
+    archive["xl/worksheets/sheet13.xml"] = strToU8(xml);
+  }
+  if (archive["xl/worksheets/sheet14.xml"]) {
+    const s14 = strFromU8(archive["xl/worksheets/sheet14.xml"]);
+    const { xml, lastRow } = updateReservasXml(s14, reservas);
+    archive["xl/worksheets/sheet14.xml"] = strToU8(xml);
+    if (archive["xl/tables/table5.xml"]) {
+      let t5 = strFromU8(archive["xl/tables/table5.xml"]);
+      t5 = t5.replace(/ref="B4:L\d+"/g, `ref="B4:L${lastRow}"`);
+      t5 = t5.replace(/ref="B5:L\d+"/g, `ref="B5:L${lastRow}"`);
+      t5 = t5.replace(/ref="E4:E\d+"/g, `ref="E4:E${lastRow}"`);
+      archive["xl/tables/table5.xml"] = strToU8(t5);
+    }
+  }
+  if (archive["xl/workbook.xml"]) {
+    let wbXml = strFromU8(archive["xl/workbook.xml"]);
+    wbXml = wbXml.replace(
+      /<sheet name="ATENCIONES 2026-2" sheetId="34" state="hidden" r:id="rId12"\/>/,
+      '<sheet name="ATENCIONES 2026-2" sheetId="34" r:id="rId12"/>'
+    );
+    wbXml = wbXml.replace(
+      /<sheet name="RESUMEN 2026-2" sheetId="24" state="hidden" r:id="rId4"\/>/,
+      '<sheet name="RESUMEN 2026-2" sheetId="24" r:id="rId4"/>'
+    );
+    wbXml = wbXml.replace(
+      /<calcPr calcId="(\d+)"\/>/,
+      '<calcPr calcId="$1" fullCalcOnLoad="1"/>'
+    );
+    archive["xl/workbook.xml"] = strToU8(wbXml);
+  }
+  if (archive["xl/calcChain.xml"]) {
+    delete archive["xl/calcChain.xml"];
+  }
+  if (archive["xl/_rels/workbook.xml.rels"]) {
+    let relsXml = strFromU8(archive["xl/_rels/workbook.xml.rels"]);
+    relsXml = relsXml.replace(/<Relationship[^>]*Target="calcChain\.xml"[^>]*\/>/, "");
+    archive["xl/_rels/workbook.xml.rels"] = strToU8(relsXml);
+  }
+  if (archive["[Content_Types].xml"]) {
+    let ctXml = strFromU8(archive["[Content_Types].xml"]);
+    ctXml = ctXml.replace(/<Override[^>]*PartName="\/xl\/calcChain\.xml"[^>]*\/>/, "");
+    archive["[Content_Types].xml"] = strToU8(ctXml);
+  }
+  return zipSync(archive, { level: 6 });
+}
+__name(buildMasterExcelFromTemplate, "buildMasterExcelFromTemplate");
+
+// ../src/utils/onedriveGraphSync.js
+var G = "https://graph.microsoft.com/v1.0";
+var TENANT_ID = "ae544a57-aecb-4bf9-828a-5b520732b110";
+var CLIENT_ID = "d3590ed6-52b3-4102-aeff-aad2292ab01c";
+var enc = encodeURIComponent;
+var norm = /* @__PURE__ */ __name((s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim(), "norm");
+var colLetter = /* @__PURE__ */ __name((n) => {
+  let s = "";
+  n += 1;
+  while (n > 0) {
+    const m = (n - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}, "colLetter");
+function serialToISO(v) {
+  if (typeof v === "number" && v > 2e4) {
+    const d = new Date(Math.round((v - 25569) * 864e5));
+    if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  const str = String(v ?? "").trim();
+  const m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m) {
+    return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  }
+  return str;
+}
+__name(serialToISO, "serialToISO");
+function toExcelDate(v) {
+  if (v === null || v === void 0 || v === "") return "";
+  if (typeof v === "number" && v > 2e4) {
+    const d = new Date(Math.round((v - 25569) * 864e5));
+    if (!Number.isNaN(d.getTime())) {
+      const dd = String(d.getUTCDate()).padStart(2, "0");
+      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const yyyy = d.getUTCFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+  }
+  const str = String(v).trim();
+  const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymd) {
+    return `${ymd[3].padStart(2, "0")}/${ymd[2].padStart(2, "0")}/${ymd[1]}`;
+  }
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    return `${dmy[1].padStart(2, "0")}/${dmy[2].padStart(2, "0")}/${dmy[3]}`;
+  }
+  return str;
+}
+__name(toExcelDate, "toExcelDate");
+function isoToSerial(s) {
+  const str = String(s ?? "").trim();
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    return Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 + 25569;
+  }
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    return Date.UTC(+dmy[3], +dmy[2] - 1, +dmy[1]) / 864e5 + 25569;
+  }
+  return s ?? "";
+}
+__name(isoToSerial, "isoToSerial");
+function fracToHHMM(v) {
+  if (typeof v === "number") {
+    const f = v >= 1 ? v - Math.floor(v) : v;
+    const t = Math.round(f * 1440);
+    return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+  }
+  const m = String(v ?? "").match(/^(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2, "0")}:${m[2]}` : String(v ?? "").trim();
+}
+__name(fracToHHMM, "fracToHHMM");
+function hhmmToFrac(s) {
+  const m = String(s ?? "").match(/^(\d{1,2}):(\d{2})/);
+  return m ? (+m[1] * 60 + +m[2]) / 1440 : s ?? "";
+}
+__name(hhmmToFrac, "hhmmToFrac");
+function canon(type, v) {
+  if (type === "date") return serialToISO(v);
+  if (type === "time") return fracToHHMM(v);
+  return String(v ?? "").trim();
+}
+__name(canon, "canon");
+function toCell(type, v) {
+  if (v === null || v === void 0) return "";
+  if (type === "date") return toExcelDate(v);
+  if (type === "time") return hhmmToFrac(v);
+  if (type === "num") return /^\d+$/.test(String(v).trim()) ? Number(v) : String(v);
+  return String(v);
+}
+__name(toCell, "toCell");
+async function gfetch(token, url, init = {}) {
+  const res = await fetch(url, {
+    ...init,
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...init.headers || {} }
+  });
+  let json2 = null;
+  try {
+    json2 = await res.json();
+  } catch (_) {
+  }
+  return { ok: res.ok, status: res.status, json: json2 };
+}
+__name(gfetch, "gfetch");
+async function ensureTables(db) {
+  try {
+    await db.prepare("ALTER TABLE reservas ADD COLUMN motivo TEXT").run();
+  } catch (_) {
+  }
+  try {
+    await db.prepare("ALTER TABLE reservas ADD COLUMN obs TEXT").run();
+  } catch (_) {
+  }
+  try {
+    await db.prepare("ALTER TABLE reservas ADD COLUMN hoja TEXT").run();
+  } catch (_) {
+  }
+}
+__name(ensureTables, "ensureTables");
+async function getState(db, k) {
+  const r = await db.prepare("SELECT v FROM onedrive_state WHERE k = ?").bind(k).first();
+  return r ? r.v : null;
+}
+__name(getState, "getState");
+async function setState(db, k, v) {
+  await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES (?, ?)").bind(k, String(v)).run();
+}
+__name(setState, "setState");
+async function markDbWrite(db) {
+  await setState(db, "last_write_ts", String(Date.now()));
+}
+__name(markDbWrite, "markDbWrite");
+async function getAccess(db) {
+  const row = await db.prepare("SELECT * FROM onedrive_auth WHERE id = ?").bind("primary").first();
+  if (!row || !row.refresh_token) return null;
+  let token = row.access_token;
+  if (!token || Date.now() > Number(row.expires_at || 0) - 12e4) {
+    const r = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: CLIENT_ID,
+        refresh_token: row.refresh_token,
+        scope: "https://graph.microsoft.com/.default offline_access"
+      })
+    });
+    const j = await r.json();
+    if (!r.ok || !j.access_token) return null;
+    token = j.access_token;
+    await db.prepare(
+      "UPDATE onedrive_auth SET access_token = ?, refresh_token = COALESCE(?, refresh_token), expires_at = ? WHERE id = 'primary'"
+    ).bind(token, j.refresh_token || null, Date.now() + Number(j.expires_in || 3600) * 1e3).run();
+  }
+  return { token, row };
+}
+__name(getAccess, "getAccess");
+async function findTargets(token, row) {
+  const targets = [];
+  const r = await gfetch(token, `${G}/me/drive/root/search(q='CONTROL DOCENTE')`);
+  if (r.ok) {
+    for (const f of r.json?.value || []) {
+      const nm = String(f.name || "");
+      if (nm.toUpperCase().includes("CONTROL DOCENTE") && nm.toLowerCase().endsWith(".xlsx")) {
+        targets.push({ id: f.id, name: nm });
+      }
+    }
+  }
+  if (targets.length === 0 && row.item_id) targets.push({ id: row.item_id, name: row.file_name || "CONTROL DOCENTE.xlsx" });
+  return targets;
+}
+__name(findTargets, "findTargets");
+async function itemMod(token, itemId) {
+  const r = await gfetch(token, `${G}/me/drive/items/${itemId}?$select=lastModifiedDateTime`);
+  return r.ok ? r.json?.lastModifiedDateTime || "" : "";
+}
+__name(itemMod, "itemMod");
+async function loadUsed(token, itemId, sheet) {
+  const r = await gfetch(
+    token,
+    `${G}/me/drive/items/${itemId}/workbook/worksheets/${enc(sheet)}/usedRange?$select=values,formulas,rowIndex,columnIndex`
+  );
+  return r.ok ? r.json : null;
+}
+__name(loadUsed, "loadUsed");
+function findHeader(used, musts) {
+  const vals = used?.values || [];
+  for (let r = 0; r < Math.min(vals.length, 12); r++) {
+    const cells = (vals[r] || []).map(norm);
+    if (musts.every((m) => cells.some((c) => c === m || c.startsWith(m) || c.includes(m)))) return { row: r, cells };
+  }
+  return null;
+}
+__name(findHeader, "findHeader");
+function colOf(cells, names) {
+  for (const n of names) {
+    let i2 = cells.findIndex((c) => c === n);
+    if (i2 < 0) i2 = cells.findIndex((c) => c.startsWith(n));
+    if (i2 < 0) i2 = cells.findIndex((c) => c.includes(n));
+    if (i2 >= 0) return i2;
+  }
+  return -1;
+}
+__name(colOf, "colOf");
+async function patchRange(token, itemId, sheet, address, matrix, fmtMatrix = null) {
+  let hasFormulas = false;
+  const valuesMatrix = [];
+  const formulasMatrix = [];
+  for (let r = 0; r < matrix.length; r++) {
+    const vRow = [];
+    const fRow = [];
+    const row = matrix[r] || [];
+    for (let c = 0; c < row.length; c++) {
+      const cell = row[c];
+      if (typeof cell === "string" && cell.startsWith("=")) {
+        hasFormulas = true;
+        fRow.push(cell);
+        vRow.push(null);
+      } else {
+        vRow.push(cell === void 0 || cell === null ? "" : cell);
+        fRow.push(null);
+      }
+    }
+    valuesMatrix.push(vRow);
+    formulasMatrix.push(fRow);
+  }
+  const body = { values: valuesMatrix };
+  if (hasFormulas) {
+    body.formulas = formulasMatrix;
+  }
+  if (fmtMatrix) {
+    body.numberFormat = fmtMatrix;
+  }
+  return gfetch(token, `${G}/me/drive/items/${itemId}/workbook/worksheets/${enc(sheet)}/range(address='${address}')`, {
+    method: "PATCH",
+    body: JSON.stringify(body)
+  });
+}
+__name(patchRange, "patchRange");
+var patchFormulas = patchRange;
+async function repairHeaders(token, itemId, spec, used) {
+  if (findHeader(used, spec.musts)) return used;
+  const cols = spec.headerCells.length;
+  const addr = `${spec.headerStartCol}${spec.headerRow}:${colLetter(spec.headerStartColIdx + cols - 1)}${spec.headerRow}`;
+  await patchFormulas(token, itemId, spec.sheet, addr, [spec.headerCells]);
+  if (spec.clearRows) {
+    for (const rr of spec.clearRows) {
+      const a = `${spec.headerStartCol}${rr}:${colLetter(spec.headerStartColIdx + cols - 1)}${rr}`;
+      await patchFormulas(token, itemId, spec.sheet, a, [new Array(cols).fill("")]);
+    }
+  }
+  return loadUsed(token, itemId, spec.sheet);
+}
+__name(repairHeaders, "repairHeaders");
+var T = { date: "date", time: "time", num: "num", str: "str" };
+var SPECS = {
+  tickets: {
+    sheet: "ATENCIONES 2026-2",
+    musts: ["FECHA", "AMBIENTE"],
+    headerRow: 2,
+    headerStartCol: "A",
+    headerStartColIdx: 0,
+    headerCells: ["FECHA", "DIA", "HORA DE REPORTE", "RANGO", "AMBIENTE", "PISO", "PABELL\xD3N", "TIPO DE SOLICITUD", "ESTADO", "USUARIO", "DESCRIPCI\xD3N / SOLUCI\xD3N", "RESPONSABLE"],
+    fields: [
+      { k: "fecha", h: ["FECHA"], t: T.date },
+      { k: "dia", h: ["DIA"], t: T.str, up: true },
+      { k: "hora_reporte", h: ["HORA DE REPORTE", "HORA"], t: T.time },
+      { k: "rango", h: ["RANGO"], t: T.str },
+      { k: "ambiente", h: ["AMBIENTE"], t: T.str, up: true },
+      { k: "piso", h: ["PISO"], t: T.str },
+      { k: "pabellon", h: ["PABELLON"], t: T.str },
+      { k: "tipo_solicitud", h: ["TIPO DE SOLICITUD", "TIPO"], t: T.str },
+      { k: "estado", h: ["ESTADO"], t: T.str, up: true },
+      { k: "usuario", h: ["USUARIO"], t: T.str, up: true },
+      { k: "descripcion_solucion", h: ["DESCRIPCION"], t: T.str },
+      { k: "responsable", h: ["RESPONSABLE"], t: T.str }
+    ],
+    required: ["ambiente", "tipo_solicitud"],
+    key: /* @__PURE__ */ __name((r) => norm([canon("date", r.fecha), canon("time", r.hora_reporte), r.ambiente, r.tipo_solicitud].join("|")), "key"),
+    table: "tickets",
+    hasUpdated: true,
+    select: "SELECT * FROM tickets WHERE periodo IS NULL OR periodo != '2026-1'",
+    sort: /* @__PURE__ */ __name((a, b) => String(a.fecha || "").localeCompare(String(b.fecha || "")) || String(a.hora_reporte || "").localeCompare(String(b.hora_reporte || "")), "sort"),
+    prefill: /* @__PURE__ */ __name((r) => ({ ...r, usuario: r.usuario || (String(r.descripcion_solucion || "").toUpperCase().includes("ALUMNO") ? "ALUMNO" : "DOCENTE") }), "prefill"),
+    insert: /* @__PURE__ */ __name((db, id, r) => db.prepare(
+      `INSERT OR IGNORE INTO tickets (id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon, tipo_solicitud, estado, usuario, descripcion_solucion, responsable, created_at)
+           VALUES (?, '2026-2', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    ).bind(id, r.fecha, r.dia, r.hora_reporte, r.rango, r.ambiente, r.piso, r.pabellon, r.tipo_solicitud, r.estado || "ATENDIDO", r.usuario || "DOCENTE", r.descripcion_solucion, r.responsable), "insert")
+  },
+  manuales: {
+    sheet: "HOJA DE ASISTENCIA 2026-2",
+    musts: ["CODIGO", "NRC"],
+    headerRow: 2,
+    headerStartCol: "A",
+    headerStartColIdx: 0,
+    headerCells: ["C\xD3DIGO", "FECHA ", "NRC", "DOCENTE", "CURSO", "CARRERA", "MOTIVO", "ASISTENTE", "DOCENTE REEMPLAZANTE"],
+    fields: [
+      { k: "codigo", h: ["CODIGO"], t: T.str, up: true },
+      { k: "fecha", h: ["FECHA"], t: T.date },
+      { k: "nrc", h: ["NRC"], t: T.num },
+      { k: "docente", h: ["DOCENTE"], t: T.str, up: true, exact: true },
+      { k: "curso", h: ["CURSO"], t: T.str },
+      { k: "carrera", h: ["CARRERA"], t: T.str },
+      { k: "motivo", h: ["MOTIVO"], t: T.str },
+      { k: "asistente", h: ["ASISTENTE"], t: T.str },
+      { k: "docente_reemplazo", h: ["DOCENTE REEMPLAZANTE", "REEMPLAZANTE"], t: T.str, up: true }
+    ],
+    required: ["codigo"],
+    key: /* @__PURE__ */ __name((r) => norm(String(r.codigo || "").replace(/^LNI-/i, "LN1-")), "key"),
+    table: "hojas_manuales",
+    select: "SELECT * FROM hojas_manuales WHERE codigo IS NOT NULL AND codigo != '' AND ((docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%') OR (nrc IS NOT NULL AND TRIM(nrc) != '') OR (fecha IS NOT NULL AND TRIM(fecha) != ''))",
+    sort: /* @__PURE__ */ __name((a, b) => {
+      const n = /* @__PURE__ */ __name((s) => {
+        const m = String(s || "").match(/(\d+)$/);
+        return m ? parseInt(m[1], 10) : 999999;
+      }, "n");
+      return n(a.codigo) - n(b.codigo);
+    }, "sort"),
+    prefill: /* @__PURE__ */ __name((r, ctx) => {
+      const rawNrc = String(r.nrc || "").trim();
+      const paddedNrc = rawNrc ? rawNrc.padStart(5, "0") : "";
+      const unpaddedNrc = rawNrc ? rawNrc.replace(/^0+/, "") : "";
+      const cleanCurso = String(r.curso || "").trim().toUpperCase();
+      const info = ctx.nrcMap && (ctx.nrcMap.get(rawNrc) || ctx.nrcMap.get(paddedNrc) || ctx.nrcMap.get(unpaddedNrc)) || ctx.courseMap && ctx.courseMap.get(cleanCurso) || {};
+      let doc = String(r.docente || info.docente || "");
+      let rep = String(r.docente_reemplazo || r.docenteReemplazo || "").trim();
+      const mDoc = doc.match(/^(.*?)\s*\[Reemplazo:\s*(.*?)\]$/i);
+      if (mDoc) {
+        doc = mDoc[1].trim();
+        if (!rep) rep = mDoc[2].trim();
+      }
+      if (!rep && r.motivo) {
+        const mMot = String(r.motivo).match(/DOCENTE DE REEMPLAZO\s*\((.*?)\)/i);
+        if (mMot) rep = mMot[1].trim();
+      }
+      if (!rep && r.detalle) {
+        const mDet = String(r.detalle).match(/Reemplaza:\s*([^|]+)/i);
+        if (mDet) rep = mDet[1].trim();
+      }
+      const cleanMotivo = String(r.motivo || "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+      return {
+        ...r,
+        docente: doc,
+        curso: r.curso || info.curso || "",
+        carrera: r.carrera || info.carrera || "",
+        motivo: cleanMotivo,
+        docente_reemplazo: rep ? rep.toUpperCase() : ""
+      };
+    }, "prefill"),
+    insert: /* @__PURE__ */ __name((db, id, r) => db.prepare(
+      `INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, docente_reemplazo, created_at)
+           VALUES (?, '2026-2', ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+           ON CONFLICT(codigo) DO UPDATE SET
+             fecha = excluded.fecha,
+             nrc = excluded.nrc,
+             docente = excluded.docente,
+             curso = excluded.curso,
+             carrera = CASE 
+               WHEN excluded.carrera IS NOT NULL AND TRIM(excluded.carrera) != '' THEN excluded.carrera 
+               ELSE hojas_manuales.carrera 
+             END,
+             motivo = excluded.motivo,
+             asistente = excluded.asistente,
+             docente_reemplazo = excluded.docente_reemplazo`
+    ).bind(
+      id,
+      String(r.codigo).replace(/^LNI-/i, "LN1-"),
+      r.fecha,
+      r.nrc,
+      r.docente,
+      r.curso,
+      r.carrera,
+      r.motivo,
+      r.asistente,
+      r.docente_reemplazo || ""
+    ), "insert")
+  },
+  reservas: {
+    sheet: "RESERVAS",
+    musts: ["FECHA", "AULA"],
+    headerRow: 4,
+    headerStartCol: "B",
+    headerStartColIdx: 1,
+    headerCells: ["FECHA", "MES", "DIA", "INICIO", "FINAL", "AULA", "UBICACI\xD3N", "DOCENTE", "DETALLE", "USUARIO", "PRIORIDAD"],
+    clearRows: [2, 3],
+    fields: [
+      { k: "fecha", h: ["FECHA"], t: T.date },
+      { k: "mes", h: ["MES"], t: T.str, up: true },
+      { k: "dia", h: ["DIA"], t: T.str, up: true },
+      { k: "inicio", h: ["INICIO"], t: T.time },
+      { k: "final", h: ["FINAL"], t: T.time },
+      { k: "aula", h: ["AULA"], t: T.str, up: true },
+      { k: "ubicacion", h: ["UBICACION"], t: T.str },
+      { k: "docente", h: ["DOCENTE"], t: T.str, up: true },
+      { k: "detalle", h: ["DETALLE"], t: T.str, up: true },
+      { k: "usuario", h: ["USUARIO"], t: T.str, up: true },
+      { k: "prioridad", h: ["PRIORIDAD"], t: T.str, up: true }
+    ],
+    required: ["fecha", "aula"],
+    key: /* @__PURE__ */ __name((r) => norm([canon("date", r.fecha), r.aula, canon("time", r.inicio)].join("|")), "key"),
+    table: "reservas",
+    select: "SELECT * FROM reservas",
+    sort: /* @__PURE__ */ __name((a, b) => String(a.fecha || "").localeCompare(String(b.fecha || "")) || String(a.inicio || "").localeCompare(String(b.inicio || "")), "sort"),
+    prefill: /* @__PURE__ */ __name((r) => r, "prefill"),
+    insert: /* @__PURE__ */ __name((db, id, r) => db.prepare(
+      `INSERT OR IGNORE INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, usuario, prioridad, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    ).bind(id, r.fecha, r.mes, r.dia, r.inicio, r.final, r.aula, r.ubicacion, r.docente, r.detalle, r.usuario || "OPERACIONES", r.prioridad || "NORMAL"), "insert")
+  }
+};
+function resolveCols(spec, cells) {
+  return spec.fields.map((f) => {
+    let idx = -1;
+    if (f.exact) idx = cells.findIndex((c) => c === f.h[0]);
+    else idx = colOf(cells, f.h.map(norm));
+    return { ...f, idx };
+  });
+}
+__name(resolveCols, "resolveCols");
+function mapDay(s) {
+  return norm(s);
+}
+__name(mapDay, "mapDay");
+async function pullRecords(db, specName, used) {
+  const spec = SPECS[specName];
+  const hdr = findHeader(used, spec.musts);
+  if (!hdr) return 0;
+  const cols = resolveCols(spec, hdr.cells);
+  const dbRows = (await db.prepare(spec.select).all()).results || [];
+  const byKey = /* @__PURE__ */ new Map();
+  for (const r of dbRows) {
+    const k = spec.key(r);
+    if (!byKey.has(k)) byKey.set(k, []);
+    byKey.get(k).push(r);
+  }
+  const recs = [];
+  for (let r = hdr.row + 1; r < used.values.length; r++) {
+    const row = used.values[r];
+    const rec = {};
+    for (const c of cols) {
+      if (c.idx < 0) continue;
+      let v = canon(c.t, row[c.idx]);
+      if (c.up) v = v.toUpperCase();
+      rec[c.k] = v;
+    }
+    if (spec.required.some((k) => !rec[k])) {
+      continue;
+    }
+    if (specName === "manuales") {
+      const doc = String(rec.docente || "").trim();
+      const nrc = String(rec.nrc || "").trim();
+      const fec = String(rec.fecha || "").trim();
+      if ((!nrc || nrc === "") && (!fec || fec === "") && (!doc || doc === "" || doc.includes("#N/D") || doc.includes("#N/A"))) {
+        continue;
+      }
+    }
+    recs.push(rec);
+  }
+  const upd = spec.hasUpdated ? ", updated_at = datetime('now')" : "";
+  const claimed = /* @__PURE__ */ new Set();
+  const stmts = [];
+  let changes = 0;
+  for (const rec of recs) {
+    const k = spec.key(rec);
+    const q = byKey.get(k);
+    const hit = q && q.find((d) => !claimed.has(d.id));
+    if (hit) {
+      claimed.add(hit.id);
+      const sets = [];
+      const vals = [];
+      for (const c of cols) {
+        if (c.idx < 0) continue;
+        if (c.k === "codigo" && specName === "manuales") continue;
+        const dbv = canon(c.t, hit[c.k]);
+        const cmp = c.up ? dbv.toUpperCase() : dbv;
+        if (cmp !== rec[c.k]) {
+          sets.push(`${c.k} = ?`);
+          vals.push(rec[c.k]);
+        }
+      }
+      if (sets.length) {
+        changes++;
+        stmts.push(db.prepare(`UPDATE ${spec.table} SET ${sets.join(", ")}${upd} WHERE id = ?`).bind(...vals, hit.id));
+      }
+    } else {
+      changes++;
+      const id = `xl_${specName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      stmts.push(spec.insert(db, id, rec));
+    }
+  }
+  let snapshotIds = /* @__PURE__ */ new Set();
+  try {
+    const rawSnap = await getState(db, `ids:${specName}`);
+    if (rawSnap) {
+      const arr = JSON.parse(rawSnap);
+      if (Array.isArray(arr)) snapshotIds = new Set(arr);
+    }
+  } catch (_) {
+  }
+  if (snapshotIds.size > 0) {
+    for (const r of dbRows) {
+      if (snapshotIds.has(r.id) && !claimed.has(r.id)) {
+        changes++;
+        stmts.push(db.prepare(`DELETE FROM ${spec.table} WHERE id = ?`).bind(r.id));
+      }
+    }
+  }
+  for (let i2 = 0; i2 < stmts.length; i2 += 50) {
+    try {
+      await db.batch(stmts.slice(i2, i2 + 50));
+    } catch (err2) {
+      console.error(`Error in batch ${specName}:`, err2);
+    }
+  }
+  return changes;
+}
+__name(pullRecords, "pullRecords");
+async function pullAsistencia(db, used) {
+  const hdr = findHeader(used, ["AULA", "NRC"]);
+  if (!hdr) return 0;
+  const c = hdr.cells;
+  const iDia = colOf(c, ["DIAS", "DIA"]);
+  const iAula = colOf(c, ["AULA"]);
+  const iNrc = colOf(c, ["NRC"]);
+  const iIni = colOf(c, ["HORA INICIO REAL"]);
+  const iFin = colOf(c, ["HORA FINAL REAL"]);
+  const iAs = colOf(c, ["ASISTENCIA"]);
+  const iPu = colOf(c, ["PUNTUALIDAD"]);
+  const iOb = colOf(c, ["OBSERVACION"]);
+  const dbRows = (await db.prepare("SELECT * FROM asistencia").all()).results || [];
+  const byKey = /* @__PURE__ */ new Map();
+  for (const r of dbRows) {
+    const k = `${String(r.nrc || "").trim()}|${mapDay(r.dia)}|${String(r.aula || "").trim().toUpperCase()}`;
+    if (!byKey.has(k)) byKey.set(k, []);
+    byKey.get(k).push(r);
+  }
+  const stmts = [];
+  for (let r = hdr.row + 1; r < used.values.length; r++) {
+    const row = used.values[r];
+    const k = `${String(row[iNrc] ?? "").trim()}|${mapDay(row[iDia])}|${String(row[iAula] ?? "").trim().toUpperCase()}`;
+    const list = byKey.get(k);
+    if (!list) continue;
+    const ini = iIni >= 0 ? fracToHHMM(row[iIni]) : null;
+    const fin = iFin >= 0 ? fracToHHMM(row[iFin]) : null;
+    const asi = iAs >= 0 ? String(row[iAs] ?? "").trim().toUpperCase() || "PENDIENTE" : null;
+    const pun = iPu >= 0 ? String(row[iPu] ?? "").trim().toUpperCase() || "-" : null;
+    const obs = iOb >= 0 ? String(row[iOb] ?? "").trim() : null;
+    for (const d of list) {
+      const diff = ini !== null && ini !== String(d.hora_inicio_real || "") || fin !== null && fin !== String(d.hora_final_real || "") || asi !== null && asi !== String(d.asistencia || "PENDIENTE").toUpperCase() || pun !== null && pun !== String(d.puntualidad || "-").toUpperCase() || obs !== null && obs !== String(d.observacion || "");
+      if (diff) {
+        stmts.push(
+          db.prepare(
+            "UPDATE asistencia SET hora_inicio_real = COALESCE(?, hora_inicio_real), hora_final_real = COALESCE(?, hora_final_real), asistencia = COALESCE(?, asistencia), puntualidad = COALESCE(?, puntualidad), observacion = COALESCE(?, observacion), updated_at = datetime('now') WHERE id = ?"
+          ).bind(ini, fin, asi, pun, obs, d.id)
+        );
+      }
+    }
+  }
+  for (let i2 = 0; i2 < stmts.length; i2 += 50) await db.batch(stmts.slice(i2, i2 + 50));
+  return stmts.length;
+}
+__name(pullAsistencia, "pullAsistencia");
+async function pullFromExcel(db, token, itemId) {
+  let total = 0;
+  const as = await loadUsed(token, itemId, "CONTROL ASISTENCIA");
+  if (as) total += await pullAsistencia(db, as);
+  for (const name of ["tickets", "manuales", "reservas"]) {
+    const used = await loadUsed(token, itemId, SPECS[name].sheet);
+    if (used) total += await pullRecords(db, name, used);
+  }
+  return total;
+}
+__name(pullFromExcel, "pullFromExcel");
+async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot, preRows) {
+  const spec = SPECS[specName];
+  let used = await loadUsed(token, itemId, spec.sheet);
+  if (!used) return { skipped: "sin hoja" };
+  used = await repairHeaders(token, itemId, spec, used);
+  const hdr = findHeader(used, spec.musts);
+  if (!hdr) return { skipped: "sin encabezado" };
+  const cols = resolveCols(spec, hdr.cells).filter((c) => c.idx >= 0);
+  if (cols.length === 0) return { skipped: "sin columnas" };
+  const sourceRows = preRows || ((await db.prepare(spec.select).all()).results || []);
+  let rows = sourceRows.slice().sort(spec.sort);
+  rows = rows.map((r) => spec.prefill(r, ctx));
+  const minC = Math.min(...cols.map((c) => c.idx));
+  const maxC = Math.max(...cols.map((c) => c.idx));
+  const width = maxC - minC + 1;
+  const firstData = hdr.row + 1;
+  const existingRows = Math.max(0, used.values.length - firstData);
+  const totalRows = Math.max(existingRows, rows.length);
+  const firstFormulas = used.formulas[firstData] || [];
+  const isFormulaCol = /* @__PURE__ */ __name((idx) => typeof firstFormulas[idx] === "string" && firstFormulas[idx].startsWith("="), "isFormulaCol");
+  const firstAbsRow = used.rowIndex + firstData + 1;
+  const matrix = [];
+  const fmtMatrix = [];
+  for (let i2 = 0; i2 < totalRows; i2++) {
+    const relRow = firstData + i2;
+    const baseF = used.formulas[relRow] || [];
+    const line = [];
+    const fmtLine = [];
+    for (let c = minC; c <= maxC; c++) {
+      const col = cols.find((x2) => x2.idx === c);
+      const base = baseF[c] !== void 0 ? baseF[c] : "";
+      const cellFmt = col && col.t === "date" ? "dd/mm/yyyy" : col && col.t === "time" ? "hh:mm" : "General";
+      fmtLine.push(cellFmt);
+      if (i2 >= rows.length) {
+        line.push("");
+        continue;
+      }
+      if (!col) {
+        if (isFormulaCol(c) && !(typeof base === "string" && base.startsWith("="))) {
+          line.push(firstFormulas[c].replace(new RegExp(`([A-Z]{1,3})${firstAbsRow}\\b`, "g"), `$1${used.rowIndex + relRow + 1}`));
+        } else line.push(base);
+        continue;
+      }
+      if (isFormulaCol(c)) {
+        const f = typeof base === "string" && base.startsWith("=") ? base : firstFormulas[c].replace(new RegExp(`([A-Z]{1,3})${firstAbsRow}\\b`, "g"), `$1${used.rowIndex + relRow + 1}`);
+        line.push(f);
+      } else {
+        let v = rows[i2][col.k];
+        line.push(toCell(col.t, v));
+      }
+    }
+    matrix.push(line);
+    fmtMatrix.push(fmtLine);
+  }
+  if (matrix.length === 0) return { updated: 0 };
+  const startAbs = used.rowIndex + firstData + 1;
+  const endAbs = startAbs + matrix.length - 1;
+  const address = `${colLetter(used.columnIndex + minC)}${startAbs}:${colLetter(used.columnIndex + maxC)}${endAbs}`;
+  const res = await patchFormulas(token, itemId, spec.sheet, address, matrix, fmtMatrix);
+  if (saveSnapshot) await setState(db, `ids:${specName}`, JSON.stringify(rows.map((r) => r.id)));
+  return { updated: rows.length, status: res.status };
+}
+__name(pushRecords, "pushRecords");
+async function pushAsistencia(db, token, itemId, preRows) {
+  const used = await loadUsed(token, itemId, "CONTROL ASISTENCIA");
+  if (!used) return { skipped: "sin hoja" };
+  const hdr = findHeader(used, ["AULA", "NRC"]);
+  if (!hdr) return { skipped: "sin encabezado" };
+  const c = hdr.cells;
+  const iDia = colOf(c, ["DIAS", "DIA"]);
+  const iAula = colOf(c, ["AULA"]);
+  const iNrc = colOf(c, ["NRC"]);
+  const managed = [
+    { idx: colOf(c, ["HORA INICIO REAL"]), get: /* @__PURE__ */ __name((d) => hhmmToFrac(d.hora_inicio_real), "get") },
+    { idx: colOf(c, ["HORA FINAL REAL"]), get: /* @__PURE__ */ __name((d) => hhmmToFrac(d.hora_final_real), "get") },
+    { idx: colOf(c, ["ASISTENCIA"]), get: /* @__PURE__ */ __name((d) => String(d.asistencia || "").toUpperCase() === "PENDIENTE" ? "" : d.asistencia || "", "get") },
+    { idx: colOf(c, ["PUNTUALIDAD"]), get: /* @__PURE__ */ __name((d) => d.puntualidad === "-" ? "" : d.puntualidad || "", "get") },
+    { idx: colOf(c, ["OBSERVACION"]), get: /* @__PURE__ */ __name((d) => d.observacion || "", "get") }
+  ].filter((m) => m.idx >= 0);
+  if (managed.length === 0) return { skipped: "sin columnas" };
+  const dbRows = preRows || ((await db.prepare("SELECT * FROM asistencia").all()).results || []);
+  const byKey = /* @__PURE__ */ new Map();
+  for (const r of dbRows) byKey.set(`${String(r.nrc || "").trim()}|${mapDay(r.dia)}|${String(r.aula || "").trim().toUpperCase()}`, r);
+  const minC = Math.min(...managed.map((m) => m.idx));
+  const maxC = Math.max(...managed.map((m) => m.idx));
+  const matrix = [];
+  let changed = 0;
+  for (let r = hdr.row + 1; r < used.values.length; r++) {
+    const row = used.values[r];
+    const f = used.formulas[r] || [];
+    const d = byKey.get(`${String(row[iNrc] ?? "").trim()}|${mapDay(row[iDia])}|${String(row[iAula] ?? "").trim().toUpperCase()}`);
+    const line = [];
+    for (let k = minC; k <= maxC; k++) {
+      const m = managed.find((x2) => x2.idx === k);
+      const base = f[k] !== void 0 ? f[k] : "";
+      const isF = typeof base === "string" && base.startsWith("=");
+      if (d && m && !isF) {
+        const nv = m.get(d);
+        if (String(nv) !== String(base)) changed++;
+        line.push(nv);
+      } else line.push(base);
+    }
+    matrix.push(line);
+  }
+  if (matrix.length === 0) return { updated: 0 };
+  const startAbs = used.rowIndex + hdr.row + 2;
+  const address = `${colLetter(used.columnIndex + minC)}${startAbs}:${colLetter(used.columnIndex + maxC)}${startAbs + matrix.length - 1}`;
+  const res = await patchFormulas(token, itemId, "CONTROL ASISTENCIA", address, matrix);
+  return { updated: changed, status: res.status };
+}
+__name(pushAsistencia, "pushAsistencia");
+async function debugInspect(db) {
+  await ensureTables(db);
+  const acc = await getAccess(db);
+  if (!acc) return { error: "sin token" };
+  const { token, row } = acc;
+  const out = { itemId: row.item_id, file: row.file_name };
+  try {
+    const searchRes = await gfetch(token, `${G}/me/drive/root/search(q='RESERVA')`);
+    out.foundReservasFiles = searchRes.ok ? (searchRes.json.value || []).map((f) => ({ id: f.id, name: f.name, lastModifiedDateTime: f.lastModifiedDateTime })) : searchRes.json;
+    const searchXlsx = await gfetch(token, `${G}/me/drive/root/search(q='.xlsx')`);
+    out.allExcelFiles = searchXlsx.ok ? (searchXlsx.json.value || []).map((f) => ({ id: f.id, name: f.name, lastModifiedDateTime: f.lastModifiedDateTime })) : searchXlsx.json;
+    const resItemId = "01VNV6AXCOCHOMFZMOSFBKCRQ6CQPHKWUG";
+    const resWs = await gfetch(token, `${G}/me/drive/items/${resItemId}/workbook/worksheets?$select=name,visibility`);
+    out.reservasWorkbook = {
+      worksheets: resWs.ok ? resWs.json.value : resWs.json,
+      sheetsData: {}
+    };
+    if (resWs.ok && Array.isArray(resWs.json.value)) {
+      const u = await loadUsed(token, resItemId, "05 ENE - 11 ENE");
+      if (u) {
+        out.reservasWorkbook.sheetsData["05 ENE - 11 ENE"] = {
+          rowIndex: u.rowIndex,
+          columnIndex: u.columnIndex,
+          rowCount: u.values.length,
+          headerAndRows: u.values.slice(8, 22)
+        };
+      }
+    }
+  } catch (e) {
+    out.searchError = e.message;
+  }
+  const ws = await gfetch(token, `${G}/me/drive/items/${row.item_id}/workbook/worksheets?$select=name,visibility`);
+  out.worksheets = ws.ok ? ws.json.value : ws.json;
+  out.sheets = {};
+  for (const name of ["CONTROL ASISTENCIA", "ATENCIONES 2026-2", "HOJA DE ASISTENCIA 2026-2", "RESERVAS"]) {
+    const used = await loadUsed(token, row.item_id, name);
+    if (!used) {
+      out.sheets[name] = "NO ENCONTRADA";
+      continue;
+    }
+    out.sheets[name] = {
+      rowIndex: used.rowIndex,
+      columnIndex: used.columnIndex,
+      rows: used.values.length,
+      first: used.values.slice(0, 7).map((r) => r.slice(0, 14))
+    };
+  }
+  return out;
+}
+__name(debugInspect, "debugInspect");
+async function withLock(db, name, fn) {
+  const lockKey = `lock:${name}`;
+  const cur = Number(await getState(db, lockKey) || 0);
+  if (Date.now() - cur < 2e4) return { busy: true };
+  await setState(db, lockKey, Date.now());
+  try {
+    return await fn();
+  } finally {
+    await setState(db, lockKey, 0);
+  }
+}
+__name(withLock, "withLock");
+async function pullIfExcelChanged(db) {
+  await ensureTables(db);
+  const acc = await getAccess(db);
+  if (!acc) return { success: false, connected: false };
+  const { token, row } = acc;
+  const controlId = row.item_id;
+  if (!controlId) return { success: false, connected: false };
+  const modControl = await itemMod(token, controlId);
+  const lastControl = await getState(db, "excel_mod_control") || await getState(db, "excel_mod");
+  if (!lastControl && modControl) await setState(db, "excel_mod_control", modControl);
+  const controlChanged = Boolean(modControl && lastControl && modControl !== lastControl);
+  if (!controlChanged) {
+    return { success: true, pulled: false };
+  }
+  return withLock(db, "sync", async () => {
+    let totalChanges = 0;
+    try {
+      const changes = await pullFromExcel(db, token, controlId);
+      totalChanges += changes;
+      await setState(db, "excel_mod_control", modControl);
+      await setState(db, "excel_mod", modControl);
+    } catch (err2) {
+      console.error("Error pulling Control Docente:", err2);
+    }
+    if (totalChanges > 0) {
+      await markDbWrite(db);
+    }
+    return {
+      success: true,
+      pulled: true,
+      changes: totalChanges,
+      controlChanged
+    };
+  });
+}
+__name(pullIfExcelChanged, "pullIfExcelChanged");
+async function pushToExcel(db) {
+  await ensureTables(db);
+  const acc = await getAccess(db);
+  if (!acc) return { success: false, connected: false, message: "OneDrive a\xFAn no vinculado" };
+  const { token, row } = acc;
+  const doPush = /* @__PURE__ */ __name(async () => {
+    const targets = await findTargets(token, row);
+    if (targets.length === 0) return { success: false, message: "No se encontr\xF3 archivo CONTROL DOCENTE en OneDrive" };
+    const primary = targets.find((t) => t.id === row.item_id) || targets.find((t) => /COPIA|TAY/i.test(t.name)) || targets[0];
+    if (primary.id !== row.item_id) {
+      await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
+    }
+    let pulled = 0;
+    const modControl = await itemMod(token, primary.id);
+    const lastModControl = await getState(db, "excel_mod_control") || await getState(db, "excel_mod");
+    if (modControl && lastModControl && modControl !== lastModControl) {
+      try {
+        pulled += await pullFromExcel(db, token, primary.id);
+      } catch (e) {
+        console.error("Error importando desde Control Docente:", e);
+      }
+    }
+    if (pulled > 0) await markDbWrite(db);
+    const [asRes, ticketsRes, manualesRes, reservasRes] = await Promise.all([
+      db.prepare(
+        "SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia"
+      ).all(),
+      db.prepare(SPECS.tickets.select).all(),
+      db.prepare(SPECS.manuales.select).all(),
+      db.prepare(SPECS.reservas.select).all()
+    ]);
+    const asRows = asRes.results || [];
+    const preRows = {
+      tickets: ticketsRes.results || [],
+      manuales: manualesRes.results || [],
+      reservas: reservasRes.results || []
+    };
+    const nrcMap = /* @__PURE__ */ new Map();
+    const courseMap = /* @__PURE__ */ new Map();
+    for (const a of asRows) {
+      const k = String(a.nrc || "").trim();
+      const unpadded = k ? k.replace(/^0+/, "") : "";
+      const padded = k ? k.padStart(5, "0") : "";
+      const cursoUpper = String(a.curso || "").trim().toUpperCase();
+      const obj = { docente: a.docente || "", curso: a.curso || "", carrera: a.carrera || "" };
+      if (k && (!nrcMap.has(k) || !nrcMap.get(k).carrera && obj.carrera)) nrcMap.set(k, obj);
+      if (unpadded && (!nrcMap.has(unpadded) || !nrcMap.get(unpadded).carrera && obj.carrera)) nrcMap.set(unpadded, obj);
+      if (padded && (!nrcMap.has(padded) || !nrcMap.get(padded).carrera && obj.carrera)) nrcMap.set(padded, obj);
+      if (cursoUpper && (!courseMap.has(cursoUpper) || !courseMap.get(cursoUpper).carrera && obj.carrera)) {
+        courseMap.set(cursoUpper, obj);
+      }
+    }
+    const ctx = { nrcMap, courseMap };
+    const report = [];
+    for (const t of targets) {
+      const isPrimary = t.id === primary.id;
+      const r = {
+        file: t.name,
+        asistencia: await pushAsistencia(db, token, t.id, asRows),
+        tickets: await pushRecords(db, token, t.id, "tickets", ctx, isPrimary, preRows.tickets),
+        manuales: await pushRecords(db, token, t.id, "manuales", ctx, isPrimary, preRows.manuales),
+        reservas: await pushRecords(db, token, t.id, "reservas", ctx, isPrimary, preRows.reservas)
+      };
+      report.push(r);
+    }
+    const modControlAfter = await itemMod(token, primary.id);
+    if (modControlAfter) {
+      await setState(db, "excel_mod", modControlAfter);
+      await setState(db, "excel_mod_control", modControlAfter);
+    }
+    await setState(db, "last_push", String(Date.now()));
+    await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
+    return {
+      success: true,
+      connected: true,
+      pulled,
+      filesUpdated: report,
+      message: "Archivo maestro CONTROL DOCENTE - TAY.xlsx sincronizado"
+    };
+  }, "doPush");
+  const result = await withLock(db, "sync", async () => {
+    let out;
+    for (let n = 0; n < 2; n++) {
+      await setState(db, "dirty", "0");
+      out = await doPush();
+      if (await getState(db, "dirty") !== "1") break;
+    }
+    return out;
+  });
+  if (result && result.busy) {
+    await setState(db, "dirty", "1");
+    return { success: true, queued: true };
+  }
+  return result;
+}
+__name(pushToExcel, "pushToExcel");
+async function pullReservationsFromExcel(db) {
+  return await pullIfExcelChanged(db);
+}
+__name(pullReservationsFromExcel, "pullReservationsFromExcel");
+async function appendReservationToExcel(db, reservation) {
+  const acc = await getAccess(db);
+  if (!acc) return { success: false, message: "OneDrive no vinculado" };
+  const { token, row } = acc;
+  const primary = await findPrimaryTarget(token, row);
+  if (!primary || !primary.id) return { success: false, message: "No se encontr\xF3 archivo CONTROL DOCENTE en OneDrive" };
+  const sheetName = "RESERVAS";
+  const used = await loadUsed(token, primary.id, sheetName);
+  if (!used || !Array.isArray(used.values)) {
+    return { success: false, message: `No se pudo leer la hoja "${sheetName}"` };
+  }
+  let headerRowIdx = 3;
+  for (let r = 0; r < Math.min(used.values.length, 10); r++) {
+    const rowCells = (used.values[r] || []).map(norm);
+    if (rowCells.includes("FECHA") && rowCells.includes("AULA")) {
+      headerRowIdx = r;
+      break;
+    }
+  }
+  const startRow = headerRowIdx + 1;
+  let targetRowIdx = -1;
+  const aulaUpper = String(reservation.aula || "").toUpperCase().trim();
+  const inicioNorm = canon("time", reservation.inicio);
+  const fechaIso = reservation.fecha ? String(reservation.fecha).slice(0, 10) : "";
+  for (let r = startRow; r < used.values.length; r++) {
+    const rCells = used.values[r] || [];
+    const colOffset = used.columnIndex === 0 ? 1 : 0;
+    const rFecha = canon("date", rCells[colOffset + 0]);
+    const rAula = String(rCells[colOffset + 5] ?? "").toUpperCase().trim();
+    const rInicio = canon("time", rCells[colOffset + 3]);
+    if (rFecha && rAula && rFecha === fechaIso && rAula === aulaUpper && rInicio === inicioNorm) {
+      targetRowIdx = r;
+      break;
+    }
+  }
+  if (targetRowIdx < 0) {
+    for (let r = startRow; r < used.values.length; r++) {
+      const rCells = used.values[r] || [];
+      const colOffset = used.columnIndex === 0 ? 1 : 0;
+      const isEmpty = !rCells[colOffset + 0] && !rCells[colOffset + 5] && !rCells[colOffset + 7];
+      if (isEmpty) {
+        targetRowIdx = r;
+        break;
+      }
+    }
+  }
+  if (targetRowIdx < 0) {
+    targetRowIdx = used.values.length;
+  }
+  const excelRowNum = (used.rowIndex || 0) + targetRowIdx + 1;
+  const serialFecha = isoToSerial(reservation.fecha);
+  const fracInicio = hhmmToFrac(reservation.inicio);
+  const fracFinal = hhmmToFrac(reservation.final);
+  const mesVal = String(reservation.mes || "").toUpperCase().trim();
+  const diaVal = String(reservation.dia || "").toUpperCase().trim();
+  const ubicacionVal = reservation.ubicacion || "";
+  const docenteVal = String(reservation.docente || "").toUpperCase().trim();
+  const detalleVal = String(reservation.detalle || reservation.motivo || "").toUpperCase().trim();
+  const usuarioVal = String(reservation.usuario || "TAYRON SALINAS").toUpperCase().trim();
+  const prioridadVal = String(reservation.prioridad || "NORMAL").toUpperCase().trim();
+  const rowValues = [
+    typeof serialFecha === "number" ? serialFecha : toExcelDate(reservation.fecha),
+    mesVal,
+    diaVal,
+    typeof fracInicio === "number" ? fracInicio : reservation.inicio,
+    typeof fracFinal === "number" ? fracFinal : reservation.final,
+    aulaUpper,
+    ubicacionVal,
+    docenteVal,
+    detalleVal,
+    usuarioVal,
+    prioridadVal
+  ];
+  const rowFormats = [
+    "dd/mm/yyyy",
+    "@",
+    "@",
+    "hh:mm",
+    "hh:mm",
+    "@",
+    "@",
+    "@",
+    "@",
+    "@",
+    "@"
+  ];
+  const address = `B${excelRowNum}:L${excelRowNum}`;
+  const patchRes = await patchRange(token, primary.id, sheetName, address, [rowValues], [rowFormats]);
+  if (reservation.id) {
+    await db.prepare("UPDATE reservas SET hoja = 'RESERVAS' WHERE id = ?").bind(reservation.id).run();
+  }
+  return {
+    success: patchRes.ok,
+    sheet: sheetName,
+    row: excelRowNum,
+    address,
+    status: patchRes.status
+  };
+}
+__name(appendReservationToExcel, "appendReservationToExcel");
+async function deleteReservationFromExcel(db, reservation) {
+  if (!reservation || !reservation.fecha) return { success: false };
+  const acc = await getAccess(db);
+  if (!acc) return { success: false };
+  const { token, row } = acc;
+  const primary = await findPrimaryTarget(token, row);
+  if (!primary || !primary.id) return { success: false };
+  const sheetName = "RESERVAS";
+  const used = await loadUsed(token, primary.id, sheetName);
+  if (!used || !Array.isArray(used.values)) return { success: false };
+  const colOffset = used.columnIndex === 0 ? 1 : 0;
+  const aulaUpper = String(reservation.aula || "").toUpperCase().trim();
+  const inicioNorm = canon("time", reservation.inicio);
+  const fechaIso = String(reservation.fecha).slice(0, 10);
+  for (let r = 3; r < used.values.length; r++) {
+    const rCells = used.values[r] || [];
+    const rFecha = canon("date", rCells[colOffset + 0]);
+    const rAula = String(rCells[colOffset + 5] ?? "").toUpperCase().trim();
+    const rInicio = canon("time", rCells[colOffset + 3]);
+    if (rFecha === fechaIso && rAula === aulaUpper && rInicio === inicioNorm) {
+      const excelRowNum = (used.rowIndex || 0) + r + 1;
+      const clearValues = new Array(11).fill("");
+      return await patchRange(token, primary.id, sheetName, `B${excelRowNum}:L${excelRowNum}`, [clearValues]);
+    }
+  }
+  return { success: false, message: "Fila no encontrada en hoja RESERVAS" };
+}
+__name(deleteReservationFromExcel, "deleteReservationFromExcel");
+
+// api/[[catchall]].js
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=UTF-8",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      // Datos siempre frescos: los pollers dependen de ver los cambios al instante
+      "Cache-Control": "no-store"
+    }
+  });
+}
+__name(json, "json");
+function normalizeDay(day) {
+  if (!day) return "";
+  return day.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+__name(normalizeDay, "normalizeDay");
+function mapTicket(t) {
+  return {
+    id: t.id,
+    periodo: t.periodo,
+    fecha: t.fecha,
+    dia: t.dia,
+    horaReporte: t.hora_reporte,
+    rango: t.rango,
+    ambiente: t.ambiente,
+    piso: t.piso,
+    pabellon: t.pabellon,
+    tipoSolicitud: t.tipo_solicitud,
+    estado: t.estado,
+    usuario: t.usuario || (String(t.descripcion_solucion || "").toUpperCase().includes("ALUMNO") ? "ALUMNO" : "DOCENTE"),
+    descripcionSolucion: t.descripcion_solucion,
+    responsable: t.responsable,
+    firmaEntrega: t.firma_entrega || null,
+    firmaRecepcion: t.firma_recepcion || null,
+    firmaDevolucion: t.firma_devolucion || null,
+    entregadoPor: t.entregado_por || null,
+    recibidoPor: t.recibido_por || null,
+    fechaFirma: t.fecha_firma || null,
+    fechaDevolucion: t.fecha_devolucion || null
+  };
+}
+__name(mapTicket, "mapTicket");
+function ensureTicketColumns(db) {
+  return Promise.resolve();
+}
+__name(ensureTicketColumns, "ensureTicketColumns");
+async function onRequest(context) {
+  const { request, env } = context;
+  const response = await handleApiRequest(context);
+  try {
+    const p = new URL(request.url).pathname;
+    const m = request.method;
+    if (response.ok && (m === "POST" || m === "PUT" || m === "DELETE") && p.startsWith("/api/") && !p.startsWith("/api/onedrive/")) {
+      context.waitUntil(
+        (async () => {
+          try {
+            const db = env.DB;
+            await ensureTables(db);
+            const nowMs = String(Date.now());
+            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
+            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
+            await pushToExcel(db);
+          } catch (err2) {
+            console.error("Auto sync to OneDrive error:", err2);
+          }
+        })()
+      );
+    }
+  } catch (_) {
+  }
+  return response;
+}
+__name(onRequest, "onRequest");
+async function handleApiRequest(context) {
+  const { request, env } = context;
+  const db = env.DB;
+  try {
+    await ensureTables(db);
+  } catch (_) {
+  }
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    });
+  }
+  const url = new URL(request.url);
+  const path = url.pathname.replace(/\/+$/, "");
+  const method = request.method;
+  try {
+    if (path === "/api/attendance" && method === "GET") {
+      const dia = url.searchParams.get("dia");
+      const pabellon = url.searchParams.get("pabellon");
+      const piso = url.searchParams.get("piso");
+      const hora = url.searchParams.get("hora");
+      const horaDesde = url.searchParams.get("hora_desde");
+      const search = url.searchParams.get("search");
+      const nrc = url.searchParams.get("nrc");
+      let query = "SELECT * FROM asistencia WHERE 1=1";
+      const params = [];
+      if (dia) {
+        query += " AND dia = ?";
+        params.push(normalizeDay(dia));
+      }
+      if (pabellon) {
+        query += " AND (UPPER(piso_pabellon) LIKE ? OR UPPER(aula) LIKE ?)";
+        params.push(`%- ${pabellon.toUpperCase()}%`, `${pabellon.toUpperCase()}%`);
+      }
+      if (piso) {
+        const pisoItems = piso.split(",").map((p) => p.trim()).filter(Boolean);
+        if (pisoItems.length === 1) {
+          const pUpper = pisoItems[0].toUpperCase();
+          if (pUpper.includes("SOT")) {
+            query += " AND (UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%S\xD3TANO%')";
+          } else {
+            query += " AND UPPER(piso_pabellon) LIKE ?";
+            params.push(`%${pUpper}%`);
+          }
+        } else if (pisoItems.length > 1) {
+          const orClauses = [];
+          for (const item of pisoItems) {
+            const pUpper = item.toUpperCase();
+            if (pUpper.includes("SOT")) {
+              orClauses.push("(UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%S\xD3TANO%')");
+            } else {
+              orClauses.push("UPPER(piso_pabellon) LIKE ?");
+              params.push(`%${pUpper}%`);
+            }
+          }
+          if (orClauses.length > 0) {
+            query += ` AND (${orClauses.join(" OR ")})`;
+          }
+        }
+      }
+      if (hora) {
+        query += " AND hora_inicio_prog = ?";
+        params.push(hora);
+      } else if (horaDesde) {
+        query += " AND hora_inicio_prog >= ?";
+        params.push(horaDesde);
+      }
+      if (nrc) {
+        query += " AND (nrc = ? OR CAST(nrc AS TEXT) = ? OR CAST(nrc AS TEXT) LIKE ?)";
+        params.push(nrc, nrc, `%${nrc}%`);
+      }
+      if (search) {
+        query += " AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR LOWER(carrera) LIKE ? OR CAST(nrc AS TEXT) LIKE ?)";
+        const s = `%${search.toLowerCase()}%`;
+        params.push(s, s, s, s, s);
+      }
+      query += " ORDER BY hora_inicio_prog ASC, aula ASC";
+      const stmt = db.prepare(query);
+      const { results } = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
+      const mapped = results.map((r) => ({
+        id: r.id,
+        pisoPabellon: r.piso_pabellon,
+        sede: r.sede,
+        periodo: r.periodo,
+        dia: r.dia,
+        horaInicioProg: r.hora_inicio_prog,
+        horaFinalProg: r.hora_final_prog,
+        aula: r.aula,
+        nrc: r.nrc,
+        listaCruzada: r.lista_cruzada,
+        codigoDocente: r.codigo_docente,
+        docente: r.docente,
+        curso: r.curso,
+        carrera: r.carrera,
+        horaInicioReal: r.hora_inicio_real,
+        horaFinalReal: r.hora_final_real,
+        asistencia: r.asistencia,
+        puntualidad: r.puntualidad,
+        observacion: r.observacion,
+        real: r.real_horas,
+        ciclo: r.ciclo
+      }));
+      return json({ success: true, count: mapped.length, data: mapped });
+    }
+    const attendanceMatch = path.match(/^\/api\/attendance\/([^/]+)$/);
+    if (attendanceMatch && method === "PUT") {
+      const id = attendanceMatch[1];
+      const body = await request.json();
+      const fields = [];
+      const values = [];
+      if ("asistencia" in body) {
+        fields.push("asistencia = ?");
+        values.push(body.asistencia);
+      }
+      if ("puntualidad" in body) {
+        fields.push("puntualidad = ?");
+        values.push(body.puntualidad);
+      }
+      if ("horaInicioReal" in body) {
+        fields.push("hora_inicio_real = ?");
+        values.push(body.horaInicioReal);
+      }
+      if ("horaFinalReal" in body) {
+        fields.push("hora_final_real = ?");
+        values.push(body.horaFinalReal);
+      }
+      if ("observacion" in body) {
+        fields.push("observacion = ?");
+        values.push(body.observacion);
+      }
+      if ("docente" in body) {
+        fields.push("docente = ?");
+        values.push(body.docente);
+      }
+      if (fields.length > 0) {
+        fields.push("updated_at = datetime('now')");
+        values.push(id);
+        const updateSql = `UPDATE asistencia SET ${fields.join(", ")} WHERE id = ?`;
+        await db.prepare(updateSql).bind(...values).run();
+      }
+      const updated = await db.prepare("SELECT * FROM asistencia WHERE id = ?").bind(id).first();
+      return json({ success: true, data: updated });
+    }
+    if (path.startsWith("/api/tickets")) {
+      await ensureTicketColumns(db);
+    }
+    if (path === "/api/tickets" && method === "GET") {
+      const estado = url.searchParams.get("estado");
+      if (url.searchParams.get("count") === "1") {
+        let csql = "SELECT COUNT(*) AS c FROM tickets WHERE 1=1";
+        const cparams = [];
+        if (estado) {
+          csql += " AND estado = ?";
+          cparams.push(estado);
+        }
+        const cr = cparams.length > 0 ? await db.prepare(csql).bind(...cparams).all() : await db.prepare(csql).all();
+        return json({ success: true, count: cr.results && cr.results[0] ? Number(cr.results[0].c) : 0 });
+      }
+      let sql = "SELECT * FROM tickets WHERE 1=1";
+      const params = [];
+      if (estado) {
+        sql += " AND estado = ?";
+        params.push(estado);
+      }
+      sql += " ORDER BY created_at DESC";
+      const stmt = db.prepare(sql);
+      const { results } = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
+      const mapped = results.map(mapTicket);
+      return json({ success: true, count: mapped.length, data: mapped });
+    }
+    const ticketMatch = path.match(/^\/api\/tickets\/([^/]+)$/);
+    if (ticketMatch && method === "GET") {
+      const t = await db.prepare("SELECT * FROM tickets WHERE id = ?").bind(ticketMatch[1]).first();
+      if (!t) return json({ success: false, error: "Ticket no encontrado" }, 404);
+      return json({ success: true, data: mapTicket(t) });
+    }
+    if (path === "/api/tickets" && method === "POST") {
+      const body = await request.json();
+      const id = `ticket_new_${Date.now()}`;
+      const now = /* @__PURE__ */ new Date();
+      const fecha = now.toISOString().split("T")[0];
+      const days = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
+      const dia = days[now.getDay()];
+      const horaReporte = now.toTimeString().slice(0, 5);
+      const inferredUsuario = body.usuario ? String(body.usuario).toUpperCase().trim() : String(body.descripcionSolucion || "").toUpperCase().includes("ALUMNO") ? "ALUMNO" : "DOCENTE";
+      const ins = {
+        id,
+        periodo: "226434",
+        fecha,
+        dia,
+        hora_reporte: horaReporte,
+        rango: body.rango || "",
+        ambiente: body.ambiente || "",
+        piso: body.piso || "",
+        pabellon: body.pabellon || "",
+        tipo_solicitud: body.tipoSolicitud || "PLUMONES / MATERIALES",
+        estado: body.estado || "EN PROCESO",
+        usuario: inferredUsuario,
+        descripcion_solucion: body.descripcionSolucion || "",
+        responsable: body.responsable || "OPERACIONES SEDE",
+        firma_entrega: body.firmaEntrega || null,
+        firma_recepcion: body.firmaRecepcion || null,
+        entregado_por: body.entregadoPor || null,
+        recibido_por: body.recibidoPor || null,
+        fecha_firma: body.fechaFirma || (body.firmaEntrega || body.firmaRecepcion ? now.toISOString() : null)
+      };
+      await db.prepare(`
+        INSERT INTO tickets (
+          id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon, 
+          tipo_solicitud, estado, usuario, descripcion_solucion, responsable,
+          firma_entrega, firma_recepcion, entregado_por, recibido_por, fecha_firma,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `).bind(
+        ins.id,
+        ins.periodo,
+        ins.fecha,
+        ins.dia,
+        ins.hora_reporte,
+        ins.rango,
+        ins.ambiente,
+        ins.piso,
+        ins.pabellon,
+        ins.tipo_solicitud,
+        ins.estado,
+        ins.usuario,
+        ins.descripcion_solucion,
+        ins.responsable,
+        ins.firma_entrega,
+        ins.firma_recepcion,
+        ins.entregado_por,
+        ins.recibido_por,
+        ins.fecha_firma
+      ).run();
+      const created = {
+        id: ins.id,
+        periodo: ins.periodo,
+        fecha: ins.fecha,
+        dia: ins.dia,
+        horaReporte: ins.hora_reporte,
+        rango: ins.rango,
+        ambiente: ins.ambiente,
+        piso: ins.piso,
+        pabellon: ins.pabellon,
+        tipoSolicitud: ins.tipo_solicitud,
+        estado: ins.estado,
+        usuario: ins.usuario,
+        descripcionSolucion: ins.descripcion_solucion,
+        responsable: ins.responsable,
+        firmaEntrega: ins.firma_entrega,
+        firmaRecepcion: ins.firma_recepcion,
+        entregadoPor: ins.entregado_por,
+        recibidoPor: ins.recibido_por,
+        fechaFirma: ins.fecha_firma
+      };
+      return json({ success: true, data: created });
+    }
+    if (ticketMatch && method === "PUT") {
+      const id = ticketMatch[1];
+      const body = await request.json();
+      const fields = [];
+      const values = [];
+      if ("estado" in body) {
+        fields.push("estado = ?");
+        values.push(body.estado);
+      }
+      if ("descripcionSolucion" in body) {
+        fields.push("descripcion_solucion = ?");
+        values.push(body.descripcionSolucion);
+      }
+      if ("responsable" in body) {
+        fields.push("responsable = ?");
+        values.push(body.responsable);
+      }
+      if ("firmaEntrega" in body) {
+        fields.push("firma_entrega = ?");
+        values.push(body.firmaEntrega);
+      }
+      if ("firmaRecepcion" in body) {
+        fields.push("firma_recepcion = ?");
+        values.push(body.firmaRecepcion);
+      }
+      if ("firmaDevolucion" in body) {
+        fields.push("firma_devolucion = ?");
+        values.push(body.firmaDevolucion);
+      }
+      if ("entregadoPor" in body) {
+        fields.push("entregado_por = ?");
+        values.push(body.entregadoPor);
+      }
+      if ("recibidoPor" in body) {
+        fields.push("recibido_por = ?");
+        values.push(body.recibidoPor);
+      }
+      if ("fechaFirma" in body) {
+        fields.push("fecha_firma = ?");
+        values.push(body.fechaFirma);
+      }
+      if ("fechaDevolucion" in body) {
+        fields.push("fecha_devolucion = ?");
+        values.push(body.fechaDevolucion);
+      }
+      if (fields.length > 0) {
+        fields.push("updated_at = datetime('now')");
+        values.push(id);
+        await db.prepare(`UPDATE tickets SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+      }
+      const updated = await db.prepare("SELECT * FROM tickets WHERE id = ?").bind(id).first();
+      return json({
+        success: true,
+        data: updated ? {
+          id: updated.id,
+          periodo: updated.periodo,
+          fecha: updated.fecha,
+          dia: updated.dia,
+          horaReporte: updated.hora_reporte,
+          rango: updated.rango,
+          ambiente: updated.ambiente,
+          piso: updated.piso,
+          pabellon: updated.pabellon,
+          tipoSolicitud: updated.tipo_solicitud,
+          estado: updated.estado,
+          descripcionSolucion: updated.descripcion_solucion,
+          responsable: updated.responsable,
+          firmaEntrega: updated.firma_entrega || null,
+          firmaRecepcion: updated.firma_recepcion || null,
+          firmaDevolucion: updated.firma_devolucion || null,
+          entregadoPor: updated.entregado_por || null,
+          recibidoPor: updated.recibido_por || null,
+          fechaFirma: updated.fecha_firma || null,
+          fechaDevolucion: updated.fecha_devolucion || null
+        } : null
+      });
+    }
+    if (ticketMatch && method === "DELETE") {
+      const id = ticketMatch[1];
+      await db.prepare("DELETE FROM tickets WHERE id = ?").bind(id).run();
+      return json({ success: true, message: "Ticket eliminado" });
+    }
+    if (path === "/api/rooms" && method === "GET") {
+      const { results } = await db.prepare(`
+        SELECT * FROM ambientes 
+        ORDER BY pabellon ASC, 
+                 CASE 
+                   WHEN piso LIKE '%S\xD3T%' OR piso LIKE '%SOT%' THEN 0
+                   WHEN piso LIKE '%1%' OR piso LIKE '%PRIMER%' THEN 1
+                   WHEN piso LIKE '%2%' OR piso LIKE '%SEGUNDO%' THEN 2
+                   WHEN piso LIKE '%3%' OR piso LIKE '%TERCER%' THEN 3
+                   WHEN piso LIKE '%4%' OR piso LIKE '%CUARTO%' THEN 4
+                   WHEN piso LIKE '%5%' OR piso LIKE '%QUINTO%' THEN 5
+                   ELSE 6
+                 END ASC, 
+                 abrv ASC
+      `).all();
+      return json({ success: true, count: results.length, data: results });
+    }
+    if (path === "/api/assistants" && method === "GET") {
+      const officialList = [
+        "ANTHONY PALOMINO",
+        "TAYRON SALINAS",
+        "ALESSANDRO PASCUAL",
+        "FRANCISCO VILLAFAN",
+        "JOSE MIRANDA",
+        "JAEL GALLARDO"
+      ];
+      return json({ success: true, count: officialList.length, data: officialList });
+    }
+    if (path === "/api/manual-sheets" && method === "GET") {
+      try {
+        await db.prepare(`
+          DELETE FROM hojas_manuales 
+          WHERE (nrc IS NULL OR TRIM(nrc) = '') 
+            AND (fecha IS NULL OR TRIM(fecha) = '') 
+            AND (docente IS NULL OR TRIM(docente) = '' OR docente LIKE '%#N/D%' OR docente LIKE '%#N/A%')
+        `).run();
+      } catch (_) {
+      }
+      const { results } = await db.prepare(`
+        SELECT * FROM hojas_manuales 
+        WHERE (docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%' AND docente NOT LIKE '%#N/A%') 
+           OR (nrc IS NOT NULL AND TRIM(nrc) != '') 
+           OR (fecha IS NOT NULL AND TRIM(fecha) != '')
+        ORDER BY fecha DESC, id DESC
+      `).all();
+      return json({ success: true, count: results.length, data: results });
+    }
+    if (path === "/api/manual-sheets" && method === "POST") {
+      const body = await request.json();
+      try {
+        await db.prepare(`
+          DELETE FROM hojas_manuales 
+          WHERE (nrc IS NULL OR TRIM(nrc) = '') 
+            AND (fecha IS NULL OR TRIM(fecha) = '') 
+            AND (docente IS NULL OR TRIM(docente) = '' OR docente LIKE '%#N/D%' OR docente LIKE '%#N/A%')
+        `).run();
+      } catch (_) {
+      }
+      let codigo = (body.codigo || "").trim().toUpperCase().replace(/^LNI-/i, "LN1-");
+      if (codigo) {
+        const m = codigo.match(/^(?:LN\d*-)?(\d+)$/i);
+        if (m) {
+          codigo = `LN1-${m[1].padStart(3, "0")}`;
+        }
+        const existing = await db.prepare(`
+          SELECT id, codigo FROM hojas_manuales 
+          WHERE UPPER(TRIM(REPLACE(codigo, 'LNI-', 'LN1-'))) = ?
+            AND ((docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%' AND docente NOT LIKE '%#N/A%') 
+                 OR (nrc IS NOT NULL AND TRIM(nrc) != '') 
+                 OR (fecha IS NOT NULL AND TRIM(fecha) != ''))
+        `).bind(codigo).first();
+        if (existing) {
+          return json({
+            success: false,
+            error: `El c\xF3digo "${codigo}" ya est\xE1 registrado y no puede repetirse.`
+          }, 409);
+        }
+      } else {
+        const { results: codes } = await db.prepare(`
+          SELECT codigo FROM hojas_manuales 
+          WHERE (docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%' AND docente NOT LIKE '%#N/A%') 
+             OR (nrc IS NOT NULL AND TRIM(nrc) != '') 
+             OR (fecha IS NOT NULL AND TRIM(fecha) != '')
+        `).all();
+        const maxNum = (codes || []).reduce((max2, r) => {
+          const m = String(r.codigo || "").match(/LN\d*-(\d+)/i);
+          const n = m ? parseInt(m[1], 10) : 0;
+          return n > max2 ? n : max2;
+        }, 0);
+        codigo = `LN1-${String(maxNum + 1).padStart(3, "0")}`;
+      }
+      const id = `manual_new_${Date.now()}`;
+      const fecha = body.fecha || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      let motivo = String(body.motivo || "DOCENTE SIN ACCESOS").trim();
+      let suplente = String(body.docenteReemplazo || body.docente_reemplazo || "").trim().toUpperCase();
+      if (!suplente) {
+        const m = motivo.match(/REEMPLAZO\s*\(([^)]+)\)/i);
+        if (m) suplente = m[1].trim().toUpperCase();
+      }
+      motivo = motivo.replace(/\s*\([^)]*\)\s*$/, "").trim();
+      let carrera = String(body.carrera || "").trim();
+      let curso = String(body.curso || "").trim();
+      let docente = String(body.docente || "").trim();
+      if ((!carrera || !curso || !docente) && (body.nrc || curso)) {
+        const cleanNrc = String(body.nrc || "").trim();
+        const paddedNrc = cleanNrc ? cleanNrc.padStart(5, "0") : "";
+        const unpaddedNrc = cleanNrc ? cleanNrc.replace(/^0+/, "") : "";
+        const match2 = await db.prepare(`
+          SELECT carrera, curso, docente FROM asistencia 
+          WHERE (
+            (? != '' AND (nrc = ? OR nrc = ? OR nrc = ? OR nrc LIKE ?))
+            OR (? != '' AND UPPER(TRIM(curso)) = UPPER(TRIM(?)))
+          ) AND carrera IS NOT NULL AND TRIM(carrera) != ''
+          LIMIT 1
+        `).bind(
+          cleanNrc,
+          cleanNrc,
+          paddedNrc,
+          unpaddedNrc,
+          `%${cleanNrc}%`,
+          curso,
+          curso
+        ).first();
+        if (match2) {
+          if (!carrera && match2.carrera) carrera = String(match2.carrera).trim();
+          if (!curso && match2.curso) curso = String(match2.curso).trim();
+          if (!docente && match2.docente) docente = String(match2.docente).trim();
+        }
+      }
+      await db.prepare(`
+        INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, detalle, aula, hora_inicio, hora_fin, firma_docente, docente_reemplazo, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `).bind(
+        id,
+        body.periodo || "2026-2",
+        codigo,
+        fecha,
+        body.nrc ? String(body.nrc) : "",
+        docente,
+        curso,
+        carrera,
+        motivo,
+        body.asistente || "OPERACIONES",
+        body.detalle || "",
+        body.aula || "",
+        body.hora_inicio || "",
+        body.hora_fin || "",
+        body.firma_docente || "",
+        suplente
+      ).run();
+      const created = await db.prepare("SELECT * FROM hojas_manuales WHERE id = ?").bind(id).first();
+      return json({ success: true, data: created });
+    }
+    if (path === "/api/reservations/sheets" && method === "GET") {
+      return json({
+        success: true,
+        count: 1,
+        data: [{ id: "RESERVAS", name: "RESERVAS", cleanName: "RESERVAS", isCurrent: true }]
+      });
+    }
+    if (path === "/api/reservations/pull" && method === "POST") {
+      try {
+        const pullRes = await pullReservationsFromExcel(db);
+        return json(pullRes);
+      } catch (err2) {
+        console.error("Error importando reservas de Excel:", err2);
+        return json({ success: false, error: err2.message }, 500);
+      }
+    }
+    if (path === "/api/reservations" && method === "GET") {
+      const sheet = url.searchParams.get("sheet") || url.searchParams.get("hoja");
+      const mes = url.searchParams.get("mes");
+      const fecha = url.searchParams.get("fecha");
+      const dia = url.searchParams.get("dia");
+      let query = "SELECT * FROM reservas WHERE 1=1";
+      const params = [];
+      if (sheet && sheet.toUpperCase() !== "RESERVAS") {
+        query += " AND (TRIM(hoja) = TRIM(?) OR hoja LIKE ?)";
+        params.push(sheet, `%${sheet.trim()}%`);
+      }
+      if (mes) {
+        query += " AND UPPER(mes) = ?";
+        params.push(mes.toUpperCase().trim());
+      }
+      if (fecha) {
+        query += " AND fecha = ?";
+        params.push(fecha);
+      }
+      if (dia) {
+        query += " AND UPPER(dia) = ?";
+        params.push(dia.toUpperCase());
+      }
+      query += " ORDER BY fecha DESC, inicio ASC";
+      const { results } = await db.prepare(query).bind(...params).all();
+      return json({ success: true, count: results.length, data: results });
+    }
+    if (path === "/api/reservations" && method === "POST") {
+      const body = await request.json();
+      const id = `res_${Date.now()}`;
+      const months = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SETIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+      const days = ["DOMINGO", "LUNES", "MARTES", "MI\xC9RCOLES", "JUEVES", "VIERNES", "S\xC1BADO"];
+      const fechaStr = body.fecha || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const dt = /* @__PURE__ */ new Date(fechaStr + "T12:00:00");
+      const mes = body.mes || months[dt.getMonth()] || "NOVIEMBRE";
+      const dia = body.dia || days[dt.getDay()] || "LUNES";
+      const inicio = body.inicio || body.hora_inicio || body.horaInicio || "08:00";
+      const final = body.final || body.hora_fin || body.horaFin || "10:00";
+      const aula = (body.aula || "").toUpperCase().trim();
+      const ubicacion = body.ubicacion || "";
+      const docente = (body.docente || "").toUpperCase().trim();
+      const motivo = (body.motivo || body.detalle || body.actividades || "RESERVA DE AULA").toUpperCase().trim();
+      const detalle = motivo;
+      const usuario = (body.usuario || "OPERACIONES").toUpperCase().trim();
+      const prioridad = body.prioridad || "NORMAL";
+      const obs = (body.obs || body.observaciones || "").trim();
+      const hoja = "RESERVAS";
+      await db.prepare(`
+        INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, motivo, usuario, prioridad, obs, hoja, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `).bind(
+        id,
+        fechaStr,
+        mes,
+        dia,
+        inicio,
+        final,
+        aula,
+        ubicacion,
+        docente,
+        detalle,
+        motivo,
+        usuario,
+        prioridad,
+        obs,
+        hoja
+      ).run();
+      const created = await db.prepare("SELECT * FROM reservas WHERE id = ?").bind(id).first();
+      let excelSync = null;
+      try {
+        excelSync = await appendReservationToExcel(db, created);
+      } catch (errSync) {
+        console.error("Error escribiendo en Excel de OneDrive:", errSync);
+      }
+      return json({ success: true, data: created, sheet: hoja, excelSync });
+    }
+    const reservationMatch = path.match(/^\/api\/reservations\/([^/]+)$/);
+    if (reservationMatch && method === "DELETE") {
+      const id = reservationMatch[1];
+      const existing = await db.prepare("SELECT * FROM reservas WHERE id = ?").bind(id).first();
+      await db.prepare("DELETE FROM reservas WHERE id = ?").bind(id).run();
+      if (existing) {
+        try {
+          await deleteReservationFromExcel(db, existing);
+        } catch (errDel) {
+          console.error("Error eliminando fila en Excel:", errDel);
+        }
+      }
+      return json({ success: true, message: "Reserva eliminada" });
+    }
+    if (path === "/api/sync-excel") {
+      return json({
+        success: true,
+        message: "Base de datos Cloudflare D1 activa 24/7 y sincronizada.",
+        data: { message: "Base de datos Cloudflare D1 activa 24/7 y sincronizada." }
+      });
+    }
+    if (path === "/api/import-excel-data" && method === "POST") {
+      const body = await request.json();
+      const {
+        asistencia = [],
+        tickets = [],
+        manualSheets = [],
+        reservas = [],
+        ambientes = [],
+        clearExisting = true
+      } = body;
+      if (clearExisting && asistencia.length > 0) {
+        await db.prepare("DELETE FROM asistencia").run();
+      }
+      if (asistencia.length > 0) {
+        const chunkSize = 50;
+        for (let i2 = 0; i2 < asistencia.length; i2 += chunkSize) {
+          const chunk = asistencia.slice(i2, i2 + chunkSize);
+          const stmts = chunk.map((a, idx) => {
+            const id = a.id || `asist_imp_${Date.now()}_${i2 + idx}`;
+            return db.prepare(`
+              INSERT OR REPLACE INTO asistencia (
+                id, piso_pabellon, sede, periodo, dia, hora_inicio_prog, hora_final_prog,
+                aula, nrc, lista_cruzada, codigo_docente, docente, curso, carrera,
+                hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion,
+                real_horas, ciclo, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `).bind(
+              id,
+              a.pisoPabellon || a.piso_pabellon || "",
+              a.sede || "Comas",
+              a.periodo || "2026-2",
+              normalizeDay(a.dia || ""),
+              a.horaInicioProg || a.hora_inicio_prog || "",
+              a.horaFinalProg || a.hora_final_prog || "",
+              (a.aula || "").trim().toUpperCase(),
+              a.nrc ? String(a.nrc).trim() : "",
+              a.listaCruzada || a.lista_cruzada || "",
+              a.codigoDocente || a.codigo_docente || "",
+              (a.docente || "").trim().toUpperCase(),
+              (a.curso || "").trim().toUpperCase(),
+              a.carrera || "",
+              a.horaInicioReal || a.hora_inicio_real || "",
+              a.horaFinalReal || a.hora_final_real || "",
+              (a.asistencia || "PENDIENTE").trim().toUpperCase(),
+              a.puntualidad || "-",
+              a.observacion || "",
+              a.real !== void 0 && a.real !== null ? Number(a.real) : null,
+              a.ciclo || ""
+            );
+          });
+          await db.batch(stmts);
+        }
+      }
+      if (tickets.length > 0) {
+        try {
+          await db.prepare('ALTER TABLE tickets ADD COLUMN usuario TEXT DEFAULT "DOCENTE"').run();
+        } catch (_) {
+        }
+        const stmts = tickets.map((t, idx) => {
+          const id = t.id || `ticket_imp_${Date.now()}_${idx}`;
+          const usuarioVal = String(t.usuario || "DOCENTE").trim().toUpperCase().includes("ALUMNO") ? "ALUMNO" : "DOCENTE";
+          return db.prepare(`
+            INSERT OR REPLACE INTO tickets (
+              id, periodo, fecha, dia, hora_reporte, rango, ambiente, piso, pabellon,
+              tipo_solicitud, estado, usuario, descripcion_solucion, responsable, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `).bind(
+            id,
+            t.periodo || "2026-2",
+            t.fecha || "",
+            normalizeDay(t.dia || ""),
+            t.horaReporte || t.hora_reporte || "",
+            t.rango || "",
+            (t.ambiente || "").trim().toUpperCase(),
+            t.piso || "",
+            t.pabellon || "",
+            t.tipoSolicitud || t.tipo_solicitud || "",
+            (t.estado || "ATENDIDO").trim().toUpperCase(),
+            usuarioVal,
+            t.descripcionSolucion || t.descripcion_solucion || "",
+            t.responsable || ""
+          );
+        });
+        for (let i2 = 0; i2 < stmts.length; i2 += 50) await db.batch(stmts.slice(i2, i2 + 50));
+      }
+      if (manualSheets.length > 0) {
+        const stmts = manualSheets.filter((m) => m.codigo || m.n_hoja).map((m, idx) => {
+          const codigo = String(m.codigo || m.n_hoja).toUpperCase().replace(/^LNI-/, "LN1-");
+          return db.prepare(`
+              INSERT INTO hojas_manuales (id, periodo, codigo, fecha, nrc, docente, curso, carrera, motivo, asistente, docente_reemplazo, created_at)
+              VALUES (?, '2026-2', ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+              ON CONFLICT(codigo) DO UPDATE SET
+                fecha = excluded.fecha, nrc = excluded.nrc, docente = excluded.docente, curso = excluded.curso,
+                carrera = excluded.carrera, motivo = excluded.motivo, asistente = excluded.asistente,
+                docente_reemplazo = excluded.docente_reemplazo
+            `).bind(
+            m.id || `manual_imp_${Date.now()}_${idx}`,
+            codigo,
+            m.fecha || "",
+            m.nrc ? String(m.nrc) : "",
+            (m.docente || "").trim().toUpperCase(),
+            (m.curso || "").trim().toUpperCase(),
+            m.carrera || "",
+            m.motivo || "",
+            m.asistente || m.observacion || "",
+            (m.docente_reemplazo || m.docenteReemplazo || "").trim().toUpperCase()
+          );
+        });
+        for (let i2 = 0; i2 < stmts.length; i2 += 50) await db.batch(stmts.slice(i2, i2 + 50));
+      }
+      if (reservas.length > 0) {
+        const stmts = reservas.map((r, idx) => db.prepare(`
+          INSERT OR REPLACE INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, usuario, prioridad, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+          r.id || `res_imp_${Date.now()}_${idx}`,
+          r.fecha || "",
+          (r.mes || "").toUpperCase(),
+          normalizeDay(r.dia || ""),
+          r.inicio || "",
+          r.final || "",
+          (r.aula || r.ambiente || "").trim().toUpperCase(),
+          r.ubicacion || r.piso_pabellon || "",
+          (r.docente || r.responsable || "").toUpperCase(),
+          (r.detalle || r.motivo || "").toUpperCase(),
+          (r.usuario || "OPERACIONES").toUpperCase(),
+          (r.prioridad || "NORMAL").toUpperCase()
+        ));
+        for (let i2 = 0; i2 < stmts.length; i2 += 50) await db.batch(stmts.slice(i2, i2 + 50));
+      }
+      if (ambientes.length > 0) {
+        if (clearExisting) {
+          await db.prepare("DELETE FROM ambientes").run();
+        }
+        const chunkSize = 50;
+        for (let i2 = 0; i2 < ambientes.length; i2 += chunkSize) {
+          const chunk = ambientes.slice(i2, i2 + chunkSize);
+          const stmts = chunk.map((amb) => {
+            return db.prepare(`
+              INSERT OR REPLACE INTO ambientes (
+                abrv, nombre, pc, aforo, pabellon, piso, ubicacion, tipo
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+              (amb.abrv || "").trim().toUpperCase(),
+              amb.nombre || "",
+              amb.pc ? Number(amb.pc) : 0,
+              amb.aforo ? Number(amb.aforo) : 30,
+              amb.pabellon || "",
+              amb.piso || "",
+              amb.ubicacion || "",
+              amb.tipo || "AULA"
+            );
+          });
+          await db.batch(stmts);
+        }
+      }
+      return json({
+        success: true,
+        message: `Base de datos sincronizada: ${asistencia.length} clases, ${tickets.length} atenciones, ${manualSheets.length} hojas manuales y ${reservas.length} reservas.`,
+        data: {
+          count: asistencia.length,
+          ticketsCount: tickets.length,
+          manualCount: manualSheets.length,
+          reservasCount: reservas.length
+        }
+      });
+    }
+    if (path === "/api/dashboard" && method === "GET") {
+      const days = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
+      const todayName = days[(/* @__PURE__ */ new Date()).getDay()];
+      const diaParam = url.searchParams.get("dia");
+      const dia = diaParam ? normalizeDay(diaParam) : todayName;
+      const { results: classes } = await db.prepare("SELECT puntualidad, asistencia FROM asistencia WHERE dia = ?").bind(dia).all();
+      const totalClasses = classes.length;
+      let puntual = 0, tarde = 0, falta = 0, reemplazo = 0, pendientes = 0;
+      for (const c of classes) {
+        const p = (c.puntualidad || "").toUpperCase();
+        const a = (c.asistencia || "").toUpperCase();
+        if (p === "PUNTUAL") puntual++;
+        else if (p === "TARDE") tarde++;
+        else if (a === "NO") falta++;
+        else if (a.includes("REEMPLAZO")) reemplazo++;
+        else pendientes++;
+      }
+      const totalAsistieron = puntual + tarde + reemplazo;
+      const pctAsistencia = totalClasses > 0 ? Math.round(totalAsistieron / totalClasses * 100) : 0;
+      const { results: tickets } = await db.prepare("SELECT estado, tipo_solicitud FROM tickets").all();
+      let ticketsPendientes = 0, ticketsEnProceso = 0, ticketsAtendidos = 0;
+      const categoryCounts = {};
+      for (const t of tickets) {
+        const est = (t.estado || "").toUpperCase();
+        if (est === "PENDIENTE") ticketsPendientes++;
+        else if (est === "EN PROCESO") ticketsEnProceso++;
+        else if (est === "ATENDIDO") ticketsAtendidos++;
+        const cat = (t.tipo_solicitud || "Otros").trim() || "Otros";
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      }
+      return json({
+        success: true,
+        data: {
+          dia,
+          totalClasses,
+          puntual,
+          tarde,
+          falta,
+          reemplazo,
+          pendientes,
+          pctAsistencia,
+          ticketsPendientes,
+          ticketsEnProceso,
+          ticketsAtendidos,
+          categoryCounts
+        }
+      });
+    }
+    if (path === "/api/all-data" && method === "GET") {
+      const waitParam = Number(url.searchParams.get("wait") || 0);
+      if (waitParam > 0 && waitParam <= 5e3) {
+        await new Promise((resolve) => setTimeout(resolve, waitParam));
+      }
+      const [asistRes, ticketRes, manualRes, resRes] = await Promise.all([
+        db.prepare("SELECT * FROM asistencia ORDER BY hora_inicio_prog ASC, aula ASC").all(),
+        db.prepare("SELECT * FROM tickets ORDER BY created_at DESC").all(),
+        db.prepare(`
+          SELECT * FROM hojas_manuales 
+          WHERE (docente IS NOT NULL AND docente != '') 
+             OR (nrc IS NOT NULL AND nrc != '') 
+             OR (curso IS NOT NULL AND curso != '')
+          ORDER BY fecha DESC, id DESC
+        `).all(),
+        db.prepare("SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC").all()
+      ]);
+      const asistencia = (asistRes.results || []).map((r) => ({
+        id: r.id,
+        pisoPabellon: r.piso_pabellon,
+        sede: r.sede,
+        periodo: r.periodo,
+        dia: r.dia,
+        horaInicioProg: r.hora_inicio_prog,
+        horaFinalProg: r.hora_final_prog,
+        aula: r.aula,
+        nrc: r.nrc,
+        listaCruzada: r.lista_cruzada,
+        codigoDocente: r.codigo_docente,
+        docente: r.docente,
+        curso: r.curso,
+        carrera: r.carrera,
+        horaInicioReal: r.hora_inicio_real,
+        horaFinalReal: r.hora_final_real,
+        asistencia: r.asistencia,
+        puntualidad: r.puntualidad,
+        observacion: r.observacion,
+        real: r.real_horas,
+        ciclo: r.ciclo
+      }));
+      const tickets = (ticketRes.results || []).map((t) => ({
+        id: t.id,
+        periodo: t.periodo,
+        fecha: t.fecha,
+        dia: t.dia,
+        horaReporte: t.hora_reporte,
+        rango: t.rango,
+        ambiente: t.ambiente,
+        piso: t.piso,
+        pabellon: t.pabellon,
+        tipoSolicitud: t.tipo_solicitud,
+        estado: t.estado,
+        usuario: t.usuario || (String(t.descripcion_solucion || "").toUpperCase().includes("ALUMNO") ? "ALUMNO" : "DOCENTE"),
+        descripcionSolucion: t.descripcion_solucion,
+        responsable: t.responsable
+      }));
+      return json({
+        success: true,
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        data: {
+          asistencia,
+          tickets,
+          manualSheets: manualRes.results || [],
+          reservas: resRes.results || []
+        }
+      });
+    }
+    if (path === "/api/export-excel" && method === "GET") {
+      const tplUrl = new URL("/CONTROL_DOCENTE.xlsx", request.url);
+      const tplRes = env.ASSETS ? await env.ASSETS.fetch(tplUrl) : await fetch(tplUrl);
+      if (!tplRes.ok) {
+        return json({ error: "No se pudo cargar la plantilla maestra CONTROL_DOCENTE.xlsx" }, 500);
+      }
+      const [tplBuffer, asistRes, ticketRes, manualRes, resRes] = await Promise.all([
+        tplRes.arrayBuffer(),
+        db.prepare("SELECT * FROM asistencia ORDER BY hora_inicio_prog ASC, aula ASC").all(),
+        db.prepare("SELECT * FROM tickets ORDER BY created_at DESC").all(),
+        db.prepare(`
+          SELECT * FROM hojas_manuales 
+          WHERE (docente IS NOT NULL AND docente != '') 
+             OR (nrc IS NOT NULL AND nrc != '') 
+             OR (curso IS NOT NULL AND curso != '')
+          ORDER BY fecha DESC, id DESC
+        `).all(),
+        db.prepare("SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC").all()
+      ]);
+      const asistencia = (asistRes.results || []).map((r) => ({
+        id: r.id,
+        pisoPabellon: r.piso_pabellon,
+        sede: r.sede,
+        periodo: r.periodo,
+        dia: r.dia,
+        horaInicioProg: r.hora_inicio_prog,
+        horaFinalProg: r.hora_final_prog,
+        aula: r.aula,
+        nrc: r.nrc,
+        listaCruzada: r.lista_cruzada,
+        codigoDocente: r.codigo_docente,
+        docente: r.docente,
+        curso: r.curso,
+        carrera: r.carrera,
+        horaInicioReal: r.hora_inicio_real,
+        horaFinalReal: r.hora_final_real,
+        asistencia: r.asistencia,
+        puntualidad: r.puntualidad,
+        observacion: r.observacion,
+        real: r.real_horas,
+        ciclo: r.ciclo
+      }));
+      const tickets = (ticketRes.results || []).map((t) => ({
+        id: t.id,
+        periodo: t.periodo,
+        fecha: t.fecha,
+        dia: t.dia,
+        horaReporte: t.hora_reporte,
+        rango: t.rango,
+        ambiente: t.ambiente,
+        piso: t.piso,
+        pabellon: t.pabellon,
+        tipoSolicitud: t.tipo_solicitud,
+        estado: t.estado,
+        usuario: t.usuario || (String(t.descripcion_solucion || "").toUpperCase().includes("ALUMNO") ? "ALUMNO" : "DOCENTE"),
+        descripcionSolucion: t.descripcion_solucion,
+        responsable: t.responsable
+      }));
+      const outputUint8 = buildMasterExcelFromTemplate(new Uint8Array(tplBuffer), {
+        asistencia,
+        tickets,
+        manualSheets: manualRes.results || [],
+        reservas: resRes.results || []
+      });
+      return new Response(outputUint8, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": 'attachment; filename="CONTROL DOCENTE.xlsx"',
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+    const TENANT_ID2 = "ae544a57-aecb-4bf9-828a-5b520732b110";
+    const CLIENT_ID2 = "d3590ed6-52b3-4102-aeff-aad2292ab01c";
+    if (path.startsWith("/api/onedrive/")) {
+      await db.prepare(`
+        CREATE TABLE IF NOT EXISTS onedrive_auth (
+          id TEXT PRIMARY KEY,
+          refresh_token TEXT,
+          access_token TEXT,
+          expires_at INTEGER,
+          item_id TEXT,
+          file_name TEXT,
+          last_web_hash TEXT,
+          last_excel_hash TEXT,
+          updated_at TEXT
+        )
+      `).run();
+    }
+    if (path === "/api/onedrive/status" && method === "GET") {
+      const row = await db.prepare("SELECT item_id, file_name, updated_at, refresh_token FROM onedrive_auth WHERE id = ?").bind("primary").first();
+      return json({
+        success: true,
+        connected: Boolean(row && row.refresh_token),
+        fileName: row?.file_name || "CONTROL DOCENTE - Copia.xlsx",
+        itemId: row?.item_id || null,
+        updatedAt: row?.updated_at || null
+      });
+    }
+    if (path === "/api/onedrive/device-code" && method === "POST") {
+      const dcRes = await fetch(`https://login.microsoftonline.com/${TENANT_ID2}/oauth2/v2.0/devicecode`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: CLIENT_ID2,
+          scope: "https://graph.microsoft.com/.default offline_access"
+        })
+      });
+      const dcJson = await dcRes.json();
+      return json({ success: true, data: dcJson });
+    }
+    if (path === "/api/onedrive/poll-token" && method === "POST") {
+      const { device_code } = await request.json();
+      const tkRes = await fetch(`https://login.microsoftonline.com/${TENANT_ID2}/oauth2/v2.0/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+          client_id: CLIENT_ID2,
+          device_code
+        })
+      });
+      const tkJson = await tkRes.json();
+      if (!tkRes.ok || !tkJson.access_token) {
+        return json({
+          success: false,
+          pending: tkJson.error === "authorization_pending",
+          error: tkJson.error_description || tkJson.error || "Esperando autorizaci\xF3n"
+        });
+      }
+      let itemId = null;
+      let fileName = "CONTROL DOCENTE - Copia.xlsx";
+      try {
+        const searchRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='CONTROL DOCENTE')", {
+          headers: { Authorization: `Bearer ${tkJson.access_token}` }
+        });
+        if (searchRes.ok) {
+          const sJson = await searchRes.json();
+          const match2 = (sJson.value || []).find((f) => String(f.name || "").toUpperCase().includes("COPIA")) || (sJson.value || [])[0];
+          if (match2) {
+            itemId = match2.id;
+            fileName = match2.name;
+          }
+        }
+      } catch (_) {
+      }
+      const expiresAt = Date.now() + Number(tkJson.expires_in || 3600) * 1e3;
+      await db.prepare(`
+        INSERT OR REPLACE INTO onedrive_auth (
+          id, refresh_token, access_token, expires_at, item_id, file_name, updated_at
+        ) VALUES ('primary', ?, ?, ?, ?, ?, datetime('now'))
+      `).bind(tkJson.refresh_token || "", tkJson.access_token, expiresAt, itemId || "", fileName).run();
+      return json({
+        success: true,
+        connected: true,
+        fileName,
+        itemId
+      });
+    }
+    if (path === "/api/onedrive/sync" && method === "POST") {
+      const result = await pushToExcel(db);
+      return json(result);
+    }
+    if (path === "/api/web-sign" && method === "GET") {
+      await ensureTables(db);
+      const waitParam = Number(url.searchParams.get("wait") || 0);
+      let r = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_write_ts'").first();
+      if (waitParam > 0 && waitParam <= 5e3) {
+        await new Promise((resolve) => setTimeout(resolve, waitParam));
+        r = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_write_ts'").first();
+      }
+      return json({ success: true, ts: r ? Number(r.v) : 0 });
+    }
+    if (path === "/api/onedrive/debug" && method === "GET") {
+      return json(await debugInspect(db));
+    }
+    if (path === "/api/onedrive/pull" && method === "POST") {
+      const result = await pullIfExcelChanged(db);
+      return json(result);
+    }
+    return json({ error: "Ruta no encontrada", path }, 404);
+  } catch (err2) {
+    return json({ error: err2.message, stack: err2.stack }, 500);
+  }
+}
+__name(handleApiRequest, "handleApiRequest");
+
+// ../.wrangler/tmp/pages-4j40Rm/functionsRoutes-0.016404744436231966.mjs
+var routes = [
+  {
+    routePath: "/api/:catchall*",
+    mountPath: "/api",
+    method: "",
+    middlewares: [],
+    modules: [onRequest]
+  }
+];
+
+// C:/Users/Tayron/AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/path-to-regexp/dist.es2015/index.js
+function lexer(str) {
+  var tokens = [];
+  var i2 = 0;
+  while (i2 < str.length) {
+    var char = str[i2];
+    if (char === "*" || char === "+" || char === "?") {
+      tokens.push({ type: "MODIFIER", index: i2, value: str[i2++] });
+      continue;
+    }
+    if (char === "\\") {
+      tokens.push({ type: "ESCAPED_CHAR", index: i2++, value: str[i2++] });
+      continue;
+    }
+    if (char === "{") {
+      tokens.push({ type: "OPEN", index: i2, value: str[i2++] });
+      continue;
+    }
+    if (char === "}") {
+      tokens.push({ type: "CLOSE", index: i2, value: str[i2++] });
+      continue;
+    }
+    if (char === ":") {
+      var name = "";
+      var j = i2 + 1;
+      while (j < str.length) {
+        var code = str.charCodeAt(j);
+        if (
+          // `0-9`
+          code >= 48 && code <= 57 || // `A-Z`
+          code >= 65 && code <= 90 || // `a-z`
+          code >= 97 && code <= 122 || // `_`
+          code === 95
+        ) {
+          name += str[j++];
+          continue;
+        }
+        break;
+      }
+      if (!name)
+        throw new TypeError("Missing parameter name at ".concat(i2));
+      tokens.push({ type: "NAME", index: i2, value: name });
+      i2 = j;
+      continue;
+    }
+    if (char === "(") {
+      var count = 1;
+      var pattern = "";
+      var j = i2 + 1;
+      if (str[j] === "?") {
+        throw new TypeError('Pattern cannot start with "?" at '.concat(j));
+      }
+      while (j < str.length) {
+        if (str[j] === "\\") {
+          pattern += str[j++] + str[j++];
+          continue;
+        }
+        if (str[j] === ")") {
+          count--;
+          if (count === 0) {
+            j++;
+            break;
+          }
+        } else if (str[j] === "(") {
+          count++;
+          if (str[j + 1] !== "?") {
+            throw new TypeError("Capturing groups are not allowed at ".concat(j));
+          }
+        }
+        pattern += str[j++];
+      }
+      if (count)
+        throw new TypeError("Unbalanced pattern at ".concat(i2));
+      if (!pattern)
+        throw new TypeError("Missing pattern at ".concat(i2));
+      tokens.push({ type: "PATTERN", index: i2, value: pattern });
+      i2 = j;
+      continue;
+    }
+    tokens.push({ type: "CHAR", index: i2, value: str[i2++] });
+  }
+  tokens.push({ type: "END", index: i2, value: "" });
+  return tokens;
+}
+__name(lexer, "lexer");
+function parse(str, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var tokens = lexer(str);
+  var _a2 = options.prefixes, prefixes = _a2 === void 0 ? "./" : _a2, _b2 = options.delimiter, delimiter = _b2 === void 0 ? "/#?" : _b2;
+  var result = [];
+  var key = 0;
+  var i2 = 0;
+  var path = "";
+  var tryConsume = /* @__PURE__ */ __name(function(type) {
+    if (i2 < tokens.length && tokens[i2].type === type)
+      return tokens[i2++].value;
+  }, "tryConsume");
+  var mustConsume = /* @__PURE__ */ __name(function(type) {
+    var value2 = tryConsume(type);
+    if (value2 !== void 0)
+      return value2;
+    var _a3 = tokens[i2], nextType = _a3.type, index = _a3.index;
+    throw new TypeError("Unexpected ".concat(nextType, " at ").concat(index, ", expected ").concat(type));
+  }, "mustConsume");
+  var consumeText = /* @__PURE__ */ __name(function() {
+    var result2 = "";
+    var value2;
+    while (value2 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
+      result2 += value2;
+    }
+    return result2;
+  }, "consumeText");
+  var isSafe = /* @__PURE__ */ __name(function(value2) {
+    for (var _i = 0, delimiter_1 = delimiter; _i < delimiter_1.length; _i++) {
+      var char2 = delimiter_1[_i];
+      if (value2.indexOf(char2) > -1)
+        return true;
+    }
+    return false;
+  }, "isSafe");
+  var safePattern = /* @__PURE__ */ __name(function(prefix2) {
+    var prev = result[result.length - 1];
+    var prevText = prefix2 || (prev && typeof prev === "string" ? prev : "");
+    if (prev && !prevText) {
+      throw new TypeError('Must have text between two parameters, missing text after "'.concat(prev.name, '"'));
+    }
+    if (!prevText || isSafe(prevText))
+      return "[^".concat(escapeString(delimiter), "]+?");
+    return "(?:(?!".concat(escapeString(prevText), ")[^").concat(escapeString(delimiter), "])+?");
+  }, "safePattern");
+  while (i2 < tokens.length) {
+    var char = tryConsume("CHAR");
+    var name = tryConsume("NAME");
+    var pattern = tryConsume("PATTERN");
+    if (name || pattern) {
+      var prefix = char || "";
+      if (prefixes.indexOf(prefix) === -1) {
+        path += prefix;
+        prefix = "";
+      }
+      if (path) {
+        result.push(path);
+        path = "";
+      }
+      result.push({
+        name: name || key++,
+        prefix,
+        suffix: "",
+        pattern: pattern || safePattern(prefix),
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+    var value = char || tryConsume("ESCAPED_CHAR");
+    if (value) {
+      path += value;
+      continue;
+    }
+    if (path) {
+      result.push(path);
+      path = "";
+    }
+    var open = tryConsume("OPEN");
+    if (open) {
+      var prefix = consumeText();
+      var name_1 = tryConsume("NAME") || "";
+      var pattern_1 = tryConsume("PATTERN") || "";
+      var suffix = consumeText();
+      mustConsume("CLOSE");
+      result.push({
+        name: name_1 || (pattern_1 ? key++ : ""),
+        pattern: name_1 && !pattern_1 ? safePattern(prefix) : pattern_1,
+        prefix,
+        suffix,
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+    mustConsume("END");
+  }
+  return result;
+}
+__name(parse, "parse");
+function match(str, options) {
+  var keys = [];
+  var re = pathToRegexp(str, keys, options);
+  return regexpToFunction(re, keys, options);
+}
+__name(match, "match");
+function regexpToFunction(re, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var _a2 = options.decode, decode = _a2 === void 0 ? function(x2) {
+    return x2;
+  } : _a2;
+  return function(pathname) {
+    var m = re.exec(pathname);
+    if (!m)
+      return false;
+    var path = m[0], index = m.index;
+    var params = /* @__PURE__ */ Object.create(null);
+    var _loop_1 = /* @__PURE__ */ __name(function(i3) {
+      if (m[i3] === void 0)
+        return "continue";
+      var key = keys[i3 - 1];
+      if (key.modifier === "*" || key.modifier === "+") {
+        params[key.name] = m[i3].split(key.prefix + key.suffix).map(function(value) {
+          return decode(value, key);
+        });
+      } else {
+        params[key.name] = decode(m[i3], key);
+      }
+    }, "_loop_1");
+    for (var i2 = 1; i2 < m.length; i2++) {
+      _loop_1(i2);
+    }
+    return { path, index, params };
+  };
+}
+__name(regexpToFunction, "regexpToFunction");
+function escapeString(str) {
+  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+}
+__name(escapeString, "escapeString");
+function flags(options) {
+  return options && options.sensitive ? "" : "i";
+}
+__name(flags, "flags");
+function regexpToRegexp(path, keys) {
+  if (!keys)
+    return path;
+  var groupsRegex = /\((?:\?<(.*?)>)?(?!\?)/g;
+  var index = 0;
+  var execResult = groupsRegex.exec(path.source);
+  while (execResult) {
+    keys.push({
+      // Use parenthesized substring match if available, index otherwise
+      name: execResult[1] || index++,
+      prefix: "",
+      suffix: "",
+      modifier: "",
+      pattern: ""
+    });
+    execResult = groupsRegex.exec(path.source);
+  }
+  return path;
+}
+__name(regexpToRegexp, "regexpToRegexp");
+function arrayToRegexp(paths, keys, options) {
+  var parts = paths.map(function(path) {
+    return pathToRegexp(path, keys, options).source;
+  });
+  return new RegExp("(?:".concat(parts.join("|"), ")"), flags(options));
+}
+__name(arrayToRegexp, "arrayToRegexp");
+function stringToRegexp(path, keys, options) {
+  return tokensToRegexp(parse(path, options), keys, options);
+}
+__name(stringToRegexp, "stringToRegexp");
+function tokensToRegexp(tokens, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var _a2 = options.strict, strict = _a2 === void 0 ? false : _a2, _b2 = options.start, start = _b2 === void 0 ? true : _b2, _c = options.end, end = _c === void 0 ? true : _c, _d = options.encode, encode = _d === void 0 ? function(x2) {
+    return x2;
+  } : _d, _e = options.delimiter, delimiter = _e === void 0 ? "/#?" : _e, _f = options.endsWith, endsWith = _f === void 0 ? "" : _f;
+  var endsWithRe = "[".concat(escapeString(endsWith), "]|$");
+  var delimiterRe = "[".concat(escapeString(delimiter), "]");
+  var route = start ? "^" : "";
+  for (var _i = 0, tokens_1 = tokens; _i < tokens_1.length; _i++) {
+    var token = tokens_1[_i];
+    if (typeof token === "string") {
+      route += escapeString(encode(token));
+    } else {
+      var prefix = escapeString(encode(token.prefix));
+      var suffix = escapeString(encode(token.suffix));
+      if (token.pattern) {
+        if (keys)
+          keys.push(token);
+        if (prefix || suffix) {
+          if (token.modifier === "+" || token.modifier === "*") {
+            var mod = token.modifier === "*" ? "?" : "";
+            route += "(?:".concat(prefix, "((?:").concat(token.pattern, ")(?:").concat(suffix).concat(prefix, "(?:").concat(token.pattern, "))*)").concat(suffix, ")").concat(mod);
+          } else {
+            route += "(?:".concat(prefix, "(").concat(token.pattern, ")").concat(suffix, ")").concat(token.modifier);
+          }
+        } else {
+          if (token.modifier === "+" || token.modifier === "*") {
+            throw new TypeError('Can not repeat "'.concat(token.name, '" without a prefix and suffix'));
+          }
+          route += "(".concat(token.pattern, ")").concat(token.modifier);
+        }
+      } else {
+        route += "(?:".concat(prefix).concat(suffix, ")").concat(token.modifier);
+      }
+    }
+  }
+  if (end) {
+    if (!strict)
+      route += "".concat(delimiterRe, "?");
+    route += !options.endsWith ? "$" : "(?=".concat(endsWithRe, ")");
+  } else {
+    var endToken = tokens[tokens.length - 1];
+    var isEndDelimited = typeof endToken === "string" ? delimiterRe.indexOf(endToken[endToken.length - 1]) > -1 : endToken === void 0;
+    if (!strict) {
+      route += "(?:".concat(delimiterRe, "(?=").concat(endsWithRe, "))?");
+    }
+    if (!isEndDelimited) {
+      route += "(?=".concat(delimiterRe, "|").concat(endsWithRe, ")");
+    }
+  }
+  return new RegExp(route, flags(options));
+}
+__name(tokensToRegexp, "tokensToRegexp");
+function pathToRegexp(path, keys, options) {
+  if (path instanceof RegExp)
+    return regexpToRegexp(path, keys);
+  if (Array.isArray(path))
+    return arrayToRegexp(path, keys, options);
+  return stringToRegexp(path, keys, options);
+}
+__name(pathToRegexp, "pathToRegexp");
+
+// C:/Users/Tayron/AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
+var escapeRegex = /[.+?^${}()|[\]\\]/g;
+function getOriginalPathPrefix(requestPath, normalizedPrefix) {
+  let end = 0;
+  for (let index = 0; index < normalizedPrefix.length; index++) {
+    end++;
+    if (normalizedPrefix[index] === "/") {
+      while (requestPath[end] === "/") {
+        end++;
+      }
+    }
+  }
+  return requestPath.slice(0, end);
+}
+__name(getOriginalPathPrefix, "getOriginalPathPrefix");
+function* executeRequest(request) {
+  const requestPath = new URL(request.url).pathname;
+  const normalizedRequestPath = requestPath.replace(/\/+/g, "/");
+  for (const route of [...routes].reverse()) {
+    if (route.method && route.method !== request.method) {
+      continue;
+    }
+    const routeMatcher = match(route.routePath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const mountMatcher = match(route.mountPath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const matchResult = routeMatcher(requestPath) || routeMatcher(normalizedRequestPath);
+    const originalMountMatch = mountMatcher(requestPath);
+    const mountMatchResult = originalMountMatch || mountMatcher(normalizedRequestPath);
+    if (matchResult && mountMatchResult) {
+      const path = originalMountMatch ? originalMountMatch.path : getOriginalPathPrefix(requestPath, mountMatchResult.path);
+      for (const handler of route.middlewares.flat()) {
+        yield {
+          handler,
+          params: matchResult.params,
+          path
+        };
+      }
+    }
+  }
+  for (const route of routes) {
+    if (route.method && route.method !== request.method) {
+      continue;
+    }
+    const routeMatcher = match(route.routePath.replace(escapeRegex, "\\$&"), {
+      end: true
+    });
+    const mountMatcher = match(route.mountPath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const matchResult = routeMatcher(requestPath);
+    const mountMatchResult = mountMatcher(requestPath);
+    if (matchResult && mountMatchResult && route.modules.length) {
+      for (const handler of route.modules.flat()) {
+        yield {
+          handler,
+          params: matchResult.params,
+          path: matchResult.path
+        };
+      }
+      break;
+    }
+  }
+}
+__name(executeRequest, "executeRequest");
+var pages_template_worker_default = {
+  async fetch(originalRequest, env, workerContext) {
+    let request = originalRequest;
+    const handlerIterator = executeRequest(request);
+    let data = {};
+    let isFailOpen = false;
+    const next = /* @__PURE__ */ __name(async (input, init) => {
+      if (input !== void 0) {
+        let url = input;
+        if (typeof input === "string") {
+          url = new URL(input, request.url).toString();
+        }
+        request = new Request(url, init);
+      }
+      const result = handlerIterator.next();
+      if (result.done === false) {
+        const { handler, params, path } = result.value;
+        const context = {
+          request: new Request(request.clone()),
+          functionPath: path,
+          next,
+          params,
+          get data() {
+            return data;
+          },
+          set data(value) {
+            if (typeof value !== "object" || value === null) {
+              throw new Error("context.data must be an object");
+            }
+            data = value;
+          },
+          env,
+          waitUntil: workerContext.waitUntil.bind(workerContext),
+          passThroughOnException: /* @__PURE__ */ __name(() => {
+            isFailOpen = true;
+          }, "passThroughOnException")
+        };
+        const response = await handler(context);
+        if (!(response instanceof Response)) {
+          throw new Error("Your Pages function should return a Response");
+        }
+        return cloneResponse(response);
+      } else if ("ASSETS") {
+        const response = await env["ASSETS"].fetch(request);
+        return cloneResponse(response);
+      } else {
+        const response = await fetch(request);
+        return cloneResponse(response);
+      }
+    }, "next");
+    try {
+      return await next();
+    } catch (error) {
+      if (isFailOpen) {
+        const response = await env["ASSETS"].fetch(request);
+        return cloneResponse(response);
+      }
+      throw error;
+    }
+  }
+};
+var cloneResponse = /* @__PURE__ */ __name((response) => (
+  // https://fetch.spec.whatwg.org/#null-body-status
+  new Response(
+    [101, 204, 205, 304].includes(response.status) ? null : response.body,
+    response
+  )
+), "cloneResponse");
+export {
+  pages_template_worker_default as default
+};
+
+------formdata-undici-042105260117--
