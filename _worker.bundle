@@ -1,9 +1,9 @@
-------formdata-undici-013946712203
+------formdata-undici-028274043607
 Content-Disposition: form-data; name="metadata"
 
-{"main_module":"functionsWorker-0.3518580191523343.js"}
-------formdata-undici-013946712203
-Content-Disposition: form-data; name="functionsWorker-0.3518580191523343.js"; filename="functionsWorker-0.3518580191523343.js"
+{"main_module":"functionsWorker-0.3535736356872645.js"}
+------formdata-undici-028274043607
+Content-Disposition: form-data; name="functionsWorker-0.3535736356872645.js"; filename="functionsWorker-0.3535736356872645.js"
 Content-Type: application/javascript+module
 
 var __defProp = Object.defineProperty;
@@ -1822,6 +1822,15 @@ async function getAccess(db) {
       "UPDATE onedrive_auth SET access_token = ?, refresh_token = COALESCE(?, refresh_token), expires_at = ? WHERE id = 'primary'"
     ).bind(token, j.refresh_token || null, Date.now() + Number(j.expires_in || 3600) * 1e3).run();
   }
+  try {
+    const targets = await findTargets(token, row);
+    if (targets.length > 0 && targets[0].id && (targets[0].id !== row.item_id || !row.item_id)) {
+      await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(targets[0].id, targets[0].name).run();
+      row.item_id = targets[0].id;
+      row.file_name = targets[0].name;
+    }
+  } catch (_) {
+  }
   return { token, row };
 }
 __name(getAccess, "getAccess");
@@ -1832,14 +1841,27 @@ async function findTargets(token, row) {
     for (const f of r.json?.value || []) {
       const nm = String(f.name || "");
       if (nm.toUpperCase().includes("CONTROL DOCENTE") && nm.toLowerCase().endsWith(".xlsx")) {
-        targets.push({ id: f.id, name: nm });
+        targets.push({ id: f.id, name: nm, lastModifiedDateTime: f.lastModifiedDateTime });
       }
     }
   }
-  if (targets.length === 0 && row.item_id) targets.push({ id: row.item_id, name: row.file_name || "CONTROL DOCENTE.xlsx" });
+  targets.sort((a, b) => {
+    const aTest = a.name.toUpperCase().includes("TEST") ? 1 : 0;
+    const bTest = b.name.toUpperCase().includes("TEST") ? 1 : 0;
+    if (aTest !== bTest) return bTest - aTest;
+    return String(b.lastModifiedDateTime || "").localeCompare(String(a.lastModifiedDateTime || ""));
+  });
+  if (targets.length === 0 && row?.item_id) {
+    targets.push({ id: row.item_id, name: row.file_name || "CONTROL DOCENTE - TEST.xlsx" });
+  }
   return targets;
 }
 __name(findTargets, "findTargets");
+async function findPrimaryTarget(token, row) {
+  const targets = await findTargets(token, row);
+  return targets[0] || (row?.item_id ? { id: row.item_id, name: row.file_name } : null);
+}
+__name(findPrimaryTarget, "findPrimaryTarget");
 async function itemMod(token, itemId) {
   const r = await gfetch(token, `${G}/me/drive/items/${itemId}?$select=lastModifiedDateTime`);
   return r.ok ? r.json?.lastModifiedDateTime || "" : "";
@@ -2458,7 +2480,7 @@ async function pushToExcel(db) {
   const doPush = /* @__PURE__ */ __name(async () => {
     const targets = await findTargets(token, row);
     if (targets.length === 0) return { success: false, message: "No se encontr\xF3 archivo CONTROL DOCENTE en OneDrive" };
-    const primary = targets.find((t) => t.id === row.item_id) || targets.find((t) => /COPIA|TAY/i.test(t.name)) || targets[0];
+    const primary = targets.find((t) => /TEST/i.test(t.name)) || targets.find((t) => t.id === row.item_id) || targets[0];
     if (primary.id !== row.item_id) {
       await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
     }
@@ -3838,7 +3860,7 @@ async function handleApiRequest(context) {
 }
 __name(handleApiRequest, "handleApiRequest");
 
-// ../.wrangler/tmp/pages-QvLkqC/functionsRoutes-0.67700538450333.mjs
+// ../.wrangler/tmp/pages-TxQb3V/functionsRoutes-0.482860451938099.mjs
 var routes = [
   {
     routePath: "/api/:catchall*",
@@ -4314,4 +4336,4 @@ export {
   pages_template_worker_default as default
 };
 
-------formdata-undici-013946712203--
+------formdata-undici-028274043607--

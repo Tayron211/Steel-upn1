@@ -165,22 +165,52 @@ async function getAccess(db) {
       .bind(token, j.refresh_token || null, Date.now() + Number(j.expires_in || 3600) * 1000)
       .run();
   }
+
+  // Auto-resolver y asegurar que apunte a CONTROL DOCENTE - TEST.xlsx
+  try {
+    const targets = await findTargets(token, row);
+    if (targets.length > 0 && targets[0].id && (targets[0].id !== row.item_id || !row.item_id)) {
+      await db
+        .prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'")
+        .bind(targets[0].id, targets[0].name)
+        .run();
+      row.item_id = targets[0].id;
+      row.file_name = targets[0].name;
+    }
+  } catch (_) {}
+
   return { token, row };
 }
 
-async function findTargets(token, row) {
+export async function findTargets(token, row) {
   const targets = [];
   const r = await gfetch(token, `${G}/me/drive/root/search(q='CONTROL DOCENTE')`);
   if (r.ok) {
     for (const f of r.json?.value || []) {
       const nm = String(f.name || '');
       if (nm.toUpperCase().includes('CONTROL DOCENTE') && nm.toLowerCase().endsWith('.xlsx')) {
-        targets.push({ id: f.id, name: nm });
+        targets.push({ id: f.id, name: nm, lastModifiedDateTime: f.lastModifiedDateTime });
       }
     }
   }
-  if (targets.length === 0 && row.item_id) targets.push({ id: row.item_id, name: row.file_name || 'CONTROL DOCENTE.xlsx' });
+
+  // Ordenar priorizando estrictamente "CONTROL DOCENTE - TEST.xlsx"
+  targets.sort((a, b) => {
+    const aTest = a.name.toUpperCase().includes('TEST') ? 1 : 0;
+    const bTest = b.name.toUpperCase().includes('TEST') ? 1 : 0;
+    if (aTest !== bTest) return bTest - aTest;
+    return String(b.lastModifiedDateTime || '').localeCompare(String(a.lastModifiedDateTime || ''));
+  });
+
+  if (targets.length === 0 && row?.item_id) {
+    targets.push({ id: row.item_id, name: row.file_name || 'CONTROL DOCENTE - TEST.xlsx' });
+  }
   return targets;
+}
+
+export async function findPrimaryTarget(token, row) {
+  const targets = await findTargets(token, row);
+  return targets[0] || (row?.item_id ? { id: row.item_id, name: row.file_name } : null);
 }
 
 async function itemMod(token, itemId) {
@@ -864,7 +894,7 @@ export async function pushToExcel(db) {
   const doPush = async () => {
     const targets = await findTargets(token, row);
     if (targets.length === 0) return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
-    const primary = targets.find((t) => t.id === row.item_id) || targets.find((t) => /COPIA|TAY/i.test(t.name)) || targets[0];
+    const primary = targets.find((t) => /TEST/i.test(t.name)) || targets.find((t) => t.id === row.item_id) || targets[0];
     if (primary.id !== row.item_id) {
       await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
     }
