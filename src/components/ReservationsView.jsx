@@ -1203,7 +1203,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba seleccionando otro bloque horario, piso o pabellón.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5">
               {freeRooms.map((room) => {
                 const blockObj = REAL_BLOCKS.find(b => b.start === selectedHoraBlock);
                 return (
@@ -1313,7 +1313,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4">
             {filtered.map(r => {
               const isImportante = r.prioridad === 'IMPORTANTE';
               const rm = roomMap[(r.aula || '').toUpperCase().trim()];

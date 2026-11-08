@@ -363,8 +363,8 @@ export default function App() {
         onToggleDarkMode={toggleDarkMode}
       />
 
-      {/* Main Fluid App Container */}
-      <main className="flex-1 max-w-7xl 2xl:max-w-[1720px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 pb-32 md:pb-24">
+      {/* Main Fluid App Container - Amplio en escritorio para máxima visibilidad */}
+      <main className="flex-1 max-w-[1880px] w-full mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-5 pb-32 md:pb-24">
         {activeTab === 'attendance' && (
           <div key="attendance" className="animate-tab-view">
             <ErrorBoundary>

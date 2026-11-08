@@ -631,7 +631,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   }, [filteredTickets]);
 
   return (
-    <div className="space-y-4 pb-32 md:pb-12 w-full max-w-7xl 2xl:max-w-[1720px] mx-auto">
+    <div className="space-y-4 pb-32 md:pb-12 w-full max-w-[1880px] mx-auto">
       {/* Toast Alert */}
       {toastMessage && (
         <ToastBanner

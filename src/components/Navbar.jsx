@@ -82,7 +82,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
     <>
       {/* Native App Top Bar with Frosted Glass Blur & Official UPN Branding */}
       <header className="sticky top-0 z-40 bg-white/70 dark:bg-black/70 backdrop-blur-2xl backdrop-saturate-180 border-b border-slate-200/70 dark:border-zinc-800/80 safe-top shadow-2xs supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/60 print:hidden">
-        <div className="max-w-7xl 2xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+        <div className="max-w-[1880px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-2">
           {/* Official UPN Identity Brand */}
           <div
             className="flex items-center min-w-0 cursor-pointer active:scale-98 transition-transform"
@@ -149,7 +149,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         </div>
 
         {/* Desktop / Tablet Navigation Strip */}
-        <div className="hidden md:block max-w-7xl 2xl:max-w-[1720px] mx-auto px-6 lg:px-8 pb-2.5 pt-1 border-t border-slate-100 dark:border-zinc-900">
+        <div className="hidden md:block max-w-[1880px] mx-auto px-6 lg:px-8 xl:px-10 pb-2.5 pt-1 border-t border-slate-100 dark:border-zinc-900">
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
             {navItems.map((item) => {
               const Icon = item.icon;
