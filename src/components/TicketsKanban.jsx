@@ -23,7 +23,8 @@ import {
   Plus,
   Copy,
   Table,
-  LayoutGrid
+  LayoutGrid,
+  AlertTriangle
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
@@ -192,7 +193,6 @@ export default function TicketsKanban({
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeViewTab, setActiveViewTab] = useState('ACTIVOS'); // 'ACTIVOS' | 'CONCLUIDOS'
-  const [viewMode, setViewMode] = useState('CARDS'); // 'CARDS' | 'TABLE'
 
   const asistentes = useAssistants();
 
@@ -952,37 +952,6 @@ export default function TicketsKanban({
             </button>
           </div>
 
-          {/* Selector de Modo de Vista: Tarjetas vs Tabla Excel */}
-          <div className="flex items-center p-0.5 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-bold shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode('CARDS')}
-              className={`h-8 px-2.5 rounded-lg transition flex items-center gap-1.5 active:scale-95 ${
-                viewMode === 'CARDS'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-              }`}
-              title="Vista de Tarjetas AMOLED"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Tarjetas</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setViewMode('TABLE')}
-              className={`h-8 px-2.5 rounded-lg transition flex items-center gap-1.5 active:scale-95 ${
-                viewMode === 'TABLE'
-                  ? 'bg-[#FFC000] text-slate-950 font-black shadow-2xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-              }`}
-              title="Vista en Tabla Oficial de Excel (ATENCIONES 2026-2)"
-            >
-              <Table className="w-3.5 h-3.5" />
-              <span>Tabla Excel</span>
-            </button>
-          </div>
-
           {/* Botón Principal: Registrar Préstamo (Abre ventana modal para aprovechar los espacios) */}
           <button
             type="button"
@@ -1025,155 +994,6 @@ export default function TicketsKanban({
           <div className="w-7 h-7 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
           <p className="text-xs text-slate-500 dark:text-zinc-400">Cargando...</p>
         </div>
-      ) : viewMode === 'TABLE' ? (
-        /* VISTA TABLA OFICIAL EXCEL (ATENCIONES 2026-2) SEGÚN MODELO DE FOTO */
-        <div className="bg-white dark:bg-[#0c0c0f] border border-slate-300 dark:border-zinc-800 rounded-3xl p-3 sm:p-5 shadow-sm space-y-3">
-          {/* Header de la Tabla */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#FFC000]/20 flex items-center justify-center shrink-0 border border-[#FFC000]/40">
-                <Table className="w-5 h-5 text-amber-500 stroke-[2.4]" />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase">
-                  Préstamos de Material · Tabla Oficial Excel (ATENCIONES 2026-2)
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-zinc-400">
-                  10 columnas oficiales sin columna piso · {activeViewTab === 'ACTIVOS' ? 'Mostrando Préstamos Activos' : 'Mostrando Historial de Devoluciones'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <span className="font-mono text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700">
-                {(activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans).length} registros
-              </span>
-              <button
-                type="button"
-                onClick={() => handleCopyAllTicketsTable(activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans)}
-                className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FFC000] hover:bg-[#e5ad00] active:scale-95 text-slate-950 shadow-xs transition flex items-center gap-1.5 shrink-0"
-                title="Copiar todas las filas visibles con formato oficial Excel (tabla enriquecida con colores)"
-              >
-                <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
-                <span>Copiar Toda la Tabla</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Contenedor con Scroll Horizontal y Vertical */}
-          <div className="w-full overflow-x-auto max-h-[72vh] overflow-y-auto rounded-2xl border-2 border-slate-900 dark:border-zinc-700 shadow-md">
-            <table className="w-full text-xs text-left border-collapse font-sans min-w-[1250px]">
-              <thead className="sticky top-0 z-20 shadow-xs">
-                <tr className="border-b border-black">
-                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">FECHA</th>
-                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">DIA</th>
-                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA DE REPORTE</th>
-                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">RANGO</th>
-                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">AMBIENTE</th>
-                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">PABELLÓN</th>
-                  <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">TIPO DE SOLICITUD</th>
-                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">ESTADO</th>
-                  <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">DESCRIPCIÓN / SOLUCIÓN</th>
-                  <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">RESPONSABLE</th>
-                  <th className="bg-slate-900 text-white font-black px-3 py-2.5 text-center uppercase tracking-tight text-[11px] whitespace-nowrap sticky right-0 z-30">ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-sans divide-y divide-black/20">
-                {(activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans).length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="py-12 text-center text-slate-500 font-medium">
-                      No hay registros en esta sección.
-                    </td>
-                  </tr>
-                ) : (
-                  (activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans).map(ticket => {
-                    let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
-                    let fecha = rawFecha;
-                    if (rawFecha.includes('-')) {
-                      const parts = rawFecha.split('T')[0].split('-');
-                      if (parts.length === 3 && parts[0].length === 4) {
-                        fecha = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                      }
-                    }
-                    const rawDia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
-                    const dia = String(rawDia).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-                    let hora = ticket.horaReporte || ticket.hora_reporte || '';
-                    if (hora.length > 5 && hora.includes(':')) hora = hora.slice(0, 5);
-                    if (!hora) {
-                      const now = new Date();
-                      hora = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                    }
-
-                    const rango = ticket.rango || computeRango(hora);
-                    const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
-                    const cleanPab = cleanExcelVal(ticket.pabellon);
-                    const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
-                    const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
-                    const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
-                    const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
-                    const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
-                    const isDevuelto = estado === 'ATENDIDO' || estado === 'DEVUELTO' || estado === 'RESUELTO';
-
-                    return (
-                      <tr key={ticket.id} className="hover:bg-amber-50/60 dark:hover:bg-zinc-800/60 transition-colors border-b border-black">
-                        <td className="px-3 py-2 text-center border-r border-black font-medium">{fecha}</td>
-                        <td className="px-3 py-2 text-center border-r border-black font-bold uppercase">{dia}</td>
-                        <td className="px-3 py-2 text-center border-r border-black font-mono font-bold">{hora}</td>
-                        <td className="px-3 py-2 text-center border-r border-black font-mono text-[11px]">{rango}</td>
-                        <td className="px-3 py-2 text-center border-r border-black font-mono font-black text-sm bg-slate-50 dark:bg-zinc-800/80">{ambiente}</td>
-                        <td className="px-3 py-2 text-center border-r border-black font-black">{pabellon}</td>
-                        <td className="px-4 py-2 text-left border-r border-black font-medium max-w-[220px] truncate" title={tipo}>{tipo}</td>
-                        <td className={`px-3 py-2 text-center border-r border-black font-black whitespace-nowrap ${
-                          isDevuelto ? 'bg-[#C6EFCE] text-[#006100]' : 'bg-[#FFEB9C] text-[#9C5700]'
-                        }`}>
-                          {isDevuelto ? 'ATENDIDO' : 'EN PROCESO'}
-                        </td>
-                        <td className="px-4 py-2 text-left border-r border-black max-w-[260px] truncate" title={descripcion}>{descripcion}</td>
-                        <td className="px-4 py-2 text-left border-r border-black font-semibold max-w-[180px] truncate" title={responsable}>{responsable}</td>
-                        <td className="px-2 py-2 text-center sticky right-0 bg-white dark:bg-zinc-900 border-l border-black z-10 whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1">
-                            {isDevuelto ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => copyTicketExcelRow(ticket)}
-                                  className="h-7 px-2.5 rounded-lg text-[10px] font-black bg-amber-100 hover:bg-[#FFC000] text-slate-950 border border-amber-300 transition flex items-center gap-1 active:scale-95 shadow-2xs"
-                                  title="Copiar fila para Excel (solo habilitado en devueltos)"
-                                >
-                                  <Copy className="w-3 h-3 stroke-[2.4]" />
-                                  <span>Copiar</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleQuickDownloadPdf(e, ticket)}
-                                  className="h-7 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-lg text-[10px] font-bold border border-slate-300 dark:border-zinc-700 transition"
-                                  title="Descargar PDF"
-                                >
-                                  PDF
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setInlineReceiveTicketId(ticket.id)}
-                                className="h-7 px-2.5 rounded-lg text-[10px] font-black bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1 active:scale-95 shadow-2xs"
-                                title="Registrar devolución con firma"
-                              >
-                                <CheckCircle2 className="w-3 h-3 stroke-[2.4]" />
-                                <span>Devolución</span>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       ) : activeViewTab === 'ACTIVOS' ? (
         activeLoans.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200 dark:border-zinc-800 px-4">
@@ -1192,9 +1012,32 @@ export default function TicketsKanban({
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between hover:border-amber-400/80 dark:hover:border-zinc-700 transition-all overflow-hidden"
+                  className="bg-white dark:bg-[#0c0c0f] border-2 border-amber-400/70 dark:border-amber-500/40 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between hover:border-amber-500 transition-all overflow-hidden relative"
                 >
                   <div className="space-y-2.5">
+                    {/* Alerta de Estado Pendiente / Firma Faltante */}
+                    {!ticket.firmaRecepcion ? (
+                      <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-[11px] font-black">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5] text-amber-500 shrink-0 animate-pulse" />
+                          <span className="truncate">Pendiente · Falta Firma de Solicitante</span>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black shrink-0">
+                          ALERTA
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 text-[11px] font-bold">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Clock className="w-3.5 h-3.5 stroke-[2.3] text-amber-500 shrink-0" />
+                          <span className="truncate">En Préstamo · Pendiente de Devolución</span>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold shrink-0">
+                          ACTIVO
+                        </span>
+                      </div>
+                    )}
+
                     {/* Header: Aula, Ubicación y Hora */}
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
