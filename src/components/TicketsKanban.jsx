@@ -397,9 +397,9 @@ export default function TicketsKanban({
     setLoanRango(computeRango(newTime));
   };
 
-  // Copia la fila de Excel en formato TSV según modelo (omitida la columna PISO)
+  // Copia la fila de Excel en formato TSV según modelo oficial (Hoja ATENCIONES 2026-2, omitida la columna PISO)
   // FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PABELLÓN | TIPO DE SOLICITUD | ESTADO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
-  const copyTicketExcelRow = (ticket) => {
+  const copyTicketExcelRow = (ticket, withPiso = false) => {
     let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
     let fecha = rawFecha;
     if (rawFecha.includes('-')) {
@@ -409,33 +409,37 @@ export default function TicketsKanban({
       }
     }
 
-    const dia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
-    const hora = ticket.horaReporte || ticket.hora_reporte || '--:--';
+    const rawDia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
+    const dia = String(rawDia).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    let hora = ticket.horaReporte || ticket.hora_reporte || '';
+    if (hora.length > 5 && hora.includes(':')) {
+      hora = hora.slice(0, 5);
+    }
+    if (!hora) {
+      const now = new Date();
+      hora = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
     const rango = ticket.rango || computeRango(hora);
     const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
     const cleanPab = cleanExcelVal(ticket.pabellon);
     const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
+    const cleanP = cleanExcelVal(ticket.piso);
+    const piso = cleanP || deduceFloor(ambiente) || '1ER PISO';
     const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
     const estado = (ticket.estado || 'EN PROCESO').toUpperCase().trim();
-    const descripcion = ticket.descripcionSolucion || '';
+    const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
     const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
 
-    const row = [
-      fecha,
-      dia,
-      hora,
-      rango,
-      ambiente,
-      pabellon,
-      tipo,
-      estado,
-      descripcion,
-      responsable
-    ].join('\t');
+    // 10 Columnas exactas de ATENCIONES 2026-2 (omitida la columna PISO según solicitud):
+    const row = withPiso
+      ? [fecha, dia, hora, rango, ambiente, piso, pabellon, tipo, estado, descripcion, responsable].join('\t')
+      : [fecha, dia, hora, rango, ambiente, pabellon, tipo, estado, descripcion, responsable].join('\t');
 
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(row);
-      setToastMessage('📋 Fila copiada (formato ATENCIONES Excel)');
+      setToastMessage(`📋 Fila copiada (${ambiente} · ${tipo})`);
       setTimeout(() => setToastMessage(''), 2500);
     }
   };
@@ -994,10 +998,11 @@ export default function TicketsKanban({
                       <button
                         type="button"
                         onClick={() => copyTicketExcelRow(ticket)}
-                        className="w-9 h-9 rounded-xl text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95 shrink-0"
+                        className="h-9 px-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-[#FDBA30] dark:bg-zinc-800 dark:hover:bg-[#FDBA30] text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-slate-950 border border-slate-200 dark:border-zinc-700 transition flex items-center gap-1.5 active:scale-95 shadow-2xs shrink-0"
                         title="Copiar fila de Excel (ATENCIONES 2026-2)"
                       >
-                        <Copy className="w-4 h-4 stroke-[2.2]" />
+                        <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <span>Copiar</span>
                       </button>
 
                       <button
@@ -1125,10 +1130,11 @@ export default function TicketsKanban({
                       <button
                         type="button"
                         onClick={() => copyTicketExcelRow(ticket)}
-                        className="w-8 h-8 rounded-lg text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95"
+                        className="h-8 px-2.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-[#FDBA30] dark:bg-zinc-800 dark:hover:bg-[#FDBA30] text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-slate-950 border border-slate-200 dark:border-zinc-700 transition flex items-center gap-1 active:scale-95 shadow-2xs"
                         title="Copiar fila de Excel (ATENCIONES 2026-2)"
                       >
                         <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <span>Copiar</span>
                       </button>
                       <button
                         type="button"
