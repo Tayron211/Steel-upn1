@@ -456,49 +456,17 @@ async function handleApiRequest(context) {
     // 3.5 ASISTENTES Y RESPONSABLES: /api/assistants
     // -------------------------------------------------------------
     if (path === '/api/assistants' && method === 'GET') {
-      const defaultList = [
+      // LISTA OFICIAL Y ÚNICA AUTORIZADA
+      const officialList = [
+        'ANTHONY PALOMINO',
         'TAYRON SALINAS',
-        'JOSÉ CARLOS MIRANDA ROSALES',
-        'FRANCISCO ALONSO VILLAFAN COLONIA',
-        'JAVIER ALEXANDER BENITES ALBAN',
-        'ALESSANDRO PASCUAL ROMERO',
-        'JAEL ZULEMA GALLARDO CARRANZA',
-        'JANETH VIVAR PEREZ',
-        'JHONAYKER MAGUIÑA',
-        'EDUARDO ANTONIO VELASQUEZ CARRION',
-        'JUNIOR MARINO FLORES PUMACAYO',
-        'DAVID SAMUEL HUSAREZ CABRERA'
+        'ALESSANDRO PASCUAL',
+        'FRANCISCO VILLAFAN',
+        'JOSE MIRANDA',
+        'JAEL GALLARDO'
       ];
-      const set = new Set();
-      const results = [];
-      const add = (name) => {
-        const clean = String(name || '').trim().toUpperCase();
-        if (clean && clean.length > 2 && !clean.includes('#N/D') && !clean.includes('#N/A') && !set.has(clean)) {
-          set.add(clean);
-          results.push(clean);
-        }
-      };
 
-      // TAYRON SALINAS siempre primero
-      add('TAYRON SALINAS');
-
-      try {
-        const { results: r1 } = await db.prepare(`
-          SELECT DISTINCT asistente FROM hojas_manuales WHERE asistente IS NOT NULL AND TRIM(asistente) != ''
-        `).all();
-        if (r1) r1.forEach(row => add(row.asistente));
-      } catch (_) {}
-
-      try {
-        const { results: r2 } = await db.prepare(`
-          SELECT DISTINCT responsable FROM tickets WHERE responsable IS NOT NULL AND TRIM(responsable) != ''
-        `).all();
-        if (r2) r2.forEach(row => add(row.responsable));
-      } catch (_) {}
-
-      defaultList.forEach(add);
-
-      return json({ success: true, count: results.length, data: results });
+      return json({ success: true, count: officialList.length, data: officialList });
     }
 
     // -------------------------------------------------------------
@@ -641,26 +609,19 @@ async function handleApiRequest(context) {
     }
 
     // -------------------------------------------------------------
-    // 5. RESERVATIONS: /api/reservations (Vinculado a RESERVAS 2026 - TAY.xlsx)
+    // 5. RESERVATIONS: /api/reservations (CONTROL DOCENTE - TAY.xlsx · Hoja RESERVAS)
     // -------------------------------------------------------------
     if (path === '/api/reservations/sheets' && method === 'GET') {
-      try {
-        const sheets = await getReservasSheetsList(db);
-        return json({ success: true, count: sheets.length, data: sheets });
-      } catch (err) {
-        console.error('Error obteniendo hojas de reservas:', err);
-        return json({ success: false, error: err.message }, 500);
-      }
+      return json({
+        success: true,
+        count: 1,
+        data: [{ id: 'RESERVAS', name: 'RESERVAS', cleanName: 'RESERVAS', isCurrent: true }]
+      });
     }
 
     if (path === '/api/reservations/pull' && method === 'POST') {
       try {
-        let reqSheet = null;
-        try {
-          const body = await request.json();
-          reqSheet = body?.sheet || null;
-        } catch (_) {}
-        const pullRes = await pullReservationsFromExcel(db, reqSheet);
+        const pullRes = await pullReservationsFromExcel(db);
         return json(pullRes);
       } catch (err) {
         console.error('Error importando reservas de Excel:', err);
@@ -670,15 +631,20 @@ async function handleApiRequest(context) {
 
     if (path === '/api/reservations' && method === 'GET') {
       const sheet = url.searchParams.get('sheet') || url.searchParams.get('hoja');
+      const mes = url.searchParams.get('mes');
       const fecha = url.searchParams.get('fecha');
       const dia = url.searchParams.get('dia');
 
       let query = 'SELECT * FROM reservas WHERE 1=1';
       const params = [];
 
-      if (sheet) {
+      if (sheet && sheet.toUpperCase() !== 'RESERVAS') {
         query += ' AND (TRIM(hoja) = TRIM(?) OR hoja LIKE ?)';
         params.push(sheet, `%${sheet.trim()}%`);
+      }
+      if (mes) {
+        query += ' AND UPPER(mes) = ?';
+        params.push(mes.toUpperCase().trim());
       }
       if (fecha) {
         query += ' AND fecha = ?';
@@ -713,8 +679,7 @@ async function handleApiRequest(context) {
       const usuario = (body.usuario || 'OPERACIONES').toUpperCase().trim();
       const prioridad = body.prioridad || 'NORMAL';
       const obs = (body.obs || body.observaciones || '').trim();
-      const targetSheet = getReservasSheetNameForDate(fechaStr) || '';
-      const hoja = (body.hoja || targetSheet || '').trim();
+      const hoja = 'RESERVAS';
 
       await db.prepare(`
         INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, motivo, usuario, prioridad, obs, hoja, created_at)

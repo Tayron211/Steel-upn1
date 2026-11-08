@@ -1,51 +1,44 @@
 import { useState, useEffect } from 'react';
 
-export const DEFAULT_ASSISTANTS = [
+// LISTA OFICIAL Y ÚNICA DE ASISTENTES / RESPONSABLES
+export const OFFICIAL_ASSISTANTS = [
+  'ANTHONY PALOMINO',
   'TAYRON SALINAS',
-  'JOSÉ CARLOS MIRANDA ROSALES',
-  'FRANCISCO ALONSO VILLAFAN COLONIA',
-  'JAVIER ALEXANDER BENITES ALBAN',
-  'ALESSANDRO PASCUAL ROMERO',
-  'JAEL ZULEMA GALLARDO CARRANZA',
-  'JANETH VIVAR PEREZ',
-  'JHONAYKER MAGUIÑA',
-  'EDUARDO ANTONIO VELASQUEZ CARRION',
-  'JUNIOR MARINO FLORES PUMACAYO',
-  'DAVID SAMUEL HUSAREZ CABRERA'
+  'ALESSANDRO PASCUAL',
+  'FRANCISCO VILLAFAN',
+  'JOSE MIRANDA',
+  'JAEL GALLARDO'
 ];
 
-let cachedAssistants = [...DEFAULT_ASSISTANTS];
+export const DEFAULT_ASSISTANTS = [...OFFICIAL_ASSISTANTS];
+
+let cachedAssistants = [...OFFICIAL_ASSISTANTS];
 
 export function getCachedAssistants() {
   return cachedAssistants;
 }
 
 export function useAssistants() {
-  const [assistants, setAssistants] = useState(cachedAssistants);
+  const [assistants, setAssistants] = useState(OFFICIAL_ASSISTANTS);
 
   const fetchAssistants = async () => {
     try {
       const res = await fetch('/api/assistants');
       const json = await res.json();
       if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
-        // Combinar con los valores por defecto asegurando TAYRON SALINAS al inicio y sin duplicados
-        const set = new Set();
-        const merged = [];
-        
-        // Priorizar TAYRON SALINAS al tope
-        const rawList = ['TAYRON SALINAS', ...json.data, ...DEFAULT_ASSISTANTS];
-        for (const item of rawList) {
-          const clean = String(item || '').trim().toUpperCase();
-          if (clean && !set.has(clean)) {
-            set.add(clean);
-            merged.push(clean);
-          }
-        }
-        cachedAssistants = merged;
-        setAssistants(merged);
+        // Filtrar estrictamente para permitir ÚNICAMENTE a los 6 autorizados
+        const allowedSet = new Set(OFFICIAL_ASSISTANTS.map(a => a.toUpperCase()));
+        const cleanList = json.data
+          .map(a => String(a || '').trim().toUpperCase())
+          .filter(a => allowedSet.has(a));
+
+        // Mantener orden oficial garantizado
+        const finalList = OFFICIAL_ASSISTANTS.filter(a => cleanList.includes(a) || true);
+        cachedAssistants = finalList;
+        setAssistants(finalList);
       }
     } catch (_) {
-      // Usar lista por defecto si falla la red
+      setAssistants(OFFICIAL_ASSISTANTS);
     }
   };
 
@@ -58,4 +51,5 @@ export function useAssistants() {
 
   return assistants;
 }
+
 

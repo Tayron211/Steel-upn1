@@ -276,7 +276,7 @@ export default function ManualSheetsView({
       carrera: '',
       motivo: 'PROBLEMA CON AUTENTICADOR',
       docenteReemplazo: '',
-      asistente: 'José Carlos Miranda Rosales'
+      asistente: 'TAYRON SALINAS'
     });
     setNrcMatchFound(null);
   };

@@ -419,25 +419,15 @@ export default function App() {
       <FloatingActionMenu
         onOpenManualSheet={() => {
           setOperationsSubTab('manual');
-          setOpenManualModalTrigger(Date.now());
           navigateTab('operations', true);
           scrollToTopGlobal();
         }}
         onOpenNewTicket={() => {
-          setNewTicketPrefill({
-            ambiente: '',
-            pabellon: 'A',
-            piso: '1ER PISO',
-            tipoSolicitud: 'PLUMONES / MATERIALES',
-            descripcionSolucion: 'Préstamo de plumones y mota acrílica',
-            _ts: Date.now()
-          });
           navigateTab('tickets', true);
           scrollToTopGlobal();
         }}
         onOpenReservation={() => {
           setOperationsSubTab('reservations');
-          setOpenReservationModalTrigger(Date.now());
           navigateTab('operations', true);
           scrollToTopGlobal();
         }}

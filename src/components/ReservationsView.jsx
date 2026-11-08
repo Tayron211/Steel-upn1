@@ -208,8 +208,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [modalDayClasses, setModalDayClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
-  const [excelSheets, setExcelSheets] = useState([]);
-  const [selectedSheet, setSelectedSheet] = useState(''); // '' = Todas las semanas
+  const [selectedMes, setSelectedMes] = useState(''); // '' = Todos los meses
 
   // Vista: 'RESERVAS' (Reservas registradas) | 'FREE_ROOMS' (Aulas libres hoy y próximos días)
   const [viewMode, setViewMode] = useState('RESERVAS');
@@ -218,7 +217,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [search, setSearch] = useState('');
   const [selectedPabellon, setSelectedPabellon] = useState(''); // '' | 'A' | 'B'
   const [selectedPisos, setSelectedPisos] = useState([]); // Array selección múltiple
-  const [selectedDayOffset, setSelectedDayOffset] = useState(null); // null = Todas las fechas, 0 = Hoy, 1 = Mañana, 2..6 = Próximos días
+  const [selectedDayOffset, setSelectedDayOffset] = useState(null); // null = Todas las fechas, 0 = Hoy, 1 = Mañana, 2..13 = Próximos días
   const [selectedHoraBlock, setSelectedHoraBlock] = useState(() => getCurrentHourBlock()); // '' = Todo el día, o '07:30', etc.
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -234,21 +233,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     if (onConsumeTrigger) onConsumeTrigger();
   };
 
-  const MONTHS_ABBR = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
-
-  const computeTargetSheet = (dateStr) => {
-    if (!dateStr) return '';
-    const parts = String(dateStr).slice(0, 10).split(/[\/\-]/).map(Number);
-    let y = parts[0], m = parts[1], d = parts[2];
-    if (parts[0] < 32 && parts[2] > 1900) { d = parts[0]; m = parts[1]; y = parts[2]; }
-    const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-    if (Number.isNaN(dt.getTime())) return '';
-    const day = dt.getUTCDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    const mon = new Date(dt); mon.setUTCDate(mon.getUTCDate() + diff);
-    const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
-    return `${String(mon.getUTCDate()).padStart(2, '0')} ${MONTHS_ABBR[mon.getUTCMonth()]} - ${String(sun.getUTCDate()).padStart(2, '0')} ${MONTHS_ABBR[sun.getUTCMonth()]}`;
-  };
+  const MONTHS_LIST = [
+    'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+    'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
+  ];
 
   useEffect(() => {
     if (initialOpenTrigger) {
@@ -258,20 +246,20 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     }
   }, [initialOpenTrigger]);
 
-  // Opciones de semanas formateadas para el selector estilizado Apple Liquid
-  const sheetOptions = useMemo(() => [
-    { value: '', label: 'Todas las semanas' },
-    ...excelSheets.map((sh) => ({
-      value: sh.name,
-      label: sh.name + (sh.isCurrent ? ' ⭐ (Semana Actual)' : '')
+  // Opciones de meses formateadas para el selector estilizado Apple Liquid
+  const monthOptions = useMemo(() => [
+    { value: '', label: 'Todos los meses' },
+    ...MONTHS_LIST.map((m) => ({
+      value: m,
+      label: m.charAt(0) + m.slice(1).toLowerCase()
     }))
-  ], [excelSheets]);
+  ], []);
 
-  // Generar los próximos 7 días (Hoy + 6 días siguientes)
+  // Generar los próximos 14 días (Hoy + 13 días siguientes, garantizando Sábado y Domingo visibles)
   const upcomingDays = useMemo(() => {
     const list = [];
     const base = new Date();
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 14; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
       const yyyy = d.getFullYear();
@@ -329,21 +317,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const loadReservasAndRooms = async () => {
     setLoading(true);
     try {
-      const [resReservas, resRooms, resSheets] = await Promise.all([
-        fetch(selectedSheet ? `/api/reservations?sheet=${encodeURIComponent(selectedSheet)}` : '/api/reservations'),
-        fetch('/api/rooms'),
-        fetch('/api/reservations/sheets')
+      const [resReservas, resRooms] = await Promise.all([
+        fetch(selectedMes ? `/api/reservations?mes=${encodeURIComponent(selectedMes)}` : '/api/reservations'),
+        fetch('/api/rooms')
       ]);
-      const [jsonReservas, jsonRooms, jsonSheets] = await Promise.all([
+      const [jsonReservas, jsonRooms] = await Promise.all([
         resReservas.json(),
-        resRooms.json(),
-        resSheets.json()
+        resRooms.json()
       ]);
       if (jsonReservas.success) setReservas(jsonReservas.data || []);
       if (jsonRooms.success) setRooms(jsonRooms.data || []);
-      if (jsonSheets.success && Array.isArray(jsonSheets.data)) {
-        setExcelSheets(jsonSheets.data);
-      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -523,7 +506,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       const computedUbicacion = rm
         ? `${rm.piso} - ${rm.pabellon}`
         : `${deducePisoFromAula(cleanAula) || 'SEDE'} - ${cleanAula.startsWith('B') ? 'B' : 'A'}`;
-      const computedSheet = computeTargetSheet(formData.fecha);
+      const computedSheet = 'RESERVAS';
 
       const payload = {
         ...formData,
@@ -533,9 +516,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         ubicacion: computedUbicacion,
         motivo: (formData.motivo || formData.detalle || 'RESERVA DE AULA').toUpperCase().trim(),
         detalle: (formData.motivo || formData.detalle || 'RESERVA DE AULA').toUpperCase().trim(),
-        usuario: (formData.usuario || 'ALESSANDRO').toUpperCase().trim(),
+        usuario: (formData.usuario || 'TAYRON SALINAS').toUpperCase().trim(),
         obs: (formData.obs || '').trim(),
-        hoja: computedSheet
+        hoja: 'RESERVAS'
       };
 
       const res = await fetch('/api/reservations', {
@@ -546,7 +529,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       const json = await res.json();
       if (json.success) {
         setReservas(prev => [json.data, ...prev.filter(r => r.id !== json.data.id)]);
-        setToastMessage(`✅ Guardado en Excel: Hoja "${computedSheet}" (Aula ${cleanAula})`);
+        setToastMessage(`✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${cleanAula})`);
         setTimeout(() => setToastMessage(''), 3500);
         closeModal();
         resetForm();
@@ -609,7 +592,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
   };
 
-  // Filtrado de Reservas Registradas (por Hoja Excel, Día/Fecha, Pabellón, Piso, Hora y Texto)
+  // Filtrado de Reservas Registradas (por Mes, Día/Fecha, Pabellón, Piso, Hora y Texto)
   const filtered = useMemo(() => {
     return reservas.filter(r => {
       const code = (r.aula || '').toUpperCase().trim();
@@ -617,11 +600,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       const pab = rm?.pabellon || (code.startsWith('B') ? 'B' : (code.startsWith('A') ? 'A' : ''));
       const pisoStr = rm?.piso || r.ubicacion || deducePisoFromAula(code);
 
-      // Filtro por Hoja Excel
-      if (selectedSheet) {
-        const targetWeek = selectedSheet.trim().toUpperCase();
-        const rowHoja = (r.hoja || computeTargetSheet(r.fecha) || '').trim().toUpperCase();
-        if (rowHoja !== targetWeek && !rowHoja.includes(targetWeek) && !targetWeek.includes(rowHoja)) {
+      // Filtro por Mes (MES en CONTROL DOCENTE - TAY.xlsx)
+      if (selectedMes) {
+        const targetMes = selectedMes.trim().toUpperCase();
+        const rowMes = (r.mes || '').trim().toUpperCase();
+        let deducedMes = '';
+        if (r.fecha) {
+          const dt = new Date(r.fecha + 'T12:00:00');
+          if (!Number.isNaN(dt.getTime())) deducedMes = MONTHS_UPPER[dt.getMonth()];
+        }
+        if (rowMes !== targetMes && deducedMes !== targetMes) {
           return false;
         }
       }
@@ -655,7 +643,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       }
       return true;
     });
-  }, [reservas, selectedSheet, roomMap, selectedPabellon, selectedPisos, selectedDayOffset, upcomingDays, search]);
+  }, [reservas, selectedMes, roomMap, selectedPabellon, selectedPisos, selectedDayOffset, upcomingDays, search]);
 
   // Cálculo de Aulas Libres para Hoy y los Próximos Días
   const freeRooms = useMemo(() => {
@@ -820,35 +808,34 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           </div>
         </div>
 
-        {/* Selector de Semanas */}
+        {/* Selector de Mes (Columna MES en CONTROL DOCENTE - TAY.xlsx) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 shrink-0 inline-flex items-center gap-1">
               <CalendarDays className="w-3.5 h-3.5 text-amber-500 stroke-[2.3]" />
-              <span>Semana:</span>
+              <span>Mes:</span>
             </span>
             <div className="flex-1 sm:w-80">
               <CustomSelect
-                value={selectedSheet}
+                value={selectedMes}
                 onChange={(val) => {
-                  setSelectedSheet(val);
-                  setSelectedDayOffset(null);
+                  setSelectedMes(val);
                 }}
-                placeholder="Todas las semanas"
-                options={sheetOptions}
+                placeholder="Todos los meses"
+                options={monthOptions}
                 className="h-8.5 rounded-xl text-xs font-bold"
               />
             </div>
           </div>
 
-          {selectedSheet && (
+          {selectedMes && (
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-200 dark:border-amber-800/60 self-start sm:self-auto shrink-0">
-              <span>Semana: <strong>{selectedSheet}</strong></span>
+              <span>Mes: <strong>{selectedMes}</strong></span>
               <button
                 type="button"
-                onClick={() => setSelectedSheet('')}
+                onClick={() => setSelectedMes('')}
                 className="text-amber-700 dark:text-amber-400 hover:text-amber-950 dark:hover:text-white p-0.5"
-                title="Limpiar filtro de semana"
+                title="Limpiar filtro de mes"
               >
                 <X className="w-3 h-3 stroke-[2.5]" />
               </button>
@@ -856,7 +843,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           )}
         </div>
 
-        {/* Fila 1: Selector de Hoy y Próximos Días */}
+        {/* Fila 1: Selector de Hoy y Próximos Días (Incluye Lunes a Domingo, Sábado y Domingo destacados) */}
         <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
           {viewMode === 'RESERVAS' && (
             <button
@@ -889,7 +876,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <span>{d.offset === 0 ? 'Hoy' : d.offset === 1 ? 'Mañana' : d.diaShort}</span>
+                <span>{d.offset === 0 ? `Hoy (${d.diaShort})` : d.offset === 1 ? `Mañana (${d.diaShort})` : d.diaShort}</span>
                 <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded ${
                   isSelected
                     ? 'bg-white/20 dark:bg-black/15 text-white dark:text-slate-950 font-black'
@@ -1204,7 +1191,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           {displayUbicacion}
                         </span>
                         <span className="text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 px-2 py-0.5 rounded-lg shrink-0">
-                          📄 {r.hoja || computeTargetSheet(r.fecha)}
+                          🗓️ {r.mes || (r.fecha ? MONTHS_UPPER[new Date(r.fecha + 'T12:00:00').getMonth()] : 'RESERVA')}
                         </span>
                       </div>
 
@@ -1393,14 +1380,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 />
               </div>
 
-              {/* Indicador de Semana de Destino */}
+              {/* Indicador de Hoja y Archivo de Destino en OneDrive */}
               <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-2.5 flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300 font-bold min-w-0">
                   <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.5] shrink-0" />
-                  <span className="truncate">Semana correspondiente:</span>
+                  <span className="truncate">Hoja de destino (CONTROL DOCENTE):</span>
                 </div>
                 <span className="font-mono font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-lg border border-emerald-300/60 dark:border-emerald-700/60 shrink-0">
-                  {computeTargetSheet(formData.fecha) || 'Calculando...'}
+                  RESERVAS
                 </span>
               </div>
 
