@@ -144,7 +144,7 @@ const generateAttendanceTableData = (items, selectedDia) => {
       <th style="${thStyle}">CARRERA</th>
       <th style="${thStyle}">HORA INICIO REAL</th>
       <th style="${thStyle}">HORA FINAL REAL</th>
-      <th style="${thBlackStyle}">ASISTENCIA</th>
+      <th style="${thStyle}">ASISTENCIA</th>
       <th style="${thStyle}">PUNTUALIDAD</th>
     </tr>
   </thead>
@@ -1367,7 +1367,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">CARRERA</th>
                 <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA INICIO REAL</th>
                 <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA FINAL REAL</th>
-                <th className="bg-[#000000] text-white font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">ASISTENCIA</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">ASISTENCIA</th>
                 <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">PUNTUALIDAD</th>
                 <th className="bg-slate-900 text-white font-black px-3 py-2.5 text-center uppercase tracking-tight text-[11px] whitespace-nowrap sticky right-0 z-30">ACCIONES</th>
               </tr>
