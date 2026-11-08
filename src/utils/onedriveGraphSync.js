@@ -741,7 +741,12 @@ async function pushAsistencia(db, token, itemId, preRows) {
         return hhmmToFrac(d.hora_inicio_real);
       } 
     },
-    { idx: colOf(c, ['HORA FINAL REAL']), get: (d) => hhmmToFrac(d.hora_final_real) },
+    { idx: colOf(c, ['HORA FINAL REAL']), get: (d) => {
+        if (!d.hora_final_real) return '';
+        if (d.hora_final_real === '-') return '-';
+        return hhmmToFrac(d.hora_final_real);
+      } 
+    },
     { idx: colOf(c, ['ASISTENCIA']), get: (d) => (String(d.asistencia || '').toUpperCase() === 'PENDIENTE' ? '' : d.asistencia || '') },
     { idx: colOf(c, ['PUNTUALIDAD']), get: (d) => (d.puntualidad || '') },
     { idx: colOf(c, ['OBSERVACION']), get: (d) => d.observacion || '' }

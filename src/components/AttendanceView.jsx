@@ -113,10 +113,23 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const [quickAttentionResponsable, setQuickAttentionResponsable] = useState('TAYRON SALINAS');
   const [quickAttentionItem, setQuickAttentionItem] = useState(null);
   const [quickAttentionBeneficiary, setQuickAttentionBeneficiary] = useState('DOCENTE');
-  const [quickAttentionTipo, setQuickAttentionTipo] = useState('PLUMONES / MATERIALES');
+  const [quickAttentionTipo, setQuickAttentionTipo] = useState('PROYECTOR');
+  const [quickSelectedMaterials, setQuickSelectedMaterials] = useState(['PROYECTOR']);
+  const [quickManualText, setQuickManualText] = useState('');
   const [quickAttentionNotes, setQuickAttentionNotes] = useState('');
   const [quickAttentionStatus, setQuickAttentionStatus] = useState('EN PROCESO'); // 'PENDIENTE' | 'EN PROCESO' | 'ATENDIDO'
   const [toastMessage, setToastMessage] = useState('');
+
+  const toggleQuickMaterial = (id) => {
+    setQuickSelectedMaterials(prev => {
+      if (prev.includes(id)) {
+        if (prev.length === 1) return prev;
+        return prev.filter(m => m !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
 
   // Observation Modal
   const [activeModalItem, setActiveModalItem] = useState(null);
@@ -219,19 +232,20 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     { label: 'Piso 5', short: 'P5', val: '5TO PISO' }
   ];
 
-  // Quick Loan Chips for Attention Drawer (11 Materiales exactos solicitados)
+  // Quick Loan Chips for Attention Drawer (11 Materiales exactos solicitados + MANUAL)
   const commonLoanChips = [
-    { label: "📽️ Proyector", tipo: "PROYECTOR", desc: "Préstamo de Proyector Multimedia" },
-    { label: "🎯 Puntero", tipo: "PUNTERO", desc: "Préstamo de Puntero Láser" },
-    { label: "🔌 Cable HDMI", tipo: "CABLE HDMI", desc: "Préstamo de Cable HDMI" },
-    { label: "⚡ Adaptador", tipo: "ADAPTADOR", desc: "Préstamo de Adaptador" },
-    { label: "🔪 Cutting", tipo: "CUTTING", desc: "Préstamo de Cutting" },
-    { label: "🖱️ Mouse", tipo: "MOUSE", desc: "Préstamo de Mouse" },
-    { label: "📷 Cámara Web", tipo: "CAMARA WEB", desc: "Préstamo de Cámara Web" },
-    { label: "🌐 Cable de Red", tipo: "CABLE DE RED", desc: "Préstamo de Cable de Red" },
-    { label: "🎧 Audífonos", tipo: "AUDIFONOS", desc: "Préstamo de Audífonos" },
-    { label: "🔌 Adaptador VGA/HDMI", tipo: "ADAPTADOR VGA/HDMI", desc: "Préstamo de Adaptador VGA/HDMI" },
-    { label: "📸 Cámara Digital", tipo: "CAMARA DIGITAL", desc: "Préstamo de Cámara Digital" }
+    { id: "PROYECTOR", label: "PROYECTOR", icon: "📽️" },
+    { id: "PUNTERO", label: "PUNTERO", icon: "🎯" },
+    { id: "CABLE HDMI", label: "CABLE HDMI", icon: "🔌" },
+    { id: "ADAPTADOR", label: "ADAPTADOR", icon: "⚡" },
+    { id: "CUTTING", label: "CUTTING", icon: "🔪" },
+    { id: "MOUSE", label: "MOUSE", icon: "🖱️" },
+    { id: "CAMARA WEB", label: "CÁMARA WEB", icon: "📷" },
+    { id: "CABLE DE RED", label: "CABLE DE RED", icon: "🌐" },
+    { id: "AUDIFONOS", label: "AUDÍFONOS", icon: "🎧" },
+    { id: "ADAPTADOR VGA/HDMI", label: "ADAPTADOR VGA/HDMI", icon: "🔌" },
+    { id: "CAMARA DIGITAL", label: "CÁMARA DIGITAL", icon: "📸" },
+    { id: "MANUAL", label: "OTRO / MANUAL", icon: "✏️" }
   ];
 
   // Official UPN Class Blocks matching SQLite CONTROL DOCENTE
@@ -405,7 +419,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         asistencia: 'NO',
         puntualidad: '-',
         horaInicioReal: '-',
-        horaFinalReal: ''
+        horaFinalReal: '-'
       };
     }
 
@@ -434,8 +448,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       const mNum = String(dObj.getMonth() + 1).padStart(2, '0');
       const yNum = dObj.getFullYear();
       const dateStr = `${dNum}/${mNum}/${yNum}`;
-      const diaName = (item.dia || 'LUNES').toUpperCase();
-      const diasVal = diaName.includes('/') ? diaName : `${diaName} ${dateStr}`;
+      const rawDia = (item.dia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
 
       const sede = item.sede || 'Comas';
       const periodo = item.periodo || '226434';
@@ -507,14 +521,21 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       ? '[🎓 ALUMNO]'
       : `[👨‍🏫 DOCENTE: ${quickAttentionItem.docente}]`;
 
+    const selectedList = Array.isArray(quickSelectedMaterials) ? [...quickSelectedMaterials] : [];
+    const filteredList = selectedList.filter(m => m !== 'MANUAL');
+    if (selectedList.includes('MANUAL') && quickManualText.trim()) {
+      filteredList.push(quickManualText.trim().toUpperCase());
+    }
+    const finalTipo = filteredList.length > 0 ? filteredList.join(', ') : 'PROYECTOR';
+
     const payload = {
       ambiente: quickAttentionItem.aula,
       pabellon: quickAttentionItem.aula.startsWith('B') ? 'B' : 'A',
       piso: quickAttentionItem.pisoPabellon || 'SEDE',
-      tipoSolicitud: quickAttentionTipo,
+      tipoSolicitud: finalTipo,
       estado: quickAttentionStatus,
       usuario: quickAttentionBeneficiary,
-      descripcionSolucion: `${personTag} ${quickAttentionNotes || `Préstamo en aula ${quickAttentionItem.aula}`}`,
+      descripcionSolucion: `${personTag} ${quickAttentionNotes || `Préstamo de ${finalTipo} en aula ${quickAttentionItem.aula}`}`,
       responsable: quickAttentionResponsable || 'TAYRON SALINAS'
     };
 
@@ -535,6 +556,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
     setQuickAttentionItem(null);
     setQuickAttentionNotes('');
+    setQuickSelectedMaterials(['PROYECTOR']);
+    setQuickManualText('');
   };
 
   const handleSaveObservation = async () => {
@@ -1437,30 +1460,47 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </div>
           </div>
 
-          {/* Quick 1-Tap Preset Material Chips */}
+          {/* Quick Preset Material Chips (11 Materiales exactos + MANUAL con multiselección) */}
           <div className="space-y-1.5 mb-3.5">
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-              Selecciona requerimiento en 1 toque:
-            </label>
-            <div className="grid grid-cols-1 gap-1.5">
-              {commonLoanChips.map(chip => (
-                <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => {
-                    setQuickAttentionTipo(chip.tipo);
-                    setQuickAttentionNotes(chip.desc);
-                  }}
-                  className={`text-left text-xs font-bold px-3.5 py-2.5 rounded-2xl border transition-all duration-200 flex items-center justify-between active:scale-95 ${quickAttentionNotes === chip.desc
-                      ? 'bg-[#FDBA30] text-slate-950 border-amber-400 shadow-[0_2px_12px_rgba(253,186,48,0.35)] scale-[1.01]'
-                      : 'bg-white/80 text-slate-700 border-slate-200/80 hover:bg-slate-50'
-                    }`}
-                >
-                  <span>{chip.label}</span>
-                  {quickAttentionNotes === chip.desc && <Check className="w-3.5 h-3.5 stroke-[2.8]" />}
-                </button>
-              ))}
+            <div className="flex items-center justify-between">
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight">
+                Material a Prestar (Multiselección):
+              </label>
+              <span className="text-[10px] font-mono font-bold text-amber-500 truncate max-w-[200px]">
+                {quickSelectedMaterials.join(', ')}
+              </span>
             </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {commonLoanChips.map(chip => {
+                const isSelected = quickSelectedMaterials.includes(chip.id);
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => toggleQuickMaterial(chip.id)}
+                    className={`text-left text-xs font-bold px-2.5 py-2 rounded-xl border transition-all duration-150 flex items-center justify-between active:scale-95 ${isSelected
+                        ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs ring-1 ring-amber-400'
+                        : 'bg-white/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700'
+                      }`}
+                  >
+                    <span className="truncate">{chip.icon} {chip.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.8] shrink-0 text-slate-950" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {quickSelectedMaterials.includes('MANUAL') && (
+              <div className="mt-2">
+                <input
+                  type="text"
+                  value={quickManualText}
+                  onChange={(e) => setQuickManualText(e.target.value)}
+                  placeholder="Escribe el material solicitado manualmente (ej. PARLANTE, EXTENSIÓN)..."
+                  className="w-full text-xs font-bold px-3 py-2 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30]"
+                />
+              </div>
+            )}
           </div>
 
           {/* Detail notes & Assistant selector */}
