@@ -603,15 +603,35 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
   }, [tickets, search]);
 
   const activeLoans = useMemo(() => {
-    return filteredTickets.filter(t => t.estado === 'PENDIENTE' || t.estado === 'EN PROCESO');
+    return filteredTickets
+      .filter(t => t.estado === 'PENDIENTE' || t.estado === 'EN PROCESO')
+      .sort((a, b) => {
+        const dateA = a.fecha || '';
+        const dateB = b.fecha || '';
+        if (dateA !== dateB) return dateB.localeCompare(dateA);
+        const timeA = a.horaReporte || '';
+        const timeB = b.horaReporte || '';
+        if (timeA !== timeB) return timeB.localeCompare(timeA);
+        return String(b.id || '').localeCompare(String(a.id || ''));
+      });
   }, [filteredTickets]);
 
   const concludedLoans = useMemo(() => {
-    return filteredTickets.filter(t => t.estado === 'ATENDIDO');
+    return filteredTickets
+      .filter(t => t.estado === 'ATENDIDO')
+      .sort((a, b) => {
+        const dateA = a.fecha || '';
+        const dateB = b.fecha || '';
+        if (dateA !== dateB) return dateB.localeCompare(dateA);
+        const timeA = a.horaReporte || '';
+        const timeB = b.horaReporte || '';
+        if (timeA !== timeB) return timeB.localeCompare(timeA);
+        return String(b.id || '').localeCompare(String(a.id || ''));
+      });
   }, [filteredTickets]);
 
   return (
-    <div className="space-y-3 pb-32 md:pb-12 w-full max-w-4xl mx-auto">
+    <div className="space-y-4 pb-32 md:pb-12 w-full max-w-7xl 2xl:max-w-[1720px] mx-auto">
       {/* Toast Alert */}
       {toastMessage && (
         <ToastBanner
@@ -860,7 +880,7 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4">
             {activeLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
               const isSigningInline = inlineSignTicketId === ticket.id;
@@ -869,53 +889,79 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between hover:border-slate-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between hover:border-amber-400/80 dark:hover:border-zinc-700 transition-all overflow-hidden"
                 >
-                  <div>
-                    {/* Header: Aula, Beneficiario y Hora */}
-                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                  <div className="space-y-2.5">
+                    {/* Header: Aula, Ubicación y Hora */}
+                    <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-mono font-black text-[11px] bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-md shrink-0">
+                        <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-amber-400 dark:text-amber-400 px-2.5 py-0.5 rounded-xl shrink-0 shadow-2xs tracking-tight">
                           {ticket.ambiente || 'DOCENCIA'}
                         </span>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          {ben.type === 'ALUMNO' ? '🎓 ' : '👨‍🏫 '}{ben.name || (ben.type === 'ALUMNO' ? 'Alumno' : 'Docente')}
-                        </span>
+                        {(ticket.pabellon || ticket.piso) && (
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
+                            {ticket.pabellon ? `Pab. ${ticket.pabellon}` : ''} {ticket.piso ? `(${ticket.piso})` : ''}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500 shrink-0 flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5 stroke-[2.2]" />
+                      <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 px-2 py-0.5 rounded-lg border border-slate-200/60 dark:border-zinc-800 shrink-0 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-amber-500 stroke-[2.3]" />
                         <span>{ticket.horaReporte || '--:--'}</span>
                       </span>
                     </div>
 
-                    {/* Fila 2: Material Prestado y Estado de Firma */}
-                    <div className="flex items-center justify-between gap-1.5 mb-2">
-                      <div className="font-black text-xs text-slate-900 dark:text-zinc-100 uppercase tracking-tight truncate">
-                        {ticket.tipoSolicitud}
+                    {/* Fila 2: Beneficiario (Docente o Alumno) y Estado de Firma */}
+                    <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-zinc-800">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
+                          {ben.type === 'ALUMNO' ? (
+                            <GraduationCap className="w-4 h-4 stroke-[2.2]" />
+                          ) : (
+                            <User className="w-4 h-4 stroke-[2.2]" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                            {ben.type === 'ALUMNO' ? 'Alumno' : 'Docente Solicitante'}
+                          </div>
+                          <div className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                            {ben.name || (ben.type === 'ALUMNO' ? 'Alumno' : 'Docente')}
+                          </div>
+                        </div>
                       </div>
 
                       {ticket.firmaRecepcion ? (
                         <button
                           type="button"
                           onClick={() => setDetailTicket(ticket)}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800 transition active:scale-95 shrink-0"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800 transition active:scale-95 shrink-0"
                           title="Ver firma registrada"
                         >
-                          <Check className="w-3 h-3 stroke-[3]" />
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
                           <span>Firmado</span>
-                          <Eye className="w-2.5 h-2.5 ml-0.5 opacity-75" />
+                          <Eye className="w-3 h-3 ml-0.5 opacity-75" />
                         </button>
                       ) : isSigningInline ? null : (
                         <button
                           type="button"
                           onClick={() => setInlineSignTicketId(ticket.id)}
-                          className="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800/70 transition inline-flex items-center gap-1 active:scale-95 shrink-0"
+                          className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800/80 transition inline-flex items-center gap-1 active:scale-95 shrink-0"
                           title="Firmar préstamo"
                         >
-                          <PenTool className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                          <PenTool className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
                           <span>Firmar</span>
                         </button>
                       )}
+                    </div>
+
+                    {/* Fila 3: Material Prestado Destacado */}
+                    <div className="flex items-center justify-between gap-2 px-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                        Material:
+                      </span>
+                      <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-zinc-100 uppercase tracking-tight bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 px-2.5 py-0.5 rounded-lg truncate">
+                        {ticket.tipoSolicitud}
+                      </span>
                     </div>
 
                     {/* Panel de Firma Inicial si faltaba firmar */}
@@ -989,26 +1035,32 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                     )}
                   </div>
 
-                  {/* Acciones de la Tarjeta en Activos (Sin PDF: el botón de devolución se expande y nunca se corta) */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
-                    <button
-                      type="button"
-                      onClick={() => setInlineReceiveTicketId(ticket.id)}
-                      className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-2 active:scale-95 whitespace-nowrap"
-                      title="Registrar devolución con firma"
-                    >
-                      <CheckCircle2 className="w-4 h-4 stroke-[2.5] shrink-0" />
-                      <span>Recibir Devolución</span>
-                    </button>
+                  {/* Acciones de la Tarjeta en Activos */}
+                  <div className="pt-2.5 mt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-400 dark:text-zinc-500 truncate">
+                      Por: <strong className="text-slate-700 dark:text-zinc-300 font-semibold">{ticket.responsable || 'OPERACIONES'}</strong>
+                    </span>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(ticket.id)}
-                      className="w-9 h-9 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95 shrink-0"
-                      title="Eliminar préstamo"
-                    >
-                      <Trash2 className="w-4 h-4 stroke-[2.2]" />
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setInlineReceiveTicketId(ticket.id)}
+                        className="h-9 px-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
+                        title="Registrar devolución con firma"
+                      >
+                        <CheckCircle2 className="w-4 h-4 stroke-[2.5] shrink-0" />
+                        <span>Devolución</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(ticket.id)}
+                        className="w-9 h-9 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95 shrink-0"
+                        title="Eliminar préstamo"
+                      >
+                        <Trash2 className="w-4 h-4 stroke-[2.2]" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1021,36 +1073,52 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
             <p className="text-xs text-slate-500 dark:text-zinc-400">No hay devoluciones registradas</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4">
             {concludedLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
 
               return (
                 <div 
                   key={ticket.id}
-                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-xl p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between opacity-95 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
+                  className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between opacity-95 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
                 >
-                  <div>
+                  <div className="space-y-2.5">
                     {/* Header: Aula, Beneficiario y Estado Devuelto */}
-                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                    <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-mono font-bold text-[11px] bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2 py-0.5 rounded-md border border-slate-200 dark:border-zinc-700 shrink-0">
+                        <span className="font-mono font-bold text-xs sm:text-sm bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2.5 py-0.5 rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
                           {ticket.ambiente || 'DOCENCIA'}
                         </span>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          {ben.type === 'ALUMNO' ? '🎓 ' : '👨‍🏫 '}{ben.name || (ben.type === 'ALUMNO' ? 'Alumno' : 'Docente')}
-                        </span>
+                        {(ticket.pabellon || ticket.piso) && (
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
+                            {ticket.pabellon ? `Pab. ${ticket.pabellon}` : ''} {ticket.piso ? `(${ticket.piso})` : ''}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 inline-flex items-center gap-1 shrink-0">
-                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 inline-flex items-center gap-1 shrink-0">
+                        <Check className="w-3 h-3 stroke-[3]" />
                         DEVUELTO
                       </span>
                     </div>
 
-                    {/* Fila 2: Material y Firmas registradas */}
-                    <div className="flex items-center justify-between gap-1.5 mb-2">
-                      <div className="font-black text-xs text-slate-800 dark:text-zinc-200 uppercase tracking-tight truncate">
-                        {ticket.tipoSolicitud}
+                    {/* Fila 2: Beneficiario */}
+                    <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-zinc-800">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 flex items-center justify-center shrink-0 shadow-2xs">
+                          {ben.type === 'ALUMNO' ? (
+                            <GraduationCap className="w-4 h-4 stroke-[2.2]" />
+                          ) : (
+                            <User className="w-4 h-4 stroke-[2.2]" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                            {ben.type === 'ALUMNO' ? 'Alumno' : 'Docente'}
+                          </div>
+                          <div className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                            {ben.name || (ben.type === 'ALUMNO' ? 'Alumno' : 'Docente')}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
@@ -1074,10 +1142,20 @@ export default function TicketsKanban({ initialNewTicket, onClearInitialTicket }
                         )}
                       </div>
                     </div>
+
+                    {/* Fila 3: Material */}
+                    <div className="flex items-center justify-between gap-2 px-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                        Material:
+                      </span>
+                      <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-zinc-200 uppercase tracking-tight truncate">
+                        {ticket.tipoSolicitud}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Acciones de la Tarjeta en Devoluciones (PDF habilitado exclusivamente aquí) */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs">
+                  <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-100 dark:border-zinc-800 text-xs">
                     <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">
                       {ticket.fecha} · {ticket.horaReporte}
                     </span>

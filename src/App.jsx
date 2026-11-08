@@ -364,7 +364,7 @@ export default function App() {
       />
 
       {/* Main Fluid App Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5 pb-32 md:pb-24">
+      <main className="flex-1 max-w-7xl 2xl:max-w-[1720px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 pb-32 md:pb-24">
         {activeTab === 'attendance' && (
           <div key="attendance" className="animate-tab-view">
             <ErrorBoundary>
