@@ -302,10 +302,10 @@ async function handleApiRequest(context) {
       const body = await request.json();
       const id = `ticket_new_${Date.now()}`;
       const now = new Date();
-      const fecha = now.toISOString().split('T')[0];
+      const fecha = body.fecha || now.toISOString().split('T')[0];
       const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
-      const dia = days[now.getDay()];
-      const horaReporte = now.toTimeString().slice(0, 5);
+      const dia = body.dia || days[now.getDay()];
+      const horaReporte = body.horaReporte || body.hora_reporte || now.toTimeString().slice(0, 5);
       const inferredUsuario = body.usuario
         ? String(body.usuario).toUpperCase().trim()
         : String(body.descripcionSolucion || '').toUpperCase().includes('ALUMNO')
@@ -322,10 +322,10 @@ async function handleApiRequest(context) {
         ambiente: body.ambiente || '',
         piso: body.piso || '',
         pabellon: body.pabellon || '',
-        tipo_solicitud: body.tipoSolicitud || 'PLUMONES / MATERIALES',
+        tipo_solicitud: body.tipoSolicitud || body.tipo_solicitud || 'PROYECTOR',
         estado: body.estado || 'EN PROCESO',
         usuario: inferredUsuario,
-        descripcion_solucion: body.descripcionSolucion || '',
+        descripcion_solucion: body.descripcionSolucion || body.descripcion_solucion || '',
         responsable: body.responsable || 'OPERACIONES SEDE',
         firma_entrega: body.firmaEntrega || null,
         firma_recepcion: body.firmaRecepcion || null,

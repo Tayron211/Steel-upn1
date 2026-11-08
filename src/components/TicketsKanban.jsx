@@ -19,7 +19,8 @@ import {
   Grid3X3,
   Layers,
   Eye,
-  Plus
+  Plus,
+  Copy
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
@@ -109,12 +110,36 @@ const CAMPUS_ROOMS = [
 ];
 
 const CORE_MATERIALS = [
-  { id: 'PLUMONES', label: '🖊️ Plumones y Mota', desc: 'Préstamo de plumones y mota acrílica' },
-  { id: 'CABLES', label: '🔌 Cable HDMI', desc: 'Préstamo de cable HDMI' },
-  { id: 'ADAPTADOR', label: '⚡ Adaptador', desc: 'Préstamo de adaptador Tipo C / HDMI' },
-  { id: 'LLAVE', label: '🚪 Llave de Aula', desc: 'Llave de ambiente' },
-  { id: 'MANUAL', label: '✏️ Otro', desc: '' }
+  { id: 'PROYECTOR', label: 'PROYECTOR', icon: '📽️', desc: 'Préstamo de Proyector' },
+  { id: 'PUNTERO', label: 'PUNTERO', icon: '🎯', desc: 'Préstamo de Puntero' },
+  { id: 'CABLE HDMI', label: 'CABLE HDMI', icon: '🔌', desc: 'Préstamo de Cable HDMI' },
+  { id: 'ADAPTADOR', label: 'ADAPTADOR', icon: '⚡', desc: 'Préstamo de Adaptador' },
+  { id: 'CUTTING', label: 'CUTTING', icon: '🔪', desc: 'Préstamo de Cutting' },
+  { id: 'MOUSE', label: 'MOUSE', icon: '🖱️', desc: 'Préstamo de Mouse' },
+  { id: 'CAMARA WEB', label: 'CAMARA WEB', icon: '📷', desc: 'Préstamo de Cámara Web' },
+  { id: 'CABLE DE RED', label: 'CABLE DE RED', icon: '🌐', desc: 'Préstamo de Cable de Red' },
+  { id: 'AUDIFONOS', label: 'AUDIFONOS', icon: '🎧', desc: 'Préstamo de Audífonos' },
+  { id: 'ADAPTADOR VGA/HDMI', label: 'ADAPTADOR VGA/HDMI', icon: '🔌', desc: 'Préstamo de Adaptador VGA/HDMI' },
+  { id: 'CAMARA DIGITAL', label: 'CAMARA DIGITAL', icon: '📸', desc: 'Préstamo de Cámara Digital' },
+  { id: 'MANUAL', label: 'OTRO / MANUAL', icon: '✏️', desc: '' }
 ];
+
+const computeRango = (timeStr) => {
+  const m = String(timeStr || '').match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return '10:00 – 11:00';
+  const hh = parseInt(m[1], 10);
+  const nextH = (hh + 1) % 24;
+  return `${String(hh).padStart(2, '0')}:00 – ${String(nextH).padStart(2, '0')}:00`;
+};
+
+const getDayOfWeek = (dateStr) => {
+  if (!dateStr) return 'LUNES';
+  const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+  const [y, m, d] = String(dateStr).split('T')[0].split('-').map(Number);
+  if (!y || !m || !d) return 'LUNES';
+  const date = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  return days[date.getUTCDay()] || 'LUNES';
+};
 
 export default function TicketsKanban({ 
   initialNewTicket, 
@@ -131,13 +156,27 @@ export default function TicketsKanban({
   // Modal State para Registrar Préstamo de Material
   const [isNewLoanModalOpen, setIsNewLoanModalOpen] = useState(false);
 
-  // Form State
+  // Form State (100% Sincronizado con las 12 columnas de ATENCIONES 2026-2)
+  // Columna 1 & 2: FECHA y DIA
+  const [loanDate, setLoanDate] = useState(() => new Date().toISOString().split('T')[0]);
+  // Columna 3 & 4: HORA DE REPORTE y RANGO
+  const [loanTime, setLoanTime] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [loanRango, setLoanRango] = useState(() => computeRango(new Date().toTimeString().slice(0, 5)));
+  // Columna 5, 6, 7: AMBIENTE, PISO y PABELLÓN
+  const [roomInput, setRoomInput] = useState('');
+  // Columna 8: TIPO DE SOLICITUD
+  const [selectedMaterialVal, setSelectedMaterialVal] = useState('PROYECTOR');
+  const [manualItemText, setManualItemText] = useState('');
+  // Columna 9: ESTADO
+  const [loanStatus, setLoanStatus] = useState('EN PROCESO'); // 'EN PROCESO' | 'ATENDIDO' | 'PENDIENTE'
+  // Columna 10: USUARIO
   const [beneficiaryType, setBeneficiaryType] = useState('DOCENTE'); // 'DOCENTE' | 'ALUMNO'
   const [personName, setPersonName] = useState('');
-  const [roomInput, setRoomInput] = useState('');
+  // Columna 11: DESCRIPCIÓN / SOLUCIÓN
+  const [loanDescription, setLoanDescription] = useState('');
+  // Columna 12: RESPONSABLE
   const [loanResponsable, setLoanResponsable] = useState('TAYRON SALINAS');
-  const [selectedMaterialVal, setSelectedMaterialVal] = useState('PLUMONES');
-  const [manualItemText, setManualItemText] = useState('');
+
   const [submittingLoan, setSubmittingLoan] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -374,11 +413,55 @@ export default function TicketsKanban({
     });
   };
 
+  // Actualiza hora de reporte y recalcula automáticamente el rango horario (ej. 10:00 – 11:00)
+  const handleTimeChange = (newTime) => {
+    setLoanTime(newTime);
+    setLoanRango(computeRango(newTime));
+  };
+
+  // Copia la fila de Excel en formato TSV (12 columnas exactas de ATENCIONES 2026-2)
+  const copyTicketExcelRow = (ticket) => {
+    const fecha = ticket.fecha || new Date().toISOString().split('T')[0];
+    const dia = ticket.dia || getDayOfWeek(fecha) || 'LUNES';
+    const hora = ticket.horaReporte || ticket.hora_reporte || '--:--';
+    const rango = ticket.rango || computeRango(hora);
+    const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
+    const piso = ticket.piso || deduceFloor(ambiente);
+    const pabellon = ticket.pabellon || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
+    const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
+    const estado = (ticket.estado || 'EN PROCESO').toUpperCase().trim();
+    const ben = parseBeneficiary(ticket.descripcionSolucion);
+    const usuario = (ticket.usuario || ben.type || 'DOCENTE').toUpperCase().trim();
+    const descripcion = ticket.descripcionSolucion || '';
+    const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
+
+    const row = [
+      fecha,
+      dia,
+      hora,
+      rango,
+      ambiente,
+      piso,
+      pabellon,
+      tipo,
+      estado,
+      usuario,
+      descripcion,
+      responsable
+    ].join('\t');
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(row);
+      setToastMessage('📋 Fila copiada (formato ATENCIONES Excel)');
+      setTimeout(() => setToastMessage(''), 2500);
+    }
+  };
+
   // Dinámica Paso 1: El docente/alumno firma que RECIBE el material ("Recibí")
   const handleRegisterLoan = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
-    // Material
+    // Material / Tipo de Solicitud
     let matName = '';
     let matDesc = '';
     if (selectedMaterialVal === 'MANUAL') {
@@ -392,7 +475,7 @@ export default function TicketsKanban({
       matDesc = `Préstamo de ${cleanManual}`;
     } else {
       const item = CORE_MATERIALS.find(m => m.id === selectedMaterialVal) || CORE_MATERIALS[0];
-      matName = item.label.replace(/^[^\w\s]+/, '').trim().toUpperCase();
+      matName = item.id;
       matDesc = item.desc;
     }
 
@@ -405,21 +488,30 @@ export default function TicketsKanban({
 
     const personTag = personName.trim() ? `: ${personName.trim().toUpperCase()}` : '';
     const prefix = beneficiaryType === 'ALUMNO' ? `[🎓 ALUMNO${personTag}]` : `[👨‍🏫 DOCENTE${personTag}]`;
-    const finalDesc = `${prefix} ${matDesc}`;
+    const extraDetail = loanDescription.trim() ? ` - ${loanDescription.trim()}` : '';
+    const finalDesc = `${prefix} ${matDesc}${extraDetail}`;
 
     // Capturar Firma del Solicitante que recibe el material ("Recibí conforme")
     const finalFirmaRecepcion = solicitanteFormSignRef.current ? solicitanteFormSignRef.current.getDataUrl() : null;
 
+    const finalDate = loanDate || new Date().toISOString().split('T')[0];
+    const finalDay = getDayOfWeek(finalDate) || 'LUNES';
+    const finalTime = loanTime || new Date().toTimeString().slice(0, 5);
+    const finalRango = loanRango || computeRango(finalTime);
+
     const payload = {
+      fecha: finalDate,
+      dia: finalDay,
+      horaReporte: finalTime,
+      rango: finalRango,
       ambiente: cleanRoom,
       piso: floor,
       pabellon: pab,
       tipoSolicitud: matName,
       responsable: loanResponsable || 'TAYRON SALINAS',
-      estado: 'EN PROCESO',
+      estado: loanStatus || 'EN PROCESO',
       usuario: beneficiaryType, // 'DOCENTE' o 'ALUMNO'
       descripcionSolucion: finalDesc,
-      rango: '',
       firmaEntrega: null, // Se firmará al devolver ("Entregué")
       entregadoPor: personName.trim() ? personName.trim().toUpperCase() : '',
       firmaRecepcion: finalFirmaRecepcion,
@@ -443,13 +535,15 @@ export default function TicketsKanban({
         }
 
         setTickets(prev => [createdTicket, ...prev]);
-        setToastMessage('✅ Préstamo registrado con éxito');
+        setToastMessage('✅ Préstamo registrado con éxito en ATENCIONES');
         
         // Reset form
         setPersonName('');
         setRoomInput('');
         setManualItemText('');
-        setSelectedMaterialVal('PLUMONES');
+        setLoanDescription('');
+        setSelectedMaterialVal('PROYECTOR');
+        setLoanStatus('EN PROCESO');
         if (solicitanteFormSignRef.current) solicitanteFormSignRef.current.clear();
         setIsNewLoanModalOpen(false);
         setActiveViewTab('ACTIVOS');
@@ -904,6 +998,15 @@ export default function TicketsKanban({
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
+                        onClick={() => copyTicketExcelRow(ticket)}
+                        className="w-9 h-9 rounded-xl text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95 shrink-0"
+                        title="Copiar fila de Excel (ATENCIONES 2026-2)"
+                      >
+                        <Copy className="w-4 h-4 stroke-[2.2]" />
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => setInlineReceiveTicketId(ticket.id)}
                         className="h-9 px-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
                         title="Registrar devolución con firma"
@@ -1020,6 +1123,14 @@ export default function TicketsKanban({
                       {ticket.fecha} · {ticket.horaReporte}
                     </span>
                     <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => copyTicketExcelRow(ticket)}
+                        className="w-8 h-8 rounded-lg text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition inline-flex items-center justify-center border border-slate-200 dark:border-zinc-800 active:scale-95"
+                        title="Copiar fila de Excel (ATENCIONES 2026-2)"
+                      >
+                        <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => handleQuickDownloadPdf(e, ticket)}
@@ -1564,8 +1675,10 @@ export default function TicketsKanban({
       )}
 
       {/* =========================================================================
-          MODAL FLOTANTE: REGISTRAR PRÉSTAMO DE MATERIAL (Paso 1)
-          Aprovecha el 100% del espacio en pantalla y solo se abre al hacer clic
+          MODAL FLOTANTE: REGISTRAR ATENCIÓN / PRÉSTAMO (Sincronizado con ATENCIONES 2026-2)
+          12 Columnas exactas de la hoja de Excel:
+          FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PISO | PABELLÓN |
+          TIPO DE SOLICITUD | ESTADO | USUARIO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
           ========================================================================= */}
       {isNewLoanModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
@@ -1573,7 +1686,7 @@ export default function TicketsKanban({
           onClick={() => setIsNewLoanModalOpen(false)}
         >
           <div 
-            className="w-full max-w-xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal */}
@@ -1584,10 +1697,10 @@ export default function TicketsKanban({
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-base font-black text-slate-950 dark:text-white leading-tight truncate">
-                    Registrar Préstamo de Material
+                    Registrar Atención / Préstamo de Material
                   </h2>
                   <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold truncate">
-                    Paso 1: Entrega de recurso y firma del solicitante
+                    Sincronizado con la hoja ATENCIONES 2026-2 del Excel Maestro
                   </p>
                 </div>
               </div>
@@ -1603,63 +1716,70 @@ export default function TicketsKanban({
 
             {/* Contenido del Formulario Scrolleable */}
             <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
-              <form id="new-loan-modal-form" onSubmit={handleRegisterLoan} className="space-y-3.5">
-                {/* Beneficiario Toggle */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                    Tipo de Solicitante
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-zinc-900 p-1 rounded-2xl border border-slate-200/80 dark:border-zinc-800">
-                    <button
-                      type="button"
-                      onClick={() => setBeneficiaryType('DOCENTE')}
-                      className={`h-9 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
-                        beneficiaryType === 'DOCENTE'
-                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <User className="w-4 h-4 stroke-[2.4]" />
-                      <span>Docente</span>
-                    </button>
+              <form id="new-loan-modal-form" onSubmit={handleRegisterLoan} className="space-y-4">
+                
+                {/* 1. Columnas: FECHA, DIA, HORA DE REPORTE, RANGO */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
+                  <div>
+                    <label className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                      <span>Fecha</span>
+                      <span className="text-amber-500 font-black">{getDayOfWeek(loanDate)}</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={loanDate}
+                      onChange={(e) => setLoanDate(e.target.value)}
+                      className="w-full h-9 px-3 text-xs font-bold bg-white dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                    />
+                  </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setBeneficiaryType('ALUMNO')}
-                      className={`h-9 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 ${
-                        beneficiaryType === 'ALUMNO'
-                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <GraduationCap className="w-4 h-4 stroke-[2.4]" />
-                      <span>Alumno</span>
-                    </button>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                      Hora de Reporte
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={loanTime}
+                      onChange={(e) => handleTimeChange(e.target.value)}
+                      className="w-full h-9 px-3 text-xs font-mono font-bold bg-white dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                      Rango Horario
+                    </label>
+                    <input
+                      type="text"
+                      value={loanRango}
+                      onChange={(e) => setLoanRango(e.target.value)}
+                      placeholder="ej. 10:00 – 11:00"
+                      className="w-full h-9 px-3 text-xs font-mono font-bold bg-white dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                    />
                   </div>
                 </div>
 
-                {/* Nombre del Solicitante */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                    {beneficiaryType === 'DOCENTE' ? 'Nombre del Docente' : 'Nombre o Código del Alumno'}
-                  </label>
-                  <input
-                    id="prestamo-person-name"
-                    type="text"
-                    required
-                    value={personName}
-                    onChange={(e) => setPersonName(e.target.value)}
-                    placeholder={beneficiaryType === 'DOCENTE' ? 'Ingresa el nombre completo...' : 'Ingresa nombre o código de estudiante...'}
-                    className="w-full h-10 px-3.5 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:border-[#FDBA30] transition"
-                  />
-                </div>
-
-                {/* Aula y Responsable */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                      Aula Destino
+                {/* 2. Columnas: AMBIENTE, PISO, PABELLÓN */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Ambiente / Aula
                     </label>
+                    {roomInput && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                          Pabellón {roomInput.startsWith('B') ? 'B' : (roomInput.startsWith('A') ? 'A' : 'SEDE')}
+                        </span>
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                          {deduceFloor(roomInput)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setIsRoomCalendarOpen(true)}
@@ -1672,7 +1792,7 @@ export default function TicketsKanban({
                     >
                       <div className="flex items-center gap-1.5 truncate">
                         <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Seleccionar Aula'}</span>
+                        <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Elegir en Mapa de Aulas'}</span>
                       </div>
                       {roomInput ? (
                         <span
@@ -1687,10 +1807,150 @@ export default function TicketsKanban({
                         </span>
                       ) : (
                         <span className="text-[10px] font-black uppercase tracking-tight bg-slate-200 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-slate-700 dark:text-zinc-300">
-                          Elegir
+                          Buscar
                         </span>
                       )}
                     </button>
+
+                    <input
+                      type="text"
+                      value={roomInput}
+                      onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                      placeholder="O escribe aula manual (ej. B206, A509)"
+                      className="w-full h-10 px-3 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30]"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Columnas: USUARIO y SOLICITANTE */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Usuario (Rol)
+                    </label>
+                    <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => setBeneficiaryType('DOCENTE')}
+                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
+                          beneficiaryType === 'DOCENTE'
+                            ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <User className="w-3.5 h-3.5 stroke-[2.4]" />
+                        <span>Docente</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setBeneficiaryType('ALUMNO')}
+                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
+                          beneficiaryType === 'ALUMNO'
+                            ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <GraduationCap className="w-3.5 h-3.5 stroke-[2.4]" />
+                        <span>Alumno</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                      {beneficiaryType === 'DOCENTE' ? 'Nombre del Docente' : 'Nombre / Código del Alumno'}
+                    </label>
+                    <input
+                      id="prestamo-person-name"
+                      type="text"
+                      required
+                      value={personName}
+                      onChange={(e) => setPersonName(e.target.value)}
+                      placeholder={beneficiaryType === 'DOCENTE' ? 'Apellidos y Nombres del Docente...' : 'Nombre o código del estudiante...'}
+                      className="w-full h-10 px-3.5 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:border-[#FDBA30] transition"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Columna: TIPO DE SOLICITUD (11 Materiales exactos + OTRO / MANUAL) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Tipo de Solicitud (Material a Prestar)
+                    </label>
+                    <span className="text-[10px] font-mono font-bold text-amber-500">
+                      {selectedMaterialVal}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                    {CORE_MATERIALS.map(item => {
+                      const isSelected = selectedMaterialVal === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setSelectedMaterialVal(item.id)}
+                          className={`h-9 px-2.5 rounded-xl text-[11px] font-bold transition flex items-center justify-between gap-1 active:scale-95 border ${
+                            isSelected
+                              ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/50'
+                              : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
+                          }`}
+                        >
+                          <span className="truncate">{item.icon} {item.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3] text-amber-400 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {selectedMaterialVal === 'MANUAL' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        value={manualItemText}
+                        onChange={(e) => setManualItemText(e.target.value)}
+                        placeholder="Escribe el material solicitado manualmente (ej. PARLANTE, EXTENSIÓN, DISPLAYPORT)..."
+                        className="w-full h-10 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Columnas: ESTADO y RESPONSABLE */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Estado
+                    </label>
+                    <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => setLoanStatus('EN PROCESO')}
+                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
+                          loanStatus === 'EN PROCESO'
+                            ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <span>EN PROCESO</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setLoanStatus('ATENDIDO')}
+                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
+                          loanStatus === 'ATENDIDO'
+                            ? 'bg-emerald-600 text-white font-black shadow-xs'
+                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <span>ATENDIDO</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1707,56 +1967,31 @@ export default function TicketsKanban({
                   </div>
                 </div>
 
-                {/* Materiales Rápidos */}
+                {/* 6. Columna: DESCRIPCIÓN / SOLUCIÓN */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                    Material a Prestar
+                    Descripción / Solución (Detalle adicional opcional)
                   </label>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {CORE_MATERIALS.map(item => {
-                      const isSelected = selectedMaterialVal === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setSelectedMaterialVal(item.id)}
-                          className={`h-8 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 border ${
-                            isSelected
-                              ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/40'
-                              : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
-                          }`}
-                        >
-                          <span>{item.label}</span>
-                          {isSelected && <Check className="w-3 h-3 stroke-[3] text-amber-400 shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {selectedMaterialVal === 'MANUAL' && (
-                    <input
-                      type="text"
-                      required
-                      autoFocus
-                      value={manualItemText}
-                      onChange={(e) => setManualItemText(e.target.value)}
-                      placeholder="Escribe el material a prestar: Extensión, Parlante, Puntero..."
-                      className="w-full h-9 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 mt-2"
-                    />
-                  )}
+                  <input
+                    type="text"
+                    value={loanDescription}
+                    onChange={(e) => setLoanDescription(e.target.value)}
+                    placeholder="Ej. Proyector no muestra imagen, uso en laboratorio, configuración de periféricos..."
+                    className="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-medium focus:outline-none focus:border-[#FDBA30]"
+                  />
                 </div>
 
-                {/* Firma del Solicitante */}
+                {/* 7. Firma del Solicitante (Recibí Conforme) */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                    Firma del Solicitante
+                    Firma del Solicitante (Recibí Conforme)
                   </label>
                   <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-slate-200 dark:border-zinc-800 space-y-1">
                     <SignatureCanvas
                       ref={solicitanteFormSignRef}
                       title="Firma del Solicitante"
-                      subtitle="Firma directamente con el dedo en pantalla"
-                      height={100}
+                      subtitle="Firma directamente con el dedo en pantalla o toca pantalla amplia"
+                      height={90}
                       compact={true}
                     />
                   </div>
@@ -1781,7 +2016,7 @@ export default function TicketsKanban({
                 className="h-10 px-5 bg-[#FDBA30] hover:bg-[#ffc642] active:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-xs transition inline-flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                <span>{submittingLoan ? 'Registrando...' : 'Registrar Préstamo'}</span>
+                <span>{submittingLoan ? 'Registrando...' : 'Registrar Atención / Préstamo'}</span>
               </button>
             </div>
           </div>
