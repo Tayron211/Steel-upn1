@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Copy,
   RefreshCw
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
@@ -606,6 +607,112 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     setToastMessage('✅ Reserva cancelada y fila limpiada en Excel');
     setTimeout(() => setToastMessage(''), 3500);
     await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
+  };
+
+  const [copiedId, setCopiedId] = useState(null);
+  const [copyMenuOpenId, setCopyMenuOpenId] = useState(null);
+
+  useEffect(() => {
+    if (!copyMenuOpenId) return;
+    const handleDocClick = () => setCopyMenuOpenId(null);
+    document.addEventListener('click', handleDocClick);
+    return () => document.removeEventListener('click', handleDocClick);
+  }, [copyMenuOpenId]);
+
+  const formatExcelDate = (val) => {
+    if (!val) return '';
+    const s = String(val).trim();
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+    const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) {
+      const y = m[1];
+      const mo = m[2].padStart(2, '0');
+      const d = m[3].padStart(2, '0');
+      return `${d}/${mo}/${y}`;
+    }
+    return s;
+  };
+
+  // Copia la fila exacta de la reserva según las 11 columnas de la hoja RESERVAS en CONTROL DOCENTE
+  const handleCopyReservation = async (r, onlyData = false) => {
+    const aula = (r.aula || '').trim().toUpperCase();
+    const rm = roomMap[aula];
+    const ubicacion = (r.ubicacion || (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(aula) || 'SEDE'))).trim().toUpperCase();
+    const formattedFecha = formatExcelDate(r.fecha);
+
+    let mes = (r.mes || '').trim().toUpperCase();
+    let dia = (r.dia || '').trim().toUpperCase();
+    if ((!mes || !dia) && r.fecha) {
+      const dt = new Date(r.fecha + 'T12:00:00');
+      if (!Number.isNaN(dt.getTime())) {
+        if (!mes) mes = MONTHS_UPPER[dt.getMonth()] || '';
+        if (!dia) dia = DAYS_OF_WEEK[dt.getDay()] || '';
+      }
+    }
+
+    const inicio = (r.inicio || r.hora_inicio || '').trim();
+    const final = (r.final || r.hora_fin || '').trim();
+    const docente = (r.docente || '').trim().toUpperCase();
+    const detalle = (r.detalle || r.motivo || '').trim().toUpperCase();
+    const usuario = (r.usuario || '').trim().toUpperCase();
+    const prioridad = (r.prioridad || 'NORMAL').trim().toUpperCase();
+
+    const headers = ['FECHA', 'MES', 'DIA', 'INICIO', 'FINAL', 'AULA', 'UBICACIÓN', 'DOCENTE', 'DETALLE', 'USUARIO', 'PRIORIDAD'];
+    const values = [formattedFecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, usuario, prioridad];
+
+    // Formato delimitado por tabulaciones (TSV) - estándar universal para pegar en celdas de Excel
+    const tsvText = onlyData ? values.join('\t') : `${headers.join('\t')}\n${values.join('\t')}`;
+
+    // Tabla HTML formateada para pegar directamente en correos (Gmail, Outlook, Webmail)
+    const htmlTable = `
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:12px;border:1px solid #999999;text-align:center;">
+  ${!onlyData ? `<thead>
+    <tr style="background-color:#ECA000;color:#000000;font-weight:bold;text-transform:uppercase;">
+      ${headers.map(h => `<th style="padding:6px 10px;border:1px solid #999999;background-color:#ECA000;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:12px;">${h}</th>`).join('')}
+    </tr>
+  </thead>` : ''}
+  <tbody>
+    <tr style="background-color:#ffffff;color:#000000;">
+      ${values.map((v, idx) => {
+        const isLeft = idx === 7 || idx === 8;
+        const isBold = idx === 0 || idx === 3 || idx === 4 || idx === 5;
+        return `<td style="padding:6px 10px;border:1px solid #999999;font-family:Calibri,Arial,sans-serif;font-size:12px;text-align:${isLeft ? 'left' : 'center'};${isBold ? 'font-weight:bold;' : ''}">${v || ''}</td>`;
+      }).join('')}
+    </tr>
+  </tbody>
+</table>`.trim();
+
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const textBlob = new Blob([tsvText], { type: 'text/plain' });
+        const htmlBlob = new Blob([htmlTable], { type: 'text/html' });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/plain': textBlob,
+            'text/html': htmlBlob
+          })
+        ]);
+      } else {
+        await navigator.clipboard.writeText(tsvText);
+      }
+      setCopiedId(r.id);
+      setCopyMenuOpenId(null);
+      setToastMessage(onlyData ? `📋 Copiada fila de datos para Excel: ${aula}` : `📋 Fila de Excel copiada para correo: ${aula} (${formattedFecha})`);
+      setTimeout(() => setCopiedId(null), 2500);
+      setTimeout(() => setToastMessage(''), 3500);
+    } catch (err) {
+      console.error('Error al copiar:', err);
+      try {
+        await navigator.clipboard.writeText(tsvText);
+        setCopiedId(r.id);
+        setCopyMenuOpenId(null);
+        setToastMessage(`📋 Fila copiada: ${aula}`);
+        setTimeout(() => setCopiedId(null), 2500);
+        setTimeout(() => setToastMessage(''), 3500);
+      } catch (e2) {
+        alert('No se pudo copiar al portapapeles.');
+      }
+    }
   };
 
   // Filtrado de Reservas Registradas (por Mes, Día/Fecha, Pabellón, Piso, Hora y Texto)
@@ -1271,15 +1378,77 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     </div>
                   </div>
 
-                  <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between text-[11px] text-slate-400 dark:text-zinc-500">
-                    <span>Por: <strong className="text-slate-700 dark:text-zinc-300 font-semibold">{r.usuario}</strong></span>
-                    <button
-                      onClick={() => handleDelete(r.id)}
-                      className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center"
-                      title="Cancelar Reserva"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
-                    </button>
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-zinc-500">
+                    <span className="truncate">Por: <strong className="text-slate-700 dark:text-zinc-300 font-semibold">{r.usuario}</strong></span>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Botón de Copiar Fila de Reserva (Formato Excel / Correo) */}
+                      <div className="relative inline-flex items-center rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyReservation(r, false)}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-700 hover:text-slate-950 dark:text-zinc-300 dark:hover:text-white transition active:scale-95"
+                          title="Copiar fila con formato de Excel para correo o tabla"
+                        >
+                          {copiedId === r.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">¡Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-amber-500 stroke-[2.2]" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCopyMenuOpenId(copyMenuOpenId === r.id ? null : r.id);
+                          }}
+                          className="px-1 py-1 rounded-md hover:bg-white dark:hover:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-white transition"
+                          title="Opciones de copiado"
+                        >
+                          <ChevronDown className="w-3 h-3 stroke-[2.2]" />
+                        </button>
+
+                        {copyMenuOpenId === r.id && (
+                          <div 
+                            className="absolute right-0 bottom-full mb-1 w-56 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl p-1 z-30 text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleCopyReservation(r, false)}
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-800 dark:text-zinc-200 font-semibold flex items-center gap-2"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                              <span>Con Encabezados (Para correo)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyReservation(r, true)}
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-800 dark:text-zinc-200 font-semibold flex items-center gap-2"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                              <span>Solo Datos (1 fila para Excel)</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(r.id)}
+                        className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center"
+                        title="Cancelar Reserva"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
