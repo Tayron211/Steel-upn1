@@ -397,19 +397,26 @@ export default function TicketsKanban({
     setLoanRango(computeRango(newTime));
   };
 
-  // Copia la fila de Excel en formato TSV (12 columnas exactas de ATENCIONES 2026-2)
+  // Copia la fila de Excel en formato TSV según modelo (omitida la columna PISO)
+  // FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PABELLÓN | TIPO DE SOLICITUD | ESTADO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
   const copyTicketExcelRow = (ticket) => {
-    const fecha = ticket.fecha || new Date().toISOString().split('T')[0];
-    const dia = ticket.dia || getDayOfWeek(fecha) || 'LUNES';
+    let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
+    let fecha = rawFecha;
+    if (rawFecha.includes('-')) {
+      const parts = rawFecha.split('T')[0].split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        fecha = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    }
+
+    const dia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
     const hora = ticket.horaReporte || ticket.hora_reporte || '--:--';
     const rango = ticket.rango || computeRango(hora);
     const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
-    const piso = ticket.piso || deduceFloor(ambiente);
-    const pabellon = ticket.pabellon || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
+    const cleanPab = cleanExcelVal(ticket.pabellon);
+    const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
     const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
     const estado = (ticket.estado || 'EN PROCESO').toUpperCase().trim();
-    const ben = parseBeneficiary(ticket.descripcionSolucion);
-    const usuario = (ticket.usuario || ben.type || 'DOCENTE').toUpperCase().trim();
     const descripcion = ticket.descripcionSolucion || '';
     const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
 
@@ -419,11 +426,9 @@ export default function TicketsKanban({
       hora,
       rango,
       ambiente,
-      piso,
       pabellon,
       tipo,
       estado,
-      usuario,
       descripcion,
       responsable
     ].join('\t');
