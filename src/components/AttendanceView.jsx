@@ -27,7 +27,8 @@ import {
   Cable,
   Package,
   Layers,
-  MoreVertical
+  MoreVertical,
+  Copy
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -418,6 +419,82 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       });
     } catch (err) {
       console.error('Error updating status:', err);
+    }
+  };
+
+  // Copiar Fila de Control de Asistencia para Excel / correo (14 Columnas Oficiales)
+  const handleCopyAttendanceRow = async (item) => {
+    try {
+      const isPuntual = item.puntualidad === 'PUNTUAL';
+      const isTarde = item.puntualidad === 'TARDE';
+      const isFalta = item.asistencia === 'NO';
+
+      const dObj = selectedDate ? new Date(selectedDate + 'T12:00:00') : new Date();
+      const dNum = String(dObj.getDate()).padStart(2, '0');
+      const mNum = String(dObj.getMonth() + 1).padStart(2, '0');
+      const yNum = dObj.getFullYear();
+      const dateStr = `${dNum}/${mNum}/${yNum}`;
+      const diaName = (item.dia || 'LUNES').toUpperCase();
+      const diasVal = diaName.includes('/') ? diaName : `${diaName} ${dateStr}`;
+
+      const sede = item.sede || 'Comas';
+      const periodo = item.periodo || '226434';
+      const hIniProg = item.horaInicioProg || '';
+      const hFinProg = item.horaFinalProg || '';
+      const aula = item.aula || '';
+      const nrc = item.nrc || '';
+      const docente = item.docente || '';
+      const curso = item.curso || '';
+      const carrera = item.carrera || '';
+
+      let hIniReal = '';
+      let hFinReal = '';
+      let asistencia = 'SI';
+      let puntualidad = 'PUNTUAL';
+
+      if (isFalta) {
+        hIniReal = '-';
+        hFinReal = '-';
+        asistencia = 'NO';
+        puntualidad = '-';
+      } else if (isTarde) {
+        hIniReal = item.horaInicioReal || hIniProg;
+        hFinReal = item.horaFinalReal || hFinProg;
+        asistencia = 'SI';
+        puntualidad = 'TARDE';
+      } else {
+        hIniReal = item.horaInicioReal || hIniProg;
+        hFinReal = item.horaFinalReal || hFinProg;
+        asistencia = 'SI';
+        puntualidad = 'PUNTUAL';
+      }
+
+      // 14 Columnas exactas de CONTROL ASISTENCIA:
+      // SEDE | PERIODO | DÍAS | HORA INICIO PROGRAMADA | HORA FINAL PROGRAMADA | AULA | NRC. | DOCENTE | CURSO | CARRERA | HORA INICIO REAL | HORA FINAL REAL | ASISTENCIA | PUNTUALIDAD
+      const rowText = [
+        sede,
+        periodo,
+        diasVal,
+        hIniProg,
+        hFinProg,
+        aula,
+        nrc,
+        docente,
+        curso,
+        carrera,
+        hIniReal,
+        hFinReal,
+        asistencia,
+        puntualidad
+      ].join('\t');
+
+      await navigator.clipboard.writeText(rowText);
+      setToastMessage(`📋 Fila copiada (${aula} - ${docente})`);
+      setTimeout(() => setToastMessage(''), 2500);
+    } catch (err) {
+      console.error(err);
+      setToastMessage('❌ Error al copiar fila');
+      setTimeout(() => setToastMessage(''), 2500);
     }
   };
 
@@ -1029,7 +1106,22 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Botón Copiar Fila para Excel (solo las que ya están llenas: puntual, tarde, falta) */}
+                    {(isPuntual || isTarde || isFalta || isReemplazo) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyAttendanceRow(item);
+                        }}
+                        className="h-6 px-2 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-[#FDBA30] dark:bg-zinc-800 dark:hover:bg-[#FDBA30] text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-slate-950 border border-slate-200 dark:border-zinc-700 transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                        title="Copiar fila para Excel / correo"
+                      >
+                        <Copy className="w-3 h-3 stroke-[2.2]" />
+                        <span>Copiar</span>
+                      </button>
+                    )}
                     {isPuntual && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-xs">
                         <CheckCircle2 className="w-3 h-3 text-white stroke-[2.4] shrink-0" />
