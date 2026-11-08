@@ -633,32 +633,38 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     return s;
   };
 
-  // Copia la fila exacta de la reserva según las 11 columnas de la hoja RESERVAS en CONTROL DOCENTE
+  // Copia la fila exacta de la reserva con el modelo solicitado:
+  // FECHA | DIA | INICIO | FINAL | AULA | UBICACIÓN | DOCENTE | DETALLE
   const handleCopyReservation = async (r, onlyData = false) => {
     const aula = (r.aula || '').trim().toUpperCase();
     const rm = roomMap[aula];
-    const ubicacion = (r.ubicacion || (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(aula) || 'SEDE'))).trim().toUpperCase();
+    let ubicacion = (r.ubicacion || (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(aula) || 'SEDE'))).trim().toUpperCase();
+    if (rm && !ubicacion.includes('-') && rm.pabellon) {
+      ubicacion = `${rm.piso} - ${rm.pabellon}`;
+    }
     const formattedFecha = formatExcelDate(r.fecha);
 
-    let mes = (r.mes || '').trim().toUpperCase();
     let dia = (r.dia || '').trim().toUpperCase();
-    if ((!mes || !dia) && r.fecha) {
+    if (!dia && r.fecha) {
       const dt = new Date(r.fecha + 'T12:00:00');
       if (!Number.isNaN(dt.getTime())) {
-        if (!mes) mes = MONTHS_UPPER[dt.getMonth()] || '';
-        if (!dia) dia = DAYS_OF_WEEK[dt.getDay()] || '';
+        const daysMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+        dia = daysMap[dt.getDay()] || '';
       }
+    } else if (dia === 'SABADO') {
+      dia = 'SÁBADO';
+    } else if (dia === 'MIERCOLES') {
+      dia = 'MIÉRCOLES';
     }
 
     const inicio = (r.inicio || r.hora_inicio || '').trim();
     const final = (r.final || r.hora_fin || '').trim();
     const docente = (r.docente || '').trim().toUpperCase();
     const detalle = (r.detalle || r.motivo || '').trim().toUpperCase();
-    const usuario = (r.usuario || '').trim().toUpperCase();
-    const prioridad = (r.prioridad || 'NORMAL').trim().toUpperCase();
 
-    const headers = ['FECHA', 'MES', 'DIA', 'INICIO', 'FINAL', 'AULA', 'UBICACIÓN', 'DOCENTE', 'DETALLE', 'USUARIO', 'PRIORIDAD'];
-    const values = [formattedFecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, usuario, prioridad];
+    // Modelo exacto: FECHA | DIA | INICIO | FINAL | AULA | UBICACIÓN | DOCENTE | DETALLE
+    const headers = ['FECHA', 'DIA', 'INICIO', 'FINAL', 'AULA', 'UBICACIÓN', 'DOCENTE', 'DETALLE'];
+    const values = [formattedFecha, dia, inicio, final, aula, ubicacion, docente, detalle];
 
     // Formato delimitado por tabulaciones (TSV) - estándar universal para pegar en celdas de Excel
     const tsvText = onlyData ? values.join('\t') : `${headers.join('\t')}\n${values.join('\t')}`;
@@ -668,15 +674,15 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:12px;border:1px solid #999999;text-align:center;">
   ${!onlyData ? `<thead>
     <tr style="background-color:#ECA000;color:#000000;font-weight:bold;text-transform:uppercase;">
-      ${headers.map(h => `<th style="padding:6px 10px;border:1px solid #999999;background-color:#ECA000;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:12px;">${h}</th>`).join('')}
+      ${headers.map(h => `<th style="padding:6px 12px;border:1px solid #999999;background-color:#ECA000;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:12px;">${h}</th>`).join('')}
     </tr>
   </thead>` : ''}
   <tbody>
     <tr style="background-color:#ffffff;color:#000000;">
       ${values.map((v, idx) => {
-        const isLeft = idx === 7 || idx === 8;
-        const isBold = idx === 0 || idx === 3 || idx === 4 || idx === 5;
-        return `<td style="padding:6px 10px;border:1px solid #999999;font-family:Calibri,Arial,sans-serif;font-size:12px;text-align:${isLeft ? 'left' : 'center'};${isBold ? 'font-weight:bold;' : ''}">${v || ''}</td>`;
+        const isLeft = idx === 6 || idx === 7;
+        const isBold = idx === 0 || idx === 2 || idx === 3 || idx === 4;
+        return `<td style="padding:6px 12px;border:1px solid #999999;font-family:Calibri,Arial,sans-serif;font-size:12px;text-align:${isLeft ? 'left' : 'center'};${isBold ? 'font-weight:bold;' : ''}">${v || ''}</td>`;
       }).join('')}
     </tr>
   </tbody>
@@ -697,7 +703,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       }
       setCopiedId(r.id);
       setCopyMenuOpenId(null);
-      setToastMessage(onlyData ? `📋 Copiada fila de datos para Excel: ${aula}` : `📋 Fila de Excel copiada para correo: ${aula} (${formattedFecha})`);
+      setToastMessage(onlyData ? `📋 Copiada fila de reserva: ${aula}` : `📋 Fila copiada con encabezados: ${aula} (${formattedFecha})`);
       setTimeout(() => setCopiedId(null), 2500);
       setTimeout(() => setToastMessage(''), 3500);
     } catch (err) {
