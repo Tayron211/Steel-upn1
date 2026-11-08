@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Calendar, 
@@ -16,6 +16,8 @@ import {
   X,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   RefreshCw
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
@@ -287,6 +289,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const idx = selectedDayOffset !== null ? selectedDayOffset : 0;
     return upcomingDays[idx] || upcomingDays[0];
   }, [selectedDayOffset, upcomingDays]);
+
+  const dateScrollRef = useRef(null);
+  const scrollDates = (direction) => {
+    if (dateScrollRef.current) {
+      dateScrollRef.current.scrollBy({
+        left: direction === 'left' ? -260 : 260,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
@@ -847,86 +859,110 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           )}
         </div>
 
-        {/* Fila 1: Selector de Hoy y Próximos Días (Incluye Lunes a Domingo, Sábado y Domingo destacados) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
-          {viewMode === 'RESERVAS' && (
-            <button
-              type="button"
-              onClick={() => setSelectedDayOffset(null)}
-              className={`h-8 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 active:scale-95 ${
-                selectedDayOffset === null
-                  ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Todas las fechas
-            </button>
-          )}
+        {/* Fila 1: Selector de Hoy y Próximos Días (Incluye Lunes a Domingo, Sábado y Domingo destacados con navegación asistida) */}
+        <div className="relative w-full flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => scrollDates('left')}
+            className="hidden sm:flex items-center justify-center w-7 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 transition shrink-0 active:scale-95"
+            title="Desplazar fechas a la izquierda"
+          >
+            <ChevronLeft className="w-4 h-4 stroke-[2.2]" />
+          </button>
 
-          {upcomingDays.map((d) => {
-            const isSelected =
-              viewMode === 'FREE_ROOMS'
-                ? (selectedDayOffset ?? 0) === d.offset
-                : selectedDayOffset === d.offset;
-
-            return (
+          <div
+            ref={dateScrollRef}
+            className="flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 scroll-smooth scrollbar-none flex-1 min-w-0"
+          >
+            {viewMode === 'RESERVAS' && (
               <button
-                key={d.fecha}
                 type="button"
-                onClick={() => setSelectedDayOffset(d.offset)}
-                className={`h-8 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 active:scale-95 ${
-                  isSelected
+                onClick={() => setSelectedDayOffset(null)}
+                className={`h-8 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 active:scale-95 ${
+                  selectedDayOffset === null
                     ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
                     : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <span>{d.offset === 0 ? `Hoy (${d.diaShort})` : d.offset === 1 ? `Mañana (${d.diaShort})` : d.diaShort}</span>
-                <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded ${
-                  isSelected
-                    ? 'bg-white/20 dark:bg-black/15 text-white dark:text-slate-950 font-black'
-                    : 'text-slate-400 dark:text-zinc-500'
-                }`}>
-                  {d.shortDate}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Fila 2: Buscador + Filtro Pabellón (Ambos / Pab. A / Pab. B) + Filtro Pisos (Todos / Sót / P1..P5) */}
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 stroke-[2.2]" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={
-                viewMode === 'FREE_ROOMS'
-                  ? 'Buscar aula libre por código (A201, B102) o laboratorio...'
-                  : 'Buscar por aula (A201), docente solicitante o detalle...'
-              }
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161b] focus:border-[#FDBA30] transition font-semibold"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
-              >
-                <X className="w-3.5 h-3.5 stroke-[2.2]" />
+                Todas las fechas
               </button>
             )}
+
+            {upcomingDays.map((d) => {
+              const isSelected =
+                viewMode === 'FREE_ROOMS'
+                  ? (selectedDayOffset ?? 0) === d.offset
+                  : selectedDayOffset === d.offset;
+
+              return (
+                <button
+                  key={d.fecha}
+                  type="button"
+                  onClick={() => setSelectedDayOffset(d.offset)}
+                  className={`h-8 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 active:scale-95 ${
+                    isSelected
+                      ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
+                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>{d.offset === 0 ? `Hoy (${d.diaShort})` : d.offset === 1 ? `Mañana (${d.diaShort})` : d.diaShort}</span>
+                  <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded ${
+                    isSelected
+                      ? 'bg-white/20 dark:bg-black/15 text-white dark:text-slate-950 font-black'
+                      : 'text-slate-400 dark:text-zinc-500'
+                  }`}>
+                    {d.shortDate}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
+          <button
+            type="button"
+            onClick={() => scrollDates('right')}
+            className="hidden sm:flex items-center justify-center w-7 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 transition shrink-0 active:scale-95"
+            title="Desplazar fechas a la derecha"
+          >
+            <ChevronRight className="w-4 h-4 stroke-[2.2]" />
+          </button>
+        </div>
+
+        {/* Fila 2: Buscador Principal (Ancho Completo - Nunca se corta) */}
+        <div className="relative w-full">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 stroke-[2.2]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              viewMode === 'FREE_ROOMS'
+                ? 'Buscar aula libre por código (A201, B102) o laboratorio...'
+                : 'Buscar por aula (A201), docente solicitante o detalle...'
+            }
+            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161b] focus:border-[#FDBA30] transition font-semibold"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
+            >
+              <X className="w-3.5 h-3.5 stroke-[2.2]" />
+            </button>
+          )}
+        </div>
+
+        {/* Fila 3: Filtro Pabellón (Ambos / Pab. A / Pab. B) + Filtro Pisos (Todos / Sót / P1..P5) */}
+        <div className="flex flex-wrap items-center justify-between gap-2 w-full pt-0.5">
           {/* Pabellón Pills */}
-          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto">
+          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0">
             {['', 'A', 'B'].map((pab) => (
               <button
                 key={pab || 'ALL'}
                 type="button"
                 onClick={() => setSelectedPabellon(pab)}
-                className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 whitespace-nowrap ${
+                className={`h-7 px-3 rounded-lg text-xs font-bold transition active:scale-95 whitespace-nowrap ${
                   selectedPabellon === pab
                     ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
                     : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -938,7 +974,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           </div>
 
           {/* Pisos Pills (Selección Múltiple) */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
             {PISOS_DISPONIBLES.map((p) => {
               const isTodos = p.val === '';
               const isSelected = isTodos
