@@ -974,7 +974,7 @@ export async function pushToExcel(db) {
       connected: true, 
       pulled, 
       filesUpdated: report, 
-      message: 'Archivo maestro CONTROL DOCENTE - TAY.xlsx sincronizado' 
+      message: 'Archivo maestro CONTROL DOCENTE - TEST.xlsx sincronizado al 100%' 
     };
   };
 
