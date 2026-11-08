@@ -30,6 +30,44 @@ import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
 import { CAMPUS_ROOMS } from '../utils/campusRooms';
 
+const safeCopyToClipboard = async (text) => {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      console.warn('navigator.clipboard falló, usando fallback:', e);
+    }
+  }
+  if (typeof document !== 'undefined') {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (err) {
+      console.error('Error en fallback execCommand copy:', err);
+      return false;
+    }
+  }
+  return false;
+};
+
 const CORE_MATERIALS = [
   { id: 'PROYECTOR', label: 'PROYECTOR', icon: '📽️', desc: 'Préstamo de Proyector' },
   { id: 'PUNTERO', label: 'PUNTERO', icon: '🎯', desc: 'Préstamo de Puntero' },
@@ -399,7 +437,7 @@ export default function TicketsKanban({
 
   // Copia la fila de Excel en formato TSV según modelo oficial (Hoja ATENCIONES 2026-2, omitida la columna PISO)
   // FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PABELLÓN | TIPO DE SOLICITUD | ESTADO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
-  const copyTicketExcelRow = (ticket, withPiso = false) => {
+  const copyTicketExcelRow = async (ticket, withPiso = false) => {
     let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
     let fecha = rawFecha;
     if (rawFecha.includes('-')) {
@@ -437,11 +475,13 @@ export default function TicketsKanban({
       ? [fecha, dia, hora, rango, ambiente, piso, pabellon, tipo, estado, descripcion, responsable].join('\t')
       : [fecha, dia, hora, rango, ambiente, pabellon, tipo, estado, descripcion, responsable].join('\t');
 
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(row);
+    const ok = await safeCopyToClipboard(row);
+    if (ok) {
       setToastMessage(`📋 Fila copiada (${ambiente} · ${tipo})`);
-      setTimeout(() => setToastMessage(''), 2500);
+    } else {
+      setToastMessage('❌ No se pudo copiar al portapapeles');
     }
+    setTimeout(() => setToastMessage(''), 2500);
   };
 
   // Dinámica Paso 1: El docente/alumno firma que RECIBE el material ("Recibí")

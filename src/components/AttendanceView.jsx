@@ -42,6 +42,45 @@ const TIME_OPTIONS = [
   '19:00', '19:30', '20:00', '20:20', '21:00', '21:10', '22:00', '22:50'
 ];
 
+// Helper robusto para copiar al portapapeles (funciona en móvil, desktop y contextos con permisos restringidos)
+const safeCopyToClipboard = async (text) => {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      console.warn('navigator.clipboard falló, usando método fallback:', e);
+    }
+  }
+  if (typeof document !== 'undefined') {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (err) {
+      console.error('Error en fallback execCommand copy:', err);
+      return false;
+    }
+  }
+  return false;
+};
+
 export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, initialSearch = '', onClearInitialSearch }) {
   const [data, setData] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -443,12 +482,12 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       const isTarde = item.puntualidad === 'TARDE';
       const isFalta = item.asistencia === 'NO';
 
-      const dObj = selectedDate ? new Date(selectedDate + 'T12:00:00') : new Date();
+      const dObj = new Date();
       const dNum = String(dObj.getDate()).padStart(2, '0');
       const mNum = String(dObj.getMonth() + 1).padStart(2, '0');
       const yNum = dObj.getFullYear();
       const dateStr = `${dNum}/${mNum}/${yNum}`;
-      const rawDia = (item.dia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const rawDia = String(item.dia || selectedDia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
 
       const sede = item.sede || 'Comas';
@@ -502,11 +541,15 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         puntualidad
       ].join('\t');
 
-      await navigator.clipboard.writeText(rowText);
-      setToastMessage(`📋 Fila copiada (${aula} - ${docente})`);
+      const ok = await safeCopyToClipboard(rowText);
+      if (ok) {
+        setToastMessage(`📋 Fila copiada (${aula} - ${docente})`);
+      } else {
+        setToastMessage('❌ No se pudo copiar al portapapeles');
+      }
       setTimeout(() => setToastMessage(''), 2500);
     } catch (err) {
-      console.error(err);
+      console.error('Error al copiar fila:', err);
       setToastMessage('❌ Error al copiar fila');
       setTimeout(() => setToastMessage(''), 2500);
     }
