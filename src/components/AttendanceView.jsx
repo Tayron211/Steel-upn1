@@ -1181,15 +1181,15 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                           e.stopPropagation();
                           handleCopyAttendanceRow(item);
                         }}
-                        className="h-6 px-2 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-[#FDBA30] dark:bg-zinc-800 dark:hover:bg-[#FDBA30] text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-slate-950 border border-slate-200 dark:border-zinc-700 transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                        className="h-6 px-2 rounded-lg text-[10px] font-black bg-amber-400/15 hover:bg-[#FDBA30] text-amber-500 hover:text-slate-950 border border-amber-400/40 transition flex items-center gap-1 active:scale-95 shadow-2xs"
                         title="Copiar fila para Excel / correo"
                       >
-                        <Copy className="w-3 h-3 stroke-[2.2]" />
+                        <Copy className="w-3 h-3 stroke-[2.4]" />
                         <span>Copiar</span>
                       </button>
                     )}
                     {isPuntual && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#00875A] text-white px-2.5 py-0.5 rounded-full shadow-xs">
                         <CheckCircle2 className="w-3 h-3 text-white stroke-[2.4] shrink-0" />
                         <span>PUNTUAL</span>
                       </span>
@@ -1201,7 +1201,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                       </span>
                     )}
                     {isFalta && (
-                      <span className="inline-flex items-center justify-center font-mono font-bold text-xs text-white bg-zinc-800 dark:bg-zinc-800 border border-zinc-600 px-3 py-0.5 rounded-full shadow-xs" title="Falta (-)">
+                      <span className="inline-flex items-center justify-center font-mono font-black text-xs text-white bg-zinc-900 border border-zinc-600 px-3 py-0.5 rounded-full shadow-xs" title="Falta (-)">
                         -
                       </span>
                     )}
@@ -1292,42 +1292,48 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </div>
               </div>
 
-              {/* Fila Única y Simétrica de Toma de Asistencia */}
+              {/* Fila Única y Simétrica de Toma de Asistencia (Estilo exacto de la foto del usuario) */}
               <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   onClick={() => handleQuickStatus(item, 'PUNTUAL')}
-                  className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${isPuntual
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/70'
+                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isPuntual
+                      ? 'bg-[#00875A] text-white border border-[#00875A] shadow-md font-black'
+                      : 'bg-[#061d15] text-[#10b981] border border-[#059669]/60 hover:bg-[#059669]/20'
                     }`}
                   title={isPuntual ? 'Toca para desmarcar' : 'Marcar puntual'}
                 >
-                  <CheckCircle2 className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isPuntual ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isPuntual ? 'text-white' : 'text-[#10b981]'}`} />
                   <span>Puntual</span>
                 </button>
 
                 <button
                   onClick={() => handleQuickStatus(item, 'TARDE')}
-                  className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${isTarde
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                      : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-800/70'
+                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isTarde
+                      ? 'bg-[#FDBA30] text-slate-950 border border-[#FDBA30] font-black shadow-md'
+                      : 'bg-[#1c1204] text-[#f59e0b] border border-[#d97706] hover:bg-[#d97706]/20'
                     }`}
                   title={isTarde ? 'Toca para desmarcar' : 'Marcar tardanza'}
                 >
-                  <Clock className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isTarde ? 'text-slate-950' : 'text-amber-600 dark:text-amber-400'}`} />
-                  <span>Tarde</span>
+                  <Clock className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isTarde ? 'text-slate-950' : 'text-[#f59e0b]'}`} />
+                  <span>{isTarde && item.horaInicioReal ? `Tarde (${item.horaInicioReal})` : 'Tarde'}</span>
                 </button>
 
                 <button
                   onClick={() => handleQuickStatus(item, 'FALTA')}
-                  className={`h-10 rounded-xl font-bold text-xs transition inline-flex items-center justify-center gap-1 active:scale-95 ${isFalta
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-800/70'
+                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isFalta
+                      ? 'bg-zinc-900 text-white border border-zinc-500 font-black shadow-md'
+                      : 'bg-[#1e0810] text-[#fda4af] border border-[#9f1239] hover:bg-[#9f1239]/20'
                     }`}
                   title={isFalta ? 'Toca para desmarcar' : 'Marcar falta'}
                 >
-                  <XCircle className={`w-3.5 h-3.5 stroke-[2.2] shrink-0 ${isFalta ? 'text-white' : 'text-rose-600 dark:text-rose-400'}`} />
-                  <span>Falta</span>
+                  {isFalta ? (
+                    <span className="text-white font-mono font-black text-base">-</span>
+                  ) : (
+                    <>
+                      <XCircle className="w-3.5 h-3.5 stroke-[2.4] shrink-0 text-[#fda4af]" />
+                      <span>Falta</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
