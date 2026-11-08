@@ -28,7 +28,9 @@ import {
   Package,
   Layers,
   MoreVertical,
-  Copy
+  Copy,
+  Table,
+  LayoutGrid
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -42,20 +44,204 @@ const TIME_OPTIONS = [
   '19:00', '19:30', '20:00', '20:20', '21:00', '21:10', '22:00', '22:50'
 ];
 
-// Helper robusto para copiar al portapapeles (funciona en móvil, desktop y contextos con permisos restringidos)
-const safeCopyToClipboard = async (text) => {
-  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+// Generador oficial de Tabla de Asistencia en HTML y TSV (14 columnas según modelo oficial de Excel)
+const generateAttendanceTableData = (items, selectedDia) => {
+  const list = Array.isArray(items) ? items : [items];
+  const dObj = new Date();
+  const dNum = String(dObj.getDate()).padStart(2, '0');
+  const mNum = String(dObj.getMonth() + 1).padStart(2, '0');
+  const yNum = dObj.getFullYear();
+  const dateStr = `${dNum}/${mNum}/${yNum}`;
+
+  const thStyle = 'background-color:#FFC000;color:#000000;font-weight:bold;border:1px solid #000000;padding:6px 10px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:nowrap;';
+  const thBlackStyle = 'background-color:#000000;color:#FFFFFF;font-weight:bold;border:1px solid #000000;padding:6px 10px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:nowrap;';
+  const tdStyle = 'border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#000000;background-color:#FFFFFF;white-space:nowrap;';
+  const tdCenterStyle = 'border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#000000;text-align:center;background-color:#FFFFFF;white-space:nowrap;';
+
+  const rowsHtml = list.map(item => {
+    const isPuntual = item.puntualidad === 'PUNTUAL';
+    const isTarde = item.puntualidad === 'TARDE';
+    const isFalta = item.asistencia === 'NO';
+
+    const rawDia = String(item.dia || selectedDia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
+
+    const sede = item.sede || 'Comas';
+    const periodo = item.periodo || '226434';
+    const hIniProg = item.horaInicioProg || '';
+    const hFinProg = item.horaFinalProg || '';
+    const aula = item.aula || '';
+    const nrc = item.nrc || '';
+    const docente = item.docente || '';
+    const curso = item.curso || '';
+    const carrera = item.carrera || '';
+
+    let hIniReal = '';
+    let hFinReal = '';
+    let asistencia = 'SI';
+    let puntualidad = 'PUNTUAL';
+    let puntColorBg = '#C6EFCE';
+    let puntColorFg = '#006100';
+
+    if (isFalta) {
+      hIniReal = '-';
+      hFinReal = '-';
+      asistencia = 'NO';
+      puntualidad = '-';
+      puntColorBg = '#000000';
+      puntColorFg = '#FFFFFF';
+    } else if (isTarde) {
+      hIniReal = item.horaInicioReal || hIniProg;
+      hFinReal = item.horaFinalReal || hFinProg;
+      asistencia = 'SI';
+      puntualidad = 'TARDE';
+      puntColorBg = '#FFEB9C';
+      puntColorFg = '#9C5700';
+    } else {
+      hIniReal = item.horaInicioReal || hIniProg;
+      hFinReal = item.horaFinalReal || hFinProg;
+      asistencia = 'SI';
+      puntualidad = 'PUNTUAL';
+      puntColorBg = '#C6EFCE';
+      puntColorFg = '#006100';
+    }
+
+    const tdPuntStyle = `border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;text-align:center;background-color:${puntColorBg};color:${puntColorFg};white-space:nowrap;`;
+
+    return `<tr>
+      <td style="${tdCenterStyle}">${sede}</td>
+      <td style="${tdCenterStyle}">${periodo}</td>
+      <td style="${tdCenterStyle}">${diasVal}</td>
+      <td style="${tdCenterStyle}">${hIniProg}</td>
+      <td style="${tdCenterStyle}">${hFinProg}</td>
+      <td style="${tdCenterStyle}">${aula}</td>
+      <td style="${tdCenterStyle}">${nrc}</td>
+      <td style="${tdStyle}">${docente}</td>
+      <td style="${tdStyle}">${curso}</td>
+      <td style="${tdStyle}">${carrera}</td>
+      <td style="${tdCenterStyle}">${hIniReal}</td>
+      <td style="${tdCenterStyle}">${hFinReal}</td>
+      <td style="${tdCenterStyle}">${asistencia}</td>
+      <td style="${tdPuntStyle}">${puntualidad}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<!--StartFragment-->
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #000000;font-family:Calibri,Arial,sans-serif;font-size:10pt;">
+  <thead>
+    <tr>
+      <th style="${thStyle}">SEDE</th>
+      <th style="${thStyle}">PERIODO</th>
+      <th style="${thStyle}">DÍAS</th>
+      <th style="${thStyle}">HORA INICIO PROGRAMADA</th>
+      <th style="${thStyle}">HORA FINAL PROGRAMADA</th>
+      <th style="${thStyle}">AULA</th>
+      <th style="${thStyle}">NRC.</th>
+      <th style="${thStyle}">DOCENTE</th>
+      <th style="${thStyle}">CURSO</th>
+      <th style="${thStyle}">CARRERA</th>
+      <th style="${thStyle}">HORA INICIO REAL</th>
+      <th style="${thStyle}">HORA FINAL REAL</th>
+      <th style="${thBlackStyle}">ASISTENCIA</th>
+      <th style="${thStyle}">PUNTUALIDAD</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rowsHtml}
+  </tbody>
+</table>
+<!--EndFragment-->`.trim();
+
+  const plainRows = list.map(item => {
+    const isPuntual = item.puntualidad === 'PUNTUAL';
+    const isTarde = item.puntualidad === 'TARDE';
+    const isFalta = item.asistencia === 'NO';
+    const rawDia = String(item.dia || selectedDia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
+    const hIniProg = item.horaInicioProg || '';
+    const hFinProg = item.horaFinalProg || '';
+    let hIniReal = isFalta ? '-' : (item.horaInicioReal || hIniProg);
+    let hFinReal = isFalta ? '-' : (item.horaFinalReal || hFinProg);
+    let asistencia = isFalta ? 'NO' : 'SI';
+    let puntualidad = isFalta ? '-' : (isTarde ? 'TARDE' : 'PUNTUAL');
+
+    return [
+      item.sede || 'Comas',
+      item.periodo || '226434',
+      diasVal,
+      hIniProg,
+      hFinProg,
+      item.aula || '',
+      item.nrc || '',
+      item.docente || '',
+      item.curso || '',
+      item.carrera || '',
+      hIniReal,
+      hFinReal,
+      asistencia,
+      puntualidad
+    ].join('\t');
+  });
+
+  const plain = [
+    ['SEDE', 'PERIODO', 'DÍAS', 'HORA INICIO PROGRAMADA', 'HORA FINAL PROGRAMADA', 'AULA', 'NRC.', 'DOCENTE', 'CURSO', 'CARRERA', 'HORA INICIO REAL', 'HORA FINAL REAL', 'ASISTENCIA', 'PUNTUALIDAD'].join('\t'),
+    ...plainRows
+  ].join('\n');
+
+  return { html, plain };
+};
+
+// Helper robusto para copiar Tablas completas al portapapeles (HTML rico + texto plano TSV)
+const copyRichTableToClipboard = async (plainText, htmlText) => {
+  // 1. Prioridad: API Clipboard moderna con ClipboardItem (copia simultánea de HTML rico + TSV)
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.ClipboardItem) {
     try {
-      await navigator.clipboard.writeText(text);
+      const blobHtml = new Blob([htmlText], { type: 'text/html' });
+      const blobText = new Blob([plainText], { type: 'text/plain' });
+      const item = new window.ClipboardItem({
+        'text/html': blobHtml,
+        'text/plain': blobText
+      });
+      await navigator.clipboard.write([item]);
       return true;
     } catch (e) {
-      console.warn('navigator.clipboard falló, usando método fallback:', e);
+      console.warn('ClipboardItem copy falló, usando fallback enriquecido:', e);
     }
   }
+
+  // 2. Fallback enriquecido: listener de evento copy que escribe HTML rico para Excel/Word/Outlook
   if (typeof document !== 'undefined') {
     try {
+      let copyOk = false;
+      const listener = (e) => {
+        e.preventDefault();
+        e.clipboardData.setData('text/html', htmlText);
+        e.clipboardData.setData('text/plain', plainText);
+        copyOk = true;
+      };
+      document.addEventListener('copy', listener);
+      const successful = document.execCommand('copy');
+      document.removeEventListener('copy', listener);
+      if (copyOk || successful) return true;
+    } catch (err) {
+      console.warn('Fallback copy listener falló:', err);
+    }
+
+    // 3. Fallback solo texto
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(plainText);
+        return true;
+      } catch (e) {
+        console.warn('navigator.clipboard.writeText falló:', e);
+      }
+    }
+
+    try {
       const textArea = document.createElement('textarea');
-      textArea.value = text;
+      textArea.value = plainText;
       textArea.style.position = 'fixed';
       textArea.style.top = '0';
       textArea.style.left = '0';
@@ -74,7 +260,7 @@ const safeCopyToClipboard = async (text) => {
       document.body.removeChild(textArea);
       return successful;
     } catch (err) {
-      console.error('Error en fallback execCommand copy:', err);
+      console.error('Error en fallback textarea copy:', err);
       return false;
     }
   }
@@ -445,13 +631,15 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       updates = {
         asistencia: 'SI',
         puntualidad: 'PUNTUAL',
-        horaInicioReal: item.horaInicioProg || getCurrentTimeStr()
+        horaInicioReal: item.horaInicioProg || getCurrentTimeStr(),
+        horaFinalReal: item.horaFinalProg || item.horaFinalReal || ''
       };
     } else if (targetStatus === 'TARDE') {
       updates = {
         asistencia: 'SI',
         puntualidad: 'TARDE',
-        horaInicioReal: getCurrentTimeStr()
+        horaInicioReal: getCurrentTimeStr(),
+        horaFinalReal: item.horaFinalProg || item.horaFinalReal || ''
       };
     } else if (targetStatus === 'FALTA') {
       updates = {
@@ -475,82 +663,43 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     }
   };
 
-  // Copiar Fila de Control de Asistencia para Excel / correo (14 Columnas Oficiales)
+  // Copiar Fila de Control de Asistencia en Formato de TABLA (HTML rico con bordes y colores + TSV para Excel)
   const handleCopyAttendanceRow = async (item) => {
     try {
-      const isPuntual = item.puntualidad === 'PUNTUAL';
-      const isTarde = item.puntualidad === 'TARDE';
-      const isFalta = item.asistencia === 'NO';
-
-      const dObj = new Date();
-      const dNum = String(dObj.getDate()).padStart(2, '0');
-      const mNum = String(dObj.getMonth() + 1).padStart(2, '0');
-      const yNum = dObj.getFullYear();
-      const dateStr = `${dNum}/${mNum}/${yNum}`;
-      const rawDia = String(item.dia || selectedDia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
-
-      const sede = item.sede || 'Comas';
-      const periodo = item.periodo || '226434';
-      const hIniProg = item.horaInicioProg || '';
-      const hFinProg = item.horaFinalProg || '';
-      const aula = item.aula || '';
-      const nrc = item.nrc || '';
-      const docente = item.docente || '';
-      const curso = item.curso || '';
-      const carrera = item.carrera || '';
-
-      let hIniReal = '';
-      let hFinReal = '';
-      let asistencia = 'SI';
-      let puntualidad = 'PUNTUAL';
-
-      if (isFalta) {
-        hIniReal = '-';
-        hFinReal = '-';
-        asistencia = 'NO';
-        puntualidad = '-';
-      } else if (isTarde) {
-        hIniReal = item.horaInicioReal || hIniProg;
-        hFinReal = item.horaFinalReal || hFinProg;
-        asistencia = 'SI';
-        puntualidad = 'TARDE';
-      } else {
-        hIniReal = item.horaInicioReal || hIniProg;
-        hFinReal = item.horaFinalReal || hFinProg;
-        asistencia = 'SI';
-        puntualidad = 'PUNTUAL';
-      }
-
-      // 14 Columnas exactas de CONTROL ASISTENCIA:
-      // SEDE | PERIODO | DÍAS | HORA INICIO PROGRAMADA | HORA FINAL PROGRAMADA | AULA | NRC. | DOCENTE | CURSO | CARRERA | HORA INICIO REAL | HORA FINAL REAL | ASISTENCIA | PUNTUALIDAD
-      const rowText = [
-        sede,
-        periodo,
-        diasVal,
-        hIniProg,
-        hFinProg,
-        aula,
-        nrc,
-        docente,
-        curso,
-        carrera,
-        hIniReal,
-        hFinReal,
-        asistencia,
-        puntualidad
-      ].join('\t');
-
-      const ok = await safeCopyToClipboard(rowText);
+      const { html, plain } = generateAttendanceTableData(item, selectedDia);
+      const ok = await copyRichTableToClipboard(plain, html);
       if (ok) {
-        setToastMessage(`📋 Fila copiada (${aula} - ${docente})`);
+        setToastMessage(`📋 Tabla copiada (${item.aula} - ${item.docente})`);
       } else {
-        setToastMessage('❌ No se pudo copiar al portapapeles');
+        setToastMessage('❌ No se pudo copiar la tabla al portapapeles');
       }
       setTimeout(() => setToastMessage(''), 2500);
     } catch (err) {
-      console.error('Error al copiar fila:', err);
-      setToastMessage('❌ Error al copiar fila');
+      console.error('Error al copiar tabla:', err);
+      setToastMessage('❌ Error al copiar tabla');
+      setTimeout(() => setToastMessage(''), 2500);
+    }
+  };
+
+  // Copiar Toda la Tabla de Asistencia Filtrada en Formato Tabla HTML + Excel
+  const handleCopyAllAttendanceTable = async () => {
+    try {
+      if (displayedItems.length === 0) {
+        setToastMessage('⚠️ No hay clases filtradas para copiar');
+        setTimeout(() => setToastMessage(''), 2000);
+        return;
+      }
+      const { html, plain } = generateAttendanceTableData(displayedItems, selectedDia);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setToastMessage(`📋 Tabla completa copiada (${displayedItems.length} filas en tabla)`);
+      } else {
+        setToastMessage('❌ No se pudo copiar la tabla');
+      }
+      setTimeout(() => setToastMessage(''), 2500);
+    } catch (err) {
+      console.error('Error copiando tabla completa:', err);
+      setToastMessage('❌ Error al copiar tabla');
       setTimeout(() => setToastMessage(''), 2500);
     }
   };
@@ -873,6 +1022,35 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <DoorOpen className="w-3 h-3" />
               <span>Libres ({freeRooms.length})</span>
             </button>
+
+            {/* Selector de Modo de Vista: Tarjetas vs Tabla Excel */}
+            <div className="flex items-center p-0.5 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setViewMode('CLASSES')}
+                className={`h-6 px-2 rounded-lg transition flex items-center gap-1 active:scale-95 ${viewMode === 'CLASSES'
+                    ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                  }`}
+                title="Vista de Tarjetas AMOLED"
+              >
+                <LayoutGrid className="w-3 h-3" />
+                <span>Tarjetas</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('TABLE')}
+                className={`h-6 px-2 rounded-lg transition flex items-center gap-1 active:scale-95 ${viewMode === 'TABLE'
+                    ? 'bg-[#FFC000] text-slate-950 font-black shadow-2xs'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                  }`}
+                title="Vista en Tabla Oficial de Excel"
+              >
+                <Table className="w-3 h-3" />
+                <span>Tabla Excel</span>
+              </button>
+            </div>
           </div>
 
           {/* Pastillas KPI para filtrar con 1 toque */}
@@ -975,7 +1153,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       </div>
 
       {/* Active Filter Pill indicator if statusFilter != 'ALL' */}
-      {statusFilter !== 'ALL' && viewMode === 'CLASSES' && (
+      {statusFilter !== 'ALL' && viewMode !== 'FREE_ROOMS' && (
         <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800">
           <span className="text-slate-600 dark:text-zinc-300 font-medium">
             Filtrando por estado: <strong className="text-slate-900 dark:text-white font-bold uppercase">{statusFilter}</strong>
@@ -991,7 +1169,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       )}
 
       {/* Active Schedule Mode Indicator if blockMode != 'ALL' */}
-      {blockMode !== 'ALL' && viewMode === 'CLASSES' && (
+      {blockMode !== 'ALL' && viewMode !== 'FREE_ROOMS' && (
         <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60">
           <span className="text-amber-950 dark:text-amber-200 font-medium">
             Horario: <strong className="font-bold">
@@ -1018,7 +1196,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       )}
 
       {/* Active Floor Filter Pill indicator if selectedPisos.length > 0 */}
-      {selectedPisos.length > 0 && viewMode === 'CLASSES' && (
+      {selectedPisos.length > 0 && viewMode !== 'FREE_ROOMS' && (
         <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60">
           <span className="text-amber-950 dark:text-amber-200 font-medium">
             Filtrando {selectedPisos.length === 1 ? 'piso' : 'pisos'}: <strong className="font-bold">
@@ -1136,6 +1314,192 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             Restablecer Filtro
           </button>
         )}
+      </div>
+    ) : viewMode === 'TABLE' ? (
+      /* VIEW MODE: TABLA OFICIAL EXCEL (CONTROL DOCENTE) */
+      <div className="bg-white dark:bg-[#0c0c0f] border border-slate-300 dark:border-zinc-800 rounded-3xl p-3 sm:p-5 shadow-sm space-y-3">
+        {/* Header de la Tabla */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFC000]/20 flex items-center justify-center shrink-0 border border-[#FFC000]/40">
+              <Table className="w-5 h-5 text-amber-500 stroke-[2.4]" />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase">
+                Control de Asistencia Docente · Tabla Oficial Excel
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">
+                14 columnas oficiales de la hoja <strong className="text-slate-800 dark:text-zinc-200">CONTROL ASISTENCIA</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <span className="font-mono text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700">
+              {displayedItems.length} clases
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyAllAttendanceTable}
+              className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FFC000] hover:bg-[#e5ad00] active:scale-95 text-slate-950 shadow-xs transition flex items-center gap-1.5 shrink-0"
+              title="Copiar todas las filas visibles con formato oficial Excel (tabla enriquecida con colores)"
+            >
+              <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
+              <span>Copiar Toda la Tabla</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Contenedor con Scroll Horizontal y Vertical */}
+        <div className="w-full overflow-x-auto max-h-[72vh] overflow-y-auto rounded-2xl border-2 border-slate-900 dark:border-zinc-700 shadow-md">
+          <table className="w-full text-xs text-left border-collapse font-sans min-w-[1350px]">
+            <thead className="sticky top-0 z-20 shadow-xs">
+              <tr className="border-b border-black">
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">SEDE</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">PERIODO</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">DÍAS</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA INICIO PROGRAMADA</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA FINAL PROGRAMADA</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">AULA</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">NRC.</th>
+                <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">DOCENTE</th>
+                <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">CURSO</th>
+                <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">CARRERA</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA INICIO REAL</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA FINAL REAL</th>
+                <th className="bg-[#000000] text-white font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">ASISTENCIA</th>
+                <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">PUNTUALIDAD</th>
+                <th className="bg-slate-900 text-white font-black px-3 py-2.5 text-center uppercase tracking-tight text-[11px] whitespace-nowrap sticky right-0 z-30">ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-sans divide-y divide-black/20">
+              {displayedItems.map(item => {
+                const isPuntual = item.puntualidad === 'PUNTUAL';
+                const isTarde = item.puntualidad === 'TARDE';
+                const isFalta = item.asistencia === 'NO';
+                const isReemplazo = item.asistencia && item.asistencia.includes('REEMPLAZO');
+
+                const dObj = new Date();
+                const dNum = String(dObj.getDate()).padStart(2, '0');
+                const mNum = String(dObj.getMonth() + 1).padStart(2, '0');
+                const yNum = dObj.getFullYear();
+                const dateStr = `${dNum}/${mNum}/${yNum}`;
+                const rawDia = String(item.dia || selectedDia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
+
+                return (
+                  <tr key={item.id} className="hover:bg-amber-50/60 dark:hover:bg-zinc-800/60 transition-colors border-b border-black">
+                    <td className="px-3 py-2 text-center border-r border-black font-medium">{item.sede || 'Comas'}</td>
+                    <td className="px-3 py-2 text-center border-r border-black font-mono">{item.periodo || '226434'}</td>
+                    <td className="px-3 py-2 text-center border-r border-black font-medium whitespace-nowrap">{diasVal}</td>
+                    <td className="px-3 py-2 text-center border-r border-black font-mono font-bold">{item.horaInicioProg || ''}</td>
+                    <td className="px-3 py-2 text-center border-r border-black font-mono font-bold">{item.horaFinalProg || ''}</td>
+                    <td className="px-3 py-2 text-center border-r border-black font-mono font-black text-sm bg-slate-50 dark:bg-zinc-800/80">{item.aula || ''}</td>
+                    <td className="px-3 py-2 text-center border-r border-black font-mono font-semibold">{item.nrc || ''}</td>
+                    <td className="px-4 py-2 text-left border-r border-black font-bold max-w-[240px] truncate" title={item.docente}>{item.docente || ''}</td>
+                    <td className="px-4 py-2 text-left border-r border-black max-w-[200px] truncate" title={item.curso}>{item.curso || ''}</td>
+                    <td className="px-4 py-2 text-left border-r border-black max-w-[180px] truncate" title={item.carrera}>{item.carrera || ''}</td>
+                    <td className="px-3 py-2 text-center border-r border-black font-mono font-bold">
+                      {isFalta ? (
+                        <span className="font-mono font-black">-</span>
+                      ) : isTarde ? (
+                        <span className="text-amber-950 dark:text-amber-300 bg-[#FFEB9C] dark:bg-amber-950/80 px-2 py-0.5 rounded border border-amber-400">
+                          {item.horaInicioReal || item.horaInicioProg}
+                        </span>
+                      ) : isPuntual ? (
+                        <span className="text-emerald-800 dark:text-emerald-300">
+                          {item.horaInicioReal || item.horaInicioProg}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-center border-r border-black font-mono font-bold">
+                      {isFalta ? '-' : (item.horaFinalReal || item.horaFinalProg || '')}
+                    </td>
+                    <td className="px-3 py-2 text-center border-r border-black font-black">
+                      {isFalta ? (
+                        <span className="text-rose-600 font-extrabold">NO</span>
+                      ) : (isPuntual || isTarde || isReemplazo) ? (
+                        <span className="text-emerald-700 font-extrabold">SI</span>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
+                    {/* Columna PUNTUALIDAD con color oficial de Excel */}
+                    <td className={`px-3 py-2 text-center border-r border-black font-black whitespace-nowrap ${
+                      isPuntual
+                        ? 'bg-[#C6EFCE] text-[#006100]'
+                        : isTarde
+                          ? 'bg-[#FFEB9C] text-[#9C5700]'
+                          : isFalta
+                            ? 'bg-[#000000] text-[#FFFFFF]'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400'
+                    }`}>
+                      {isPuntual ? 'PUNTUAL' : isTarde ? 'TARDE' : isFalta ? '-' : 'PENDIENTE'}
+                    </td>
+                    {/* Acciones Rápidas en la Fila */}
+                    <td className="px-2 py-2 text-center sticky right-0 bg-white dark:bg-zinc-900 border-l border-black z-10 whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleQuickStatus(item, 'PUNTUAL')}
+                          className={`h-7 px-2 rounded-lg text-[10px] font-black transition flex items-center gap-1 active:scale-95 ${
+                            isPuntual
+                              ? 'bg-[#00875A] text-white shadow-xs'
+                              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 hover:bg-emerald-100'
+                          }`}
+                          title="Puntual"
+                        >
+                          <CheckCircle2 className="w-3 h-3 stroke-[2.4]" />
+                          <span>Puntual</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleQuickStatus(item, 'TARDE')}
+                          className={`h-7 px-2 rounded-lg text-[10px] font-black transition flex items-center gap-1 active:scale-95 ${
+                            isTarde
+                              ? 'bg-[#FDBA30] text-slate-950 shadow-xs'
+                              : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/40 hover:bg-amber-100'
+                          }`}
+                          title="Tarde"
+                        >
+                          <Clock className="w-3 h-3 stroke-[2.4]" />
+                          <span>Tarde</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleQuickStatus(item, 'FALTA')}
+                          className={`h-7 px-2 rounded-lg text-[10px] font-black transition flex items-center gap-1 active:scale-95 ${
+                            isFalta
+                              ? 'bg-black text-white border border-zinc-600 shadow-xs'
+                              : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-500/40 hover:bg-rose-100'
+                          }`}
+                          title="Falta (-)"
+                        >
+                          <XCircle className="w-3 h-3 stroke-[2.4]" />
+                          <span>Falta</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopyAttendanceRow(item)}
+                          className="h-7 px-2 rounded-lg text-[10px] font-black bg-amber-100 dark:bg-amber-950/60 hover:bg-[#FFC000] text-amber-900 dark:text-amber-200 hover:text-slate-950 border border-amber-400 transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                          title="Copiar fila para Excel"
+                        >
+                          <Copy className="w-3 h-3 stroke-[2.4]" />
+                          <span>Copiar</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-3.5">

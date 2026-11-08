@@ -13,7 +13,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     height = 120,
     compact = false,
     autoOpen = false,
-    onSignChange
+    onSignChange,
+    onClose
   },
   ref
 ) {
@@ -185,6 +186,17 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     openModal: () => setIsModalOpen(true)
   }));
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (onClose) {
+      try {
+        onClose();
+      } catch (e) {
+        console.error('Error on SignatureCanvas onClose:', e);
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       {/* Cabecera del apartado de firma */}
@@ -278,7 +290,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
       {isModalOpen && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-5 animate-backdrop-fade"
-          onClick={() => setIsModalOpen(false)}
+          onClick={handleModalClose}
         >
           <div
             className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 animate-spring-up"
@@ -301,7 +313,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleModalClose}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
                 title="Cerrar ventana"
               >
@@ -365,7 +377,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
               <div className="flex items-center gap-2.5 flex-1 sm:flex-initial justify-end">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleModalClose}
                   className="h-11 px-4 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 transition inline-flex items-center justify-center active:scale-95"
                 >
                   Cancelar

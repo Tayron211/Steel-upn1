@@ -20,7 +20,9 @@ import {
   Layers,
   Eye,
   Plus,
-  Copy
+  Copy,
+  Table,
+  LayoutGrid
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
@@ -30,19 +32,51 @@ import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
 import { CAMPUS_ROOMS } from '../utils/campusRooms';
 
-const safeCopyToClipboard = async (text) => {
-  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+const copyRichTableToClipboard = async (plainText, htmlText) => {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.ClipboardItem) {
     try {
-      await navigator.clipboard.writeText(text);
+      const blobHtml = new Blob([htmlText], { type: 'text/html' });
+      const blobText = new Blob([plainText], { type: 'text/plain' });
+      const item = new window.ClipboardItem({
+        'text/html': blobHtml,
+        'text/plain': blobText
+      });
+      await navigator.clipboard.write([item]);
       return true;
     } catch (e) {
-      console.warn('navigator.clipboard falló, usando fallback:', e);
+      console.warn('ClipboardItem copy failed, trying fallback:', e);
     }
   }
+
   if (typeof document !== 'undefined') {
     try {
+      let copyOk = false;
+      const listener = (e) => {
+        e.preventDefault();
+        e.clipboardData.setData('text/html', htmlText);
+        e.clipboardData.setData('text/plain', plainText);
+        copyOk = true;
+      };
+      document.addEventListener('copy', listener);
+      const successful = document.execCommand('copy');
+      document.removeEventListener('copy', listener);
+      if (copyOk || successful) return true;
+    } catch (err) {
+      console.warn('Fallback copy listener falló:', err);
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(plainText);
+        return true;
+      } catch (e) {
+        console.warn('navigator.clipboard.writeText falló:', e);
+      }
+    }
+
+    try {
       const textArea = document.createElement('textarea');
-      textArea.value = text;
+      textArea.value = plainText;
       textArea.style.position = 'fixed';
       textArea.style.top = '0';
       textArea.style.left = '0';
@@ -157,6 +191,7 @@ export default function TicketsKanban({
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeViewTab, setActiveViewTab] = useState('ACTIVOS'); // 'ACTIVOS' | 'CONCLUIDOS'
+  const [viewMode, setViewMode] = useState('CARDS'); // 'CARDS' | 'TABLE'
 
   const asistentes = useAssistants();
 
@@ -435,53 +470,151 @@ export default function TicketsKanban({
     setLoanRango(computeRango(newTime));
   };
 
-  // Copia la fila de Excel en formato TSV según modelo oficial (Hoja ATENCIONES 2026-2, omitida la columna PISO)
+  // Generador oficial de Tabla de Préstamos en HTML y TSV (10 columnas oficiales de ATENCIONES 2026-2)
   // FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PABELLÓN | TIPO DE SOLICITUD | ESTADO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
-  const copyTicketExcelRow = async (ticket, withPiso = false) => {
-    let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
-    let fecha = rawFecha;
-    if (rawFecha.includes('-')) {
-      const parts = rawFecha.split('T')[0].split('-');
-      if (parts.length === 3 && parts[0].length === 4) {
-        fecha = `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const generateTicketsTableData = (items) => {
+    const list = Array.isArray(items) ? items : [items];
+    const headers = ['FECHA', 'DIA', 'HORA DE REPORTE', 'RANGO', 'AMBIENTE', 'PABELLÓN', 'TIPO DE SOLICITUD', 'ESTADO', 'DESCRIPCIÓN / SOLUCIÓN', 'RESPONSABLE'];
+
+    const thStyle = 'background-color:#FFC000;color:#000000;font-weight:bold;border:1px solid #000000;padding:6px 10px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:nowrap;';
+    const tdCenter = 'border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;background-color:#FFFFFF;color:#000000;white-space:nowrap;';
+    const tdLeft = 'border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:left;background-color:#FFFFFF;color:#000000;white-space:nowrap;';
+
+    const rowsHtml = list.map(ticket => {
+      let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
+      let fecha = rawFecha;
+      if (rawFecha.includes('-')) {
+        const parts = rawFecha.split('T')[0].split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+          fecha = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
       }
+      const rawDia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
+      const dia = String(rawDia).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      let hora = ticket.horaReporte || ticket.hora_reporte || '';
+      if (hora.length > 5 && hora.includes(':')) hora = hora.slice(0, 5);
+      if (!hora) {
+        const now = new Date();
+        hora = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      }
+
+      const rango = ticket.rango || computeRango(hora);
+      const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
+      const cleanPab = cleanExcelVal(ticket.pabellon);
+      const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
+      const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
+      const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
+      const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
+      const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
+
+      const isAtendido = estado === 'ATENDIDO' || estado === 'DEVUELTO' || estado === 'RESUELTO';
+      const tdEstado = `border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;font-weight:bold;background-color:${isAtendido ? '#C6EFCE' : '#FFEB9C'};color:${isAtendido ? '#006100' : '#9C5700'};white-space:nowrap;`;
+
+      return `<tr>
+        <td style="${tdCenter}">${fecha}</td>
+        <td style="${tdCenter}">${dia}</td>
+        <td style="${tdCenter}">${hora}</td>
+        <td style="${tdCenter}">${rango}</td>
+        <td style="${tdCenter}">${ambiente}</td>
+        <td style="${tdCenter}">${pabellon}</td>
+        <td style="${tdLeft}">${tipo}</td>
+        <td style="${tdEstado}">${estado}</td>
+        <td style="${tdLeft}">${descripcion}</td>
+        <td style="${tdLeft}">${responsable}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<!--StartFragment-->
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #000000;font-family:Calibri,Arial,sans-serif;font-size:10pt;">
+  <thead>
+    <tr>
+      ${headers.map(h => `<th style="${thStyle}">${h}</th>`).join('')}
+    </tr>
+  </thead>
+  <tbody>
+    ${rowsHtml}
+  </tbody>
+</table>
+<!--EndFragment-->`.trim();
+
+    const plainRows = list.map(ticket => {
+      let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
+      let fecha = rawFecha;
+      if (rawFecha.includes('-')) {
+        const parts = rawFecha.split('T')[0].split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+          fecha = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+      }
+      const rawDia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
+      const dia = String(rawDia).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      let hora = ticket.horaReporte || ticket.hora_reporte || '';
+      if (hora.length > 5 && hora.includes(':')) hora = hora.slice(0, 5);
+      if (!hora) {
+        const now = new Date();
+        hora = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      }
+
+      const rango = ticket.rango || computeRango(hora);
+      const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
+      const cleanPab = cleanExcelVal(ticket.pabellon);
+      const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
+      const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
+      const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
+      const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
+      const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
+
+      return [fecha, dia, hora, rango, ambiente, pabellon, tipo, estado, descripcion, responsable].join('\t');
+    });
+
+    const plain = [headers.join('\t'), ...plainRows].join('\n');
+    return { html, plain };
+  };
+
+  // Copia la fila de Excel en formato Tabla HTML rico + TSV (solo para devueltos/atendidos)
+  const copyTicketExcelRow = async (ticket) => {
+    try {
+      const { html, plain } = generateTicketsTableData(ticket);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setToastMessage(`📋 Tabla copiada (${ticket.ambiente} · ${ticket.tipoSolicitud})`);
+      } else {
+        setToastMessage('❌ No se pudo copiar al portapapeles');
+      }
+      setTimeout(() => setToastMessage(''), 2500);
+    } catch (err) {
+      console.error('Error al copiar ticket:', err);
+      setToastMessage('❌ Error al copiar tabla');
+      setTimeout(() => setToastMessage(''), 2500);
     }
+  };
 
-    const rawDia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
-    const dia = String(rawDia).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    let hora = ticket.horaReporte || ticket.hora_reporte || '';
-    if (hora.length > 5 && hora.includes(':')) {
-      hora = hora.slice(0, 5);
+  // Copiar toda la tabla de préstamos en Formato Oficial Excel
+  const handleCopyAllTicketsTable = async (itemsToCopy) => {
+    try {
+      const list = itemsToCopy && itemsToCopy.length > 0 ? itemsToCopy : concludedLoans;
+      if (list.length === 0) {
+        setToastMessage('⚠️ No hay préstamos para copiar');
+        setTimeout(() => setToastMessage(''), 2000);
+        return;
+      }
+      const { html, plain } = generateTicketsTableData(list);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setToastMessage(`📋 Tabla de préstamos copiada (${list.length} filas en formato oficial)`);
+      } else {
+        setToastMessage('❌ No se pudo copiar la tabla');
+      }
+      setTimeout(() => setToastMessage(''), 2500);
+    } catch (err) {
+      console.error('Error al copiar tabla completa:', err);
+      setToastMessage('❌ Error al copiar tabla');
+      setTimeout(() => setToastMessage(''), 2500);
     }
-    if (!hora) {
-      const now = new Date();
-      hora = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
-
-    const rango = ticket.rango || computeRango(hora);
-    const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
-    const cleanPab = cleanExcelVal(ticket.pabellon);
-    const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
-    const cleanP = cleanExcelVal(ticket.piso);
-    const piso = cleanP || deduceFloor(ambiente) || '1ER PISO';
-    const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
-    const estado = (ticket.estado || 'EN PROCESO').toUpperCase().trim();
-    const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
-    const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
-
-    // 10 Columnas exactas de ATENCIONES 2026-2 (omitida la columna PISO según solicitud):
-    const row = withPiso
-      ? [fecha, dia, hora, rango, ambiente, piso, pabellon, tipo, estado, descripcion, responsable].join('\t')
-      : [fecha, dia, hora, rango, ambiente, pabellon, tipo, estado, descripcion, responsable].join('\t');
-
-    const ok = await safeCopyToClipboard(row);
-    if (ok) {
-      setToastMessage(`📋 Fila copiada (${ambiente} · ${tipo})`);
-    } else {
-      setToastMessage('❌ No se pudo copiar al portapapeles');
-    }
-    setTimeout(() => setToastMessage(''), 2500);
   };
 
   // Dinámica Paso 1: El docente/alumno firma que RECIBE el material ("Recibí")
@@ -818,6 +951,37 @@ export default function TicketsKanban({
             </button>
           </div>
 
+          {/* Selector de Modo de Vista: Tarjetas vs Tabla Excel */}
+          <div className="flex items-center p-0.5 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-bold shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('CARDS')}
+              className={`h-8 px-2.5 rounded-lg transition flex items-center gap-1.5 active:scale-95 ${
+                viewMode === 'CARDS'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+              }`}
+              title="Vista de Tarjetas AMOLED"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Tarjetas</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode('TABLE')}
+              className={`h-8 px-2.5 rounded-lg transition flex items-center gap-1.5 active:scale-95 ${
+                viewMode === 'TABLE'
+                  ? 'bg-[#FFC000] text-slate-950 font-black shadow-2xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+              }`}
+              title="Vista en Tabla Oficial de Excel (ATENCIONES 2026-2)"
+            >
+              <Table className="w-3.5 h-3.5" />
+              <span>Tabla Excel</span>
+            </button>
+          </div>
+
           {/* Botón Principal: Registrar Préstamo (Abre ventana modal para aprovechar los espacios) */}
           <button
             type="button"
@@ -859,6 +1023,155 @@ export default function TicketsKanban({
         <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200 dark:border-zinc-800">
           <div className="w-7 h-7 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
           <p className="text-xs text-slate-500 dark:text-zinc-400">Cargando...</p>
+        </div>
+      ) : viewMode === 'TABLE' ? (
+        /* VISTA TABLA OFICIAL EXCEL (ATENCIONES 2026-2) SEGÚN MODELO DE FOTO */
+        <div className="bg-white dark:bg-[#0c0c0f] border border-slate-300 dark:border-zinc-800 rounded-3xl p-3 sm:p-5 shadow-sm space-y-3">
+          {/* Header de la Tabla */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFC000]/20 flex items-center justify-center shrink-0 border border-[#FFC000]/40">
+                <Table className="w-5 h-5 text-amber-500 stroke-[2.4]" />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase">
+                  Préstamos de Material · Tabla Oficial Excel (ATENCIONES 2026-2)
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-zinc-400">
+                  10 columnas oficiales sin columna piso · {activeViewTab === 'ACTIVOS' ? 'Mostrando Préstamos Activos' : 'Mostrando Historial de Devoluciones'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <span className="font-mono text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700">
+                {(activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans).length} registros
+              </span>
+              <button
+                type="button"
+                onClick={() => handleCopyAllTicketsTable(activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans)}
+                className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FFC000] hover:bg-[#e5ad00] active:scale-95 text-slate-950 shadow-xs transition flex items-center gap-1.5 shrink-0"
+                title="Copiar todas las filas visibles con formato oficial Excel (tabla enriquecida con colores)"
+              >
+                <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
+                <span>Copiar Toda la Tabla</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Contenedor con Scroll Horizontal y Vertical */}
+          <div className="w-full overflow-x-auto max-h-[72vh] overflow-y-auto rounded-2xl border-2 border-slate-900 dark:border-zinc-700 shadow-md">
+            <table className="w-full text-xs text-left border-collapse font-sans min-w-[1250px]">
+              <thead className="sticky top-0 z-20 shadow-xs">
+                <tr className="border-b border-black">
+                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">FECHA</th>
+                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">DIA</th>
+                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">HORA DE REPORTE</th>
+                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">RANGO</th>
+                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">AMBIENTE</th>
+                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">PABELLÓN</th>
+                  <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">TIPO DE SOLICITUD</th>
+                  <th className="bg-[#FFC000] text-black font-black px-3 py-2.5 text-center border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">ESTADO</th>
+                  <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">DESCRIPCIÓN / SOLUCIÓN</th>
+                  <th className="bg-[#FFC000] text-black font-black px-4 py-2.5 text-left border-r border-black uppercase tracking-tight text-[11px] whitespace-nowrap">RESPONSABLE</th>
+                  <th className="bg-slate-900 text-white font-black px-3 py-2.5 text-center uppercase tracking-tight text-[11px] whitespace-nowrap sticky right-0 z-30">ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-sans divide-y divide-black/20">
+                {(activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans).length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="py-12 text-center text-slate-500 font-medium">
+                      No hay registros en esta sección.
+                    </td>
+                  </tr>
+                ) : (
+                  (activeViewTab === 'ACTIVOS' ? activeLoans : concludedLoans).map(ticket => {
+                    let rawFecha = ticket.fecha || new Date().toISOString().split('T')[0];
+                    let fecha = rawFecha;
+                    if (rawFecha.includes('-')) {
+                      const parts = rawFecha.split('T')[0].split('-');
+                      if (parts.length === 3 && parts[0].length === 4) {
+                        fecha = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                      }
+                    }
+                    const rawDia = ticket.dia || getDayOfWeek(rawFecha) || 'LUNES';
+                    const dia = String(rawDia).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                    let hora = ticket.horaReporte || ticket.hora_reporte || '';
+                    if (hora.length > 5 && hora.includes(':')) hora = hora.slice(0, 5);
+                    if (!hora) {
+                      const now = new Date();
+                      hora = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    }
+
+                    const rango = ticket.rango || computeRango(hora);
+                    const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
+                    const cleanPab = cleanExcelVal(ticket.pabellon);
+                    const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
+                    const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
+                    const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
+                    const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
+                    const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
+                    const isDevuelto = estado === 'ATENDIDO' || estado === 'DEVUELTO' || estado === 'RESUELTO';
+
+                    return (
+                      <tr key={ticket.id} className="hover:bg-amber-50/60 dark:hover:bg-zinc-800/60 transition-colors border-b border-black">
+                        <td className="px-3 py-2 text-center border-r border-black font-medium">{fecha}</td>
+                        <td className="px-3 py-2 text-center border-r border-black font-bold uppercase">{dia}</td>
+                        <td className="px-3 py-2 text-center border-r border-black font-mono font-bold">{hora}</td>
+                        <td className="px-3 py-2 text-center border-r border-black font-mono text-[11px]">{rango}</td>
+                        <td className="px-3 py-2 text-center border-r border-black font-mono font-black text-sm bg-slate-50 dark:bg-zinc-800/80">{ambiente}</td>
+                        <td className="px-3 py-2 text-center border-r border-black font-black">{pabellon}</td>
+                        <td className="px-4 py-2 text-left border-r border-black font-medium max-w-[220px] truncate" title={tipo}>{tipo}</td>
+                        <td className={`px-3 py-2 text-center border-r border-black font-black whitespace-nowrap ${
+                          isDevuelto ? 'bg-[#C6EFCE] text-[#006100]' : 'bg-[#FFEB9C] text-[#9C5700]'
+                        }`}>
+                          {isDevuelto ? 'ATENDIDO' : 'EN PROCESO'}
+                        </td>
+                        <td className="px-4 py-2 text-left border-r border-black max-w-[260px] truncate" title={descripcion}>{descripcion}</td>
+                        <td className="px-4 py-2 text-left border-r border-black font-semibold max-w-[180px] truncate" title={responsable}>{responsable}</td>
+                        <td className="px-2 py-2 text-center sticky right-0 bg-white dark:bg-zinc-900 border-l border-black z-10 whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1">
+                            {isDevuelto ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => copyTicketExcelRow(ticket)}
+                                  className="h-7 px-2.5 rounded-lg text-[10px] font-black bg-amber-100 hover:bg-[#FFC000] text-slate-950 border border-amber-300 transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                                  title="Copiar fila para Excel (solo habilitado en devueltos)"
+                                >
+                                  <Copy className="w-3 h-3 stroke-[2.4]" />
+                                  <span>Copiar</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleQuickDownloadPdf(e, ticket)}
+                                  className="h-7 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-lg text-[10px] font-bold border border-slate-300 dark:border-zinc-700 transition"
+                                  title="Descargar PDF"
+                                >
+                                  PDF
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setInlineReceiveTicketId(ticket.id)}
+                                className="h-7 px-2.5 rounded-lg text-[10px] font-black bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                                title="Registrar devolución con firma"
+                              >
+                                <CheckCircle2 className="w-3 h-3 stroke-[2.4]" />
+                                <span>Devolución</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : activeViewTab === 'ACTIVOS' ? (
         activeLoans.length === 0 ? (
@@ -966,6 +1279,7 @@ export default function TicketsKanban({
                           height={85}
                           compact={true}
                           autoOpen={true}
+                          onClose={() => setInlineSignTicketId(null)}
                         />
                         <div className="grid grid-cols-2 gap-1.5 pt-1">
                           <button
@@ -996,6 +1310,7 @@ export default function TicketsKanban({
                           height={85}
                           compact={true}
                           autoOpen={true}
+                          onClose={() => setInlineReceiveTicketId(null)}
                         />
                         <div className="space-y-1.5 pt-1">
                           <button
@@ -1037,18 +1352,8 @@ export default function TicketsKanban({
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
-                        onClick={() => copyTicketExcelRow(ticket)}
-                        className="h-9 px-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-[#FDBA30] dark:bg-zinc-800 dark:hover:bg-[#FDBA30] text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-slate-950 border border-slate-200 dark:border-zinc-700 transition flex items-center gap-1.5 active:scale-95 shadow-2xs shrink-0"
-                        title="Copiar fila de Excel (ATENCIONES 2026-2)"
-                      >
-                        <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                        <span>Copiar</span>
-                      </button>
-
-                      <button
-                        type="button"
                         onClick={() => setInlineReceiveTicketId(ticket.id)}
-                        className="h-9 px-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
+                        className="h-9 px-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
                         title="Registrar devolución con firma"
                       >
                         <CheckCircle2 className="w-4 h-4 stroke-[2.5] shrink-0" />
