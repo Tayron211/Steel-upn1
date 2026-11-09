@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createDbChangeGate } from '../utils/webSignGate';
 import {
@@ -39,6 +39,7 @@ import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { useFadeModal } from '../utils/useFadeModal';
+import { triggerAutoSyncLinkedExcel } from '../utils/liveExcelSync';
 import { toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
 
@@ -549,6 +550,140 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const activeModalFade = useFadeModal(activeModalItem, () => setActiveModalItem(null), 200);
   const reserveRoomFade = useFadeModal(reservingRoom, () => setReservingRoom(null), 200);
 
+  // Modales de Acción al Mantener Presionado
+  const [manualTardeItem, setManualTardeItem] = useState(null);
+  const [manualTardeTime, setManualTardeTime] = useState('');
+  const manualTardeFade = useFadeModal(manualTardeItem, () => setManualTardeItem(null), 200);
+
+  const [faltaOptionsItem, setFaltaOptionsItem] = useState(null);
+  const faltaOptionsFade = useFadeModal(faltaOptionsItem, () => setFaltaOptionsItem(null), 200);
+
+  // Manejador Central de Pulsación Larga (Long Press) para Tarde y Falta
+  const longPressRef = useRef({
+    timer: null,
+    didLongPress: false,
+    item: null,
+    startX: 0,
+    startY: 0
+  });
+
+  const handlePressStart = (e, item, onLongPress) => {
+    const point = e.touches ? e.touches[0] : e;
+    longPressRef.current.didLongPress = false;
+    longPressRef.current.item = item;
+    longPressRef.current.startX = point.clientX;
+    longPressRef.current.startY = point.clientY;
+
+    if (longPressRef.current.timer) clearTimeout(longPressRef.current.timer);
+
+    longPressRef.current.timer = setTimeout(() => {
+      longPressRef.current.didLongPress = true;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(40); } catch (_) {}
+      }
+      onLongPress(item);
+    }, 450);
+  };
+
+  const handlePressEnd = () => {
+    if (longPressRef.current.timer) {
+      clearTimeout(longPressRef.current.timer);
+      longPressRef.current.timer = null;
+    }
+  };
+
+  const handlePressMove = (e) => {
+    if (!longPressRef.current.timer) return;
+    const point = e.touches ? e.touches[0] : e;
+    const dx = Math.abs(point.clientX - longPressRef.current.startX);
+    const dy = Math.abs(point.clientY - longPressRef.current.startY);
+    if (dx > 10 || dy > 10) {
+      handlePressEnd();
+    }
+  };
+
+  const handlePressClick = (e, item, onClick) => {
+    if (longPressRef.current.didLongPress) {
+      e.preventDefault();
+      e.stopPropagation();
+      longPressRef.current.didLongPress = false;
+      return;
+    }
+    onClick(item);
+  };
+
+  const handleOpenManualTarde = (item) => {
+    setManualTardeItem(item);
+    const initialTime = (item.horaInicioReal && item.horaInicioReal !== '-') ? item.horaInicioReal : getCurrentTimeStr();
+    setManualTardeTime(initialTime);
+  };
+
+  const handleOpenFaltaOptions = (item) => {
+    setFaltaOptionsItem(item);
+  };
+
+  const handleSaveManualTarde = async (e) => {
+    if (e) e.preventDefault();
+    const item = manualTardeFade.cachedData || manualTardeItem;
+    if (!item || !manualTardeTime) return;
+
+    const timeVal = manualTardeTime.trim();
+    const updates = {
+      asistencia: 'SI',
+      puntualidad: 'TARDE',
+      horaInicioReal: timeVal,
+      horaFinalReal: item.horaFinalProg || item.horaFinalReal || ''
+    };
+
+    setData(prev => prev.map(c => (c.id === item.id ? { ...c, ...updates } : c)));
+    setToastMessage(`✓ Tardanza fijada a las ${timeVal} (${item.aula})`);
+    setTimeout(() => setToastMessage(''), 2500);
+
+    manualTardeFade.requestClose(() => setManualTardeItem(null));
+
+    try {
+      await fetch(`/api/attendance/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      triggerAutoSyncLinkedExcel();
+    } catch (err) {
+      console.error('Error saving manual tarde time:', err);
+    }
+  };
+
+  const handleSelectFaltaOption = async (obsType) => {
+    const item = faltaOptionsFade.cachedData || faltaOptionsItem;
+    if (!item) return;
+
+    const upperObs = obsType.toUpperCase().trim();
+    const updates = {
+      asistencia: 'NO',
+      puntualidad: '-',
+      horaInicioReal: '-',
+      horaFinalReal: '-',
+      observacion: upperObs
+    };
+
+    setData(prev => prev.map(c => (c.id === item.id ? { ...c, ...updates } : c)));
+    setToastMessage(`✓ Falta registrada: "${upperObs}" (${item.aula})`);
+    setTimeout(() => setToastMessage(''), 3000);
+
+    faltaOptionsFade.requestClose(() => setFaltaOptionsItem(null));
+
+    try {
+      await fetch(`/api/attendance/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      triggerAutoSyncLinkedExcel();
+    } catch (err) {
+      console.error('Error saving falta with observation:', err);
+    }
+  };
+
   const handleOpenReserveModal = (room) => {
     setReservingRoom(room);
     setReservationForm({
@@ -831,6 +966,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
+      triggerAutoSyncLinkedExcel();
     } catch (err) {
       console.error('Error updating status:', err);
     }
@@ -1574,9 +1710,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                       </button>
                     )}
                     {isTarde && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-full shadow-xs">
-                        <Clock className="w-3 h-3 text-slate-950 stroke-[2.4] shrink-0" />
-                        <span>TARDE</span>
+                      <span className="inline-flex items-center justify-center w-6 h-6 bg-[#FDBA30] text-slate-950 rounded-full shadow-xs shrink-0" title="Tarde">
+                        <Clock className="w-3.5 h-3.5 text-slate-950 stroke-[2.4] shrink-0" />
                       </span>
                     )}
                     {isFalta && (
@@ -1671,24 +1806,40 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </button>
 
                 <button
-                  onClick={() => handleQuickStatus(item, 'TARDE')}
-                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isTarde
+                  type="button"
+                  onMouseDown={(e) => handlePressStart(e, item, handleOpenManualTarde)}
+                  onTouchStart={(e) => handlePressStart(e, item, handleOpenManualTarde)}
+                  onMouseUp={handlePressEnd}
+                  onTouchEnd={handlePressEnd}
+                  onMouseLeave={handlePressEnd}
+                  onTouchMove={handlePressMove}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onClick={(e) => handlePressClick(e, item, () => handleQuickStatus(item, 'TARDE'))}
+                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isTarde
                       ? 'bg-[#FDBA30] text-slate-950 border border-[#FDBA30] font-black shadow-md'
                       : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 dark:bg-[#1c1204] dark:text-[#f59e0b] dark:border-[#d97706] dark:hover:bg-[#d97706]/20'
                     }`}
-                  title={isTarde ? 'Toca para desmarcar' : 'Marcar tardanza'}
+                  title={isTarde ? 'Toca para desmarcar · Mantén presionado para cambiar hora' : 'Marcar tarde · Mantén presionado para cambiar hora'}
                 >
                   <Clock className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isTarde ? 'text-slate-950' : 'text-amber-800 dark:text-[#f59e0b]'}`} />
                   <span>{isTarde && item.horaInicioReal ? `Tarde (${item.horaInicioReal})` : 'Tarde'}</span>
                 </button>
 
                 <button
-                  onClick={() => handleQuickStatus(item, 'FALTA')}
-                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isFalta
+                  type="button"
+                  onMouseDown={(e) => handlePressStart(e, item, handleOpenFaltaOptions)}
+                  onTouchStart={(e) => handlePressStart(e, item, handleOpenFaltaOptions)}
+                  onMouseUp={handlePressEnd}
+                  onTouchEnd={handlePressEnd}
+                  onMouseLeave={handlePressEnd}
+                  onTouchMove={handlePressMove}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onClick={(e) => handlePressClick(e, item, () => handleQuickStatus(item, 'FALTA'))}
+                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isFalta
                       ? 'bg-rose-600 text-white border border-rose-600 font-black shadow-md'
                       : 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 dark:bg-[#1e0810] dark:text-[#fda4af] dark:border-[#9f1239] dark:hover:bg-[#9f1239]/20'
                     }`}
-                  title={isFalta ? 'Toca para desmarcar' : 'Marcar falta'}
+                  title={isFalta ? 'Toca para desmarcar · Mantén presionado para Clase Remota/Adelantada' : 'Marcar falta · Mantén presionado para Clase Remota/Adelantada'}
                 >
                   {isFalta ? (
                     <span className="text-white font-mono font-black text-base">-</span>
@@ -2260,6 +2411,218 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       document.body
     );
   })()
+  }
+
+  {/* MODAL PARA CAMBIAR HORA MANUALMENTE AL MANTENER PRESIONADO 'TARDE' */}
+  {
+    manualTardeFade.shouldRender && typeof document !== 'undefined' && (() => {
+      const item = manualTardeFade.cachedData || manualTardeItem;
+      if (!item) return null;
+
+      return createPortal(
+        <div
+          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 ${manualTardeFade.backdropClass}`}
+          onClick={() => manualTardeFade.requestClose()}
+        >
+          <div
+            className={`apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${manualTardeFade.modalClass}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
+
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs">
+                  <Clock className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                    Cambiar Hora de Tardanza
+                  </h3>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold mt-0.5">
+                    Aula {item.aula} · {item.docente}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => manualTardeFade.requestClose()}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center active:scale-95 transition"
+              >
+                <X className="w-4 h-4 stroke-[2.2]" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveManualTarde} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
+                  Hora de Llegada Real (HH:MM)
+                </label>
+                <input
+                  type="time"
+                  value={manualTardeTime}
+                  onChange={(e) => setManualTardeTime(e.target.value)}
+                  required
+                  className="w-full text-center font-mono font-black text-2xl h-14 rounded-2xl border-2 border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/30 text-amber-950 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Accesos rápidos de hora */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-wider">
+                  Sugerencias rápidas
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setManualTardeTime(getCurrentTimeStr())}
+                    className="py-2 px-1 text-xs font-bold rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition"
+                  >
+                    Hora Actual
+                  </button>
+                  {item.horaInicioProg && (
+                    <button
+                      type="button"
+                      onClick={() => setManualTardeTime(item.horaInicioProg)}
+                      className="py-2 px-1 text-xs font-bold rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition"
+                    >
+                      Programada ({item.horaInicioProg})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const [h, m] = (manualTardeTime || getCurrentTimeStr()).split(':').map(Number);
+                      const nextM = (m + 5) % 60;
+                      const nextH = m + 5 >= 60 ? (h + 1) % 24 : h;
+                      setManualTardeTime(`${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`);
+                    }}
+                    className="py-2 px-1 text-xs font-bold rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition"
+                  >
+                    +5 min
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => manualTardeFade.requestClose()}
+                  className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 text-xs font-black transition active:scale-98 shadow-md"
+                >
+                  Guardar Tardanza
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      );
+    })()
+  }
+
+  {/* MODAL DE OPCIONES AL MANTENER PRESIONADO 'FALTA' (CLASE REMOTA / CLASE ADELANTADA) */}
+  {
+    faltaOptionsFade.shouldRender && typeof document !== 'undefined' && (() => {
+      const item = faltaOptionsFade.cachedData || faltaOptionsItem;
+      if (!item) return null;
+
+      return createPortal(
+        <div
+          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 ${faltaOptionsFade.backdropClass}`}
+          onClick={() => faltaOptionsFade.requestClose()}
+        >
+          <div
+            className={`apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${faltaOptionsFade.modalClass}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
+
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 flex items-center justify-center shadow-xs">
+                  <XCircle className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                    Opciones Especiales de Falta
+                  </h3>
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
+                    Aula {item.aula} · {item.docente}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => faltaOptionsFade.requestClose()}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center active:scale-95 transition"
+              >
+                <X className="w-4 h-4 stroke-[2.2]" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-zinc-400 mb-3.5 leading-relaxed">
+              Selecciona el motivo especial. Se registrará la falta y se guardará el texto en <strong className="text-slate-800 dark:text-zinc-200">MAYÚSCULAS</strong> en la columna de observaciones:
+            </p>
+
+            <div className="space-y-2.5 mb-4">
+              {/* 1. CLASE REMOTA */}
+              <button
+                type="button"
+                onClick={() => handleSelectFaltaOption('CLASE REMOTA')}
+                className="w-full p-3.5 rounded-2xl bg-sky-50/80 hover:bg-sky-100/80 dark:bg-sky-950/40 dark:hover:bg-sky-950/70 border border-sky-200/90 dark:border-sky-800/80 text-left flex items-center gap-3.5 transition active:scale-98 group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
+                  <Monitor className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-black text-sky-950 dark:text-sky-200 tracking-wide uppercase">
+                    Clase Remota
+                  </div>
+                  <div className="text-[11px] text-sky-700/90 dark:text-sky-300/80 leading-snug mt-0.5">
+                    Falta por modalidad virtual. Guarda "CLASE REMOTA" en observación.
+                  </div>
+                </div>
+              </button>
+
+              {/* 2. CLASE ADELANTADA */}
+              <button
+                type="button"
+                onClick={() => handleSelectFaltaOption('CLASE ADELANTADA')}
+                className="w-full p-3.5 rounded-2xl bg-amber-50/80 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3.5 transition active:scale-98 group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0">
+                  <CalendarClock className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-black text-amber-950 dark:text-amber-200 tracking-wide uppercase">
+                    Clase Adelantada
+                  </div>
+                  <div className="text-[11px] text-amber-700/90 dark:text-amber-300/80 leading-snug mt-0.5">
+                    Falta por sesión recuperada o adelantada. Guarda "CLASE ADELANTADA" en observación.
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => faltaOptionsFade.requestClose()}
+              className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>,
+        document.body
+      );
+    })()
   }
     </div >
   );

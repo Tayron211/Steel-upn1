@@ -18,7 +18,7 @@ let watchInterval = null;
 let isSyncingNow = false;
 let lastKnownFileModified = 0;
 let lastLocalSyncAt = 0;
-const LOCAL_SYNC_MIN_MS = 30000;
+const LOCAL_SYNC_MIN_MS = 1200;
 const listeners = new Set();
 const dbChanged = createDbChangeGate({ fireOnFirst: false });
 
@@ -401,30 +401,46 @@ async function pullFromLinkedExcelToWeb(buffer) {
   }
 }
 
+async function checkExternalExcelChange() {
+  if (!cachedHandle || isSyncingNow) return;
+  try {
+    const file = await cachedHandle.getFile();
+    if (!lastKnownFileModified) {
+      lastKnownFileModified = file.lastModified;
+      return;
+    }
+    // Si el archivo en disco cambió (el usuario editó o borró algo en Excel)
+    if (file.lastModified > lastKnownFileModified + 800) {
+      isSyncingNow = true;
+      notifyListeners({ linked: true, fileName: cachedHandle.name, status: 'syncing' });
+      const buf = await file.arrayBuffer();
+      await pullFromLinkedExcelToWeb(buf);
+      lastKnownFileModified = file.lastModified;
+      const nowStr = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      isSyncingNow = false;
+      notifyListeners({ linked: true, fileName: cachedHandle.name, status: 'synced', lastSync: nowStr });
+      return;
+    }
+
+    // Web -> file: si la BD cambió en la web
+    if (await dbChanged()) await syncAllDataToLinkedExcel();
+  } catch (e) {
+    isSyncingNow = false;
+  }
+}
+
 function startBidirectionalWatchLoop() {
   if (watchInterval) clearInterval(watchInterval);
-  watchInterval = setInterval(async () => {
-    if (!cachedHandle || isSyncingNow) return;
-    try {
-      const file = await cachedHandle.getFile();
-      if (lastKnownFileModified && file.lastModified > lastKnownFileModified + 1500) {
-        isSyncingNow = true;
-        notifyListeners({ linked: true, fileName: cachedHandle.name, status: 'syncing' });
-        const buf = await file.arrayBuffer();
-        await pullFromLinkedExcelToWeb(buf);
-        lastKnownFileModified = file.lastModified;
-        const nowStr = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        isSyncingNow = false;
-        notifyListeners({ linked: true, fileName: cachedHandle.name, status: 'synced', lastSync: nowStr });
-        return;
-      }
+  // Revisa cada 3 segundos en segundo plano
+  watchInterval = setInterval(checkExternalExcelChange, 3000);
 
-      // Web -> file: solo jala la data completa si la BD cambió desde la última vez (consulta de 1 fila)
-      if (await dbChanged()) await syncAllDataToLinkedExcel();
-    } catch (e) {
-      isSyncingNow = false;
-    }
-  }, 120000);
+  // Y revisa INMEDIATAMENTE cuando el usuario vuelve al navegador desde Excel
+  if (typeof window !== 'undefined' && !window.__liveExcelFocusBound) {
+    window.__liveExcelFocusBound = true;
+    window.addEventListener('focus', () => {
+      checkExternalExcelChange();
+    });
+  }
 }
 
 export async function linkOneDriveExcelFile() {
