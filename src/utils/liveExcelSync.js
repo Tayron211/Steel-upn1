@@ -37,7 +37,6 @@ function formatExcelTime(val) {
 
 function formatExcelDate(val) {
   if (val === undefined || val === null || val === '') return '';
-  if (typeof val === 'string') return val.trim();
   if (typeof val === 'number' && val > 20000) {
     const utcDays = Math.floor(val - 25569);
     const d = new Date(utcDays * 86400 * 1000);
@@ -45,7 +44,39 @@ function formatExcelDate(val) {
       return d.toISOString().split('T')[0];
     }
   }
-  return String(val);
+  const s = String(val).trim();
+  const ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymd) {
+    return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
+  }
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  }
+  return s;
+}
+
+function findHeaderRow(rows, musts) {
+  for (let r = 0; r < Math.min(rows.length, 12); r++) {
+    const cells = (rows[r] || []).map(c => 
+      String(c ?? '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    );
+    if (musts.every(m => cells.some(c => c.includes(m)))) {
+      return { rowIndex: r, cells };
+    }
+  }
+  return null;
+}
+
+function colOf(cells, names) {
+  for (const n of names) {
+    const normN = n.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let i = cells.findIndex(c => c === normN);
+    if (i < 0) i = cells.findIndex(c => c.startsWith(normN));
+    if (i < 0) i = cells.findIndex(c => c.includes(normN));
+    if (i >= 0) return i;
+  }
+  return -1;
 }
 
 export function subscribeLiveExcelStatus(cb) {
@@ -172,24 +203,57 @@ async function pullFromLinkedExcelToWeb(buffer) {
     const is20261 = atenName.includes('2026-1');
     const defaultPeriodo = is20261 ? '2026-1' : '2026-2';
     const atenRows = XLSX.utils.sheet_to_json(wb.Sheets[atenName], { header: 1 });
-    for (let r = 1; r < atenRows.length; r++) {
+    if (!atenRows || atenRows.length === 0) continue;
+
+    // Detección dinámica de cabeceras para no depender de índices fijos desplazados
+    const headerInfo = findHeaderRow(atenRows, ['FECHA', 'AMBIENTE']) || {
+      rowIndex: 1,
+      cells: (atenRows[1] || []).map(c => String(c ?? '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+    };
+
+    const c = headerInfo.cells;
+    const iFecha = colOf(c, ['FECHA']);
+    const iDia = colOf(c, ['DIA']);
+    const iHora = colOf(c, ['HORA DE REPORTE', 'HORA']);
+    const iRango = colOf(c, ['RANGO']);
+    const iAmbiente = colOf(c, ['AMBIENTE', 'AULA']);
+    const iPiso = colOf(c, ['PISO']);
+    const iPabellon = colOf(c, ['PABELLON']);
+    const iTipo = colOf(c, ['TIPO DE SOLICITUD', 'TIPO']);
+    const iEstado = colOf(c, ['ESTADO']);
+    const iUsuario = colOf(c, ['USUARIO']);
+    const iDesc = colOf(c, ['DESCRIPCION / SOLUCION', 'DESCRIPCION', 'SOLUCION']);
+    const iResp = colOf(c, ['RESPONSABLE']);
+
+    for (let r = headerInfo.rowIndex + 1; r < atenRows.length; r++) {
       const row = atenRows[r];
-      if (!row || (!row[4] && !row[7] && !row[10])) continue;
-      if (String(row[0] || '').toUpperCase().includes('PERIODO')) continue;
+      if (!row) continue;
+      const ambVal = iAmbiente >= 0 && row[iAmbiente] ? String(row[iAmbiente]).trim().toUpperCase() : '';
+      const tipVal = iTipo >= 0 && row[iTipo] ? String(row[iTipo]).trim().toUpperCase() : '';
+      const fecVal = iFecha >= 0 ? formatExcelDate(row[iFecha]) : '';
+      if (!ambVal && !tipVal && !fecVal) continue;
+
+      const descVal = iDesc >= 0 && row[iDesc] !== undefined ? String(row[iDesc] || '').trim() : '';
+      let usuVal = iUsuario >= 0 && row[iUsuario] ? String(row[iUsuario]).trim().toUpperCase() : '';
+      if (!usuVal) {
+        usuVal = descVal.toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE';
+      }
+
       tickets.push({
         id: `ticket_${is20261 ? '1' : '2'}_${r}`,
-        periodo: row[0] ? String(row[0]).trim() : defaultPeriodo,
-        fecha: formatExcelDate(row[1]),
-        dia: row[2] ? String(row[2]).trim().toUpperCase() : '',
-        horaReporte: formatExcelTime(row[3]),
-        ambiente: row[4] ? String(row[4]).trim().toUpperCase() : '',
-        piso: row[5] !== undefined && row[5] !== null ? String(row[5]).trim() : '',
-        pabellon: row[6] ? String(row[6]).trim().toUpperCase() : '',
-        tipoSolicitud: row[7] ? String(row[7]).trim().toUpperCase() : 'ASISTENCIA TÉCNICA',
-        estado: row[8] ? String(row[8]).trim().toUpperCase() : 'ATENDIDO',
-        usuario: row[9] ? (String(row[9]).toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE') : 'DOCENTE',
-        descripcionSolucion: row[10] !== undefined ? String(row[10] || '').trim() : '',
-        responsable: row[11] !== undefined ? String(row[11] || '').trim() : ''
+        periodo: defaultPeriodo,
+        fecha: fecVal,
+        dia: iDia >= 0 && row[iDia] ? String(row[iDia]).trim().toUpperCase() : '',
+        horaReporte: iHora >= 0 ? formatExcelTime(row[iHora]) : '',
+        rango: iRango >= 0 && row[iRango] ? String(row[iRango]).trim() : '',
+        ambiente: ambVal,
+        piso: iPiso >= 0 && row[iPiso] !== undefined ? String(row[iPiso]).trim() : '',
+        pabellon: iPabellon >= 0 && row[iPabellon] ? String(row[iPabellon]).trim().toUpperCase() : '',
+        tipoSolicitud: tipVal || 'ASISTENCIA TÉCNICA',
+        estado: iEstado >= 0 && row[iEstado] ? String(row[iEstado]).trim().toUpperCase() : 'ATENDIDO',
+        usuario: usuVal,
+        descripcionSolucion: descVal,
+        responsable: iResp >= 0 && row[iResp] !== undefined ? String(row[iResp] || '').trim() : ''
       });
     }
   }
@@ -200,38 +264,100 @@ async function pullFromLinkedExcelToWeb(buffer) {
     sheetNames.find(n => n.toUpperCase().includes('HOJA DE ASISTENCIA'));
   if (manualSheetName && wb.Sheets[manualSheetName]) {
     const manRows = XLSX.utils.sheet_to_json(wb.Sheets[manualSheetName], { header: 1 });
-    for (let r = 1; r < manRows.length; r++) {
+    const headerInfo = findHeaderRow(manRows, ['CODIGO', 'NRC']) || {
+      rowIndex: 1,
+      cells: (manRows[1] || []).map(c => String(c ?? '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+    };
+    const c = headerInfo.cells;
+    const iCod = colOf(c, ['CODIGO']);
+    const iFec = colOf(c, ['FECHA']);
+    const iAula = colOf(c, ['AULA']);
+    const iNrc = colOf(c, ['NRC']);
+    const iCodDoc = colOf(c, ['CODIGO DE DOCENTE', 'CODIGO']);
+    const iDoc = colOf(c, ['DOCENTE']);
+    const iCur = colOf(c, ['CURSO']);
+    const iCar = colOf(c, ['CARRERA']);
+    const iMot = colOf(c, ['MOTIVO']);
+    const iAsis = colOf(c, ['ASISTENTE']);
+    const iReemp = colOf(c, ['DOCENTE REEMPLAZANTE', 'REEMPLAZANTE']);
+
+    for (let r = headerInfo.rowIndex + 1; r < manRows.length; r++) {
       const row = manRows[r];
       if (!row) continue;
-      const nHoja = row[0] ? String(row[0]).trim().toUpperCase() : '';
-      if (nHoja.includes('HOJA') || String(row[4] || '').toUpperCase().includes('NOMBRE')) continue;
-      const docente = row[5] ? String(row[5]).trim().toUpperCase() : '';
-      const nrc = row[3] ? String(row[3]).trim() : '';
-      const curso = row[6] ? String(row[6]).trim().toUpperCase() : '';
-      const docReemp = row[8] ? String(row[8]).trim().toUpperCase() : '';
+      const nHoja = iCod >= 0 && row[iCod] ? String(row[iCod]).trim().toUpperCase() : '';
+      if (!nHoja || nHoja.includes('HOJA') || String(row[iDoc] || '').toUpperCase().includes('NOMBRE')) continue;
+      const docente = iDoc >= 0 && row[iDoc] ? String(row[iDoc]).trim().toUpperCase() : '';
+      const nrc = iNrc >= 0 && row[iNrc] ? String(row[iNrc]).trim() : '';
+      const curso = iCur >= 0 && row[iCur] ? String(row[iCur]).trim().toUpperCase() : '';
+      const docReemp = iReemp >= 0 && row[iReemp] ? String(row[iReemp]).trim().toUpperCase() : '';
       if (!docente && !nrc && !curso && !docReemp) continue;
       manualSheets.push({
         id: `manual_2_${r}`,
         n_hoja: nHoja.replace(/^LNI-/i, 'LN1-'),
-        fecha: formatExcelDate(row[1]),
-        aula: row[2] ? String(row[2]).trim().toUpperCase() : '',
+        fecha: iFec >= 0 ? formatExcelDate(row[iFec]) : '',
+        aula: iAula >= 0 && row[iAula] ? String(row[iAula]).trim().toUpperCase() : '',
         nrc,
-        codigo_docente: row[4] ? String(row[4]).trim() : '',
+        codigo_docente: iCodDoc >= 0 && row[iCodDoc] ? String(row[iCodDoc]).trim() : '',
         docente,
         curso,
-        observacion: row[7] ? String(row[7]).trim() : '',
+        carrera: iCar >= 0 && row[iCar] ? String(row[iCar]).trim() : '',
+        observacion: iAsis >= 0 && row[iAsis] ? String(row[iAsis]).trim() : '',
         docente_reemplazo: docReemp,
-        motivo: docReemp ? 'REEMPLAZO DOCENTE' : 'CLASE REGULAR',
+        motivo: iMot >= 0 && row[iMot] ? String(row[iMot]).trim() : (docReemp ? 'REEMPLAZO DOCENTE' : 'CLASE REGULAR'),
         estado_hoja: 'REGISTRADO'
       });
     }
   }
 
-  if (asistencia.length > 0) {
+  const reservas = [];
+  const resSheetName = sheetNames.find(n => n.toUpperCase().includes('RESERVA'));
+  if (resSheetName && wb.Sheets[resSheetName]) {
+    const resRows = XLSX.utils.sheet_to_json(wb.Sheets[resSheetName], { header: 1 });
+    const headerInfo = findHeaderRow(resRows, ['FECHA', 'AULA']) || {
+      rowIndex: 3,
+      cells: (resRows[3] || []).map(c => String(c ?? '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+    };
+    const c = headerInfo.cells;
+    const iFecha = colOf(c, ['FECHA']);
+    const iMes = colOf(c, ['MES']);
+    const iDia = colOf(c, ['DIA']);
+    const iIni = colOf(c, ['INICIO']);
+    const iFin = colOf(c, ['FINAL']);
+    const iAula = colOf(c, ['AULA']);
+    const iUbic = colOf(c, ['UBICACION']);
+    const iDoc = colOf(c, ['DOCENTE']);
+    const iDet = colOf(c, ['DETALLE']);
+    const iUsu = colOf(c, ['USUARIO']);
+    const iPrio = colOf(c, ['PRIORIDAD']);
+
+    for (let r = headerInfo.rowIndex + 1; r < resRows.length; r++) {
+      const row = resRows[r];
+      if (!row) continue;
+      const fecVal = iFecha >= 0 ? formatExcelDate(row[iFecha]) : '';
+      const aulaVal = iAula >= 0 && row[iAula] ? String(row[iAula]).trim().toUpperCase() : '';
+      if (!fecVal && !aulaVal) continue;
+      reservas.push({
+        id: `res_imp_${r}`,
+        fecha: fecVal,
+        mes: iMes >= 0 && row[iMes] ? String(row[iMes]).trim().toUpperCase() : '',
+        dia: iDia >= 0 && row[iDia] ? String(row[iDia]).trim().toUpperCase() : '',
+        inicio: iIni >= 0 ? formatExcelTime(row[iIni]) : '',
+        final: iFin >= 0 ? formatExcelTime(row[iFin]) : '',
+        aula: aulaVal,
+        ubicacion: iUbic >= 0 && row[iUbic] ? String(row[iUbic]).trim() : '',
+        docente: iDoc >= 0 && row[iDoc] ? String(row[iDoc]).trim().toUpperCase() : '',
+        detalle: iDet >= 0 && row[iDet] ? String(row[iDet]).trim() : '',
+        usuario: iUsu >= 0 && row[iUsu] ? String(row[iUsu]).trim().toUpperCase() : 'OPERACIONES',
+        prioridad: iPrio >= 0 && row[iPrio] ? String(row[iPrio]).trim().toUpperCase() : 'NORMAL'
+      });
+    }
+  }
+
+  if (asistencia.length > 0 || tickets.length > 0 || manualSheets.length > 0 || reservas.length > 0) {
     await fetch('/api/import-excel-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ asistencia, tickets, manualSheets, clearExisting: true })
+      body: JSON.stringify({ asistencia, tickets, manualSheets, reservas, clearExisting: true })
     });
   }
 }

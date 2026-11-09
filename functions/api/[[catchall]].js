@@ -145,8 +145,9 @@ async function handleApiRequest(context) {
       const params = [];
 
       if (dia) {
-        query += ' AND dia = ?';
-        params.push(normalizeDay(dia));
+        const normD = normalizeDay(dia);
+        query += ' AND (dia = ? OR dia LIKE ?)';
+        params.push(normD, `${normD}%`);
       }
       if (pabellon) {
         query += ' AND (UPPER(piso_pabellon) LIKE ? OR UPPER(aula) LIKE ?)';

@@ -98,7 +98,10 @@ function canon(type, v) {
 /* a celda de Excel */
 function toCell(type, v) {
   if (v === null || v === undefined) return '';
-  if (type === 'date') return toExcelDate(v);
+  if (type === 'date') {
+    const s = isoToSerial(v);
+    return typeof s === 'number' && !isNaN(s) ? s : toExcelDate(v);
+  }
   if (type === 'time') return hhmmToFrac(v);
   if (type === 'num') return /^\d+$/.test(String(v).trim()) ? Number(v) : String(v);
   return String(v);
@@ -481,7 +484,13 @@ function resolveCols(spec, cells) {
 }
 
 function mapDay(s) {
-  return norm(s);
+  if (!s) return '';
+  const clean = norm(String(s));
+  const days = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
+  for (const d of days) {
+    if (clean.startsWith(d) || clean.includes(d)) return d;
+  }
+  return clean;
 }
 
 /* ============================== PULL (Excel -> BD) ============================== */

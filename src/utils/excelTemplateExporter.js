@@ -20,15 +20,21 @@ export function escapeXml(val) {
 // Convierte "YYYY-MM-DD" o "DD/MM/YYYY" a número de serie de fecha de Excel (ej. 46296)
 export function dateToExcelSerial(dateStr) {
   if (!dateStr) return null;
-  if (typeof dateStr === 'number') return dateStr;
+  if (typeof dateStr === 'number' && !isNaN(dateStr)) return dateStr;
   const s = String(dateStr).trim();
   let yyyy, mm, dd;
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    [yyyy, mm, dd] = s.split('T')[0].split('-').map(Number);
-  } else if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
-    [dd, mm, yyyy] = s.split('/').map(Number);
+  const ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymd) {
+    yyyy = Number(ymd[1]);
+    mm = Number(ymd[2]);
+    dd = Number(ymd[3]);
   } else {
-    return null;
+    const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (dmy) {
+      dd = Number(dmy[1]);
+      mm = Number(dmy[2]);
+      yyyy = Number(dmy[3]);
+    }
   }
   if (!yyyy || !mm || !dd) return null;
   const utcMs = Date.UTC(yyyy, mm - 1, dd);
@@ -61,9 +67,22 @@ function computeRangoStr(timeStr) {
 function getDayAndMonthFromDateStr(dateStr) {
   if (!dateStr) return { dia: '', mes: '' };
   const s = String(dateStr).trim().split('T')[0];
-  const parts = s.split('-').map(Number);
-  if (parts.length !== 3) return { dia: '', mes: '' };
-  const dt = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+  let yyyy, mm, dd;
+  const ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymd) {
+    yyyy = Number(ymd[1]);
+    mm = Number(ymd[2]);
+    dd = Number(ymd[3]);
+  } else {
+    const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (dmy) {
+      dd = Number(dmy[1]);
+      mm = Number(dmy[2]);
+      yyyy = Number(dmy[3]);
+    }
+  }
+  if (!yyyy || !mm || !dd) return { dia: '', mes: '' };
+  const dt = new Date(yyyy, mm - 1, dd, 12, 0, 0);
   return {
     dia: DAYS_ES[dt.getDay()] || '',
     mes: MONTHS_ES[dt.getMonth()] || ''
