@@ -1242,7 +1242,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4">
+          <div key={`reservas-${selectedDayOffset}-${selectedPabellon}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4 animate-fade-in">
             {filtered.map(r => {
               const isImportante = r.prioridad === 'IMPORTANTE';
               const rm = roomMap[(r.aula || '').toUpperCase().trim()];

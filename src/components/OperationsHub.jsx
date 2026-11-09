@@ -95,7 +95,7 @@ export default function OperationsHub({
       </div>
 
       {/* Render Active Sub-View con transicion suave fade */}
-      <div key={subTab} className="animate-tab-view">
+      <div key={subTab} className="animate-fade-in">
         {subTab === 'manual' && (
           <ManualSheetsView
             initialClassData={initialClassData}

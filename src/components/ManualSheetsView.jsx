@@ -482,7 +482,7 @@ export default function ManualSheetsView({
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba limpiando los filtros o emite una nueva hoja.</p>
         </div>
       ) : (
-        <>
+        <div key="sheets-data" className="animate-fade-in space-y-4">
           {/* Mobile Card List (visible on screens < 768px) */}
           <div className="grid grid-cols-1 gap-3 md:hidden">
             {filtered.map(item => (
@@ -685,7 +685,7 @@ export default function ManualSheetsView({
               </table>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Modal: New Manual Sheet - 100% Symmetrical */}

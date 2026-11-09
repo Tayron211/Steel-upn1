@@ -1756,131 +1756,73 @@ export default function DashboardView() {
 
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="relative" ref={dropdownRef}>
-              {/* Botón Único Desplegable */}
+              {/* Boton Pequeño Solo con el Logo/Icono */}
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="h-11 px-4 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition-all active:scale-95 inline-flex items-center justify-center gap-2"
+                title="Gestion de Excel & OneDrive"
+                className="w-10 h-10 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition-all active:scale-95 inline-flex items-center justify-center shrink-0"
               >
-                <Database className="w-4 h-4 stroke-[2.4]" />
-                <span>Base de Datos Excel</span>
-                <ChevronDown className={`w-4 h-4 stroke-[2.4] transition-transform duration-200 ${isMenuOpen ? '' : 'rotate-180'}`} />
+                <Database className="w-5 h-5 stroke-[2.4]" />
               </button>
 
-            {/* Input archivo oculto para nuevo Excel */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              accept=".xlsx, .xls"
-              className="hidden"
-            />
-
-            {/* Menú Flotante Desplegable Hacia Arriba con las 4 Acciones */}
-            {isMenuOpen && (
-              <div className="absolute right-0 bottom-full mb-2 w-72 sm:w-80 bg-white dark:bg-[#121216] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-zinc-800 p-2 z-50 animate-fade-in space-y-1">
-                {/* 0. Vincular Excel de OneDrive en Tiempo Real */}
-                <button
-                  type="button"
-                  disabled={syncing || importing}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setShowOneDriveModal(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl hover:bg-sky-50 dark:hover:bg-sky-950/40 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <Cloud className="w-4 h-4 stroke-[2.2]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-sky-900 dark:text-sky-300 flex items-center justify-between gap-1">
-                      <span className="truncate">
-                        {liveExcel.linked
-                          ? `OneDrive Activo (${liveExcel.fileName})`
-                          : 'OneDrive: CONTROL DOCENTE - TEST.xlsx'}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-black shrink-0 whitespace-nowrap">
-                        CONECTADO
-                      </span>
+              {/* Menu Flotante Desplegable Hacia Arriba - Solo OneDrive y Respaldo Excel */}
+              {isMenuOpen && (
+                <div className="absolute right-0 bottom-full mb-2 w-72 sm:w-80 bg-white dark:bg-[#121216] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-zinc-800 p-2 z-50 animate-fade-in space-y-1">
+                  {/* 1. Vincular / Abrir Excel de OneDrive en Tiempo Real */}
+                  <button
+                    type="button"
+                    disabled={syncing || importing}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setShowOneDriveModal(true);
+                    }}
+                    className="w-full p-2.5 rounded-xl hover:bg-sky-50 dark:hover:bg-sky-950/40 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Cloud className="w-4 h-4 stroke-[2.2]" />
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
-                      Abrir o sincronizar en tiempo real con tu archivo CONTROL DOCENTE - TEST.xlsx en OneDrive UPN.
-                    </p>
-                  </div>
-                </button>
-
-                {/* 1. Sincronización */}
-                <button
-                  type="button"
-                  disabled={syncing || importing}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    handleManualSync();
-                  }}
-                  className="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <RotateCw className={`w-4 h-4 stroke-[2.2] ${syncing ? 'animate-spin' : ''}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
-                      <span>Auto-Sync con Excel</span>
-                      {syncing && <span className="text-[10px] text-amber-600 font-mono animate-pulse">Sincronizando...</span>}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-sky-900 dark:text-sky-300 flex items-center justify-between gap-1">
+                        <span className="truncate">
+                          {liveExcel.linked
+                            ? `OneDrive Activo (${liveExcel.fileName})`
+                            : 'OneDrive: CONTROL DOCENTE - TEST.xlsx'}
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-black shrink-0 whitespace-nowrap">
+                          CONECTADO
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
+                        Abrir o sincronizar en tiempo real con tu archivo en OneDrive UPN.
+                      </p>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
-                      Sincroniza con el archivo maestro actual preservando asistencias tomadas.
-                    </p>
-                  </div>
-                </button>
+                  </button>
 
-                {/* 2. Importación de nuevo Excel */}
-                <button
-                  type="button"
-                  disabled={syncing || importing}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    fileInputRef.current?.click();
-                  }}
-                  className="w-full p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <Upload className="w-4 h-4 stroke-[2.2]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-emerald-900 dark:text-emerald-300 flex items-center justify-between">
-                      <span>Importar Nuevo Excel (.xlsx)</span>
-                      {importing && <span className="text-[10px] text-emerald-600 font-mono animate-pulse">Cargando...</span>}
+                  {/* 2. Descargar Copia de Respaldo (.xlsx) */}
+                  <button
+                    type="button"
+                    disabled={syncing || importing}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleExportExcel();
+                    }}
+                    className="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Download className="w-4 h-4 stroke-[2.2]" />
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
-                      Suministrar nuevo archivo Excel como base de datos para trabajar con nueva data.
-                    </p>
-                  </div>
-                </button>
-
-                {/* 3. Exportar Excel */}
-                <button
-                  type="button"
-                  disabled={syncing || importing}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    handleExportExcel();
-                  }}
-                  className="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <Download className="w-4 h-4 stroke-[2.2]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-slate-900 dark:text-white">
-                      Exportar a Excel (.xlsx)
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        Descargar Copia de Respaldo (.xlsx)
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
+                        Descargar archivo Excel con la información actualizada de asistencias y atenciones.
+                      </p>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
-                      Descargar archivo Excel con la información actualizada de asistencias y atenciones.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
