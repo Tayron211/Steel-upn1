@@ -20,7 +20,7 @@ import QRCode from 'qrcode';
 import SignatureCanvas from './SignatureCanvas';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
-import { generateCargoPdf } from '../utils/cargoPdfGenerator';
+import { generateCargoPdf, formatCargoNumber } from '../utils/cargoPdfGenerator';
 
 export default function SignatureModal({
   ticket,
@@ -32,8 +32,8 @@ export default function SignatureModal({
   const asistentes = useAssistants();
   if (!isOpen || !ticket) return null;
 
-  // Cargo Folio Number
-  const cargoNum = (ticket.id || '').replace(/^ticket_/, 'CARGO-').slice(-8).toUpperCase();
+  // Cargo Folio Number (formato correlativo 5 dígitos desde 00001)
+  const cargoNum = formatCargoNumber(ticket);
 
   // Señor(es) - Recipient
   const [senorEs, setSenorEs] = useState(() => {
@@ -483,6 +483,17 @@ export default function SignatureModal({
                       {ticket.horaReporte || '--:--'}
                     </strong>
                   </div>
+
+                  {(ticket.estado === 'ATENDIDO' || firmaEntrega) && (
+                    <div className="mt-2 flex flex-col items-center">
+                      <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 tracking-wider">
+                        DEVOLUCIÓN CONFORME
+                      </span>
+                      <span className="text-[9px] font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-tight">
+                        {((entregadoPor && entregadoPor !== senorEs ? entregadoPor : null) || ticket.responsable || defaultAssistant).slice(0, 32)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* 3. RECIBÍ CONFORME (DOCENTE / ALUMNO) */}

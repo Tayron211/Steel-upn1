@@ -1,6 +1,55 @@
 import { jsPDF } from 'jspdf';
 
 /**
+ * Formatea el número de cargo correlativo de 5 dígitos iniciando desde 00001
+ * Ejemplos: 1 -> "00001", 38 -> "00038", 125 -> "00125"
+ */
+export function formatCargoNumber(ticket) {
+  if (!ticket) return '00001';
+
+  // 1. Si ya tiene folio o número de cargo explícito
+  const explicit = ticket.nCargo || ticket.numeroCargo || ticket.n_cargo || ticket.folio || ticket.cargoNum;
+  if (explicit) {
+    const num = parseInt(String(explicit).replace(/\D+/g, ''), 10);
+    if (!isNaN(num) && num > 0) {
+      return String(num).padStart(5, '0');
+    }
+  }
+
+  // 2. Si cuenta con propiedad de fila/secuencia numérica
+  if (typeof ticket.row === 'number' && ticket.row > 0) {
+    return String(ticket.row).padStart(5, '0');
+  }
+
+  const rawId = String(ticket.id || '').trim();
+
+  // 3. Patrón de ID UPN: ticket_1_38, ticket_2_38, ticket_38_Q7Q8Z, etc.
+  // Extrae el número de fila/secuencia antes de cualquier hash aleatorio
+  const matchPattern = rawId.match(/(?:ticket_\d+_(\d+))|(?:(?:^|_)(\d+)(?:_[a-zA-Z0-9]+)?$)/);
+  if (matchPattern) {
+    const rawNum = matchPattern[1] || matchPattern[2];
+    const parsed = parseInt(rawNum, 10);
+    if (!isNaN(parsed) && parsed > 0 && parsed <= 99999) {
+      return String(parsed).padStart(5, '0');
+    }
+  }
+
+  // 4. Cualquier dígito numérico dentro del ID
+  const allDigits = rawId.replace(/\D+/g, '');
+  if (allDigits) {
+    let num = parseInt(allDigits, 10);
+    if (num > 99999) {
+      num = (num % 100000) || 1;
+    }
+    if (num > 0) {
+      return String(num).padStart(5, '0');
+    }
+  }
+
+  return '00001';
+}
+
+/**
  * Generates an official "Acta de Cargo" PDF matching the exact UPN format
  * with double-bordered frame, Cargo N°, Señor(es), Remitimos con el portador,
  * Fecha/Hora, and both digital signatures (Entregué & Recibí conforme).
@@ -51,8 +100,8 @@ export function generateCargoPdf({
   doc.setTextColor(100, 116, 139);
   doc.text('UNIVERSIDAD PRIVADA DEL NORTE · OPERACIONES SEDE', m + 5, m + 7.5);
 
-  // 4. Cargo N° [ _______ ]
-  const cargoNum = (ticket.id || '').replace(/^ticket_/, 'CARGO-').slice(-8).toUpperCase();
+  // 4. Cargo N° [ 00001 ]
+  const cargoNum = formatCargoNumber(ticket);
   doc.setTextColor(...lineColor);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11.5);
@@ -218,6 +267,20 @@ export function generateCargoPdf({
     doc.setFontSize(7.5);
     doc.setTextColor(22, 101, 52);
     doc.text('DEVOLUCIÓN CONFORME', centerX, footerY + 7.5, { align: 'center' });
+
+    // Nombre del asistente en pequeño debajo de DEVOLUCIÓN CONFORME
+    const rawAssistant = (
+      (entregadoPor && entregadoPor !== recipientName ? entregadoPor : null) ||
+      ticket.responsable ||
+      ticket.asistente ||
+      'OPERACIONES SEDE'
+    ).toUpperCase().trim();
+    const assistantName = rawAssistant.length > 32 ? rawAssistant.slice(0, 32) : rawAssistant;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(assistantName, centerX, footerY + 10.8, { align: 'center' });
   }
 
   // --- Derecha: RECIBÍ CONFORME (Docente o Alumno al recibir el préstamo) ---
