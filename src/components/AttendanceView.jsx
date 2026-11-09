@@ -1424,9 +1424,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                         S/A
                       </span>
                     )}
-                    <span className="font-mono font-bold text-[10px] text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800/80 px-1.5 py-0.5 rounded-md shadow-2xs">
-                      {item.horaInicioProg}
-                    </span>
                     <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md">
                       {item.pisoPabellon || 'Campus'}
                     </span>
