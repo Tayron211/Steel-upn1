@@ -2486,21 +2486,21 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           onClick={() => manualTardeFade.requestClose()}
         >
           <div
-            className={`apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${manualTardeFade.modalClass}`}
+            className={`apple-liquid-modal rounded-t-[28px] sm:rounded-2xl max-w-sm w-full p-4 sm:p-5 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${manualTardeFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
+            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3 sm:hidden"></div>
 
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs">
-                  <Clock className="w-5 h-5 stroke-[2.2]" />
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-zinc-800 mb-3.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs">
+                  <Clock className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">
                     Cambiar Hora de Tardanza
                   </h3>
-                  <p className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold mt-0.5">
+                  <p className="text-[10px] text-amber-700 dark:text-amber-300 font-semibold mt-0.5">
                     Aula {item.aula} · {item.docente}
                   </p>
                 </div>
@@ -2508,15 +2508,15 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <button
                 type="button"
                 onClick={() => manualTardeFade.requestClose()}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center active:scale-95 transition"
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center active:scale-95 transition"
               >
-                <X className="w-4 h-4 stroke-[2.2]" />
+                <X className="w-3.5 h-3.5 stroke-[2.2]" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveManualTarde} className="space-y-4">
+            <form onSubmit={handleSaveManualTarde} className="space-y-3">
               <div>
-                <label className="block text-center text-xs font-bold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">
+                <label className="block text-center text-[10px] font-black text-slate-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
                   Hora de Llegada Real
                 </label>
                 <div className="flex justify-center">
@@ -2525,17 +2525,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     value={manualTardeTime}
                     onChange={(e) => setManualTardeTime(e.target.value)}
                     required
-                    className="w-48 text-center font-mono font-black text-3xl py-2.5 rounded-2xl border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                    className="w-36 text-center font-mono font-black text-2xl py-1.5 px-2 rounded-xl border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner [&::-webkit-datetime-edit]:text-center [&::-webkit-datetime-edit-fields-wrapper]:mx-auto [&::-webkit-datetime-edit-fields-wrapper]:justify-center [&::-webkit-datetime-edit]:justify-center [text-align-last:center]"
                   />
                 </div>
               </div>
 
-              {/* Accesos rápidos de hora 100% Simétricos */}
-              <div className="grid grid-cols-3 gap-2 pt-1">
+              {/* Accesos rápidos de hora 100% Simétricos y más compactos */}
+              <div className="grid grid-cols-3 gap-1.5 pt-0.5">
                 <button
                   type="button"
                   onClick={() => setManualTardeTime(getCurrentTimeStr())}
-                  className="h-9 px-1 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
+                  className="h-8 px-1 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
                   title="Hora actual"
                 >
                   Hora Actual
@@ -2543,7 +2543,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 <button
                   type="button"
                   onClick={() => item.horaInicioProg && setManualTardeTime(item.horaInicioProg)}
-                  className="h-9 px-1 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
+                  className="h-8 px-1 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
                   title={`Hora programada: ${item.horaInicioProg || '--:--'}`}
                 >
                   Prog. ({item.horaInicioProg || '--:--'})
@@ -2556,24 +2556,24 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     const nextH = m + 5 >= 60 ? (h + 1) % 24 : h;
                     setManualTardeTime(`${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`);
                   }}
-                  className="h-9 px-1 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center"
+                  className="h-8 px-1 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center"
                 >
                   +5 min
                 </button>
               </div>
 
-              {/* Botones de Acción 50% - 50% Perfectamente Simétricos */}
-              <div className="grid grid-cols-2 gap-2.5 pt-2">
+              {/* Botones de Acción 50% - 50% Perfectamente Simétricos y más chicos */}
+              <div className="grid grid-cols-2 gap-2 pt-1.5">
                 <button
                   type="button"
                   onClick={() => manualTardeFade.requestClose()}
-                  className="h-11 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98 flex items-center justify-center"
+                  className="h-9 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-95 flex items-center justify-center text-center"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="h-11 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 text-xs font-black transition active:scale-98 shadow-md flex items-center justify-center"
+                  className="h-9 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 text-xs font-black transition active:scale-95 shadow-sm flex items-center justify-center text-center"
                 >
                   Guardar Tardanza
                 </button>
@@ -2598,21 +2598,21 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           onClick={() => faltaOptionsFade.requestClose()}
         >
           <div
-            className={`apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${faltaOptionsFade.modalClass}`}
+            className={`apple-liquid-modal rounded-t-[28px] sm:rounded-2xl max-w-sm w-full p-4 sm:p-5 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${faltaOptionsFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
+            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3 sm:hidden"></div>
 
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 flex items-center justify-center shadow-xs">
-                  <XCircle className="w-5 h-5 stroke-[2.2]" />
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-zinc-800 mb-3.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 flex items-center justify-center shadow-xs">
+                  <XCircle className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">
                     Opciones Especiales de Falta
                   </h3>
-                  <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
+                  <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
                     Aula {item.aula} · {item.docente}
                   </p>
                 </div>
@@ -2620,27 +2620,27 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <button
                 type="button"
                 onClick={() => faltaOptionsFade.requestClose()}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center active:scale-95 transition"
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center active:scale-95 transition"
               >
-                <X className="w-4 h-4 stroke-[2.2]" />
+                <X className="w-3.5 h-3.5 stroke-[2.2]" />
               </button>
             </div>
 
-            <div className="space-y-2.5 my-3">
+            <div className="space-y-2 my-2.5">
               {/* 1. CLASE REMOTA */}
               <button
                 type="button"
                 onClick={() => handleSelectFaltaOption('CLASE REMOTA')}
-                className="w-full p-3.5 rounded-2xl bg-sky-50/80 hover:bg-sky-100/90 dark:bg-sky-950/40 dark:hover:bg-sky-900/50 border border-sky-200 dark:border-sky-800 text-left flex items-center gap-3.5 transition active:scale-98 group"
+                className="w-full p-3 rounded-xl bg-sky-50/80 hover:bg-sky-100/90 dark:bg-sky-950/40 dark:hover:bg-sky-900/50 border border-sky-200 dark:border-sky-800 text-left flex items-center gap-3 transition active:scale-98 group"
               >
-                <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/70 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
-                  <Monitor className="w-5 h-5 stroke-[2.2]" />
+                <div className="w-9 h-9 rounded-lg bg-sky-100 dark:bg-sky-900/70 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
+                  <Monitor className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-black text-sky-950 dark:text-sky-200 uppercase tracking-wide">
+                  <div className="text-xs font-black text-sky-950 dark:text-sky-200 uppercase tracking-wide">
                     Clase Remota
                   </div>
-                  <div className="text-xs text-sky-700/80 dark:text-sky-300/70 mt-0.5">
+                  <div className="text-[11px] text-sky-700/80 dark:text-sky-300/70 mt-0.5">
                     Sesión en modalidad virtual
                   </div>
                 </div>
@@ -2650,16 +2650,16 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <button
                 type="button"
                 onClick={() => handleSelectFaltaOption('CLASE ADELANTADA')}
-                className="w-full p-3.5 rounded-2xl bg-amber-50/80 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 text-left flex items-center gap-3.5 transition active:scale-98 group"
+                className="w-full p-3 rounded-xl bg-amber-50/80 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 text-left flex items-center gap-3 transition active:scale-98 group"
               >
-                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0">
-                  <CalendarClock className="w-5 h-5 stroke-[2.2]" />
+                <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0">
+                  <CalendarClock className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
+                  <div className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
                     Clase Adelantada
                   </div>
-                  <div className="text-xs text-amber-700/80 dark:text-amber-300/70 mt-0.5">
+                  <div className="text-[11px] text-amber-700/80 dark:text-amber-300/70 mt-0.5">
                     Sesión adelantada o recuperada
                   </div>
                 </div>
@@ -2669,7 +2669,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             <button
               type="button"
               onClick={() => faltaOptionsFade.requestClose()}
-              className="w-full h-11 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98 flex items-center justify-center"
+              className="w-full h-9 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-95 flex items-center justify-center text-center mt-2"
             >
               Cancelar
             </button>
