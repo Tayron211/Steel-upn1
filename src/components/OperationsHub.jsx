@@ -94,26 +94,28 @@ export default function OperationsHub({
         </button>
       </div>
 
-      {/* Render Active Sub-View */}
-      {subTab === 'manual' && (
-        <ManualSheetsView
-          initialClassData={initialClassData}
-          onClearInitialClass={onClearInitialClass}
-          initialOpenTrigger={openManualModalTrigger}
-          onConsumeTrigger={onConsumeManualModalTrigger}
-        />
-      )}
+      {/* Render Active Sub-View con transicion suave fade */}
+      <div key={subTab} className="animate-tab-view">
+        {subTab === 'manual' && (
+          <ManualSheetsView
+            initialClassData={initialClassData}
+            onClearInitialClass={onClearInitialClass}
+            initialOpenTrigger={openManualModalTrigger}
+            onConsumeTrigger={onConsumeManualModalTrigger}
+          />
+        )}
 
-      {subTab === 'reservations' && (
-        <ReservationsView 
-          initialOpenTrigger={openReservationModalTrigger} 
-          onConsumeTrigger={onConsumeReservationModalTrigger}
-        />
-      )}
+        {subTab === 'reservations' && (
+          <ReservationsView 
+            initialOpenTrigger={openReservationModalTrigger} 
+            onConsumeTrigger={onConsumeReservationModalTrigger}
+          />
+        )}
 
-      {subTab === 'rooms' && (
-        <RoomsView onSelectRoomForSchedule={onSelectRoomForSchedule} />
-      )}
+        {subTab === 'rooms' && (
+          <RoomsView onSelectRoomForSchedule={onSelectRoomForSchedule} />
+        )}
+      </div>
     </div>
   );
 }

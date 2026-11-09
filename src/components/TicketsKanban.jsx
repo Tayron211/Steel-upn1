@@ -1012,7 +1012,7 @@ export default function TicketsKanban({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4">
+          <div key="activos" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
             {activeLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
               const isSigningInline = inlineSignTicketId === ticket.id;
@@ -1234,7 +1234,7 @@ export default function TicketsKanban({
             <p className="text-xs text-slate-500 dark:text-zinc-400">No hay devoluciones registradas</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4">
+          <div key="devueltos" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
             {concludedLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
 

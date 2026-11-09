@@ -1318,7 +1318,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5">
+        <div key={`${selectedDia}-${selectedHora}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5 animate-fade-in">
           {freeRooms.map(room => (
             <div
               key={room.abrv}
@@ -1398,7 +1398,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         )}
       </div>
     ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-3.5">
+      <div key={`${selectedDia}-${selectedPab}-${selectedPiso}-${selectedHora}-${statusFilter}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-3.5 animate-fade-in">
         {displayedItems.map(item => {
           const isPuntual = item.puntualidad === 'PUNTUAL';
           const isTarde = item.puntualidad === 'TARDE';

@@ -615,17 +615,6 @@ export default function DashboardView() {
     }
   };
 
-  if (loading && !stats) {
-    return (
-      <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
-        <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
-        <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Calculando indicadores clave desde SQLite...</p>
-      </div>
-    );
-  }
-
-  if (!stats) return null;
-
   const cleanMaterialName = (mat) => {
     const raw = String(mat || '').toUpperCase().trim();
     if (raw.includes('PROYECTOR')) return 'PROYECTOR';
@@ -841,19 +830,30 @@ export default function DashboardView() {
     return { total, activas, finalizadas, sortedRooms, pabA, pabB };
   }, [reservationsData]);
 
+  if (loading && !stats) {
+    return (
+      <div className="text-center py-20 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs animate-fade-in">
+        <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5"></div>
+        <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Calculando indicadores clave desde SQLite...</p>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
   const {
-    totalClasses,
-    puntual,
-    tarde,
-    falta,
-    reemplazo,
-    pendientes,
-    pctAsistencia,
-    ticketsPendientes,
-    ticketsEnProceso,
-    ticketsAtendidos,
-    categoryCounts
-  } = stats;
+    totalClasses = 0,
+    puntual = 0,
+    tarde = 0,
+    falta = 0,
+    reemplazo = 0,
+    pendientes = 0,
+    pctAsistencia = 0,
+    ticketsPendientes = 0,
+    ticketsEnProceso = 0,
+    ticketsAtendidos = 0,
+    categoryCounts = {}
+  } = stats || {};
 
   const totalAsistieron = puntual + tarde + reemplazo;
 
