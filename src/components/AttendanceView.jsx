@@ -1044,8 +1044,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   type="button"
                   onClick={() => setSelectedPabellon(pab)}
                   className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
-                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
-                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
                     }`}
                 >
                   {pab ? `Pab. ${pab}` : 'Ambos'}
@@ -1626,7 +1626,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         >
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-1 rounded-xl shadow-xs shrink-0">
+              <span className="font-mono font-black text-xs bg-amber-100 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 px-2.5 py-1 rounded-xl shadow-xs shrink-0">
                 {selectedClassOptions.aula || 'S/A'}
               </span>
               <div className="min-w-0">

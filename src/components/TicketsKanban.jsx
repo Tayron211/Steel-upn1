@@ -1374,11 +1374,11 @@ export default function TicketsKanban({
           ========================================================================= */}
       {isRoomCalendarOpen && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-backdrop-fade"
           onClick={() => setIsRoomCalendarOpen(false)}
         >
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-modal-fade"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Calendario */}
@@ -1913,11 +1913,11 @@ export default function TicketsKanban({
           ========================================================================= */}
       {isNewLoanModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-backdrop-fade"
           onClick={() => setIsNewLoanModalOpen(false)}
         >
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-modal-fade"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal */}

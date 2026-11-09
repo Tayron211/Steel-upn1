@@ -207,22 +207,22 @@ input, textarea, select {
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* Fluid Keyframe Animations with Apple Easing (cubic-bezier(0.16, 1, 0.3, 1)) */
-@keyframes appleSpringUp {
+/* Fluid Keyframe Animations with Apple Easing (Suave y gradual efecto Fade en toda apertura de ventana/modal) */
+@keyframes appleModalFadeEnter {
   0% {
     opacity: 0;
-    transform: translateY(24px) scale(0.97);
+    transform: scale(0.975) translateY(4px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
 @keyframes appleScaleUp {
   0% {
     opacity: 0;
-    transform: scale(0.94) translateY(8px);
+    transform: scale(0.96) translateY(4px);
   }
   100% {
     opacity: 1;
@@ -256,8 +256,9 @@ input, textarea, select {
   }
 }
 
+.animate-modal-fade,
 .animate-spring-up {
-  animation: appleSpringUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleModalFadeEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-scale-up {
@@ -265,7 +266,7 @@ input, textarea, select {
 }
 
 .animate-backdrop-fade {
-  animation: appleBackdropFade 0.2s ease-out forwards;
+  animation: appleBackdropFade 0.22s ease-out forwards;
 }
 
 .animate-speed-dial {

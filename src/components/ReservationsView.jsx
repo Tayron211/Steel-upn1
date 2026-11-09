@@ -1626,17 +1626,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
               </div>
 
-              {/* Indicador de Hoja y Archivo de Destino en OneDrive */}
-              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-2.5 flex items-center justify-between text-[11px]">
-                <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300 font-bold min-w-0">
-                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2.5] shrink-0" />
-                  <span className="truncate">Destino Excel: CONTROL DOCENTE - TEST.xlsx · Hoja <strong>RESERVAS</strong></span>
-                </div>
-                <span className="font-mono font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-lg border border-emerald-300/60 dark:border-emerald-700/60 shrink-0 text-[10px]">
-                  B:L (11 Col.)
-                </span>
-              </div>
-
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   type="button"

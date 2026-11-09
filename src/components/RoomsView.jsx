@@ -61,27 +61,27 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
             <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Directorio de Ambientes & Aforos</h1>
           </div>
 
-          <div className="flex items-center gap-1 self-start sm:self-auto bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl">
+          <div className="flex items-center gap-1 self-end sm:self-auto ml-auto sm:ml-0 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0">
             <button
               onClick={() => setFilterPabellon('')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center ${
-                !filterPabellon ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center active:scale-95 ${
+                !filterPabellon ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Todos ({rooms.length})
             </button>
             <button
               onClick={() => setFilterPabellon('A')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center ${
-                filterPabellon === 'A' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center active:scale-95 ${
+                filterPabellon === 'A' ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Pabellón A
             </button>
             <button
               onClick={() => setFilterPabellon('B')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center ${
-                filterPabellon === 'B' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center active:scale-95 ${
+                filterPabellon === 'B' ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Pabellón B
