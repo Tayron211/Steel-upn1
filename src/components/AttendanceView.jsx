@@ -1337,12 +1337,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                         <span>Copiar</span>
                       </button>
                     )}
-                    {isPuntual && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#00875A] text-white px-2.5 py-0.5 rounded-full shadow-xs">
-                        <CheckCircle2 className="w-3 h-3 text-white stroke-[2.4] shrink-0" />
-                        <span>PUNTUAL</span>
-                      </span>
-                    )}
                     {isTarde && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-full shadow-xs">
                         <Clock className="w-3 h-3 text-slate-950 stroke-[2.4] shrink-0" />
@@ -1409,16 +1403,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     {isTarde && item.horaInicioReal && (
                       <span className="text-amber-950 dark:text-amber-300 font-extrabold bg-[#FDBA30]/20 dark:bg-amber-950/80 px-2 py-0.5 rounded-md text-[10px] border border-amber-400/80 dark:border-amber-700 shadow-2xs">
                         Inicio Real: {item.horaInicioReal}
-                      </span>
-                    )}
-                    {isPuntual && item.horaInicioReal && (
-                      <span className="text-emerald-700 dark:text-emerald-400 font-extrabold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md text-[10px] border border-emerald-300 dark:border-emerald-800 shadow-2xs">
-                        Inicio Real: {item.horaInicioReal}
-                      </span>
-                    )}
-                    {isFalta && (
-                      <span className="text-white font-mono font-bold bg-zinc-800 px-2 py-0.5 rounded-md text-[10px] border border-zinc-700 shadow-2xs">
-                        Inicio Real: -
                       </span>
                     )}
                   </div>
