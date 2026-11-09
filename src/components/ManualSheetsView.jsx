@@ -22,6 +22,7 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
+import { useFadeModal } from '../utils/useFadeModal';
 
 // Detecta si la hoja es de reemplazo y extrae el nombre del docente reemplazante
 const isReemplazoSheet = (item) => (item?.motivo || '').toUpperCase().includes('REEMPLAZO');
@@ -101,9 +102,17 @@ export default function ManualSheetsView({
   const [nrcLookupLoading, setNrcLookupLoading] = useState(false);
   const [nrcMatchFound, setNrcMatchFound] = useState(null);
 
-  const closeModal = () => {
+  const newSheetFade = useFadeModal(isModalOpen, () => {
     setIsModalOpen(false);
     if (onConsumeTrigger) onConsumeTrigger();
+  }, 200);
+
+  const printSheetFade = useFadeModal(selectedForPrint, () => {
+    setSelectedForPrint(null);
+  }, 200);
+
+  const closeModal = () => {
+    newSheetFade.requestClose();
   };
 
   useEffect(() => {
@@ -688,14 +697,14 @@ export default function ManualSheetsView({
         </div>
       )}
 
-      {/* Modal: New Manual Sheet - 100% Symmetrical */}
-      {isModalOpen && typeof document !== 'undefined' && createPortal(
+      {/* Modal: New Manual Sheet - 100% Symmetrical con Fade In y Fade Out Suave */}
+      {newSheetFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+          className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 ${newSheetFade.backdropClass}`}
           onClick={() => closeModal()}
         >
           <div
-            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto animate-spring-up"
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto ${newSheetFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800 mb-4">
@@ -942,18 +951,20 @@ export default function ManualSheetsView({
         document.body
       )}
 
-      {/* Modal de Detalles Completos de la Hoja de Asistencia Manual */}
-      {selectedForPrint && typeof document !== 'undefined' && (() => {
-        const isReemplazo = isReemplazoSheet(selectedForPrint);
-        const suplenteName = getSuplente(selectedForPrint);
+      {/* Modal de Detalles Completos de la Hoja de Asistencia Manual con Fade In y Fade Out Suave */}
+      {printSheetFade.shouldRender && typeof document !== 'undefined' && (() => {
+        const activeSheet = printSheetFade.cachedData || selectedForPrint;
+        if (!activeSheet) return null;
+        const isReemplazo = isReemplazoSheet(activeSheet);
+        const suplenteName = getSuplente(activeSheet);
 
         return createPortal(
           <div
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-            onClick={() => setSelectedForPrint(null)}
+            className={`fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 ${printSheetFade.backdropClass}`}
+            onClick={() => printSheetFade.requestClose()}
           >
             <div
-              className="bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-900 dark:text-zinc-100 animate-scale-up space-y-4 max-h-[90vh] overflow-y-auto"
+              className={`bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-900 dark:text-zinc-100 ${printSheetFade.modalClass} space-y-4 max-h-[90vh] overflow-y-auto`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header del Modal - Simétrico y Adaptable en todos los formatos */}
@@ -968,7 +979,7 @@ export default function ManualSheetsView({
                         Detalles de la Hoja
                       </h3>
                       <span className="font-mono font-black text-xs bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-lg shadow-2xs whitespace-nowrap shrink-0">
-                        {selectedForPrint.codigo}
+                        {activeSheet.codigo}
                       </span>
                     </div>
                     <p className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
@@ -979,7 +990,7 @@ export default function ManualSheetsView({
 
                 <button
                   type="button"
-                  onClick={() => setSelectedForPrint(null)}
+                  onClick={() => printSheetFade.requestClose()}
                   className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0 print:hidden"
                   title="Cerrar ventana"
                 >
@@ -1057,7 +1068,7 @@ export default function ManualSheetsView({
                 <div className={`${selectedForPrint.aula ? '' : 'col-span-2'} p-3 bg-slate-50 dark:bg-zinc-900/70 rounded-2xl border border-slate-100 dark:border-zinc-800/80`}>
                   <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 block mb-0.5">Asistente Emisor</span>
                   <span className="font-bold text-xs text-slate-900 dark:text-white break-words leading-tight block">
-                    {selectedForPrint.asistente || 'Operaciones Sede'}
+                    {activeSheet.asistente || 'Operaciones Sede'}
                   </span>
                 </div>
               </div>
@@ -1066,7 +1077,7 @@ export default function ManualSheetsView({
               <div className="pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedForPrint(null)}
+                  onClick={() => printSheetFade.requestClose()}
                   className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition flex items-center justify-center active:scale-95 order-2 sm:order-1"
                 >
                   Cerrar
@@ -1075,7 +1086,7 @@ export default function ManualSheetsView({
                 <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
                   <button
                     type="button"
-                    onClick={() => handleCopyVoucherText(selectedForPrint)}
+                    onClick={() => handleCopyVoucherText(activeSheet)}
                     className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700"
                     title="Copiar texto resumen"
                   >

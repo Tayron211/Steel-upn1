@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { RotateCcw, Check, PenTool, Maximize2, X } from 'lucide-react';
+import { useFadeModal } from '../utils/useFadeModal';
 
 const SignatureCanvas = forwardRef(function SignatureCanvas(
   {
@@ -25,6 +26,16 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
   const [savedDataUrl, setSavedDataUrl] = useState(initialImage || null);
   const [isModalOpen, setIsModalOpen] = useState(Boolean(autoOpen));
+  const canvasFade = useFadeModal(isModalOpen, () => {
+    setIsModalOpen(false);
+    if (onClose) {
+      try {
+        onClose();
+      } catch (e) {
+        console.error('Error on SignatureCanvas onClose:', e);
+      }
+    }
+  }, 200);
   const [modalHasContent, setModalHasContent] = useState(Boolean(initialImage));
 
   useEffect(() => {
@@ -168,7 +179,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     const canvas = canvasRef.current;
     if (!canvas || !hasDrawnRef.current) {
       clearSavedSignature();
-      setIsModalOpen(false);
+      canvasFade.requestClose(() => setIsModalOpen(false));
       return;
     }
     const dataUrl = canvas.toDataURL('image/png');
@@ -176,7 +187,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     if (onSignChange) {
       onSignChange(dataUrl);
     }
-    setIsModalOpen(false);
+    canvasFade.requestClose(() => setIsModalOpen(false));
   };
 
   useImperativeHandle(ref, () => ({
@@ -187,14 +198,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
   }));
 
   const handleModalClose = () => {
-    setIsModalOpen(false);
-    if (onClose) {
-      try {
-        onClose();
-      } catch (e) {
-        console.error('Error on SignatureCanvas onClose:', e);
-      }
-    }
+    canvasFade.requestClose();
   };
 
   return (
@@ -286,14 +290,14 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
         </button>
       )}
 
-      {/* Ventana Modal Grande para Firmar con Comodidad */}
-      {isModalOpen && typeof document !== 'undefined' && createPortal(
+      {/* Ventana Modal Grande para Firmar con Comodidad con Fade In y Fade Out */}
+      {canvasFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-5 animate-backdrop-fade"
+          className={`fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-5 ${canvasFade.backdropClass}`}
           onClick={handleModalClose}
         >
           <div
-            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 animate-spring-up"
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 ${canvasFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal de Firma */}

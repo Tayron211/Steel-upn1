@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight, ChevronDown, X, Clock, Check } from 'lucide-react';
+import { useFadeModal } from '../utils/useFadeModal';
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -18,6 +19,7 @@ export default function CustomDatePicker({
   className = ''
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const pickerFade = useFadeModal(isOpen, () => setIsOpen(false), 200);
   const triggerRef = useRef(null);
 
   // Parse initial selected date or default to today
@@ -47,12 +49,12 @@ export default function CustomDatePicker({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
+        pickerFade.requestClose(() => setIsOpen(false));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, pickerFade]);
 
   const handlePrevMonth = (e) => {
     e.stopPropagation();
@@ -84,7 +86,7 @@ export default function CustomDatePicker({
   const handleSelectDay = (year, month, day) => {
     const formatted = formatDateToString(year, month, day);
     onChange(formatted);
-    setIsOpen(false);
+    pickerFade.requestClose(() => setIsOpen(false));
   };
 
   const handleSelectToday = () => {
@@ -93,7 +95,7 @@ export default function CustomDatePicker({
     onChange(formatted);
     setViewYear(today.getFullYear());
     setViewMonth(today.getMonth());
-    setIsOpen(false);
+    pickerFade.requestClose(() => setIsOpen(false));
   };
 
   // Generate calendar grid
@@ -165,7 +167,7 @@ export default function CustomDatePicker({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => isOpen ? pickerFade.requestClose(() => setIsOpen(false)) : setIsOpen(true)}
         className={`w-full h-10 px-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2 text-left font-medium hover:border-[#FDBA30] dark:hover:border-[#FDBA30] focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/20 transition active:scale-[0.99] overflow-hidden ${className}`}
       >
         <div className="flex items-center gap-2 min-w-0 overflow-hidden">
@@ -177,14 +179,14 @@ export default function CustomDatePicker({
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Popover / Modal Calendar - Portaled directly to body so it never clips or causes stacking issues */}
-      {isOpen && typeof document !== 'undefined' && createPortal(
+      {/* Popover / Modal Calendar con Fade In y Fade Out Suave */}
+      {pickerFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[999999] bg-slate-950/40 dark:bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-backdrop-fade"
-          onClick={() => setIsOpen(false)}
+          className={`fixed inset-0 z-[999999] bg-slate-950/40 dark:bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 ${pickerFade.backdropClass}`}
+          onClick={() => pickerFade.requestClose(() => setIsOpen(false))}
         >
           <div
-            className="w-full max-w-[320px] bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 shadow-[0_20px_60px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.85)] animate-spring-up overflow-hidden"
+            className={`w-full max-w-[320px] bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 shadow-[0_20px_60px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.85)] ${pickerFade.modalClass} overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header: Month & Year with Navigation Controls */}
@@ -271,7 +273,7 @@ export default function CustomDatePicker({
 
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={() => pickerFade.requestClose(() => setIsOpen(false))}
                 className="text-xs font-bold px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 rounded-xl transition active:scale-95"
               >
                 Cerrar

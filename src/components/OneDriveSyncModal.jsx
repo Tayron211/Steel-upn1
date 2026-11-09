@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Cloud, Check, Copy, ExternalLink, X, FolderSync, Sparkles, RefreshCw, ShieldCheck } from 'lucide-react';
 import { getLiveExcelState } from '../utils/liveExcelSync';
+import { useFadeModal } from '../utils/useFadeModal';
 
 export const USER_ONEDRIVE_EXCEL_URL =
   'https://educorpperu-my.sharepoint.com/:x:/r/personal/tayron_salinas_upn_edu_pe/_layouts/15/Doc.aspx?sourcedoc=%7BE0144669-9D3C-4D3D-9586-73791364FE6B%7D&file=CONTROL%20DOCENTE%20-%20TEST.xlsx&action=default&mobileredirect=true&share=cQppRhTgPJ09TZWGc3kTZP5rEgUBQSp4dZ3Plu5UzXwYu-yFNw&wdslf=myfiles-c';
 
 export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatusMessage }) {
+  const fadeModal = useFadeModal(isOpen, onClose, 200);
   const [cloudStatus, setCloudStatus] = useState({ loading: true, connected: false, fileName: 'CONTROL DOCENTE - TEST.xlsx', updatedAt: null });
   const [deviceAuth, setDeviceAuth] = useState(null);
   const [authPolling, setAuthPolling] = useState(false);
@@ -401,13 +403,15 @@ interface AllDataResponse {
     setTimeout(() => setCopiedPs(false), 2500);
   };
 
+  if (!fadeModal.shouldRender) return null;
+
   return createPortal(
     <div
-      className="fixed inset-0 bg-slate-950/75 backdrop-blur-md flex items-center justify-center z-[999999] p-3 sm:p-5 animate-backdrop-fade"
-      onClick={onClose}
+      className={`fixed inset-0 bg-slate-950/75 backdrop-blur-md flex items-center justify-center z-[999999] p-3 sm:p-5 ${fadeModal.backdropClass}`}
+      onClick={() => fadeModal.requestClose(onClose)}
     >
       <div
-        className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up max-h-[92vh] overflow-y-auto space-y-3.5"
+        className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${fadeModal.modalClass} max-h-[92vh] overflow-y-auto space-y-3.5`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -427,7 +431,7 @@ interface AllDataResponse {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => fadeModal.requestClose(onClose)}
             className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
@@ -538,7 +542,7 @@ interface AllDataResponse {
         <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => fadeModal.requestClose(onClose)}
             className="h-10 px-5 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition"
           >
             Cerrar

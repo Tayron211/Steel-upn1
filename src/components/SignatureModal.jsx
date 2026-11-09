@@ -21,6 +21,7 @@ import SignatureCanvas from './SignatureCanvas';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { generateCargoPdf, formatCargoNumber } from '../utils/cargoPdfGenerator';
+import { useFadeModal } from '../utils/useFadeModal';
 
 export default function SignatureModal({
   ticket,
@@ -29,8 +30,9 @@ export default function SignatureModal({
   onSaveSignatures,
   defaultAssistant = 'TAYRON SALINAS'
 }) {
+  const signModalFade = useFadeModal(isOpen && Boolean(ticket), onClose, 200);
   const asistentes = useAssistants();
-  if (!isOpen || !ticket) return null;
+  if (!signModalFade.shouldRender || !ticket) return null;
 
   // Cargo Folio Number (formato correlativo 5 dígitos desde 00001)
   const cargoNum = formatCargoNumber(ticket);
@@ -225,7 +227,7 @@ export default function SignatureModal({
 
     try {
       await onSaveSignatures(ticket.id, payload);
-      onClose();
+      signModalFade.requestClose(onClose);
     } catch (err) {
       console.error(err);
     } finally {
@@ -267,14 +269,14 @@ export default function SignatureModal({
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center z-[9999] p-2 sm:p-4 animate-backdrop-fade"
-      onClick={onClose}
+      className={`fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center z-[9999] p-2 sm:p-4 ${signModalFade.backdropClass}`}
+      onClick={() => signModalFade.requestClose(onClose)}
       onTouchStart={e => e.stopPropagation()}
       onTouchMove={e => e.stopPropagation()}
       onTouchEnd={e => e.stopPropagation()}
     >
       <div
-        className="bg-white dark:bg-[#0c0c0f] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[96vh] flex flex-col animate-spring-up overflow-hidden"
+        className={`bg-white dark:bg-[#0c0c0f] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[96vh] flex flex-col ${signModalFade.modalClass} overflow-hidden`}
         onClick={e => e.stopPropagation()}
         onTouchStart={e => e.stopPropagation()}
         onTouchMove={e => e.stopPropagation()}
@@ -315,7 +317,7 @@ export default function SignatureModal({
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => signModalFade.requestClose(onClose)}
               className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
               title="Cerrar"
             >

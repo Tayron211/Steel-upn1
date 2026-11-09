@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, X, Search } from 'lucide-react';
+import { useFadeModal } from '../utils/useFadeModal';
 
 export default function CustomSelect({
   value,
@@ -11,6 +12,7 @@ export default function CustomSelect({
   searchable = undefined
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const selectFade = useFadeModal(isOpen, () => setIsOpen(false), 200);
   const [searchQuery, setSearchQuery] = useState('');
   const triggerRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -20,12 +22,12 @@ export default function CustomSelect({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
+        selectFade.requestClose(() => setIsOpen(false));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, selectFade]);
 
   // Reset search and auto-scroll when modal opens
   useEffect(() => {
@@ -71,7 +73,7 @@ export default function CustomSelect({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => isOpen ? selectFade.requestClose(() => setIsOpen(false)) : setIsOpen(true)}
         className={`w-full px-3 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2 text-left font-medium hover:border-[#FDBA30] dark:hover:border-[#FDBA30] focus:outline-none focus:ring-2 focus:ring-[#FDBA30]/20 transition active:scale-[0.99] ${hasCustomHeight ? '' : 'h-10'} ${className}`}
       >
         <span className={`truncate whitespace-nowrap ${selectedOpt && selectedOpt.value !== '' ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-zinc-500'}`}>
@@ -80,13 +82,13 @@ export default function CustomSelect({
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && typeof document !== 'undefined' && createPortal(
+      {selectFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[999999] bg-slate-950/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-backdrop-fade"
-          onClick={() => setIsOpen(false)}
+          className={`fixed inset-0 z-[999999] bg-slate-950/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 ${selectFade.backdropClass}`}
+          onClick={() => selectFade.requestClose(() => setIsOpen(false))}
         >
           <div
-            className="w-full max-w-sm bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 shadow-[0_20px_60px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.9)] animate-spring-up max-h-[85vh] flex flex-col overflow-hidden"
+            className={`w-full max-w-sm bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 shadow-[0_20px_60px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.9)] ${selectFade.modalClass} max-h-[85vh] flex flex-col overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -96,7 +98,7 @@ export default function CustomSelect({
               </span>
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={() => selectFade.requestClose(() => setIsOpen(false))}
                 className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 transition flex items-center justify-center active:scale-90"
               >
                 <X className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -143,7 +145,7 @@ export default function CustomSelect({
                       type="button"
                       onClick={() => {
                         onChange(opt.value);
-                        setIsOpen(false);
+                        selectFade.requestClose(() => setIsOpen(false));
                       }}
                       className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between gap-2 active:scale-98 ${
                         isSelected

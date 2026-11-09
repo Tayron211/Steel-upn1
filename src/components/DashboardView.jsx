@@ -4,6 +4,7 @@ import { buildMasterExcelFromTemplate } from '../utils/excelTemplateExporter';
 import { createDbChangeGate } from '../utils/webSignGate';
 import { formatCargoNumber } from '../utils/cargoPdfGenerator';
 import OneDriveSyncModal from './OneDriveSyncModal';
+import { useFadeModal } from '../utils/useFadeModal';
 import {
   subscribeLiveExcelStatus,
   getLiveExcelState,
@@ -143,6 +144,7 @@ export default function DashboardView() {
 
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const excelMenuFade = useFadeModal(isMenuOpen, () => setIsMenuOpen(false), 180);
 
   useEffect(() => {
     return subscribeLiveExcelStatus((nextState) => {
@@ -153,12 +155,12 @@ export default function DashboardView() {
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setIsMenuOpen(false);
+        excelMenuFade.requestClose(() => setIsMenuOpen(false));
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [excelMenuFade]);
 
   const loadModuleCollections = async () => {
     try {
@@ -1759,23 +1761,25 @@ export default function DashboardView() {
               {/* Boton Pequeño Solo con el Logo/Icono */}
               <button
                 type="button"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => isMenuOpen ? excelMenuFade.requestClose(() => setIsMenuOpen(false)) : setIsMenuOpen(true)}
                 title="Gestion de Excel & OneDrive"
                 className="w-10 h-10 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition-all active:scale-95 inline-flex items-center justify-center shrink-0"
               >
                 <Database className="w-5 h-5 stroke-[2.4]" />
               </button>
 
-              {/* Menu Flotante Desplegable Hacia Arriba - Solo OneDrive y Respaldo Excel */}
-              {isMenuOpen && (
-                <div className="absolute right-0 bottom-full mb-2 w-72 sm:w-80 bg-white dark:bg-[#121216] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-zinc-800 p-2 z-50 animate-fade-in space-y-1">
+              {/* Menu Flotante Desplegable Hacia Arriba - Con Fade In y Fade Out Suave */}
+              {excelMenuFade.shouldRender && (
+                <div className={`absolute right-0 bottom-full mb-2 w-72 sm:w-80 bg-white dark:bg-[#121216] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-zinc-800 p-2 z-50 ${excelMenuFade.dropdownClass} space-y-1`}>
                   {/* 1. Vincular / Abrir Excel de OneDrive en Tiempo Real */}
                   <button
                     type="button"
                     disabled={syncing || importing}
                     onClick={() => {
-                      setIsMenuOpen(false);
-                      setShowOneDriveModal(true);
+                      excelMenuFade.requestClose(() => {
+                        setIsMenuOpen(false);
+                        setShowOneDriveModal(true);
+                      });
                     }}
                     className="w-full p-2.5 rounded-xl hover:bg-sky-50 dark:hover:bg-sky-950/40 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
                   >
@@ -1804,8 +1808,10 @@ export default function DashboardView() {
                     type="button"
                     disabled={syncing || importing}
                     onClick={() => {
-                      setIsMenuOpen(false);
-                      handleExportExcel();
+                      excelMenuFade.requestClose(() => {
+                        setIsMenuOpen(false);
+                        handleExportExcel();
+                      });
                     }}
                     className="w-full p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50"
                   >

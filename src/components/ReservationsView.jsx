@@ -25,6 +25,7 @@ import {
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
+import { useFadeModal } from '../utils/useFadeModal';
 import { useAssistants } from '../utils/assistants';
 
 import { CAMPUS_ROOMS } from '../utils/campusRooms';
@@ -157,9 +158,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [pickerPiso, setPickerPiso] = useState(''); // '' | 'SOT' | '1ER PISO' | ...
   const [toastMessage, setToastMessage] = useState('');
 
-  const closeModal = () => {
+  const reservationModalFade = useFadeModal(isModalOpen, () => {
     setIsModalOpen(false);
     if (onConsumeTrigger) onConsumeTrigger();
+  }, 200);
+
+  const roomPickerModalFade = useFadeModal(isRoomPickerOpen, () => {
+    setIsRoomPickerOpen(false);
+  }, 200);
+
+  const closeModal = () => {
+    reservationModalFade.requestClose();
   };
 
   const MONTHS_LIST = [
@@ -1410,14 +1419,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         )
       )}
 
-      {/* Modal: New Reservation - 100% Symmetrical */}
-      {isModalOpen && typeof document !== 'undefined' && createPortal(
+      {/* Modal: New Reservation - 100% Symmetrical con Fade In y Fade Out */}
+      {reservationModalFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
+          className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 ${reservationModalFade.backdropClass}`}
           onClick={() => closeModal()}
         >
           <div 
-            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto animate-spring-up"
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto ${reservationModalFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800 mb-4">
@@ -1647,14 +1656,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         document.body
       )}
 
-      {/* Menú Selector de Todas las Aulas, Laboratorios y Talleres */}
-      {isRoomPickerOpen && typeof document !== 'undefined' && createPortal(
+      {/* Menú Selector de Todas las Aulas, Laboratorios y Talleres con Fade In y Fade Out */}
+      {roomPickerModalFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-4 animate-backdrop-fade"
-          onClick={() => setIsRoomPickerOpen(false)}
+          className={`fixed inset-0 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-4 ${roomPickerModalFade.backdropClass}`}
+          onClick={() => roomPickerModalFade.requestClose()}
         >
           <div
-            className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[88vh] flex flex-col animate-spring-up"
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[88vh] flex flex-col ${roomPickerModalFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Menú de Aulas y Laboratorios */}
@@ -1674,7 +1683,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               </div>
               <button
                 type="button"
-                onClick={() => setIsRoomPickerOpen(false)}
+                onClick={() => roomPickerModalFade.requestClose()}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -1808,7 +1817,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           aula: rm.abrv,
                           ubicacion: `${rm.piso} - ${rm.pabellon}`
                         }));
-                        setIsRoomPickerOpen(false);
+                        roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false));
                       }}
                       className={`p-3 rounded-2xl border text-left transition flex items-start justify-between gap-2.5 active:scale-[0.98] ${
                         isSelected

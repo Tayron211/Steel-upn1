@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
+import { useFadeModal } from '../utils/useFadeModal';
 import CustomSelect from './CustomSelect';
 import CustomDatePicker from './CustomDatePicker';
 import { useAssistants } from '../utils/assistants';
@@ -251,6 +252,10 @@ export default function TicketsKanban({
 
   // Classroom Calendar Picker State (Excel catalog & categorization)
   const [isRoomCalendarOpen, setIsRoomCalendarOpen] = useState(false);
+
+  const roomCalendarFade = useFadeModal(isRoomCalendarOpen, () => setIsRoomCalendarOpen(false), 200);
+  const detailTicketFade = useFadeModal(detailTicket, () => setDetailTicket(null), 200);
+  const newLoanFade = useFadeModal(isNewLoanModalOpen, () => setIsNewLoanModalOpen(false), 200);
   const [calendarPabellon, setCalendarPabellon] = useState('A'); // 'A' | 'B' | 'TODOS'
   const [calendarPiso, setCalendarPiso] = useState('TODOS');
   const [calendarCategory, setCalendarCategory] = useState('TODOS'); // 'TODOS' | 'AULA' | 'LABORATORIO' | 'TALLER'
@@ -1372,13 +1377,13 @@ export default function TicketsKanban({
       {/* =========================================================================
           MODAL DE SELECCIÓN DE AULAS ESTILO CALENDARIO (Distribución de Sede)
           ========================================================================= */}
-      {isRoomCalendarOpen && createPortal(
+      {roomCalendarFade.shouldRender && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-backdrop-fade"
-          onClick={() => setIsRoomCalendarOpen(false)}
+          className={`fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm ${roomCalendarFade.backdropClass}`}
+          onClick={() => roomCalendarFade.requestClose()}
         >
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-modal-fade"
+            className={`w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${roomCalendarFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Calendario */}
@@ -1399,7 +1404,7 @@ export default function TicketsKanban({
 
               <button
                 type="button"
-                onClick={() => setIsRoomCalendarOpen(false)}
+                onClick={() => roomCalendarFade.requestClose()}
                 className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition active:scale-95"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -1650,7 +1655,7 @@ export default function TicketsKanban({
                   type="button"
                   onClick={() => {
                     setRoomInput('DOCENCIA');
-                    setIsRoomCalendarOpen(false);
+                    roomCalendarFade.requestClose();
                   }}
                   className="px-3 py-2 text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition"
                 >
@@ -1660,7 +1665,7 @@ export default function TicketsKanban({
                   type="button"
                   onClick={() => {
                     setRoomInput('');
-                    setIsRoomCalendarOpen(false);
+                    roomCalendarFade.requestClose();
                   }}
                   className="px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition"
                 >
@@ -1670,7 +1675,7 @@ export default function TicketsKanban({
 
               <button
                 type="button"
-                onClick={() => setIsRoomCalendarOpen(false)}
+                onClick={() => roomCalendarFade.requestClose()}
                 className="h-10 px-5 text-xs font-black bg-slate-950 dark:bg-zinc-800 hover:bg-slate-800 text-white rounded-xl transition active:scale-95 shadow-xs"
               >
                 Cerrar
@@ -1682,26 +1687,28 @@ export default function TicketsKanban({
       )}
 
       {/* =========================================================================
-          MODAL DE DETALLES DEL PRÉSTAMO Y PREVISUALIZACIÓN DE FIRMAS
+          MODAL DE DETALLES DEL PRÉSTAMO Y PREVISUALIZACIÓN DE FIRMAS CON FADE
           ========================================================================= */}
-      {detailTicket && typeof document !== 'undefined' && createPortal(
+      {detailTicketFade.shouldRender && typeof document !== 'undefined' && createPortal(
         (() => {
-          const ben = parseBeneficiary(detailTicket.descripcionSolucion);
-          const cleanDetailText = (detailTicket.descripcionSolucion || '')
+          const currentDetailTicket = detailTicketFade.cachedData || detailTicket;
+          if (!currentDetailTicket) return null;
+          const ben = parseBeneficiary(currentDetailTicket.descripcionSolucion);
+          const cleanDetailText = (currentDetailTicket.descripcionSolucion || '')
             .replace(/\[(?:🎓|👨‍🏫)?\s*(?:ALUMNO|DOCENTE)(?::\s*[^\]]+)?\]\s*/i, '')
             .trim();
-          const returnTimeMatch = (detailTicket.descripcionSolucion || '').match(/\[DEVUELTO\s+([^\]]+)\]/i);
+          const returnTimeMatch = (currentDetailTicket.descripcionSolucion || '').match(/\[DEVUELTO\s+([^\]]+)\]/i);
           const returnTimeStr = returnTimeMatch ? returnTimeMatch[1] : null;
-          const fRecepcion = detailTicket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${detailTicket.id}`) : null);
-          const fEntrega = detailTicket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${detailTicket.id}`) : null);
+          const fRecepcion = currentDetailTicket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${currentDetailTicket.id}`) : null);
+          const fEntrega = currentDetailTicket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${currentDetailTicket.id}`) : null);
 
           return (
             <div
-              className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md animate-backdrop-fade"
-              onClick={() => setDetailTicket(null)}
+              className={`fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md ${detailTicketFade.backdropClass}`}
+              onClick={() => detailTicketFade.requestClose()}
             >
               <div
-                className="w-full max-w-lg bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-spring-up"
+                className={`w-full max-w-lg bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${detailTicketFade.modalClass}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Encabezado */}
@@ -1713,11 +1720,11 @@ export default function TicketsKanban({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-black text-xs bg-amber-100 dark:bg-amber-950/60 text-amber-950 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/80 px-2.5 py-0.5 rounded-lg">
-                          {detailTicket.ambiente || 'DOCENCIA'}
+                          {currentDetailTicket.ambiente || 'DOCENCIA'}
                         </span>
                         <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/70 inline-flex items-center gap-1">
                           <Check className="w-3 h-3 stroke-[3]" />
-                          {detailTicket.estado === 'ATENDIDO' ? 'DEVUELTO / CONCLUIDO' : detailTicket.estado}
+                          {currentDetailTicket.estado === 'ATENDIDO' ? 'DEVUELTO / CONCLUIDO' : currentDetailTicket.estado}
                         </span>
                       </div>
                       <h3 className="text-sm sm:text-base font-black text-slate-950 dark:text-white leading-tight mt-1 truncate">
@@ -1727,7 +1734,7 @@ export default function TicketsKanban({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setDetailTicket(null)}
+                    onClick={() => detailTicketFade.requestClose()}
                     className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0"
                   >
                     <X className="w-4 h-4 stroke-[2.5]" />
@@ -1878,9 +1885,11 @@ export default function TicketsKanban({
                     <button
                       type="button"
                       onClick={() => {
-                        const target = detailTicket;
-                        setDetailTicket(null);
-                        handleReopen(target);
+                        const target = currentDetailTicket;
+                        detailTicketFade.requestClose(() => {
+                          setDetailTicket(null);
+                          handleReopen(target);
+                        });
                       }}
                       className="h-10 px-3 rounded-xl bg-slate-100 dark:bg-zinc-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-600 dark:text-zinc-400 hover:text-amber-800 dark:hover:text-amber-300 text-xs font-bold inline-flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 transition active:scale-95"
                       title="Devolver este registro a préstamos activos"
@@ -1892,7 +1901,7 @@ export default function TicketsKanban({
 
                   <button
                     type="button"
-                    onClick={() => setDetailTicket(null)}
+                    onClick={() => detailTicketFade.requestClose()}
                     className="h-10 px-5 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 text-xs font-black transition active:scale-95 shadow-xs"
                   >
                     Cerrar
@@ -1906,18 +1915,15 @@ export default function TicketsKanban({
       )}
 
       {/* =========================================================================
-          MODAL FLOTANTE: REGISTRAR ATENCIÓN / PRÉSTAMO (Sincronizado con ATENCIONES 2026-2)
-          12 Columnas exactas de la hoja de Excel:
-          FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PISO | PABELLÓN |
-          TIPO DE SOLICITUD | ESTADO | USUARIO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
+          MODAL FLOTANTE: REGISTRAR ATENCIÓN / PRÉSTAMO CON FADE IN Y FADE OUT
           ========================================================================= */}
-      {isNewLoanModalOpen && typeof document !== 'undefined' && createPortal(
+      {newLoanFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-backdrop-fade"
-          onClick={() => setIsNewLoanModalOpen(false)}
+          className={`fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm ${newLoanFade.backdropClass}`}
+          onClick={() => newLoanFade.requestClose()}
         >
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-modal-fade"
+            className={`w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${newLoanFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal */}
@@ -1938,7 +1944,7 @@ export default function TicketsKanban({
 
               <button
                 type="button"
-                onClick={() => setIsNewLoanModalOpen(false)}
+                onClick={() => newLoanFade.requestClose()}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-90 shrink-0"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -2232,7 +2238,7 @@ export default function TicketsKanban({
             <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-center justify-end gap-2.5">
               <button
                 type="button"
-                onClick={() => setIsNewLoanModalOpen(false)}
+                onClick={() => newLoanFade.requestClose()}
                 className="h-10 px-4 rounded-xl text-xs font-bold text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800 transition active:scale-95"
               >
                 Cancelar

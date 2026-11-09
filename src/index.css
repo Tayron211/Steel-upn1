@@ -207,7 +207,7 @@ input, textarea, select {
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* Fluid Keyframe Animations with Apple Easing (Suave y gradual efecto Fade en toda apertura de ventana/modal) */
+/* Fluid Keyframe Animations with Apple Easing (Suave y gradual efecto Fade en apertura y cierre de ventana/modal) */
 @keyframes appleModalFadeEnter {
   0% {
     opacity: 0;
@@ -216,6 +216,17 @@ input, textarea, select {
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes appleModalFadeExit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.975) translateY(4px);
   }
 }
 
@@ -230,6 +241,17 @@ input, textarea, select {
   }
 }
 
+@keyframes appleScaleExit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+}
+
 @keyframes appleBackdropFade {
   0% {
     opacity: 0;
@@ -238,6 +260,17 @@ input, textarea, select {
   100% {
     opacity: 1;
     backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes appleBackdropFadeExit {
+  0% {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+  100% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
   }
 }
 
@@ -261,12 +294,24 @@ input, textarea, select {
   animation: appleModalFadeEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.animate-modal-fade-out {
+  animation: appleModalFadeExit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .animate-scale-up {
   animation: appleScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.animate-scale-out {
+  animation: appleScaleExit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .animate-backdrop-fade {
   animation: appleBackdropFade 0.22s ease-out forwards;
+}
+
+.animate-backdrop-fade-out {
+  animation: appleBackdropFadeExit 0.2s ease-in forwards;
 }
 
 .animate-speed-dial {
@@ -334,8 +379,23 @@ button:active {
   }
 }
 
+@keyframes softDropdownExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
 .animate-fade-in {
   animation: smoothFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-out {
+  animation: appleModalFadeExit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-fade-soft {
@@ -344,5 +404,10 @@ button:active {
 
 .animate-dropdown-fade {
   animation: softDropdownEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top;
+}
+
+.animate-dropdown-fade-out {
+  animation: softDropdownExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top;
 }

@@ -38,6 +38,7 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
+import { useFadeModal } from '../utils/useFadeModal';
 
 const TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:20', '09:00', '09:10', '10:00', '10:50',
@@ -449,6 +450,11 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     actividades: ''
   });
   const [savingReservation, setSavingReservation] = useState(false);
+
+  const classOptionsFade = useFadeModal(selectedClassOptions, () => setSelectedClassOptions(null), 200);
+  const quickAttentionFade = useFadeModal(quickAttentionItem, () => setQuickAttentionItem(null), 200);
+  const activeModalFade = useFadeModal(activeModalItem, () => setActiveModalItem(null), 200);
+  const reserveRoomFade = useFadeModal(reservingRoom, () => setReservingRoom(null), 200);
 
   const handleOpenReserveModal = (room) => {
     setReservingRoom(room);
@@ -1613,143 +1619,158 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   )
   }
 
-  {/* SECONDARY CLASSROOM ACTIONS SHEET (3-Dots Menu) */ }
+  {/* SECONDARY CLASSROOM ACTIONS SHEET (3-Dots Menu) con Fade In y Fade Out */ }
   {
-    selectedClassOptions && typeof document !== 'undefined' && createPortal(
-      <div
-        className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-        onClick={() => setSelectedClassOptions(null)}
-      >
+    classOptionsFade.shouldRender && typeof document !== 'undefined' && (() => {
+      const activeOptions = classOptionsFade.cachedData || selectedClassOptions;
+      if (!activeOptions) return null;
+
+      return createPortal(
         <div
-          className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up space-y-4 overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
+          className={`fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 ${classOptionsFade.backdropClass}`}
+          onClick={() => classOptionsFade.requestClose()}
         >
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-            <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <span className="font-mono font-black text-xs bg-amber-100 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 px-2.5 py-1 rounded-xl shadow-xs shrink-0">
-                {selectedClassOptions.aula || 'S/A'}
-              </span>
-              <div className="min-w-0">
-                <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{selectedClassOptions.docente}</div>
-                <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {selectedClassOptions.nrc} · {selectedClassOptions.curso}{selectedClassOptions.carrera ? ' · ' + selectedClassOptions.carrera : ''}</div>
+          <div
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${classOptionsFade.modalClass} space-y-4 overflow-hidden`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <span className="font-mono font-black text-xs bg-amber-100 dark:bg-amber-950/70 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 px-2.5 py-1 rounded-xl shadow-xs shrink-0">
+                  {activeOptions.aula || 'S/A'}
+                </span>
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{activeOptions.docente}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {activeOptions.nrc} · {activeOptions.curso}{activeOptions.carrera ? ' · ' + activeOptions.carrera : ''}</div>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => classOptionsFade.requestClose()}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setSelectedClassOptions(null)}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
-            >
-              <X className="w-4 h-4 stroke-[2.5]" />
-            </button>
-          </div>
 
-          <div className="space-y-2 pt-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                const item = selectedClassOptions;
-                setSelectedClassOptions(null);
-                setActiveModalItem(item);
-                setObservationText(item.observacion || '');
-                setReplaceTeacherName('');
-              }}
-              className="w-full p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/90 dark:border-zinc-800 text-left flex items-center gap-3 transition active:scale-98"
-            >
-              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4 stroke-[2.2]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-slate-900 dark:text-white">Añadir Observación o Suplente</div>
-                <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const item = selectedClassOptions;
-                setSelectedClassOptions(null);
-                if (onEmitManualSheet) {
-                  onEmitManualSheet(item);
-                }
-              }}
-              className="w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/70 border border-indigo-200/90 dark:border-indigo-800/80 text-left flex items-center gap-3 transition active:scale-98"
-            >
-              <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0">
-                <FileText className="w-4 h-4 stroke-[2.2]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200">Ir a Hoja de Asistencia Manual</div>
-                <div className="text-[10px] text-indigo-600 dark:text-indigo-300 break-words leading-tight mt-0.5">Generar boleta prellenada en su apartado</div>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const item = selectedClassOptions;
-                setSelectedClassOptions(null);
-                if (onOpenNewTicket) {
-                  onOpenNewTicket({
-                    ambiente: item.aula,
-                    pabellon: item.aula?.startsWith('B') ? 'B' : 'A',
-                    tipo: 'PLUMONES / MATERIALES',
-                    descripcion: `[👨‍🏫 DOCENTE: ${item.docente}] Préstamo en aula ${item.aula}`
+            <div className="space-y-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const item = activeOptions;
+                  classOptionsFade.requestClose(() => {
+                    setSelectedClassOptions(null);
+                    setActiveModalItem(item);
+                    setObservationText(item.observacion || '');
+                    setReplaceTeacherName('');
                   });
-                }
-              }}
-              className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
-            >
-              <div className="w-9 h-9 rounded-xl bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-300 flex items-center justify-center shrink-0">
-                <HandHelping className="w-4 h-4 stroke-[2.2]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-amber-950 dark:text-amber-200">Registrar Préstamo de Material</div>
-                <div className="text-[10px] text-amber-700 dark:text-amber-300 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
-              </div>
-            </button>
+                }}
+                className="w-full p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/90 dark:border-zinc-800 text-left flex items-center gap-3 transition active:scale-98"
+              >
+                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">Añadir Observación o Suplente</div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const item = activeOptions;
+                  classOptionsFade.requestClose(() => {
+                    setSelectedClassOptions(null);
+                    if (onEmitManualSheet) {
+                      onEmitManualSheet(item);
+                    }
+                  });
+                }}
+                className="w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/70 border border-indigo-200/90 dark:border-indigo-800/80 text-left flex items-center gap-3 transition active:scale-98"
+              >
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200">Ir a Hoja de Asistencia Manual</div>
+                  <div className="text-[10px] text-indigo-600 dark:text-indigo-300 break-words leading-tight mt-0.5">Generar boleta prellenada en su apartado</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const item = activeOptions;
+                  classOptionsFade.requestClose(() => {
+                    setSelectedClassOptions(null);
+                    if (onOpenNewTicket) {
+                      onOpenNewTicket({
+                        ambiente: item.aula,
+                        pabellon: item.aula?.startsWith('B') ? 'B' : 'A',
+                        tipo: 'PLUMONES / MATERIALES',
+                        descripcion: `[👨‍🏫 DOCENTE: ${item.docente}] Préstamo en aula ${item.aula}`
+                      });
+                    }
+                  });
+                }}
+                className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
+              >
+                <div className="w-9 h-9 rounded-xl bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-300 flex items-center justify-center shrink-0">
+                  <HandHelping className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-amber-950 dark:text-amber-200">Registrar Préstamo de Material</div>
+                  <div className="text-[10px] text-amber-700 dark:text-amber-300 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
-      </div>,
-      document.body
-    )
+        </div>,
+        document.body
+      );
+    })()
   }
 
-  {/* IN-SITU QUICK ATTENTION DRAWER (Apple-Style Liquid Glass Bottom Sheet) */ }
+  {/* IN-SITU QUICK ATTENTION DRAWER (Apple-Style Liquid Glass Bottom Sheet) con Fade In y Fade Out */ }
   {
-    quickAttentionItem && typeof document !== 'undefined' && createPortal(
-      <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 animate-backdrop-fade"
-        onClick={() => setQuickAttentionItem(null)}
-      >
-        <div
-          className="apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto animate-spring-up"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
+    quickAttentionFade.shouldRender && typeof document !== 'undefined' && (() => {
+      const activeItem = quickAttentionFade.cachedData || quickAttentionItem;
+      if (!activeItem) return null;
 
-          <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3.5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 inline-flex items-center justify-center shadow-2xs">
-                <HandHelping className="w-4 h-4 stroke-[2.2]" />
+      return createPortal(
+        <div
+          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 ${quickAttentionFade.backdropClass}`}
+          onClick={() => quickAttentionFade.requestClose()}
+        >
+          <div
+            className={`apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${quickAttentionFade.modalClass}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
+
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 inline-flex items-center justify-center shadow-2xs">
+                  <HandHelping className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                    Atención Rápida en Aula
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Aula <strong className="text-slate-800 font-mono">{activeItem.aula}</strong> · {activeItem.docente}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                  Atención Rápida en Aula
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Aula <strong className="text-slate-800 font-mono">{quickAttentionItem.aula}</strong> · {quickAttentionItem.docente}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => quickAttentionFade.requestClose()}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition inline-flex items-center justify-center active:scale-90"
+              >
+                <X className="w-4 h-4 stroke-[2.2]" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setQuickAttentionItem(null)}
-              className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition inline-flex items-center justify-center active:scale-90"
-            >
-              <X className="w-4 h-4 stroke-[2.2]" />
-            </button>
-          </div>
 
           {/* Beneficiario Toggle: Docente vs Alumno */}
           <div className="flex items-center justify-between bg-slate-100/90 p-1.5 rounded-2xl mb-3 border border-slate-200/80">
@@ -1871,7 +1892,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              onClick={() => setQuickAttentionItem(null)}
+              onClick={() => quickAttentionFade.requestClose()}
               className="h-11 rounded-2xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center active:scale-95"
             >
               Cancelar
@@ -1887,40 +1908,45 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
       </div>,
       document.body
-    )
+    );
+  })()
   }
 
-  {/* Observation / Suplente Modal - 100% Symmetrical with Full AMOLED Dark Mode */ }
+  {/* Observation / Suplente Modal - 100% Symmetrical con Fade In y Fade Out */ }
   {
-    activeModalItem && typeof document !== 'undefined' && createPortal(
-      <div
-        className="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-        onClick={() => setActiveModalItem(null)}
-      >
-        <div
-          className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
-            <div className="min-w-0 pr-2">
-              <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-                Observación o Suplente
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 break-words mt-0.5">
-                Aula <strong className="text-slate-900 dark:text-amber-400 font-mono">{activeModalItem.aula || 'S/A'}</strong> · {activeModalItem.docente}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveModalItem(null)}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
-              title="Cerrar ventana"
-            >
-              <X className="w-4 h-4 stroke-[2.5]" />
-            </button>
-          </div>
+    activeModalFade.shouldRender && typeof document !== 'undefined' && (() => {
+      const currentActiveItem = activeModalFade.cachedData || activeModalItem;
+      if (!currentActiveItem) return null;
 
-          <div className="space-y-3.5 mb-5">
+      return createPortal(
+        <div
+          className={`fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 ${activeModalFade.backdropClass}`}
+          onClick={() => activeModalFade.requestClose()}
+        >
+          <div
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${activeModalFade.modalClass} overflow-hidden`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-4">
+              <div className="min-w-0 pr-2">
+                <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+                  Observación o Suplente
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 break-words mt-0.5">
+                  Aula <strong className="text-slate-900 dark:text-amber-400 font-mono">{currentActiveItem.aula || 'S/A'}</strong> · {currentActiveItem.docente}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => activeModalFade.requestClose()}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                title="Cerrar ventana"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 mb-5">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
                 Docente de Reemplazo (Opcional)
@@ -1951,7 +1977,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           <div className="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
             <button
               type="button"
-              onClick={() => setActiveModalItem(null)}
+              onClick={() => activeModalFade.requestClose()}
               className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
             >
               Cancelar
@@ -1967,44 +1993,49 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
       </div>,
       document.body
-    )
+    );
+  })()
   }
 
-  {/* MODAL PARA REGISTRAR RESERVA DE AULA LIBRE */}
+  {/* MODAL PARA REGISTRAR RESERVA DE AULA LIBRE CON FADE IN Y FADE OUT */}
   {
-    reservingRoom && typeof document !== 'undefined' && createPortal(
-      <div
-        className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-backdrop-fade"
-        onClick={() => !savingReservation && setReservingRoom(null)}
-      >
+    reserveRoomFade.shouldRender && typeof document !== 'undefined' && (() => {
+      const activeReserveRoom = reserveRoomFade.cachedData || reservingRoom;
+      if (!activeReserveRoom) return null;
+
+      return createPortal(
         <div
-          className="bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 animate-spring-up space-y-4"
-          onClick={(e) => e.stopPropagation()}
+          className={`fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 ${reserveRoomFade.backdropClass}`}
+          onClick={() => !savingReservation && reserveRoomFade.requestClose()}
         >
-          {/* Encabezado */}
-          <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-zinc-800">
-            <div className="flex items-center gap-2.5 min-w-0 pr-1">
-              <span className="font-mono font-black text-sm bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs shrink-0">
-                {reservingRoom.abrv}
-              </span>
-              <div className="min-w-0">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight break-words">
-                  Reservar {reservingRoom.nombre}
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold mt-0.5 break-words leading-tight">
-                  {reservingRoom.tipo} · Pab. {reservingRoom.pabellon} ({reservingRoom.piso}) · Cap. {reservingRoom.aforo} pers.
-                </p>
+          <div
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${reserveRoomFade.modalClass} space-y-4`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Encabezado */}
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2.5 min-w-0 pr-1">
+                <span className="font-mono font-black text-sm bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs shrink-0">
+                  {activeReserveRoom.abrv}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight break-words">
+                    Reservar {activeReserveRoom.nombre}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold mt-0.5 break-words leading-tight">
+                    {activeReserveRoom.tipo} · Pab. {activeReserveRoom.pabellon} ({activeReserveRoom.piso}) · Cap. {activeReserveRoom.aforo} pers.
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                disabled={savingReservation}
+                onClick={() => reserveRoomFade.requestClose()}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
             </div>
-            <button
-              type="button"
-              disabled={savingReservation}
-              onClick={() => setReservingRoom(null)}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
-            >
-              <X className="w-4 h-4 stroke-[2.5]" />
-            </button>
-          </div>
 
           <form onSubmit={handleSaveReservation} className="space-y-3.5">
             {/* Tipo de Solicitante Toggle */}
@@ -2113,7 +2144,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <button
                 type="button"
                 disabled={savingReservation}
-                onClick={() => setReservingRoom(null)}
+                onClick={() => reserveRoomFade.requestClose()}
                 className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95 disabled:opacity-50"
               >
                 Cancelar
@@ -2140,7 +2171,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
       </div>,
       document.body
-    )
+    );
+  })()
   }
     </div >
   );
