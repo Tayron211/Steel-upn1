@@ -452,30 +452,82 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       let blob = null;
 
       if (cardEl) {
+        const isDark = document.documentElement.classList.contains('dark');
+
+        // Create a pristine staging container off-screen to guarantee 100% symmetry & no clipping
+        const staging = document.createElement('div');
+        staging.style.position = 'fixed';
+        staging.style.left = '-9999px';
+        staging.style.top = '0';
+        staging.style.zIndex = '-9999';
+        staging.style.width = '440px';
+        staging.style.padding = '12px'; // Outer padding so card border & shadow NEVER clip
+        staging.style.boxSizing = 'border-box';
+        staging.style.backgroundColor = isDark ? '#0c0c0f' : '#ffffff';
+
+        const clone = cardEl.cloneNode(true);
+        clone.id = `capture-${cardEl.id}`;
+        clone.style.width = '100%';
+        clone.style.margin = '0';
+        clone.style.boxSizing = 'border-box';
+        clone.style.borderRadius = '20px';
+        clone.style.border = isDark ? '1px solid #27272a' : '1px solid #e2e8f0';
+        clone.style.boxShadow = isDark ? '0 10px 25px -5px rgba(0,0,0,0.7)' : '0 10px 25px -5px rgba(0,0,0,0.1)';
+        clone.style.backgroundColor = isDark ? '#0c0c0f' : '#ffffff';
+
+        // In the captured image, hide the 3-dots menu button for a clean graphic card
+        const dotsBtn = clone.querySelector('button[title*="opciones"]');
+        if (dotsBtn) dotsBtn.style.display = 'none';
+
+        // Ensure bottom buttons are perfectly symmetrical & unclipped in the snapshot
+        const bottomGrid = clone.querySelector('.grid.grid-cols-3');
+        if (bottomGrid) {
+          bottomGrid.style.gap = '8px';
+          bottomGrid.style.paddingTop = '10px';
+          const btns = bottomGrid.querySelectorAll('button');
+          btns.forEach(btn => {
+            btn.style.height = '44px';
+            btn.style.minHeight = '44px';
+            btn.style.display = 'inline-flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.style.borderRadius = '16px';
+          });
+        }
+
+        staging.appendChild(clone);
+        document.body.appendChild(staging);
+
+        // Allow browser to calculate layout and render fonts cleanly
+        await new Promise(r => setTimeout(r, 60));
+
         try {
-          const isDark = document.documentElement.classList.contains('dark');
-          blob = await toBlob(cardEl, {
-            pixelRatio: 2,
+          blob = await toBlob(staging, {
+            pixelRatio: 2.5,
             backgroundColor: isDark ? '#0c0c0f' : '#ffffff',
             cacheBust: true,
           });
         } catch (imgErr) {
           console.warn('toBlob fallback to html2canvas:', imgErr);
           try {
-            const canvas = await html2canvas(cardEl, {
-              scale: 2,
+            const canvas = await html2canvas(staging, {
+              scale: 2.5,
               useCORS: true,
               logging: false,
-              backgroundColor: document.documentElement.classList.contains('dark') ? '#0c0c0f' : '#ffffff'
+              backgroundColor: isDark ? '#0c0c0f' : '#ffffff',
             });
             blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
           } catch (h2cErr) {
             console.warn('html2canvas failed:', h2cErr);
           }
+        } finally {
+          if (staging.parentNode) {
+            staging.parentNode.removeChild(staging);
+          }
         }
       }
 
-      const defaultText = "Buenas, informacion sobre este docente";
+      const defaultText = "Buenas, informacion sobre este docente aun no llega";
       const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
 
       if (blob) {
@@ -518,8 +570,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           setTimeout(() => URL.revokeObjectURL(dlUrl), 5000);
         }
 
-        setToastMessage(copied ? '📸 ¡Captura copiada! Pégala (Ctrl+V) en WhatsApp.' : '📥 Captura descargada para adjuntar en WhatsApp.');
-        setTimeout(() => setToastMessage(''), 3500);
+        setToastMessage(copied ? '📸 ¡Captura copiada! En WhatsApp presiona Ctrl + V para adjuntarla.' : '📥 Captura descargada para adjuntar en WhatsApp.');
+        setTimeout(() => setToastMessage(''), 4000);
       }
 
       classOptionsFade.requestClose(() => setSelectedClassOptions(null));
@@ -527,7 +579,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     } catch (err) {
       console.error('Error sharing to WhatsApp:', err);
       classOptionsFade.requestClose(() => setSelectedClassOptions(null));
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent("Buenas, informacion sobre este docente")}`, '_blank');
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent("Buenas, informacion sobre este docente aun no llega")}`, '_blank');
     } finally {
       setIsSharingWhatsApp(false);
     }
@@ -1673,7 +1725,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             <div
               key={item.id}
               id={`attendance-card-${item.id || item.nrc}`}
-              className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
+              className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 pb-4 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
             >
               <div>
                 {/* Top Bar: Aula, Pabellón, Estado y Menú 3 puntos */}
@@ -1792,10 +1844,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               </div>
 
               {/* Fila Única y Simétrica de Toma de Asistencia (100% Adaptada a Modo Claro y Oscuro AMOLED) */}
-              <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800">
+              <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   onClick={() => handleQuickStatus(item, 'PUNTUAL')}
-                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isPuntual
+                  className={`min-h-[44px] h-11 py-1 px-1 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isPuntual
                       ? 'bg-[#00875A] text-white border border-[#00875A] shadow-md font-black'
                       : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 dark:bg-[#061d15] dark:text-[#10b981] dark:border-[#059669]/60 dark:hover:bg-[#059669]/20'
                     }`}
@@ -1815,14 +1867,23 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   onTouchMove={handlePressMove}
                   onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => handlePressClick(e, item, () => handleQuickStatus(item, 'TARDE'))}
-                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isTarde
+                  className={`min-h-[44px] h-11 py-1 px-1 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isTarde
                       ? 'bg-[#FDBA30] text-slate-950 border border-[#FDBA30] font-black shadow-md'
                       : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 dark:bg-[#1c1204] dark:text-[#f59e0b] dark:border-[#d97706] dark:hover:bg-[#d97706]/20'
                     }`}
                   title={isTarde ? 'Toca para desmarcar · Mantén presionado para cambiar hora' : 'Marcar tarde · Mantén presionado para cambiar hora'}
                 >
                   <Clock className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isTarde ? 'text-slate-950' : 'text-amber-800 dark:text-[#f59e0b]'}`} />
-                  <span>{isTarde && item.horaInicioReal ? `Tarde (${item.horaInicioReal})` : 'Tarde'}</span>
+                  {isTarde && item.horaInicioReal ? (
+                    <div className="flex flex-col items-center justify-center leading-none text-center">
+                      <span className="text-[11px] font-bold leading-tight">Tarde</span>
+                      <span className="text-[10px] font-mono font-black leading-none mt-0.5 opacity-90">
+                        {item.horaInicioReal}
+                      </span>
+                    </div>
+                  ) : (
+                    <span>Tarde</span>
+                  )}
                 </button>
 
                 <button
@@ -1835,14 +1896,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   onTouchMove={handlePressMove}
                   onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => handlePressClick(e, item, () => handleQuickStatus(item, 'FALTA'))}
-                  className={`h-10 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isFalta
+                  className={`min-h-[44px] h-11 py-1 px-1 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isFalta
                       ? 'bg-rose-600 text-white border border-rose-600 font-black shadow-md'
                       : 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 dark:bg-[#1e0810] dark:text-[#fda4af] dark:border-[#9f1239] dark:hover:bg-[#9f1239]/20'
                     }`}
                   title={isFalta ? 'Toca para desmarcar · Mantén presionado para Clase Remota/Adelantada' : 'Marcar falta · Mantén presionado para Clase Remota/Adelantada'}
                 >
                   {isFalta ? (
-                    <span className="text-white font-mono font-black text-base">-</span>
+                    <span className="text-white font-mono font-black text-base leading-none">-</span>
                   ) : (
                     <>
                       <XCircle className="w-3.5 h-3.5 stroke-[2.4] shrink-0 text-rose-700 dark:text-[#fda4af]" />
