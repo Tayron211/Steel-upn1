@@ -255,6 +255,23 @@ async function handleApiRequest(context) {
       return json({ success: true, data: updated });
     }
 
+    // POST /api/attendance/reset-future (Limpia marcas obsoletas/ficticias de días posteriores al actual)
+    if (path === '/api/attendance/reset-future' && method === 'POST') {
+      const body = await request.json().catch(() => ({}));
+      const targetDays = body.days || ['MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
+      let changes = 0;
+      for (const d of targetDays) {
+        const normD = normalizeDay(d);
+        const res = await db.prepare(`
+          UPDATE asistencia 
+          SET asistencia = 'PENDIENTE', puntualidad = '-', hora_inicio_real = '', hora_final_real = '', updated_at = datetime('now')
+          WHERE (dia = ? OR dia LIKE ?)
+        `).bind(normD, `${normD}%`).run();
+        changes += res.meta?.changes || 0;
+      }
+      return json({ success: true, message: `Se limpiaron ${changes} registros a PENDIENTE para los días especificados.`, resetCount: changes });
+    }
+
     // -------------------------------------------------------------
     // 2. TICKETS / PRÉSTAMOS: /api/tickets
     // -------------------------------------------------------------

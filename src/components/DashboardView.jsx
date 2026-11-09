@@ -227,6 +227,8 @@ export default function DashboardView() {
       const colDocente = findCol(['DOCENTE', 'PROFESOR']);
       const colCurso = findCol(['CURSO', 'ASIGNATURA']);
       const colCarrera = findCol(['CARRERA', 'PROGRAMA']);
+      const colInicioReal = findCol(['HORA INICIO REAL']);
+      const colFinalReal = findCol(['HORA FINAL REAL']);
       const colAsistencia = findCol(['ASISTENCIA']);
       const colPuntualidad = findCol(['PUNTUALIDAD']);
       const colObs = findCol(['OBSERVACION', 'OBSERVACIONES']);
@@ -245,6 +247,8 @@ export default function DashboardView() {
         const diaVal = colDia >= 0 && row[colDia] ? String(row[colDia]).trim().toUpperCase() : (row[3] ? String(row[3]).trim().toUpperCase() : '');
         const horaIniVal = colInicioProg >= 0 ? formatExcelTime(row[colInicioProg]) : formatExcelTime(row[4]);
         const horaFinVal = colFinProg >= 0 ? formatExcelTime(row[colFinProg]) : formatExcelTime(row[5]);
+        const horaIniRealVal = colInicioReal >= 0 ? formatExcelTime(row[colInicioReal]) : (row[13] ? formatExcelTime(row[13]) : '');
+        const horaFinRealVal = colFinalReal >= 0 ? formatExcelTime(row[colFinalReal]) : (row[14] ? formatExcelTime(row[14]) : '');
 
         parsedClasses.push({
           id: `asist_imp_${r}`,
@@ -261,6 +265,8 @@ export default function DashboardView() {
           docente,
           curso: colCurso >= 0 && row[colCurso] ? String(row[colCurso]).trim().toUpperCase() : (row[11] ? String(row[11]).trim().toUpperCase() : ''),
           carrera: colCarrera >= 0 && row[colCarrera] ? String(row[colCarrera]).trim() : '',
+          horaInicioReal: horaIniRealVal,
+          horaFinalReal: horaFinRealVal,
           asistencia: colAsistencia >= 0 && row[colAsistencia] ? String(row[colAsistencia]).trim().toUpperCase() : 'PENDIENTE',
           puntualidad: colPuntualidad >= 0 && row[colPuntualidad] ? String(row[colPuntualidad]).trim().toUpperCase() : '-',
           observacion: colObs >= 0 && row[colObs] ? String(row[colObs]).trim() : '',

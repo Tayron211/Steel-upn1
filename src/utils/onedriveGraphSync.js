@@ -622,23 +622,25 @@ async function pullAsistencia(db, used) {
     const k = `${String(row[iNrc] ?? '').trim()}|${mapDay(row[iDia])}|${String(row[iAula] ?? '').trim().toUpperCase()}`;
     const list = byKey.get(k);
     if (!list) continue;
-    const ini = iIni >= 0 ? fracToHHMM(row[iIni]) : null;
-    const fin = iFin >= 0 ? fracToHHMM(row[iFin]) : null;
-    const asi = iAs >= 0 ? String(row[iAs] ?? '').trim().toUpperCase() || 'PENDIENTE' : null;
-    const pun = iPu >= 0 ? String(row[iPu] ?? '').trim().toUpperCase() || '-' : null;
-    const obs = iOb >= 0 ? String(row[iOb] ?? '').trim() : null;
+    const ini = iIni >= 0 ? fracToHHMM(row[iIni]) : '';
+    const fin = iFin >= 0 ? fracToHHMM(row[iFin]) : '';
+    const rawAsi = iAs >= 0 ? String(row[iAs] ?? '').trim().toUpperCase() : '';
+    const asi = rawAsi ? (rawAsi === 'PENDIENTE' ? 'PENDIENTE' : rawAsi) : 'PENDIENTE';
+    const rawPu = iPu >= 0 ? String(row[iPu] ?? '').trim().toUpperCase() : '';
+    const pun = rawPu ? (rawPu === '-' ? '-' : rawPu) : '-';
+    const obs = iOb >= 0 ? String(row[iOb] ?? '').trim() : '';
     for (const d of list) {
       const diff =
-        (ini !== null && ini !== String(d.hora_inicio_real || '')) ||
-        (fin !== null && fin !== String(d.hora_final_real || '')) ||
-        (asi !== null && asi !== String(d.asistencia || 'PENDIENTE').toUpperCase()) ||
-        (pun !== null && pun !== String(d.puntualidad || '-').toUpperCase()) ||
-        (obs !== null && obs !== String(d.observacion || ''));
+        (ini !== String(d.hora_inicio_real || '')) ||
+        (fin !== String(d.hora_final_real || '')) ||
+        (asi !== String(d.asistencia || 'PENDIENTE').toUpperCase()) ||
+        (pun !== String(d.puntualidad || '-').toUpperCase()) ||
+        (obs !== String(d.observacion || ''));
       if (diff) {
         stmts.push(
           db
             .prepare(
-              "UPDATE asistencia SET hora_inicio_real = COALESCE(?, hora_inicio_real), hora_final_real = COALESCE(?, hora_final_real), asistencia = COALESCE(?, asistencia), puntualidad = COALESCE(?, puntualidad), observacion = COALESCE(?, observacion), updated_at = datetime('now') WHERE id = ?"
+              "UPDATE asistencia SET hora_inicio_real = ?, hora_final_real = ?, asistencia = ?, puntualidad = ?, observacion = ?, updated_at = datetime('now') WHERE id = ?"
             )
             .bind(ini, fin, asi, pun, obs, d.id)
         );

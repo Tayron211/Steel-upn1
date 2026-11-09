@@ -170,31 +170,70 @@ async function pullFromLinkedExcelToWeb(buffer) {
     sheetNames[0];
   const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[asistSheetName], { header: 1 });
   const asistencia = [];
-  for (let r = 1; r < rawRows.length; r++) {
-    const row = rawRows[r];
-    if (!row || (!row[6] && !row[10] && !row[7])) continue;
-    if (String(row[6] || '').toUpperCase() === 'AULA') continue;
-    asistencia.push({
-      id: `asist_imp_${r}`,
-      pisoPabellon: row[0] ? String(row[0]).trim() : '',
-      sede: row[1] ? String(row[1]).trim() : 'Comas',
-      periodo: row[2] ? String(row[2]).trim() : '2026-2',
-      dia: row[3] ? String(row[3]).trim().toUpperCase() : '',
-      horaInicioProg: formatExcelTime(row[4]),
-      horaFinalProg: formatExcelTime(row[5]),
-      aula: row[6] ? String(row[6]).trim().toUpperCase() : '',
-      nrc: row[7] ? String(row[7]).trim() : '',
-      listaCruzada: row[8] ? String(row[8]).trim() : '',
-      codigoDocente: row[9] ? String(row[9]).trim() : '',
-      docente: row[10] ? String(row[10]).trim().toUpperCase() : '',
-      curso: row[11] ? String(row[11]).trim().toUpperCase() : '',
-      carrera: row[12] ? String(row[12]).trim() : '',
-      horaInicioReal: formatExcelTime(row[13]),
-      horaFinalReal: formatExcelTime(row[14]),
-      asistencia: row[15] ? String(row[15]).trim().toUpperCase() : 'PENDIENTE',
-      puntualidad: row[16] ? String(row[16]).trim().toUpperCase() : '-',
-      observacion: row[17] ? String(row[17]).trim() : ''
-    });
+  if (rawRows && rawRows.length > 0) {
+    const headerInfo = findHeaderRow(rawRows, ['AULA', 'DOCENTE']) ||
+      findHeaderRow(rawRows, ['NRC', 'AULA']) ||
+      findHeaderRow(rawRows, ['PABELLON', 'AULA']) || {
+        rowIndex: 0,
+        cells: (rawRows[0] || []).map(c => String(c ?? '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      };
+
+    const c = headerInfo.cells;
+    const iPisoPab = colOf(c, ['PISO/PABELLON', 'PABELLON/PISO', 'PISO', 'PABELLON']);
+    const iSede = colOf(c, ['SEDE', 'CAMPUS']);
+    const iPeriodo = colOf(c, ['PERIODO', 'CICLO']);
+    const iDia = colOf(c, ['DIAS', 'DIA', 'DÍAS']);
+    const iHoraIni = colOf(c, ['HORA INICIO PROGRAMADA', 'HORA INICIO', 'INICIO PROG', 'INICIO']);
+    const iHoraFin = colOf(c, ['HORA FINAL PROGRAMADA', 'HORA FINAL', 'FIN PROG', 'FINAL']);
+    const iAula = colOf(c, ['AULA', 'AMBIENTE']);
+    const iNrc = colOf(c, ['NRC.', 'NRC', 'CODIGO CLASE']);
+    const iCruzada = colOf(c, ['LISTA CRUZADA', 'CRUZADA']);
+    const iCodDoc = colOf(c, ['CODIGO DE DOCENTE', 'CÓDIGO DE DOCENTE', 'CODIGO DOCENTE', 'COD DOCENTE', 'DNI']);
+    const iDoc = colOf(c, ['DOCENTE', 'PROFESOR']);
+    const iCur = colOf(c, ['CURSO', 'ASIGNATURA']);
+    const iCar = colOf(c, ['CARRERA', 'PROGRAMA']);
+    const iIniReal = colOf(c, ['HORA INICIO REAL']);
+    const iFinReal = colOf(c, ['HORA FINAL REAL']);
+    const iAsis = colOf(c, ['ASISTENCIA']);
+    const iPunt = colOf(c, ['PUNTUALIDAD']);
+    const iObs = colOf(c, ['OBSERVACION', 'OBSERVACIÓN']);
+
+    for (let r = headerInfo.rowIndex + 1; r < rawRows.length; r++) {
+      const row = rawRows[r];
+      if (!row) continue;
+      const aula = iAula >= 0 && row[iAula] ? String(row[iAula]).trim().toUpperCase() : (row[6] ? String(row[6]).trim().toUpperCase() : '');
+      const docente = iDoc >= 0 && row[iDoc] ? String(row[iDoc]).trim().toUpperCase() : (row[10] ? String(row[10]).trim().toUpperCase() : '');
+      const nrc = iNrc >= 0 && row[iNrc] ? String(row[iNrc]).trim() : (row[7] ? String(row[7]).trim() : '');
+      if (!aula && !docente && !nrc) continue;
+      if (aula === 'AULA' || docente === 'DOCENTE') continue;
+
+      const rawAsis = iAsis >= 0 && row[iAsis] ? String(row[iAsis]).trim().toUpperCase() : '';
+      const rawPunt = iPunt >= 0 && row[iPunt] ? String(row[iPunt]).trim().toUpperCase() : '';
+      const iniReal = iIniReal >= 0 ? formatExcelTime(row[iIniReal]) : '';
+      const finReal = iFinReal >= 0 ? formatExcelTime(row[iFinReal]) : '';
+
+      asistencia.push({
+        id: `asist_imp_${r}`,
+        pisoPabellon: iPisoPab >= 0 && row[iPisoPab] ? String(row[iPisoPab]).trim() : (row[0] ? String(row[0]).trim() : ''),
+        sede: iSede >= 0 && row[iSede] ? String(row[iSede]).trim() : 'Comas',
+        periodo: iPeriodo >= 0 && row[iPeriodo] ? String(row[iPeriodo]).trim() : '2026-2',
+        dia: iDia >= 0 && row[iDia] ? String(row[iDia]).trim().toUpperCase() : (row[3] ? String(row[3]).trim().toUpperCase() : ''),
+        horaInicioProg: iHoraIni >= 0 ? formatExcelTime(row[iHoraIni]) : formatExcelTime(row[4]),
+        horaFinalProg: iHoraFin >= 0 ? formatExcelTime(row[iHoraFin]) : formatExcelTime(row[5]),
+        aula,
+        nrc,
+        listaCruzada: iCruzada >= 0 && row[iCruzada] ? String(row[iCruzada]).trim() : '',
+        codigoDocente: iCodDoc >= 0 && row[iCodDoc] ? String(row[iCodDoc]).trim() : '',
+        docente,
+        curso: iCur >= 0 && row[iCur] ? String(row[iCur]).trim().toUpperCase() : '',
+        carrera: iCar >= 0 && row[iCar] ? String(row[iCar]).trim() : '',
+        horaInicioReal: iniReal,
+        horaFinalReal: finReal,
+        asistencia: rawAsis || 'PENDIENTE',
+        puntualidad: rawPunt || '-',
+        observacion: iObs >= 0 && row[iObs] ? String(row[iObs]).trim() : ''
+      });
+    }
   }
 
   const tickets = [];

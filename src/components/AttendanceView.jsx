@@ -12,6 +12,7 @@ import {
   CheckCheck,
   FileText,
   X,
+  Calendar,
   CalendarClock,
   CalendarPlus,
   GraduationCap,
@@ -45,13 +46,24 @@ const TIME_OPTIONS = [
 ];
 
 // Generador oficial de Tabla de Asistencia en HTML y TSV (14 columnas según modelo oficial de Excel)
-const generateAttendanceTableData = (items, selectedDia) => {
+const generateAttendanceTableData = (items, selectedDia, explicitDateStr) => {
   const list = Array.isArray(items) ? items : [items];
-  const dObj = new Date();
-  const dNum = String(dObj.getDate()).padStart(2, '0');
-  const mNum = String(dObj.getMonth() + 1).padStart(2, '0');
-  const yNum = dObj.getFullYear();
-  const dateStr = `${dNum}/${mNum}/${yNum}`;
+  
+  // Calcular la fecha exacta correspondiente al día de la semana seleccionado en la semana en curso
+  let dateStr = explicitDateStr;
+  if (!dateStr) {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    const dayNames = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
+    const idx = dayNames.indexOf(String(selectedDia || '').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    const targetDate = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + (idx >= 0 ? idx : 0));
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = targetDate.getFullYear();
+    dateStr = `${dd}/${mm}/${yyyy}`;
+  }
 
   const thStyle = 'background-color:#FFC000;color:#000000;font-weight:bold;border:1px solid #000000;padding:6px 10px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:nowrap;';
   const thBlackStyle = 'background-color:#000000;color:#FFFFFF;font-weight:bold;border:1px solid #000000;padding:6px 10px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:nowrap;';
@@ -286,6 +298,64 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const [viewMode, setViewMode] = useState('CLASSES'); // 'CLASSES' | 'FREE_ROOMS'
   const [search, setSearch] = useState(initialSearch || '');
   const [selectedCarrera, setSelectedCarrera] = useState('');
+
+  // Días de la semana con fechas exactas sincronizadas (Semana actual)
+  const weekDaysWithDates = useMemo(() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+
+    const names = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
+    const shortNames = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+
+    return names.map((name, idx) => {
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + idx);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const dateStr = `${dd}/${mm}/${yyyy}`;
+      const shortDate = `${dd}/${mm}`;
+      const isToday = d.toDateString() === now.toDateString();
+      const isFuture = d > new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return {
+        name,
+        short: shortNames[idx],
+        date: d,
+        dateStr,
+        shortDate,
+        isToday,
+        isFuture,
+        fullLabel: d.toLocaleDateString('es-PE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+      };
+    });
+  }, []);
+
+  const selectedDayInfo = useMemo(() => {
+    return weekDaysWithDates.find(w => w.name === selectedDia) || weekDaysWithDates[0];
+  }, [weekDaysWithDates, selectedDia]);
+
+  const handleResetDayToPending = async () => {
+    if (!confirm(`¿Restablecer todas las clases de ${selectedDia} (${selectedDayInfo?.dateStr || ''}) a PENDIENTE?\nEsto limpiará las marcas ficticias o pasadas que no correspondan.`)) return;
+    try {
+      setLoading(true);
+      const res = await fetch('/api/attendance/reset-future', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: [selectedDia] })
+      });
+      const json = await res.json();
+      if (json.success) {
+        setToastMessage(`✓ ${selectedDia} restablecido a PENDIENTE (${json.resetCount || 0} clases limpiadas)`);
+        await loadAttendance();
+      }
+    } catch (err) {
+      console.error(err);
+      setToastMessage('❌ Error al restablecer día');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Carreras únicas detectadas en la data cargada (para filtro rápido por carrera/facultad)
   const carrerasUnicas = useMemo(() => {
@@ -666,7 +736,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   // Copiar Fila de Control de Asistencia en Formato de TABLA (HTML rico con bordes y colores + TSV para Excel)
   const handleCopyAttendanceRow = async (item) => {
     try {
-      const { html, plain } = generateAttendanceTableData(item, selectedDia);
+      const { html, plain } = generateAttendanceTableData(item, selectedDia, selectedDayInfo?.dateStr);
       const ok = await copyRichTableToClipboard(plain, html);
       if (ok) {
         setToastMessage(`📋 Tabla copiada (${item.aula} - ${item.docente})`);
@@ -689,7 +759,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         setTimeout(() => setToastMessage(''), 2000);
         return;
       }
-      const { html, plain } = generateAttendanceTableData(displayedItems, selectedDia);
+      const { html, plain } = generateAttendanceTableData(displayedItems, selectedDia, selectedDayInfo?.dateStr);
       const ok = await copyRichTableToClipboard(plain, html);
       if (ok) {
         setToastMessage(`📋 Tabla completa copiada (${displayedItems.length} filas en tabla)`);
@@ -860,24 +930,65 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
       {/* Controlador Compacto, Ágil y Rápido */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-2.5 sm:p-3.5 shadow-xs space-y-2 transition-colors">
-        {/* Fila 1: Selector de Día LUN - DOM (Ultra compacto y directo) */}
+        {/* Fila 1: Selector de Día con Fechas Exactas y Badge HOY */}
         <div className="grid grid-cols-7 gap-1 w-full">
-          {['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'].map((d) => {
-            const isSelected = selectedDia === d;
+          {weekDaysWithDates.map((item) => {
+            const isSelected = selectedDia === item.name;
             return (
               <button
-                key={d}
+                key={item.name}
                 type="button"
-                onClick={() => setSelectedDia(d)}
-                className={`h-7 sm:h-8 text-[11px] sm:text-xs font-bold rounded-lg transition-all inline-flex items-center justify-center active:scale-95 ${isSelected
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                onClick={() => setSelectedDia(item.name)}
+                className={`h-9 sm:h-10 text-[10px] sm:text-xs font-bold rounded-xl transition-all flex flex-col items-center justify-center active:scale-95 leading-tight ${
+                  isSelected
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs ring-2 ring-[#FDBA30]/50'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-zinc-800'
+                }`}
+                title={`${item.name} (${item.dateStr})`}
               >
-                <span>{d === 'MIERCOLES' ? 'MIÉ' : d === 'SABADO' ? 'SÁB' : d === 'DOMINGO' ? 'DOM' : d.slice(0, 3)}</span>
+                <div className="flex items-center gap-0.5">
+                  <span className="font-extrabold">{item.short}</span>
+                  {item.isToday && (
+                    <span className="text-[7px] font-black px-1 rounded-sm bg-emerald-600 text-white leading-none py-0.5">
+                      HOY
+                    </span>
+                  )}
+                </div>
+                <span className={`text-[9px] font-mono tracking-tight ${isSelected ? 'text-slate-950 font-black' : 'text-slate-500 dark:text-zinc-400'}`}>
+                  {item.shortDate}
+                </span>
               </button>
             );
           })}
+        </div>
+
+        {/* Banner Informativo de Fecha Exacta Seleccionada */}
+        <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 text-[11px]">
+          <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300 font-bold capitalize">
+            <Calendar className="w-3.5 h-3.5 text-[#FDBA30] shrink-0" />
+            <span>{selectedDayInfo?.fullLabel || selectedDia}</span>
+            {selectedDayInfo?.isToday && (
+              <span className="text-[9px] font-extrabold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.2 rounded-full border border-emerald-300 dark:border-emerald-700">
+                Día Actual
+              </span>
+            )}
+            {selectedDayInfo?.isFuture && (
+              <span className="text-[9px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-1.5 py-0.2 rounded-full border border-amber-300 dark:border-amber-700">
+                Día Próximo
+              </span>
+            )}
+          </div>
+          {selectedDayInfo?.isFuture && countPuntual > 0 && (
+            <button
+              type="button"
+              onClick={handleResetDayToPending}
+              className="text-[10px] font-black bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 px-2 py-0.5 rounded-lg transition active:scale-95 flex items-center gap-1 shadow-2xs"
+              title="Limpiar marcas pasadas que no correspondan a este día"
+            >
+              <RotateCcw className="w-3 h-3 stroke-[2.4]" />
+              <span>Restablecer día a Pendiente ({countPuntual})</span>
+            </button>
+          )}
         </div>
 
         {/* Fila 2: Buscador + Pabellón + Pisos integrados */}
