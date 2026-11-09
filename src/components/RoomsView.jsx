@@ -123,7 +123,7 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba con otro código o filtro de pabellón.</p>
         </div>
       ) : (
-        <div key={`rooms-${filterPab}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4 animate-fade-in">
+        <div key={`rooms-${filterPabellon}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4 animate-fade-in">
           {filtered.map(room => (
             <div
               key={room.abrv}
