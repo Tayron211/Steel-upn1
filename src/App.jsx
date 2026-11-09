@@ -424,6 +424,7 @@ export default function App() {
         onOpenManualSheet={() => {
           setOperationsSubTab('manual');
           navigateTab('operations', true);
+          setOpenManualModalTrigger(Date.now());
           scrollToTopGlobal();
         }}
         onOpenNewTicket={() => {
@@ -434,6 +435,7 @@ export default function App() {
         onOpenReservation={() => {
           setOperationsSubTab('reservations');
           navigateTab('operations', true);
+          setOpenReservationModalTrigger(Date.now());
           scrollToTopGlobal();
         }}
       />

@@ -30,6 +30,18 @@ export default function OperationsHub({
     }
   }, [defaultSubTab]);
 
+  useEffect(() => {
+    if (openManualModalTrigger) {
+      setSubTab('manual');
+    }
+  }, [openManualModalTrigger]);
+
+  useEffect(() => {
+    if (openReservationModalTrigger) {
+      setSubTab('reservations');
+    }
+  }, [openReservationModalTrigger]);
+
   const switchSubTab = (target) => {
     // Al dar clic en una subpestaña (Hojas Manuales, Reservas, Ambientes),
     // NUNCA debe abrirse una ventana modal a menos que se use su respectivo botón de registro.

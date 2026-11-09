@@ -114,7 +114,7 @@ const CORE_MATERIALS = [
   { id: 'CAMARA WEB', label: 'CAMARA WEB', icon: '📷', desc: 'Préstamo de Cámara Web' },
   { id: 'CABLE DE RED', label: 'CABLE DE RED', icon: '🌐', desc: 'Préstamo de Cable de Red' },
   { id: 'AUDIFONOS', label: 'AUDIFONOS', icon: '🎧', desc: 'Préstamo de Audífonos' },
-  { id: 'ADAPTADOR VGA/HDMI', label: 'ADAPTADOR VGA/HDMI', icon: '🔌', desc: 'Préstamo de Adaptador VGA/HDMI' },
+  { id: 'ADAPTADOR VGA/HDMI', label: 'ADAPT. VGA/HDMI', icon: '🔌', desc: 'Préstamo de Adaptador VGA/HDMI' },
   { id: 'CAMARA DIGITAL', label: 'CAMARA DIGITAL', icon: '📸', desc: 'Préstamo de Cámara Digital' },
   { id: 'MANUAL', label: 'OTRO / MANUAL', icon: '✏️', desc: '' }
 ];
@@ -2122,14 +2122,14 @@ export default function TicketsKanban({
                           key={item.id}
                           type="button"
                           onClick={() => toggleMaterial(item.id)}
-                          className={`h-9 px-2.5 rounded-xl text-[11px] font-bold transition flex items-center justify-between gap-1 active:scale-95 border ${
+                          className={`min-h-[2.5rem] py-1.5 px-2.5 rounded-xl text-[11px] font-bold transition flex items-center justify-between gap-1 active:scale-95 border ${
                             isSelected
-                              ? 'bg-slate-950 dark:bg-zinc-800 text-white border-slate-950 dark:border-zinc-700 font-black shadow-xs ring-2 ring-amber-400/50'
-                              : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
+                              ? 'bg-[#FDBA30] dark:bg-[#FDBA30] text-slate-950 dark:text-slate-950 border-amber-500 font-black shadow-xs ring-2 ring-amber-400/50'
+                              : 'bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 border-slate-300 dark:border-zinc-800 shadow-2xs'
                           }`}
                         >
                           <span className="truncate">{item.icon} {item.label}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3] text-amber-400 shrink-0" />}
+                          {isSelected && <Check className="w-4 h-4 stroke-[3] text-slate-950 shrink-0" />}
                         </button>
                       );
                     })}
