@@ -1050,7 +1050,7 @@ export default function TicketsKanban({
                     {/* Header: Aula, Ubicación y Hora */}
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-amber-400 dark:text-amber-400 px-2.5 py-0.5 rounded-xl shrink-0 shadow-2xs tracking-tight">
+                        <span className="font-mono font-black text-xs sm:text-sm bg-amber-100 dark:bg-amber-950/60 text-amber-950 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/80 px-2.5 py-0.5 rounded-xl shrink-0 shadow-xs tracking-tight">
                           {ticket.ambiente || 'DOCENCIA'}
                         </span>
                         {(() => {
@@ -1712,7 +1712,7 @@ export default function TicketsKanban({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2.5 py-0.5 rounded-lg border border-slate-700">
+                        <span className="font-mono font-black text-xs bg-amber-100 dark:bg-amber-950/60 text-amber-950 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/80 px-2.5 py-0.5 rounded-lg">
                           {detailTicket.ambiente || 'DOCENCIA'}
                         </span>
                         <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/70 inline-flex items-center gap-1">

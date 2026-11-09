@@ -904,16 +904,16 @@ export default function DashboardView() {
               onClick={() => setActiveSectionTab(tab.id)}
               className={`h-11 px-4 rounded-2xl flex items-center gap-2.5 text-xs font-black transition-all active:scale-95 shrink-0 whitespace-nowrap shadow-xs ${
                 isActive
-                  ? 'bg-slate-950 text-white dark:bg-[#FDBA30] dark:text-slate-950 border border-slate-900 dark:border-amber-400'
+                  ? 'bg-[#FDBA30] text-slate-950 border border-amber-400 shadow-[0_2px_12px_rgba(253,186,48,0.35)]'
                   : 'bg-white hover:bg-slate-100 dark:bg-[#0c0c0f] dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200/90 dark:border-zinc-800'
               }`}
             >
-              <Icon className={`w-4 h-4 stroke-[2.4] ${isActive ? 'text-[#FDBA30] dark:text-slate-950' : 'text-slate-500 dark:text-zinc-400'}`} />
+              <Icon className={`w-4 h-4 stroke-[2.4] ${isActive ? 'text-slate-950' : 'text-slate-500 dark:text-zinc-400'}`} />
               <span>{tab.label}</span>
               {tab.count !== null && (
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                   isActive
-                    ? 'bg-white/20 text-white dark:bg-black/20 dark:text-black'
+                    ? 'bg-black/15 text-slate-950'
                     : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
                 }`}>
                   {tab.count}
@@ -1176,8 +1176,8 @@ export default function DashboardView() {
                       onClick={() => setDocentePabellonFilter(pab)}
                       className={`h-10 px-3.5 text-xs font-bold rounded-xl border transition active:scale-95 ${
                         isPab
-                          ? 'bg-slate-950 text-white dark:bg-zinc-200 dark:text-black border-slate-950'
-                          : 'bg-slate-50 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
+                          ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
+                          : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
                       }`}
                     >
                       {pab === 'TODOS' ? 'Todos Pabellones' : `Pabellón ${pab}`}
@@ -1705,8 +1705,8 @@ export default function DashboardView() {
                     onClick={() => setReservaPabellonFilter(pab)}
                     className={`h-10 px-3.5 text-xs font-bold rounded-xl border transition active:scale-95 ${
                       reservaPabellonFilter === pab
-                        ? 'bg-slate-950 text-white dark:bg-zinc-200 dark:text-black border-slate-950'
-                        : 'bg-slate-50 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
+                        ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
+                        : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
                     }`}
                   >
                     {pab === 'TODOS' ? 'Todos' : `Pab ${pab}`}

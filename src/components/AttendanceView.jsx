@@ -1398,7 +1398,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         )}
       </div>
     ) : (
-      <div key={`${selectedDia}-${selectedPab}-${selectedPiso}-${selectedHora}-${statusFilter}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-3.5 animate-fade-in">
+      <div key={`${selectedDia}-${selectedPabellon}-${selectedHora}-${statusFilter}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-3.5 animate-fade-in">
         {displayedItems.map(item => {
           const isPuntual = item.puntualidad === 'PUNTUAL';
           const isTarde = item.puntualidad === 'TARDE';
