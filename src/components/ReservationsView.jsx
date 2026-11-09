@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
-  RefreshCw
+  RefreshCw,
+  Filter
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -145,6 +146,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [selectedPisos, setSelectedPisos] = useState([]); // Array selección múltiple
   const [selectedDayOffset, setSelectedDayOffset] = useState(null); // null = Todas las fechas, 0 = Hoy, 1 = Mañana, 2..13 = Próximos días
   const [selectedHoraBlock, setSelectedHoraBlock] = useState(() => getCurrentHourBlock()); // '' = Todo el día, o '07:30', etc.
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const activeFiltersCount = (selectedPabellon ? 1 : 0) + (selectedPisos.length > 0 ? 1 : 0);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoomPickerOpen, setIsRoomPickerOpen] = useState(false);
@@ -964,41 +967,62 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           </button>
         </div>
 
-        {/* Fila 2: Buscador Principal (Ancho Completo - Nunca se corta) */}
-        <div className="relative w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 stroke-[2.2]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={
-              viewMode === 'FREE_ROOMS'
-                ? 'Buscar aula libre por código (A201, B102) o laboratorio...'
-                : 'Buscar por aula (A201), docente solicitante o detalle...'
-            }
-            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161b] focus:border-[#FDBA30] transition font-semibold"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch('')}
-              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
-            >
-              <X className="w-3.5 h-3.5 stroke-[2.2]" />
-            </button>
-          )}
+        {/* Fila 2: Buscador Principal + Boton Filtros Movil */}
+        <div className="flex items-center gap-1.5 w-full">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 stroke-[2.2]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={
+                viewMode === 'FREE_ROOMS'
+                  ? 'Buscar aula libre por código (A201, B102) o laboratorio...'
+                  : 'Buscar por aula (A201), docente solicitante o detalle...'
+              }
+              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:bg-white dark:focus:bg-[#16161b] focus:border-[#FDBA30] transition font-semibold"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5"
+              >
+                <X className="w-3.5 h-3.5 stroke-[2.2]" />
+              </button>
+            )}
+          </div>
+
+          {/* Boton Toggle Filtros Avanzados (Solo en movil para no saturar) */}
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className={`sm:hidden h-9 px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shrink-0 transition active:scale-95 ${
+              activeFiltersCount > 0 || mobileFiltersOpen
+                ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
+                : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
+            }`}
+          >
+            <Filter className="w-3.5 h-3.5 stroke-[2.4]" />
+            <span>Filtros</span>
+            {activeFiltersCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-slate-950 text-white text-[10px] flex items-center justify-center font-black">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Fila 3: Filtro Pabellón (Ambos / Pab. A / Pab. B) + Filtro Pisos (Todos / Sót / P1..P5) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 w-full pt-0.5">
+        {/* Fila 3: Filtro Pabellón + Pisos (Plegable en móvil, siempre visible en desktop) */}
+        <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 w-full pt-0.5`}>
           {/* Pabellón Pills */}
-          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0">
+          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto">
             {['', 'A', 'B'].map((pab) => (
               <button
                 key={pab || 'ALL'}
                 type="button"
                 onClick={() => setSelectedPabellon(pab)}
-                className={`h-7 px-3 rounded-lg text-xs font-bold transition active:scale-95 whitespace-nowrap ${
+                className={`flex-1 sm:flex-initial h-7 px-3 rounded-lg text-xs font-bold transition active:scale-95 whitespace-nowrap ${
                   selectedPabellon === pab
                     ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
                     : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -1010,7 +1034,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           </div>
 
           {/* Pisos Pills (Selección Múltiple) */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5 w-full sm:w-auto">
             {PISOS_DISPONIBLES.map((p) => {
               const isTodos = p.val === '';
               const isSelected = isTodos

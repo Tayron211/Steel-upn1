@@ -31,7 +31,8 @@ import {
   MoreVertical,
   Copy,
   Table,
-  LayoutGrid
+  LayoutGrid,
+  Filter
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -298,6 +299,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const [viewMode, setViewMode] = useState('CLASSES'); // 'CLASSES' | 'FREE_ROOMS'
   const [search, setSearch] = useState(initialSearch || '');
   const [selectedCarrera, setSelectedCarrera] = useState('');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const activeFiltersCount = (selectedPabellon ? 1 : 0) + (selectedPisos.length > 0 ? 1 : 0) + (selectedCarrera ? 1 : 0);
 
   // Días de la semana con fechas exactas sincronizadas (Semana actual)
   const weekDaysWithDates = useMemo(() => {
@@ -962,8 +966,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           })}
         </div>
 
-        {/* Banner Informativo de Fecha Exacta Seleccionada */}
-        <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 text-[11px]">
+        {/* Banner Informativo de Fecha Exacta Seleccionada (Solo desktop/tablet para evitar saturar el movil) */}
+        <div className="hidden sm:flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 text-[11px]">
           <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300 font-bold capitalize">
             <Calendar className="w-3.5 h-3.5 text-[#FDBA30] shrink-0" />
             <span>{selectedDayInfo?.fullLabel || selectedDia}</span>
@@ -991,9 +995,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           )}
         </div>
 
-        {/* Fila 2: Buscador + Pabellón + Pisos integrados */}
-        <div className="flex flex-col sm:flex-row items-center gap-1.5">
-          <div className="relative flex-1 w-full">
+        {/* Fila 2: Buscador + Boton Filtros Movil */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1 min-w-0">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 stroke-[2.2]" />
             <input
               type="text"
@@ -1009,96 +1013,120 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             )}
           </div>
 
-          {/* Pabellón Pills */}
-          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto">
-            {['', 'A', 'B'].map((pab) => (
-              <button
-                key={pab || 'ALL'}
-                type="button"
-                onClick={() => setSelectedPabellon(pab)}
-                className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
-                    ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
-                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
-                  }`}
-              >
-                {pab ? `Pab. ${pab}` : 'Ambos'}
-              </button>
-            ))}
-          </div>
-
-          {/* Pisos Pills (Selección Múltiple: Permite filtrar varios pisos a la vez) */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
-            {pisosDisponibles.map((p) => {
-              const isTodos = p.val === '';
-              const isSelected = isTodos
-                ? selectedPisos.length === 0
-                : selectedPisos.includes(p.val);
-
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => handleTogglePiso(p.val)}
-                  className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 ${
-                    isSelected
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                  title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label} (puedes activar varios)`}
-                >
-                  <span>{p.short}</span>
-                  {!isTodos && isSelected && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Boton Toggle Filtros Avanzados (Solo en movil para no saturar la pantalla) */}
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className={`sm:hidden h-8 px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shrink-0 transition active:scale-95 ${
+              activeFiltersCount > 0 || mobileFiltersOpen
+                ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
+                : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
+            }`}
+          >
+            <Filter className="w-3.5 h-3.5 stroke-[2.4]" />
+            <span>Filtros</span>
+            {activeFiltersCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-slate-950 text-white text-[10px] flex items-center justify-center font-black">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Fila 2b: Filtro rápido por Carrera / Facultad */}
-        {carrerasUnicas.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">Carrera:</span>
-            <button
-              type="button"
-              onClick={() => setSelectedCarrera('')}
-              className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${selectedCarrera === ''
-                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-              }`}
-            >
-              Todas
-            </button>
-            {carrerasUnicas.map((car) => {
-              const isSel = selectedCarrera === car;
-              return (
+        {/* Seccion de Filtros Secundarios: Pabellon, Pisos y Carrera (Plegable en movil, siempre visible en desktop) */}
+        <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:flex-col sm:gap-2`}>
+          <div className="flex flex-col sm:flex-row items-center gap-1.5">
+            {/* Pabellón Pills */}
+            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto">
+              {['', 'A', 'B'].map((pab) => (
                 <button
-                  key={car}
+                  key={pab || 'ALL'}
                   type="button"
-                  onClick={() => setSelectedCarrera(isSel ? '' : car)}
-                  className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${isSel
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-                  }`}
-                  title={car}
+                  onClick={() => setSelectedPabellon(pab)}
+                  className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
+                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
+                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                    }`}
                 >
-                  {car}
+                  {pab ? `Pab. ${pab}` : 'Ambos'}
                 </button>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
 
-        {/* Fila 3: Modos Rápidos + Contadores KPI de Estado en 1 Sola Línea */}
-        <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-100 dark:border-zinc-800">
-          <div className="flex items-center gap-1">
+            {/* Pisos Pills (Selección Múltiple) */}
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
+              {pisosDisponibles.map((p) => {
+                const isTodos = p.val === '';
+                const isSelected = isTodos
+                  ? selectedPisos.length === 0
+                  : selectedPisos.includes(p.val);
+
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => handleTogglePiso(p.val)}
+                    className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 ${
+                      isSelected
+                        ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                        : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
+                  >
+                    <span>{p.short}</span>
+                    {!isTodos && isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Filtro rápido por Carrera / Facultad */}
+          {carrerasUnicas.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">Carrera:</span>
+              <button
+                type="button"
+                onClick={() => setSelectedCarrera('')}
+                className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${selectedCarrera === ''
+                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
+                }`}
+              >
+                Todas
+              </button>
+              {carrerasUnicas.map((car) => {
+                const isSel = selectedCarrera === car;
+                return (
+                  <button
+                    key={car}
+                    type="button"
+                    onClick={() => setSelectedCarrera(isSel ? '' : car)}
+                    className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${isSel
+                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
+                    }`}
+                    title={car}
+                  >
+                    {car}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Fila 3: Modos Rápidos + Contadores KPI de Estado en Barra Limpia */}
+        <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800 overflow-x-auto scrollbar-none pb-0.5">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => {
                 setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
                 setSelectedHora('');
               }}
-              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${blockMode === 'CURRENT'
+              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${blockMode === 'CURRENT'
                   ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                   : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
                 }`}
@@ -1112,7 +1140,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setBlockMode(blockMode === 'NEXT' ? 'ALL' : 'NEXT');
                 setSelectedHora('');
               }}
-              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${blockMode === 'NEXT'
+              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${blockMode === 'NEXT'
                   ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                   : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
                 }`}
@@ -1125,7 +1153,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode(viewMode === 'FREE_ROOMS' ? 'CLASSES' : 'FREE_ROOMS');
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
               }}
-              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 ${viewMode === 'FREE_ROOMS'
+              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${viewMode === 'FREE_ROOMS'
                   ? 'bg-emerald-600 text-white font-black shadow-2xs'
                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
                 }`}
@@ -1136,13 +1164,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           </div>
 
           {/* Pastillas KPI para filtrar con 1 toque */}
-          <div className="flex items-center gap-1 text-[11px]">
+          <div className="flex items-center gap-1 text-[11px] shrink-0">
             <button
               onClick={() => {
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'PUNTUAL'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'PUNTUAL'
                   ? 'bg-emerald-600 text-white font-black'
                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
                 }`}
@@ -1155,7 +1183,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'TARDE'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'TARDE'
                   ? 'bg-amber-500 text-slate-950 font-black'
                   : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
                 }`}
@@ -1168,7 +1196,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'FALTA'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'FALTA'
                   ? 'bg-rose-600 text-white font-black'
                   : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
                 }`}
@@ -1181,7 +1209,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setViewMode('CLASSES');
                 setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE');
               }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 ${statusFilter === 'PENDIENTE'
+              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'PENDIENTE'
                   ? 'bg-slate-800 text-white dark:bg-zinc-700 font-black shadow-xs'
                   : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
                 }`}
