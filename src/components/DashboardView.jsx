@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
 import { buildMasterExcelFromTemplate } from '../utils/excelTemplateExporter';
 import { createDbChangeGate } from '../utils/webSignGate';
@@ -42,7 +43,8 @@ import {
   PieChart,
   BarChart3,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Eraser
 } from 'lucide-react';
 
 function formatExcelTime(val) {
@@ -146,6 +148,10 @@ export default function DashboardView() {
   const dropdownRef = useRef(null);
   const excelMenuFade = useFadeModal(isMenuOpen, () => setIsMenuOpen(false), 180);
 
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+  const [isClearingColumns, setIsClearingColumns] = useState(false);
+  const clearConfirmFade = useFadeModal(showClearConfirmModal, () => setShowClearConfirmModal(false), 200);
+
   useEffect(() => {
     return subscribeLiveExcelStatus((nextState) => {
       setLiveExcel((prev) => ({ ...prev, ...nextState }));
@@ -194,6 +200,36 @@ export default function DashboardView() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExecuteClearColumns = async () => {
+    setIsClearingColumns(true);
+    try {
+      const res = await fetch('/api/attendance/clear-columns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Error al limpiar columnas');
+      }
+
+      await loadStats();
+
+      // Si OneDrive está vinculado, sincronizar para limpiar las columnas N a R también en el archivo Excel
+      if (liveExcel.linked) {
+        await syncAllDataToLinkedExcel();
+      }
+
+      setSyncMessage('✅ Se limpiaron correctamente las columnas de asistencia (Cols. N a R).');
+      setTimeout(() => setSyncMessage(''), 5000);
+      clearConfirmFade.requestClose(() => setShowClearConfirmModal(false));
+    } catch (err) {
+      console.error('Error al limpiar columnas:', err);
+      alert('Error al limpiar columnas: ' + err.message);
+    } finally {
+      setIsClearingColumns(false);
     }
   };
 
@@ -1827,6 +1863,31 @@ export default function DashboardView() {
                       </p>
                     </div>
                   </button>
+
+                  {/* 3. Limpiar Registros de Asistencia (Cols. N a R: Inicio Real, Fin Real, Asistencia, Puntualidad y Observación) */}
+                  <button
+                    type="button"
+                    disabled={syncing || importing || isClearingColumns}
+                    onClick={() => {
+                      excelMenuFade.requestClose(() => {
+                        setIsMenuOpen(false);
+                        setShowClearConfirmModal(true);
+                      });
+                    }}
+                    className="w-full p-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left transition flex items-start gap-3 group active:scale-98 disabled:opacity-50 border-t border-slate-100 dark:border-zinc-800/80 pt-2.5"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Eraser className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-rose-950 dark:text-rose-200">
+                        Limpiar Registros de Asistencia
+                      </div>
+                      <p className="text-[10px] text-rose-600/80 dark:text-rose-300/80 mt-0.5 leading-snug">
+                        Limpiar columnas N a R (Inicio Real, Fin Real, Asistencia, Puntualidad y Observación).
+                      </p>
+                    </div>
+                  </button>
                 </div>
               )}
             </div>
@@ -1839,6 +1900,92 @@ export default function DashboardView() {
           </div>
         )}
       </div>
+
+      {/* Modal de Confirmación para Limpiar Columnas de Asistencia (N a R) */}
+      {clearConfirmFade.shouldRender && typeof document !== 'undefined' && createPortal(
+        <div
+          className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 ${clearConfirmFade.backdropClass}`}
+          onClick={() => !isClearingColumns && clearConfirmFade.requestClose(() => setShowClearConfirmModal(false))}
+        >
+          <div
+            className={`apple-liquid-modal rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200/80 dark:border-rose-900/60 bg-white dark:bg-[#121216] ${clearConfirmFade.modalClass}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3.5 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <Eraser className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                  Limpiar Registros de Asistencia
+                </h3>
+                <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
+                  Restablecer columnas N, O, P, Q y R
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-zinc-900/80 rounded-2xl p-4 border border-slate-200/80 dark:border-zinc-800 text-xs text-slate-600 dark:text-zinc-300 space-y-2 mb-5">
+              <p className="font-semibold text-slate-900 dark:text-white">
+                ¿Estás seguro de que deseas limpiar los datos de asistencia?
+              </p>
+              <p className="leading-relaxed">
+                Esta acción reiniciará a su estado vacío o inicial las 5 columnas de Control Docente:
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 pt-1 font-mono text-[11px]">
+                <div className="bg-white dark:bg-zinc-800/80 p-2 rounded-lg border border-slate-200 dark:border-zinc-700">
+                  <span className="font-bold text-amber-600 dark:text-amber-400">Col N:</span> Hora Inicio Real
+                </div>
+                <div className="bg-white dark:bg-zinc-800/80 p-2 rounded-lg border border-slate-200 dark:border-zinc-700">
+                  <span className="font-bold text-amber-600 dark:text-amber-400">Col O:</span> Hora Final Real
+                </div>
+                <div className="bg-white dark:bg-zinc-800/80 p-2 rounded-lg border border-slate-200 dark:border-zinc-700">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Col P:</span> Asistencia
+                </div>
+                <div className="bg-white dark:bg-zinc-800/80 p-2 rounded-lg border border-slate-200 dark:border-zinc-700">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Col Q:</span> Puntualidad
+                </div>
+                <div className="col-span-2 bg-white dark:bg-zinc-800/80 p-2 rounded-lg border border-slate-200 dark:border-zinc-700">
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400">Col R:</span> Observación
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 pt-1">
+                {liveExcel.linked ? '⚡ Se sincronizará inmediatamente con tu archivo Excel de OneDrive.' : '💡 La estructura de clases y horarios se mantendrán intactos.'}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isClearingColumns}
+                onClick={() => clearConfirmFade.requestClose(() => setShowClearConfirmModal(false))}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-95 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isClearingColumns}
+                onClick={handleExecuteClearColumns}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-2 active:scale-95 disabled:opacity-60 shadow-md shadow-rose-600/20"
+              >
+                {isClearingColumns ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Limpiando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Eraser className="w-4 h-4 stroke-[2.2]" />
+                    <span>Sí, Limpiar Columnas</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <OneDriveSyncModal
         isOpen={showOneDriveModal}

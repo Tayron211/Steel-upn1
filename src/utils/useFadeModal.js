@@ -56,3 +56,4 @@ export function useFadeModal(isOpen, onClose, duration = 200) {
     dropdownClass: isClosing ? 'animate-dropdown-fade-out pointer-events-none' : 'animate-dropdown-fade',
   };
 }
+

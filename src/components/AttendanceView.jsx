@@ -39,6 +39,8 @@ import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { useFadeModal } from '../utils/useFadeModal';
+import { toBlob } from 'html-to-image';
+import html2canvas from 'html2canvas';
 
 const TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:20', '09:00', '09:10', '10:00', '10:50',
@@ -438,6 +440,97 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   // Secondary Classroom Action Sheet (Discreet 3-dots menu)
   const [selectedClassOptions, setSelectedClassOptions] = useState(null);
+  const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
+
+  const handleSendWhatsApp = async (item) => {
+    if (!item) return;
+    setIsSharingWhatsApp(true);
+
+    try {
+      const cardEl = document.getElementById(`attendance-card-${item.id || item.nrc}`);
+      let blob = null;
+
+      if (cardEl) {
+        try {
+          const isDark = document.documentElement.classList.contains('dark');
+          blob = await toBlob(cardEl, {
+            pixelRatio: 2,
+            backgroundColor: isDark ? '#0c0c0f' : '#ffffff',
+            cacheBust: true,
+          });
+        } catch (imgErr) {
+          console.warn('toBlob fallback to html2canvas:', imgErr);
+          try {
+            const canvas = await html2canvas(cardEl, {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              backgroundColor: document.documentElement.classList.contains('dark') ? '#0c0c0f' : '#ffffff'
+            });
+            blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+          } catch (h2cErr) {
+            console.warn('html2canvas failed:', h2cErr);
+          }
+        }
+      }
+
+      const defaultText = "Buenas, informacion sobre este docente";
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+
+      if (blob) {
+        const cleanDocente = (item.docente || 'docente').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 25);
+        const fileName = `docente_${cleanDocente}_${item.aula || 'aula'}.png`;
+        const imageFile = new File([blob], fileName, { type: 'image/png' });
+
+        // 1. Mobile Share (Direct share to WhatsApp with attached image & text)
+        if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+          classOptionsFade.requestClose(() => setSelectedClassOptions(null));
+          await navigator.share({
+            files: [imageFile],
+            text: defaultText,
+            title: `Docente: ${item.docente || item.aula}`
+          });
+          return;
+        }
+
+        // 2. Desktop fallback (Clipboard copy + download + open WhatsApp)
+        let copied = false;
+        try {
+          if (navigator.clipboard && window.ClipboardItem) {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            copied = true;
+          }
+        } catch (clipErr) {
+          console.warn('Clipboard write error:', clipErr);
+        }
+
+        if (!copied) {
+          const dlUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = dlUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(dlUrl), 5000);
+        }
+
+        setToastMessage(copied ? '📸 ¡Captura copiada! Pégala (Ctrl+V) en WhatsApp.' : '📥 Captura descargada para adjuntar en WhatsApp.');
+        setTimeout(() => setToastMessage(''), 3500);
+      }
+
+      classOptionsFade.requestClose(() => setSelectedClassOptions(null));
+      window.open(waUrl, '_blank');
+    } catch (err) {
+      console.error('Error sharing to WhatsApp:', err);
+      classOptionsFade.requestClose(() => setSelectedClassOptions(null));
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent("Buenas, informacion sobre este docente")}`, '_blank');
+    } finally {
+      setIsSharingWhatsApp(false);
+    }
+  };
 
   // Reservation Modal for Free Classrooms
   const [reservingRoom, setReservingRoom] = useState(null);
@@ -1443,6 +1536,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           return (
             <div
               key={item.id}
+              id={`attendance-card-${item.id || item.nrc}`}
               className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
             >
               <div>
@@ -1695,28 +1789,26 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
               <button
                 type="button"
-                onClick={() => {
-                  const item = activeOptions;
-                  classOptionsFade.requestClose(() => {
-                    setSelectedClassOptions(null);
-                    if (onOpenNewTicket) {
-                      onOpenNewTicket({
-                        ambiente: item.aula,
-                        pabellon: item.aula?.startsWith('B') ? 'B' : 'A',
-                        tipo: 'PLUMONES / MATERIALES',
-                        descripcion: `[👨‍🏫 DOCENTE: ${item.docente}] Préstamo en aula ${item.aula}`
-                      });
-                    }
-                  });
-                }}
-                className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
+                disabled={isSharingWhatsApp}
+                onClick={() => handleSendWhatsApp(activeOptions)}
+                className="w-full p-3 rounded-2xl bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 border border-emerald-200/90 dark:border-emerald-800/80 text-left flex items-center gap-3 transition active:scale-98 disabled:opacity-60"
               >
-                <div className="w-9 h-9 rounded-xl bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-300 flex items-center justify-center shrink-0">
-                  <HandHelping className="w-4 h-4 stroke-[2.2]" />
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-[#25D366] flex items-center justify-center shrink-0">
+                  {isSharingWhatsApp ? (
+                    <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.36 7.34 9.09 7.4 8.87 7.65C8.64 7.9 8 8.5 8 9.71C8 10.92 8.89 12.09 9.01 12.25C9.14 12.42 10.74 14.89 13.2 15.95C13.78 16.2 14.24 16.36 14.6 16.47C15.17 16.65 15.69 16.63 16.1 16.57C16.57 16.5 17.53 15.99 17.73 15.42C17.93 14.85 17.93 14.37 17.87 14.26C17.81 14.16 17.65 14.1 17.41 13.98C17.17 13.86 15.98 13.28 15.76 13.2C15.54 13.11 15.38 13.07 15.22 13.32C15.06 13.56 14.6 14.1 14.46 14.26C14.32 14.43 14.18 14.45 13.94 14.33C13.7 14.21 12.93 13.96 12.02 13.15C11.3 12.51 10.82 11.72 10.7 11.52C10.58 11.31 10.69 11.2 10.81 11.08C10.92 10.97 11.06 10.79 11.18 10.65C11.3 10.51 11.34 10.41 11.42 10.25C11.5 10.08 11.46 9.94 11.4 9.82C11.34 9.7 10.86 8.54 10.67 8.07C10.47 7.61 10.27 7.67 10.13 7.67C10 7.66 9.84 7.66 9.68 7.66L9.53 7.34Z"/>
+                    </svg>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-amber-950 dark:text-amber-200">Registrar Préstamo de Material</div>
-                  <div className="text-[10px] text-amber-700 dark:text-amber-300 break-words leading-tight mt-0.5">Entrega de plumones, cable HDMI, llave o accesorios para esta aula</div>
+                  <div className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
+                    {isSharingWhatsApp ? 'Generando captura...' : 'Enviar por WhatsApp'}
+                  </div>
+                  <div className="text-[10px] text-emerald-700 dark:text-emerald-300 break-words leading-tight mt-0.5">
+                    Compartir captura de tarjeta e información del docente
+                  </div>
                 </div>
               </button>
             </div>

@@ -172,6 +172,26 @@ class AttendanceController {
         ]);
     }
 
+    public static function clearColumns(): void {
+        $pdo = Database::getConnection();
+        $now = date('Y-m-d H:i:s');
+        $sql = "UPDATE asistencia 
+                SET asistencia = 'PENDIENTE', 
+                    puntualidad = '-', 
+                    hora_inicio_real = '', 
+                    hora_final_real = '', 
+                    observacion = '', 
+                    updated_at = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$now]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Se limpiaron las 5 columnas de asistencia',
+            'changes' => $stmt->rowCount()
+        ]);
+    }
+
     private static function mapRow(array $r): array {
         return [
             'id' => $r['id'],

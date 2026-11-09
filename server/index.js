@@ -44,6 +44,15 @@ app.post('/api/attendance/bulk', async (req, res) => {
   }
 });
 
+app.post('/api/attendance/clear-columns', async (req, res) => {
+  try {
+    const count = await db.clearAsistenciaColumns();
+    res.json({ success: true, message: 'Se limpiaron las 5 columnas de asistencia', changes: count });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // --- TICKETS / ATENCIONES ---
 app.get('/api/tickets', async (req, res) => {
   try {

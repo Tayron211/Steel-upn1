@@ -417,6 +417,19 @@ async function bulkUpdateAsistencia(ids, updates) {
   return res.changes;
 }
 
+async function clearAsistenciaColumns() {
+  const res = await run(`
+    UPDATE asistencia 
+    SET asistencia = 'PENDIENTE', 
+        puntualidad = '-', 
+        hora_inicio_real = '', 
+        hora_final_real = '', 
+        observacion = '', 
+        updated_at = ?
+  `, [new Date().toISOString()]);
+  return res.changes;
+}
+
 // Tickets CRUD
 async function getTickets({ estado, ambiente, responsable, search }) {
   let sql = 'SELECT * FROM tickets WHERE 1=1';
@@ -826,6 +839,7 @@ module.exports = {
   getAsistencia,
   updateAsistencia,
   bulkUpdateAsistencia,
+  clearAsistenciaColumns,
   getTickets,
   createTicket,
   updateTicket,

@@ -37,6 +37,10 @@ if (str_starts_with($uri, '/api')) {
         AttendanceController::bulk();
         exit;
     }
+    if ($uri === '/api/attendance/clear-columns' && $method === 'POST') {
+        AttendanceController::clearColumns();
+        exit;
+    }
     if (preg_match('#^/api/attendance/([^/]+)$#', $uri, $matches) && $method === 'PUT') {
         AttendanceController::update($matches[1]);
         exit;

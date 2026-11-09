@@ -272,6 +272,25 @@ async function handleApiRequest(context) {
       return json({ success: true, message: `Se limpiaron ${changes} registros a PENDIENTE para los días especificados.`, resetCount: changes });
     }
 
+    // POST /api/attendance/clear-columns (Limpia las 5 columnas: HORA INICIO REAL, HORA FINAL REAL, ASISTENCIA, PUNTUALIDAD, OBSERVACIÓN)
+    if (path === '/api/attendance/clear-columns' && method === 'POST') {
+      const res = await db.prepare(`
+        UPDATE asistencia 
+        SET asistencia = 'PENDIENTE', 
+            puntualidad = '-', 
+            hora_inicio_real = '', 
+            hora_final_real = '', 
+            observacion = '', 
+            updated_at = datetime('now')
+      `).run();
+      const changes = res.meta?.changes || 0;
+      return json({ 
+        success: true, 
+        message: `Se limpiaron las 5 columnas de asistencia para ${changes} registros.`, 
+        changes 
+      });
+    }
+
     // -------------------------------------------------------------
     // 2. TICKETS / PRÉSTAMOS: /api/tickets
     // -------------------------------------------------------------
