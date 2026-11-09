@@ -1280,7 +1280,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   onClick={() => setSelectedPabellon(pab)}
                   className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
                       ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800/60'
                     }`}
                 >
                   {pab ? `Pab. ${pab}` : 'Ambos'}
@@ -1289,7 +1289,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </div>
 
             {/* Pisos Pills (Selección Múltiple) */}
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
+            <div className="flex items-center gap-1 overflow-x-auto sm:flex-wrap scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
               {pisosDisponibles.map((p) => {
                 const isTodos = p.val === '';
                 const isSelected = isTodos
@@ -1304,7 +1304,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 ${
                       isSelected
                         ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                        : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                        : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
                     }`}
                     title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
                   >
@@ -1320,7 +1320,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
           {/* Filtro rápido por Carrera / Facultad */}
           {carrerasUnicas.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-thin">
               <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">Carrera:</span>
               <button
                 type="button"
@@ -1354,8 +1354,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
 
         {/* Fila 3: Modos Rápidos + Contadores KPI de Estado en Barra Limpia */}
-        <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800 overflow-x-auto scrollbar-none pb-0.5">
-          <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800 flex-wrap pb-0.5">
+          <div className="flex items-center gap-1 shrink-0 flex-wrap">
             <button
               onClick={() => {
                 setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
@@ -1363,7 +1363,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               }}
               className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${blockMode === 'CURRENT'
                   ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
                 }`}
             >
               <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
@@ -1377,7 +1377,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               }}
               className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${blockMode === 'NEXT'
                   ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
                 }`}
             >
               <span>Sig.</span>
@@ -1454,8 +1454,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           </div>
         </div>
 
-        {/* Fila 4: Bloques de hora horizontales (Discretos) */}
-        <div className="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-none text-[11px]">
+        {/* Fila 4: Bloques de hora horizontales (Discretos y Simétricos) */}
+        <div className="flex items-center gap-1 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-thin text-[11px]">
           <button
             onClick={() => {
               setBlockMode('ALL');
@@ -1463,7 +1463,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             }}
             className={`h-6 px-2.5 rounded-md font-bold transition whitespace-nowrap active:scale-95 ${blockMode === 'ALL' && !selectedHora
                 ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800'
               }`}
           >
             Todo
@@ -1487,7 +1487,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     ? 'bg-[#FDBA30] text-slate-950 font-black'
                     : isCurrent
                       ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300'
-                      : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400'
+                      : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
                   }`}
               >
                 {b.start}
@@ -2455,66 +2455,64 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
             <form onSubmit={handleSaveManualTarde} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
-                  Hora de Llegada Real (HH:MM)
+                <label className="block text-center text-xs font-bold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">
+                  Hora de Llegada Real
                 </label>
-                <input
-                  type="time"
-                  value={manualTardeTime}
-                  onChange={(e) => setManualTardeTime(e.target.value)}
-                  required
-                  className="w-full text-center font-mono font-black text-2xl h-14 rounded-2xl border-2 border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/30 text-amber-950 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              {/* Accesos rápidos de hora */}
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-wider">
-                  Sugerencias rápidas
-                </span>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setManualTardeTime(getCurrentTimeStr())}
-                    className="py-2 px-1 text-xs font-bold rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition"
-                  >
-                    Hora Actual
-                  </button>
-                  {item.horaInicioProg && (
-                    <button
-                      type="button"
-                      onClick={() => setManualTardeTime(item.horaInicioProg)}
-                      className="py-2 px-1 text-xs font-bold rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition"
-                    >
-                      Programada ({item.horaInicioProg})
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const [h, m] = (manualTardeTime || getCurrentTimeStr()).split(':').map(Number);
-                      const nextM = (m + 5) % 60;
-                      const nextH = m + 5 >= 60 ? (h + 1) % 24 : h;
-                      setManualTardeTime(`${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`);
-                    }}
-                    className="py-2 px-1 text-xs font-bold rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition"
-                  >
-                    +5 min
-                  </button>
+                <div className="flex justify-center">
+                  <input
+                    type="time"
+                    value={manualTardeTime}
+                    onChange={(e) => setManualTardeTime(e.target.value)}
+                    required
+                    className="w-48 text-center font-mono font-black text-3xl py-2.5 rounded-2xl border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                  />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              {/* Accesos rápidos de hora 100% Simétricos */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setManualTardeTime(getCurrentTimeStr())}
+                  className="h-9 px-1 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
+                  title="Hora actual"
+                >
+                  Hora Actual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => item.horaInicioProg && setManualTardeTime(item.horaInicioProg)}
+                  className="h-9 px-1 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
+                  title={`Hora programada: ${item.horaInicioProg || '--:--'}`}
+                >
+                  Prog. ({item.horaInicioProg || '--:--'})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const [h, m] = (manualTardeTime || getCurrentTimeStr()).split(':').map(Number);
+                    const nextM = (m + 5) % 60;
+                    const nextH = m + 5 >= 60 ? (h + 1) % 24 : h;
+                    setManualTardeTime(`${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`);
+                  }}
+                  className="h-9 px-1 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center"
+                >
+                  +5 min
+                </button>
+              </div>
+
+              {/* Botones de Acción 50% - 50% Perfectamente Simétricos */}
+              <div className="grid grid-cols-2 gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => manualTardeFade.requestClose()}
-                  className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98"
+                  className="h-11 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98 flex items-center justify-center"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 text-xs font-black transition active:scale-98 shadow-md"
+                  className="h-11 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 text-xs font-black transition active:scale-98 shadow-md flex items-center justify-center"
                 >
                   Guardar Tardanza
                 </button>
@@ -2567,26 +2565,22 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-zinc-400 mb-3.5 leading-relaxed">
-              Selecciona el motivo especial. Se registrará la falta y se guardará el texto en <strong className="text-slate-800 dark:text-zinc-200">MAYÚSCULAS</strong> en la columna de observaciones:
-            </p>
-
-            <div className="space-y-2.5 mb-4">
+            <div className="space-y-2.5 my-3">
               {/* 1. CLASE REMOTA */}
               <button
                 type="button"
                 onClick={() => handleSelectFaltaOption('CLASE REMOTA')}
-                className="w-full p-3.5 rounded-2xl bg-sky-50/80 hover:bg-sky-100/80 dark:bg-sky-950/40 dark:hover:bg-sky-950/70 border border-sky-200/90 dark:border-sky-800/80 text-left flex items-center gap-3.5 transition active:scale-98 group"
+                className="w-full p-3.5 rounded-2xl bg-sky-50/80 hover:bg-sky-100/90 dark:bg-sky-950/40 dark:hover:bg-sky-900/50 border border-sky-200 dark:border-sky-800 text-left flex items-center gap-3.5 transition active:scale-98 group"
               >
-                <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/70 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
                   <Monitor className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-black text-sky-950 dark:text-sky-200 tracking-wide uppercase">
+                  <div className="text-sm font-black text-sky-950 dark:text-sky-200 uppercase tracking-wide">
                     Clase Remota
                   </div>
-                  <div className="text-[11px] text-sky-700/90 dark:text-sky-300/80 leading-snug mt-0.5">
-                    Falta por modalidad virtual. Guarda "CLASE REMOTA" en observación.
+                  <div className="text-xs text-sky-700/80 dark:text-sky-300/70 mt-0.5">
+                    Sesión en modalidad virtual
                   </div>
                 </div>
               </button>
@@ -2595,17 +2589,17 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <button
                 type="button"
                 onClick={() => handleSelectFaltaOption('CLASE ADELANTADA')}
-                className="w-full p-3.5 rounded-2xl bg-amber-50/80 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3.5 transition active:scale-98 group"
+                className="w-full p-3.5 rounded-2xl bg-amber-50/80 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 text-left flex items-center gap-3.5 transition active:scale-98 group"
               >
-                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0">
                   <CalendarClock className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-black text-amber-950 dark:text-amber-200 tracking-wide uppercase">
+                  <div className="text-sm font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
                     Clase Adelantada
                   </div>
-                  <div className="text-[11px] text-amber-700/90 dark:text-amber-300/80 leading-snug mt-0.5">
-                    Falta por sesión recuperada o adelantada. Guarda "CLASE ADELANTADA" en observación.
+                  <div className="text-xs text-amber-700/80 dark:text-amber-300/70 mt-0.5">
+                    Sesión adelantada o recuperada
                   </div>
                 </div>
               </button>
@@ -2614,7 +2608,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             <button
               type="button"
               onClick={() => faltaOptionsFade.requestClose()}
-              className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98"
+              className="w-full h-11 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-98 flex items-center justify-center"
             >
               Cancelar
             </button>

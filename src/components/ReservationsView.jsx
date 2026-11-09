@@ -1097,7 +1097,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               className={`h-6 px-2.5 rounded-md font-bold transition whitespace-nowrap shrink-0 active:scale-95 ${
                 !selectedHoraBlock
                   ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
               }`}
             >
               Cualquier hora
