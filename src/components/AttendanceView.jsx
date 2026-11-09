@@ -1482,7 +1482,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     {isTarde && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#FDBA30] text-slate-950 px-2.5 py-0.5 rounded-full shadow-xs">
                         <Clock className="w-3 h-3 text-slate-950 stroke-[2.4] shrink-0" />
-                        <span>TARDE{item.horaInicioReal ? ` (${item.horaInicioReal})` : ''}</span>
+                        <span>TARDE</span>
                       </span>
                     )}
                     {isFalta && (
@@ -1542,11 +1542,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                       <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-400 shrink-0" />
                       <span className="text-slate-700 dark:text-zinc-300 font-bold">{item.horaInicioProg} - {item.horaFinalProg}</span>
                     </span>
-                    {isTarde && item.horaInicioReal && (
-                      <span className="text-amber-950 dark:text-amber-300 font-extrabold bg-[#FDBA30]/20 dark:bg-amber-950/80 px-2 py-0.5 rounded-md text-[10px] border border-amber-400/80 dark:border-amber-700 shadow-2xs">
-                        Inicio Real: {item.horaInicioReal}
-                      </span>
-                    )}
                   </div>
 
                   {/* Observación Compacta (Clic para editar) */}
