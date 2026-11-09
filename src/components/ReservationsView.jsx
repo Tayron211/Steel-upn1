@@ -816,7 +816,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
             {/* Conmutador entre Reservas Programadas y Aulas Libres */}
             <div className="flex items-center bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800">
               <button
@@ -855,7 +855,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 resetForm();
                 setIsModalOpen(true);
               }}
-              className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0"
+              className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0 ml-auto sm:ml-0"
             >
               <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
               <span>Nueva Reserva</span>

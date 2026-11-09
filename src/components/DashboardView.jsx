@@ -1754,8 +1754,8 @@ export default function DashboardView() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="relative" ref={dropdownRef}>
+          <div className="flex items-center justify-end gap-2.5 w-full sm:w-auto">
+            <div className="relative ml-auto sm:ml-0" ref={dropdownRef}>
               {/* Boton Pequeño Solo con el Logo/Icono */}
               <button
                 type="button"
