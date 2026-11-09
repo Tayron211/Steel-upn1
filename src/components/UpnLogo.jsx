@@ -11,8 +11,8 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
         size === 'sm' ? 'h-8 w-8' : size === 'lg' ? 'h-12 w-12' : 'h-9 w-9 sm:h-10 sm:w-10'
       } ${className}`}>
         <img 
-          src="/logo-upn-oficial.svg" 
-          alt="UPN Logo Oficial" 
+          src="/icon.svg" 
+          alt="UPN Logo" 
           className="h-full w-full object-contain rounded-xl"
         />
       </div>
@@ -22,7 +22,7 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
   if (variant === 'logo-only') {
     return (
       <img 
-        src="/logo-upn-oficial.svg" 
+        src="/icon.svg" 
         alt="Universidad Privada del Norte" 
         className={`h-9 w-9 sm:h-10 sm:w-10 aspect-square object-contain rounded-xl shadow-xs shrink-0 select-none ${className}`}
       />
@@ -31,9 +31,9 @@ export default function UpnLogo({ variant = 'horizontal', className = '', size =
 
   return (
     <div className={`inline-flex items-center gap-2.5 sm:gap-3 min-w-0 select-none ${className}`}>
-      {/* Official UPN Vector Chevron Arrow ("La Flecha") directly from upn.edu.pe */}
+      {/* Official UPN App Icon */}
       <img 
-        src="/logo-upn-oficial.svg" 
+        src="/icon.svg" 
         alt="UPN" 
         className="h-9 sm:h-10 w-9 sm:w-10 aspect-square object-contain rounded-xl shadow-xs ring-1 ring-black/5 shrink-0 select-none hover:opacity-95 transition-opacity"
       />

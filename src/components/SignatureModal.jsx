@@ -367,8 +367,8 @@ export default function SignatureModal({
 
               {/* Header: University & Cargo Number */}
               <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 pb-2.5">
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                <div className="flex items-center gap-2">
+                  <img src="/icon.svg" alt="UPN" className="w-4 h-4 rounded-xs shrink-0 object-contain" />
                   <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-widest">
                     UPN · OPERACIONES SEDE
                   </span>

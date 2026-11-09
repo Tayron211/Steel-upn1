@@ -1161,7 +1161,7 @@ async function handleApiRequest(context) {
       return json({
         success: true,
         connected: Boolean(row && row.refresh_token),
-        fileName: row?.file_name || 'CONTROL DOCENTE - Copia.xlsx',
+        fileName: row?.file_name || 'CONTROL DOCENTE - TEST.xlsx',
         itemId: row?.item_id || null,
         updatedAt: row?.updated_at || null
       });
@@ -1201,14 +1201,16 @@ async function handleApiRequest(context) {
       }
 
       let itemId = null;
-      let fileName = 'CONTROL DOCENTE - Copia.xlsx';
+      let fileName = 'CONTROL DOCENTE - TEST.xlsx';
       try {
         const searchRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='CONTROL DOCENTE')", {
           headers: { Authorization: `Bearer ${tkJson.access_token}` }
         });
         if (searchRes.ok) {
           const sJson = await searchRes.json();
-          const match = (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('COPIA')) || (sJson.value || [])[0];
+          const match = (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('TEST')) ||
+                        (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('COPIA')) ||
+                        (sJson.value || [])[0];
           if (match) {
             itemId = match.id;
             fileName = match.name;

@@ -4,10 +4,10 @@ import { Cloud, Check, Copy, ExternalLink, X, FolderSync, Sparkles, RefreshCw, S
 import { getLiveExcelState } from '../utils/liveExcelSync';
 
 export const USER_ONEDRIVE_EXCEL_URL =
-  'https://educorpperu-my.sharepoint.com/:x:/r/personal/tayron_salinas_upn_edu_pe/_layouts/15/Doc.aspx?sourcedoc=%7B43927736-578C-4F3E-91C2-C9FD6E2CE448%7D&file=CONTROL%20DOCENTE%20-%20Copia.xlsx&action=default&mobileredirect=true&share=cQo2d5JDjFc-T5HCyf1uLORIEgUB1-7s8tpfsE3FwtzKMreVQA';
+  'https://educorpperu-my.sharepoint.com/:x:/r/personal/tayron_salinas_upn_edu_pe/_layouts/15/Doc.aspx?sourcedoc=%7BE0144669-9D3C-4D3D-9586-73791364FE6B%7D&file=CONTROL%20DOCENTE%20-%20TEST.xlsx&action=default&mobileredirect=true&share=cQppRhTgPJ09TZWGc3kTZP5rEgUBQSp4dZ3Plu5UzXwYu-yFNw&wdslf=myfiles-c';
 
 export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatusMessage }) {
-  const [cloudStatus, setCloudStatus] = useState({ loading: true, connected: false, fileName: 'CONTROL DOCENTE - Copia.xlsx', updatedAt: null });
+  const [cloudStatus, setCloudStatus] = useState({ loading: true, connected: false, fileName: 'CONTROL DOCENTE - TEST.xlsx', updatedAt: null });
   const [deviceAuth, setDeviceAuth] = useState(null);
   const [authPolling, setAuthPolling] = useState(false);
   const [syncingNow, setSyncingNow] = useState(false);
@@ -28,7 +28,7 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
           setCloudStatus({
             loading: false,
             connected: j.connected,
-            fileName: j.fileName || 'CONTROL DOCENTE - Copia.xlsx',
+            fileName: j.fileName || 'CONTROL DOCENTE - TEST.xlsx',
             updatedAt: j.updatedAt
           });
         } else {
@@ -421,7 +421,7 @@ interface AllDataResponse {
                 Sincronización Automática con OneDrive UPN
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug truncate">
-                Archivo: <span className="font-mono font-bold text-sky-600 dark:text-sky-400">CONTROL DOCENTE - Copia.xlsx</span>
+                Archivo: <span className="font-mono font-bold text-sky-600 dark:text-sky-400">CONTROL DOCENTE - TEST.xlsx</span>
               </p>
             </div>
           </div>
@@ -481,7 +481,7 @@ interface AllDataResponse {
           ) : (
             <div className="space-y-2.5">
               <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
-                Conecta directamente el servidor con tu cuenta <strong className="font-mono text-slate-900 dark:text-white">tayron.salinas@upn.edu.pe</strong> para que actualice tu archivo <strong className="font-mono text-slate-900 dark:text-white">CONTROL DOCENTE - Copia.xlsx</strong> solo en la nube sin usar scripts:
+                Conecta directamente el servidor con tu cuenta <strong className="font-mono text-slate-900 dark:text-white">tayron.salinas@upn.edu.pe</strong> para que actualice tu archivo <strong className="font-mono text-slate-900 dark:text-white">CONTROL DOCENTE - TEST.xlsx</strong> solo en la nube sin usar scripts ni descargas:
               </p>
 
               {deviceAuth ? (
@@ -533,55 +533,6 @@ interface AllDataResponse {
               )}
             </div>
           )}
-        </div>
-
-        {/* OPCIÓN 2: Script Corregido (Cero errores TypeScript en Excel Online) */}
-        <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/90 dark:border-amber-800/70 space-y-2">
-          <div className="flex items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Sparkles className="w-4 h-4 stroke-[2.4] text-amber-600 dark:text-amber-400 shrink-0" />
-              <span className="text-xs font-black text-amber-950 dark:text-amber-300 leading-snug">
-                Script para Pestaña "Automatizar" (Corregido sin errores)
-              </span>
-            </div>
-            <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 whitespace-nowrap shrink-0 text-center leading-none">
-              CORREGIDO
-            </span>
-          </div>
-          <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
-            Si prefieres usar la pestaña <strong>Automatizar → Nuevo script</strong> dentro de Excel Online, este script ya tiene todos los tipos estrictos corregidos (sin <code className="font-mono">any</code> ni <code className="font-mono">setTimeout</code>):
-          </p>
-          <button
-            type="button"
-            onClick={handleCopyAutoScript}
-            className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black inline-flex items-center justify-center gap-2 transition active:scale-95 whitespace-nowrap shadow-xs"
-          >
-            {copiedAutoScript ? <Check className="w-3.5 h-3.5 stroke-[2.6] shrink-0" /> : <Copy className="w-3.5 h-3.5 stroke-[2.4] shrink-0" />}
-            <span>{copiedAutoScript ? '¡Script sin errores copiado!' : 'Copiar Script Corregido para Excel Online'}</span>
-          </button>
-        </div>
-
-        {/* OPCIÓN 3: Sincronizador Bidireccional Automático en PC */}
-        <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/90 dark:border-emerald-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <FolderSync className="w-4 h-4 stroke-[2.4] text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="text-xs font-black text-emerald-950 dark:text-emerald-300">
-                Sincronizador Local en PC (sincronizar-onedrive.bat)
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-600 dark:text-zinc-400 mt-0.5">
-              Activo en segundo plano cada 3 segundos.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleCopyPs}
-            className="h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black inline-flex items-center justify-center gap-1.5 transition shrink-0 whitespace-nowrap"
-          >
-            {copiedPs ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedPs ? 'Copiado' : 'Copiar comando PC'}</span>
-          </button>
         </div>
 
         <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">

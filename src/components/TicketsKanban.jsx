@@ -29,6 +29,7 @@ import {
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
 import CustomSelect from './CustomSelect';
+import CustomDatePicker from './CustomDatePicker';
 import { useAssistants } from '../utils/assistants';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
@@ -1955,12 +1956,10 @@ export default function TicketsKanban({
                       <span>Fecha</span>
                       <span className="text-amber-500 font-black">{getDayOfWeek(loanDate)}</span>
                     </label>
-                    <input
-                      type="date"
-                      required
+                    <CustomDatePicker
                       value={loanDate}
-                      onChange={(e) => setLoanDate(e.target.value)}
-                      className="w-full h-9 px-3 text-xs font-bold bg-white dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                      onChange={(val) => setLoanDate(val)}
+                      required
                     />
                   </div>
 

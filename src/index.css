@@ -300,3 +300,48 @@ button:active {
 .animate-tab-view {
   animation: appleViewEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Transiciones Suaves y Graduales de Fade para toda la App (Cero transiciones bruscas) */
+@keyframes smoothFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pureFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes softDropdownEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: smoothFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-soft {
+  animation: pureFadeIn 0.28s ease-out forwards;
+}
+
+.animate-dropdown-fade {
+  animation: softDropdownEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top;
+}
