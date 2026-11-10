@@ -453,77 +453,39 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
       if (cardEl) {
         const isDark = document.documentElement.classList.contains('dark');
+        const bg = isDark ? '#0c0c0f' : '#ffffff';
 
-        // Create a pristine staging container off-screen to guarantee 100% symmetry & no clipping
-        const staging = document.createElement('div');
-        staging.style.position = 'fixed';
-        staging.style.left = '-9999px';
-        staging.style.top = '0';
-        staging.style.zIndex = '-9999';
-        staging.style.width = '440px';
-        staging.style.padding = '12px'; // Outer padding so card border & shadow NEVER clip
-        staging.style.boxSizing = 'border-box';
-        staging.style.backgroundColor = isDark ? '#0c0c0f' : '#ffffff';
-
-        const clone = cardEl.cloneNode(true);
-        clone.id = `capture-${cardEl.id}`;
-        clone.style.width = '100%';
-        clone.style.margin = '0';
-        clone.style.boxSizing = 'border-box';
-        clone.style.borderRadius = '20px';
-        clone.style.border = isDark ? '1px solid #27272a' : '1px solid #e2e8f0';
-        clone.style.boxShadow = isDark ? '0 10px 25px -5px rgba(0,0,0,0.7)' : '0 10px 25px -5px rgba(0,0,0,0.1)';
-        clone.style.backgroundColor = isDark ? '#0c0c0f' : '#ffffff';
-
-        // In the captured image, hide the 3-dots menu button for a clean graphic card
-        const dotsBtn = clone.querySelector('button[title*="opciones"]');
-        if (dotsBtn) dotsBtn.style.display = 'none';
-
-        // Ensure bottom buttons are perfectly symmetrical & unclipped in the snapshot
-        const bottomGrid = clone.querySelector('.grid.grid-cols-3');
-        if (bottomGrid) {
-          bottomGrid.style.gap = '8px';
-          bottomGrid.style.paddingTop = '10px';
-          const btns = bottomGrid.querySelectorAll('button');
-          btns.forEach(btn => {
-            btn.style.height = '44px';
-            btn.style.minHeight = '44px';
-            btn.style.display = 'inline-flex';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'center';
-            btn.style.borderRadius = '16px';
-          });
-        }
-
-        staging.appendChild(clone);
-        document.body.appendChild(staging);
-
-        // Allow browser to calculate layout and render fonts cleanly
-        await new Promise(r => setTimeout(r, 60));
+        // Ocultar temporalmente el menú de 3 puntos durante la captura para una tarjeta limpia
+        const dotsBtn = cardEl.querySelector('button[title*="opciones"]');
+        if (dotsBtn) dotsBtn.style.visibility = 'hidden';
 
         try {
-          blob = await toBlob(staging, {
-            pixelRatio: 2.5,
-            backgroundColor: isDark ? '#0c0c0f' : '#ffffff',
+          blob = await toBlob(cardEl, {
+            pixelRatio: 2,
+            backgroundColor: bg,
             cacheBust: true,
+            style: {
+              transform: 'none',
+              transition: 'none',
+            }
           });
         } catch (imgErr) {
           console.warn('toBlob fallback to html2canvas:', imgErr);
           try {
-            const canvas = await html2canvas(staging, {
-              scale: 2.5,
+            const canvas = await html2canvas(cardEl, {
+              scale: 2,
               useCORS: true,
               logging: false,
-              backgroundColor: isDark ? '#0c0c0f' : '#ffffff',
+              backgroundColor: bg,
+              scrollX: 0,
+              scrollY: 0,
             });
             blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
           } catch (h2cErr) {
             console.warn('html2canvas failed:', h2cErr);
           }
         } finally {
-          if (staging.parentNode) {
-            staging.parentNode.removeChild(staging);
-          }
+          if (dotsBtn) dotsBtn.style.visibility = 'visible';
         }
       }
 
