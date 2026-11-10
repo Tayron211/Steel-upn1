@@ -268,18 +268,18 @@ export function generateCargoPdf({
     doc.setTextColor(22, 101, 52);
     doc.text('DEVOLUCIÓN CONFORME', centerX, footerY + 7.5, { align: 'center' });
 
-    // Nombre del asistente en pequeño debajo de DEVOLUCIÓN CONFORME
+    // Nombre del asistente que registró el préstamo / recepción
     const rawAssistant = (
-      (entregadoPor && entregadoPor !== recipientName ? entregadoPor : null) ||
       ticket.responsable ||
       ticket.asistente ||
+      (entregadoPor && !entregadoPor.toUpperCase().includes('DOCENTE') && !entregadoPor.toUpperCase().includes('SOLICITANTE') ? entregadoPor : null) ||
       'OPERACIONES SEDE'
     ).toUpperCase().trim();
     const assistantName = rawAssistant.length > 32 ? rawAssistant.slice(0, 32) : rawAssistant;
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(71, 85, 105);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(24, 49, 83);
     doc.text(assistantName, centerX, footerY + 10.8, { align: 'center' });
   }
 

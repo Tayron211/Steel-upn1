@@ -533,7 +533,7 @@ async function handleApiRequest(context) {
         WHERE (docente IS NOT NULL AND TRIM(docente) != '' AND docente NOT LIKE '%#N/D%' AND docente NOT LIKE '%#N/A%') 
            OR (nrc IS NOT NULL AND TRIM(nrc) != '') 
            OR (fecha IS NOT NULL AND TRIM(fecha) != '')
-        ORDER BY fecha DESC, id DESC
+        ORDER BY codigo DESC, fecha DESC, id DESC
       `).all();
       return json({ success: true, count: results.length, data: results });
     }

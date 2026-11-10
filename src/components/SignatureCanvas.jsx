@@ -24,7 +24,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
   const containerRef = useRef(null);
   const isDrawingRef = useRef(false);
   const hasDrawnRef = useRef(Boolean(initialImage));
-  const lastPointRef = useRef({ x: 0, y: 0 });
+  const pointsRef = useRef([]);
+  const strokesRef = useRef([]);
   const isConfirmedRef = useRef(false);
 
   const [savedDataUrl, setSavedDataUrl] = useState(initialImage || null);
@@ -48,7 +49,46 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     setModalHasContent(Boolean(initialImage));
   }, [initialImage]);
 
-  // Configurar el lienzo amplio dentro del modal con resolución HD Retina
+  // Redibuja con máxima fidelidad vectorial todos los trazos registrados
+  const redrawVectorStrokes = (ctx) => {
+    if (!strokesRef.current || strokesRef.current.length === 0) return;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = lineWidth;
+
+    for (const pts of strokesRef.current) {
+      if (!pts || pts.length === 0) continue;
+      if (pts.length === 1) {
+        ctx.beginPath();
+        ctx.arc(pts[0].x, pts[0].y, lineWidth / 2, 0, Math.PI * 2);
+        ctx.fillStyle = strokeColor;
+        ctx.fill();
+        continue;
+      }
+      if (pts.length === 2) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        ctx.lineTo(pts[1].x, pts[1].y);
+        ctx.stroke();
+        continue;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+        ctx.quadraticCurveTo(p1.x, p1.y, midX, midY);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+      ctx.stroke();
+    }
+  };
+
+  // Configurar el lienzo amplio dentro del modal con resolución HD Retina sin pixelación
   const setupModalCanvas = (preloadImage = savedDataUrl) => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -56,7 +96,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
     const rect = container.getBoundingClientRect();
     const dpr = Math.max(window.devicePixelRatio || 1, 2);
-    const width = Math.max(Math.floor(rect.width), 280);
+    const width = Math.max(Math.floor(container.clientWidth || rect.width), 300);
     const modalHeight = window.innerWidth < 640 ? 260 : 340;
 
     canvas.width = Math.round(width * dpr);
@@ -79,7 +119,11 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, width, modalHeight);
 
-    if (preloadImage && preloadImage !== 'data:,') {
+    if (strokesRef.current.length > 0) {
+      redrawVectorStrokes(ctx);
+      hasDrawnRef.current = true;
+      setModalHasContent(true);
+    } else if (preloadImage && preloadImage !== 'data:,') {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0, width, modalHeight);
@@ -117,12 +161,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
             const dpr = Math.max(window.devicePixelRatio || 1, 2);
             const currentW = Math.round((canvas._cssWidth || 0) * dpr);
             const targetW = Math.round(cr.width * dpr);
-            if (Math.abs(currentW - targetW) > 4) {
-              const currentUrl =
-                hasDrawnRef.current && canvasRef.current
-                  ? canvasRef.current.toDataURL('image/png')
-                  : savedDataUrl;
-              setupModalCanvas(currentUrl);
+            if (Math.abs(currentW - targetW) > 6) {
+              setupModalCanvas(savedDataUrl);
             }
           }
         }
@@ -132,11 +172,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
     const handleWindowResize = () => {
       if (!isDrawingRef.current) {
-        const currentUrl =
-          hasDrawnRef.current && canvasRef.current
-            ? canvasRef.current.toDataURL('image/png')
-            : savedDataUrl;
-        setupModalCanvas(currentUrl);
+        setupModalCanvas(savedDataUrl);
       }
     };
     window.addEventListener('resize', handleWindowResize);
@@ -154,12 +190,6 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const dpr = canvas._dpr || window.devicePixelRatio || 1;
-    const logicalW = canvas._cssWidth || (canvas.width / dpr);
-    const logicalH = canvas._cssHeight || (canvas.height / dpr);
-
-    const scaleX = rect.width > 0 ? logicalW / rect.width : 1;
-    const scaleY = rect.height > 0 ? logicalH / rect.height : 1;
 
     let clientX = e.clientX;
     let clientY = e.clientY;
@@ -173,8 +203,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     }
 
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+      x: clientX - rect.left,
+      y: clientY - rect.top
     };
   };
 
@@ -191,7 +221,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     } catch (_) {}
 
     const coords = getCoordinates(e);
-    lastPointRef.current = coords;
+    pointsRef.current = [coords];
     isDrawingRef.current = true;
     hasDrawnRef.current = true;
     setModalHasContent(true);
@@ -207,8 +237,6 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     ctx.arc(coords.x, coords.y, lineWidth / 2, 0, Math.PI * 2);
     ctx.fillStyle = strokeColor;
     ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(coords.x, coords.y);
   };
 
   const handlePointerMove = (e) => {
@@ -219,23 +247,38 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     if (!canvas) return;
 
     const coords = getCoordinates(e);
+    pointsRef.current.push(coords);
+    const pts = pointsRef.current;
+
     const ctx = canvas.getContext('2d');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = lineWidth;
 
-    // Curva de Bézier cuadrática para trazos de firma hiper-fluidos y sin pixelación
-    const midX = (lastPointRef.current.x + coords.x) / 2;
-    const midY = (lastPointRef.current.y + coords.y) / 2;
+    // Curva spline Bézier suave continua sin aristas ni pixelación
+    if (pts.length >= 3) {
+      const p0 = pts[pts.length - 3];
+      const p1 = pts[pts.length - 2];
+      const p2 = pts[pts.length - 1];
 
-    ctx.beginPath();
-    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-    ctx.quadraticCurveTo(lastPointRef.current.x, lastPointRef.current.y, midX, midY);
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
+      const m1X = (p0.x + p1.x) / 2;
+      const m1Y = (p0.y + p1.y) / 2;
+      const m2X = (p1.x + p2.x) / 2;
+      const m2Y = (p1.y + p2.y) / 2;
 
-    lastPointRef.current = coords;
+      ctx.beginPath();
+      ctx.moveTo(m1X, m1Y);
+      ctx.quadraticCurveTo(p1.x, p1.y, m2X, m2Y);
+      ctx.stroke();
+    } else if (pts.length === 2) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+      ctx.lineTo(midX, midY);
+      ctx.stroke();
+    }
   };
 
   const handlePointerUp = (e) => {
@@ -248,6 +291,27 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
         e.target.releasePointerCapture(e.pointerId);
       }
     } catch (_) {}
+
+    const pts = pointsRef.current;
+    const canvas = canvasRef.current;
+    if (canvas && pts && pts.length >= 2) {
+      const ctx = canvas.getContext('2d');
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = lineWidth;
+      const pLast = pts[pts.length - 1];
+      const pPrev = pts[pts.length - 2];
+      ctx.beginPath();
+      ctx.moveTo((pPrev.x + pLast.x) / 2, (pPrev.y + pLast.y) / 2);
+      ctx.lineTo(pLast.x, pLast.y);
+      ctx.stroke();
+    }
+
+    if (pts && pts.length > 0) {
+      strokesRef.current.push([...pts]);
+    }
+    pointsRef.current = [];
   };
 
   const clearModalCanvas = () => {
@@ -261,11 +325,15 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, w, h);
 
+    strokesRef.current = [];
+    pointsRef.current = [];
     hasDrawnRef.current = false;
     setModalHasContent(false);
   };
 
   const clearSavedSignature = () => {
+    strokesRef.current = [];
+    pointsRef.current = [];
     hasDrawnRef.current = false;
     setModalHasContent(false);
     setSavedDataUrl(null);
@@ -293,8 +361,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
 
   useImperativeHandle(ref, () => ({
     clear: clearSavedSignature,
-    getDataUrl: () => savedDataUrl,
-    hasContent: () => Boolean(savedDataUrl),
+    getDataUrl: () => savedDataUrl || (hasDrawnRef.current && canvasRef.current ? canvasRef.current.toDataURL('image/png') : null),
+    hasContent: () => Boolean(savedDataUrl || hasDrawnRef.current),
     openModal: () => setIsModalOpen(true)
   }));
 

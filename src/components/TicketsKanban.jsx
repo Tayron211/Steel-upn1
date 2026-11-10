@@ -462,10 +462,11 @@ export default function TicketsKanban({
     e.stopPropagation();
     const ben = parseBeneficiary(ticket.descripcionSolucion);
     const recipientName = ticket.recibidoPor || ben.name || 'Docente / Solicitante';
+    const assistantName = ticket.responsable || ticket.asistente || 'TAYRON SALINAS';
 
     generateCargoPdf({
       ticket,
-      entregadoPor: recipientName,
+      entregadoPor: assistantName,
       recibidoPor: recipientName,
       firmaEntrega: ticket.firmaEntrega || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_entrega_${ticket.id}`) : null),
       firmaRecepcion: ticket.firmaRecepcion || (typeof localStorage !== 'undefined' ? localStorage.getItem(`upn_sign_recepcion_${ticket.id}`) : null)
@@ -1766,7 +1767,7 @@ export default function TicketsKanban({
                     )}
                   </div>
 
-                  {/* Grilla de Información del Solicitante y Horarios */}
+                  {/* Grilla de Información del Solicitante, Asistente y Horarios */}
                   <div className="grid grid-cols-2 gap-2.5">
                     <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
                       <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
@@ -1780,10 +1781,23 @@ export default function TicketsKanban({
 
                     <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
                       <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
+                        Asistente que Registró
+                      </div>
+                      <div className="text-xs font-black text-amber-600 dark:text-amber-400 mt-0.5 break-words flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 flex items-center justify-center text-[10px] font-black shrink-0">
+                          {(detailTicket.responsable || 'T').charAt(0).toUpperCase()}
+                        </span>
+                        <span className="truncate">{detailTicket.responsable || 'TAYRON SALINAS'}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
+                      <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
                         Ambiente / Ubicación
                       </div>
                       <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
-                        {detailTicket.ambiente || 'DOCENCIA'} · {detailTicket.piso || 'Sede'}
+                        {String(detailTicket.ambiente || 'DOCENCIA').replace(/#¡?REF!?/gi, '').trim() || 'DOCENCIA'}
+                        {detailTicket.piso && !String(detailTicket.piso).includes('REF') ? ` · ${detailTicket.piso}` : ''}
                       </div>
                     </div>
 
@@ -1796,13 +1810,22 @@ export default function TicketsKanban({
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800">
-                      <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
-                        Hora de Devolución
+                    <div className="col-span-2 p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
+                          Hora de Devolución
+                        </div>
+                        <div className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                          {returnTimeStr ? `${returnTimeStr} hrs` : (detailTicket.estado === 'ATENDIDO' ? 'Concluido' : 'Pendiente')}
+                        </div>
                       </div>
-                      <div className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                        {returnTimeStr ? `${returnTimeStr} hrs` : 'Concluido'}
-                      </div>
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${
+                        detailTicket.estado === 'ATENDIDO' 
+                          ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
+                          : 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
+                      }`}>
+                        {detailTicket.estado === 'ATENDIDO' ? '✓ DEVUELTO' : '⏳ PENDIENTE'}
+                      </span>
                     </div>
                   </div>
 

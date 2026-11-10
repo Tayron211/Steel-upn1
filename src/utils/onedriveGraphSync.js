@@ -939,17 +939,20 @@ export async function pushToExcel(db, opts = {}) {
   const onlySheet = opts?.onlySheet || null;
 
   const doPush = async () => {
-    const targets = await findTargets(token, row);
-    if (targets.length === 0) return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
-    const primary = targets.find((t) => /TEST/i.test(t.name)) || targets.find((t) => t.id === row.item_id) || targets[0];
-    if (primary.id !== row.item_id) {
-      await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
+    // Si ya tenemos el ID del archivo maestro guardado, usarlo directamente sin demorar buscando en todo OneDrive
+    let targetFile = (row.item_id && row.file_name) ? { id: row.item_id, name: row.file_name } : null;
+    if (!targetFile) {
+      const targets = await findTargets(token, row);
+      if (targets.length === 0) return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
+      targetFile = targets.find((t) => /TEST/i.test(t.name)) || targets.find((t) => t.id === row.item_id) || targets[0];
+      if (targetFile.id !== row.item_id) {
+        await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(targetFile.id, targetFile.name).run();
+      }
     }
 
-    const targetFile = primary;
     const report = [];
 
-    // 1) Asistencia (si no hay filtro o se pidió asistencia)
+    // 1) Asistencia (ultra-rápido: solo actualiza CONTROL ASISTENCIA si fue lo que cambió)
     if (!onlySheet || onlySheet === 'asistencia') {
       const asRes = await db.prepare(
         'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
@@ -964,29 +967,32 @@ export async function pushToExcel(db, opts = {}) {
       const fetchTickets = !onlySheet || onlySheet === 'tickets';
       const fetchManuales = !onlySheet || onlySheet === 'manuales';
       const fetchReservas = !onlySheet || onlySheet === 'reservas';
+      const needCtx = fetchTickets || fetchManuales;
 
       const [ticketsRes, manualesRes, reservasRes, asRes] = await Promise.all([
         fetchTickets ? db.prepare(SPECS.tickets.select).all() : Promise.resolve({ results: [] }),
         fetchManuales ? db.prepare(SPECS.manuales.select).all() : Promise.resolve({ results: [] }),
         fetchReservas ? db.prepare(SPECS.reservas.select).all() : Promise.resolve({ results: [] }),
-        db.prepare('SELECT nrc, docente, curso, carrera FROM asistencia').all()
+        needCtx ? db.prepare('SELECT nrc, docente, curso, carrera FROM asistencia').all() : Promise.resolve({ results: [] })
       ]);
 
       const nrcMap = new Map();
       const courseMap = new Map();
-      for (const a of (asRes.results || [])) {
-        const k = String(a.nrc || '').trim();
-        const unpadded = k ? k.replace(/^0+/, '') : '';
-        const padded = k ? k.padStart(5, '0') : '';
-        const cursoUpper = String(a.curso || '').trim().toUpperCase();
-        const obj = { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' };
+      if (needCtx) {
+        for (const a of (asRes.results || [])) {
+          const k = String(a.nrc || '').trim();
+          const unpadded = k ? k.replace(/^0+/, '') : '';
+          const padded = k ? k.padStart(5, '0') : '';
+          const cursoUpper = String(a.curso || '').trim().toUpperCase();
+          const obj = { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' };
 
-        if (k && (!nrcMap.has(k) || (!nrcMap.get(k).carrera && obj.carrera))) nrcMap.set(k, obj);
-        if (unpadded && (!nrcMap.has(unpadded) || (!nrcMap.get(unpadded).carrera && obj.carrera))) nrcMap.set(unpadded, obj);
-        if (padded && (!nrcMap.has(padded) || (!nrcMap.get(padded).carrera && obj.carrera))) nrcMap.set(padded, obj);
+          if (k && (!nrcMap.has(k) || (!nrcMap.get(k).carrera && obj.carrera))) nrcMap.set(k, obj);
+          if (unpadded && (!nrcMap.has(unpadded) || (!nrcMap.get(unpadded).carrera && obj.carrera))) nrcMap.set(unpadded, obj);
+          if (padded && (!nrcMap.has(padded) || (!nrcMap.get(padded).carrera && obj.carrera))) nrcMap.set(padded, obj);
 
-        if (cursoUpper && (!courseMap.has(cursoUpper) || (!courseMap.get(cursoUpper).carrera && obj.carrera))) {
-          courseMap.set(cursoUpper, obj);
+          if (cursoUpper && (!courseMap.has(cursoUpper) || (!courseMap.get(cursoUpper).carrera && obj.carrera))) {
+            courseMap.set(cursoUpper, obj);
+          }
         }
       }
       const ctx = { nrcMap, courseMap };

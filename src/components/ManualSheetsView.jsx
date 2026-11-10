@@ -362,11 +362,22 @@ export default function ManualSheetsView({
     "ASISTENCIA DE ESTUDIANTES"
   ];
 
-  // Exclude empty unissued placeholder sheets from Excel, sort by date descending
+  // Exclude empty unissued placeholder sheets from Excel, sort by codigo descending (último código arriba hacia abajo)
   const validSheets = useMemo(() => {
+    const extractNum = (code) => {
+      const match = String(code || '').match(/(\d+)/g);
+      if (!match) return 0;
+      return parseInt(match[match.length - 1], 10) || 0;
+    };
+
     return sheets
       .filter(s => (s.docente && s.docente.trim()) || (s.nrc && s.nrc.trim()) || (s.curso && s.curso.trim()))
-      .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.codigo || '').localeCompare(a.codigo || ''));
+      .sort((a, b) => {
+        const numA = extractNum(a.codigo);
+        const numB = extractNum(b.codigo);
+        if (numB !== numA) return numB - numA;
+        return (b.codigo || '').localeCompare(a.codigo || '') || (b.fecha || '').localeCompare(a.fecha || '');
+      });
   }, [sheets]);
 
   const filtered = useMemo(() => {
