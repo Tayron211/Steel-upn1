@@ -291,7 +291,14 @@ const copyRichTableToClipboard = async (plainText, htmlText) => {
 export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, initialSearch = '', onClearInitialSearch }) {
   const [data, setData] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const timeToMins = (t) => {
+    if (!t || typeof t !== 'string') return 0;
+    const [h, m] = t.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
 
   // Auto-detect current day in Spanish
   const daysOfWeek = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
@@ -771,6 +778,27 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       alert('Por favor, ingresa el nombre del docente o alumno solicitante.');
       return;
     }
+
+    // Validar si el aula ya tiene una reserva que solape este mismo día/horario
+    const aulaCode = reservingRoom.abrv.toUpperCase().trim();
+    const reqStartM = timeToMins(reservationForm.horaInicio);
+    const reqEndM = timeToMins(reservationForm.horaFin);
+
+    const conflictingRes = reservations.find(r => {
+      if ((r.aula || '').toUpperCase().trim() !== aulaCode) return false;
+      const sameDate = (r.fecha === reservationForm.fecha);
+      const sameDay = (r.dia && selectedDia && r.dia.toUpperCase() === selectedDia.toUpperCase());
+      if (!sameDate && !sameDay) return false;
+      const rStartM = timeToMins(r.inicio);
+      const rEndM = timeToMins(r.final);
+      return (reqStartM < rEndM && reqEndM > rStartM);
+    });
+
+    if (conflictingRes) {
+      alert(`⚠️ El aula ${reservingRoom.abrv} ya cuenta con una reserva activa para ${conflictingRes.docente} (${conflictingRes.inicio} - ${conflictingRes.final}).\nNo se puede volver a reservar.`);
+      return;
+    }
+
     setSavingReservation(true);
     try {
       const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
@@ -812,6 +840,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           horaFin: '10:00',
           actividades: ''
         });
+        await loadReservations();
       } else {
         alert('Error al guardar reserva: ' + (json.error || 'intente nuevamente'));
       }
@@ -906,6 +935,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       const json = await res.json();
       if (json.success) {
         setData(json.data);
+        loadReservations();
       }
     } catch (err) {
       console.error('Error fetching attendance:', err);
@@ -938,6 +968,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       const json = await res.json();
       if (json.success) {
         setData(json.data);
+        loadReservations();
       }
     } catch (err) {
       // silent
@@ -956,9 +987,25 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     }
   };
 
+  const loadReservations = async () => {
+    try {
+      const res = await fetch('/api/reservations');
+      const json = await res.json();
+      if (json.success) {
+        setReservations(json.data || []);
+      }
+    } catch (err) {
+      console.warn('Error fetching reservations:', err);
+    }
+  };
+
   useEffect(() => {
     loadRooms();
-    const handlePulled = () => loadAttendanceSilent();
+    loadReservations();
+    const handlePulled = () => {
+      loadAttendanceSilent();
+      loadReservations();
+    };
     window.addEventListener('upn:excel-pulled', handlePulled);
     return () => window.removeEventListener('upn:excel-pulled', handlePulled);
   }, []);
@@ -1213,18 +1260,46 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   }, [data, statusFilter, selectedCarrera]);
 
   // Compute Free Classrooms (Aulas Libres en este momento o bloque seleccionado)
+  // Excluye automáticamente tanto clases regulares como aulas con reserva activa en Excel/BD
   const freeRooms = useMemo(() => {
     const targetHour = (blockMode === 'CUSTOM' && selectedHora)
       ? selectedHora
       : getCurrentHourBlock();
 
-    // Si data contiene todas las clases del día (modo ALL), filtramos solo las del bloque actual/seleccionado
-    // para no marcar como ocupada un aula solo porque tuvo clase 8 horas antes o después
+    // 1. Clases regulares ocupadas en el bloque targetHour
     const classesInTarget = (blockMode === 'ALL')
       ? data.filter(c => (c.horaInicioProg || '').trim() === targetHour)
       : data;
 
     const busyRoomCodes = new Set(classesInTarget.map(c => (c.aula || '').toUpperCase().trim()));
+
+    // 2. Aulas con reserva activa en la hoja RESERVAS para este día/fecha y horario
+    const currentBlockDef = REAL_BLOCKS.find(b => b.start === targetHour) || {
+      startM: timeToMins(targetHour),
+      endM: timeToMins(targetHour) + 100
+    };
+
+    const targetDateStr = selectedDayInfo?.dateStr; // ej "10/11/2026"
+    const targetIsoDate = selectedDayInfo?.date ? selectedDayInfo.date.toISOString().split('T')[0] : '';
+
+    for (const res of reservations) {
+      const resAula = (res.aula || '').toUpperCase().trim();
+      if (!resAula) continue;
+
+      const matchesDay = (res.dia && selectedDia && res.dia.toUpperCase() === selectedDia.toUpperCase());
+      const matchesDate = (res.fecha && (res.fecha === targetIsoDate || res.fecha === targetDateStr));
+
+      if (matchesDay || matchesDate) {
+        const resStartM = timeToMins(res.inicio);
+        const resEndM = timeToMins(res.final);
+
+        // Comprobar solapamiento de horario (inicio < fin_bloque && fin > inicio_bloque)
+        if (resStartM < currentBlockDef.endM && resEndM > currentBlockDef.startM) {
+          busyRoomCodes.add(resAula);
+        }
+      }
+    }
+
     return rooms.filter(r => {
       if (selectedPabellon && r.pabellon !== selectedPabellon) return false;
       if (selectedPisos.length > 0) {
@@ -1233,7 +1308,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       }
       return !busyRoomCodes.has((r.abrv || '').toUpperCase().trim());
     });
-  }, [data, rooms, selectedPabellon, selectedPisos, blockMode, selectedHora]);
+  }, [data, rooms, reservations, selectedPabellon, selectedPisos, blockMode, selectedHora, selectedDia, selectedDayInfo]);
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
@@ -1279,44 +1354,15 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           })}
         </div>
 
-        {/* Banner Informativo de Fecha Exacta Seleccionada (Solo desktop/tablet para evitar saturar el movil) */}
-        <div className="hidden sm:flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 text-[11px]">
-          <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300 font-bold capitalize">
-            <Calendar className="w-3.5 h-3.5 text-[#FDBA30] shrink-0" />
-            <span>{selectedDayInfo?.fullLabel || selectedDia}</span>
-            {selectedDayInfo?.isToday && (
-              <span className="text-[9px] font-extrabold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.2 rounded-full border border-emerald-300 dark:border-emerald-700">
-                Día Actual
-              </span>
-            )}
-            {selectedDayInfo?.isFuture && (
-              <span className="text-[9px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-1.5 py-0.2 rounded-full border border-amber-300 dark:border-amber-700">
-                Día Próximo
-              </span>
-            )}
-          </div>
-          {selectedDayInfo?.isFuture && countPuntual > 0 && (
-            <button
-              type="button"
-              onClick={handleResetDayToPending}
-              className="text-[10px] font-black bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 px-2 py-0.5 rounded-lg transition active:scale-95 flex items-center gap-1 shadow-2xs"
-              title="Limpiar marcas pasadas que no correspondan a este día"
-            >
-              <RotateCcw className="w-3 h-3 stroke-[2.4]" />
-              <span>Restablecer día a Pendiente ({countPuntual})</span>
-            </button>
-          )}
-        </div>
-
-        {/* Fila 2: Buscador + Boton Filtros Movil */}
-        <div className="flex items-center gap-1.5">
-          <div className="relative flex-1 min-w-0">
+        {/* Fila 2: Buscador + Pabellón + Carrera (Selector limpio) + Botón Filtros Móvil */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="relative flex-1 min-w-[180px]">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 stroke-[2.2]" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar aula (A201), docente..."
+              placeholder="Buscar aula (A201), docente, curso, NRC..."
               className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30] transition font-bold"
             />
             {search && (
@@ -1326,7 +1372,48 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             )}
           </div>
 
-          {/* Boton Toggle Filtros Avanzados (Solo en movil para no saturar la pantalla) */}
+          {/* Pabellón Pills (En desktop directo, en móvil compacto) */}
+          <div className="hidden sm:inline-flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0">
+            {['', 'A', 'B'].map((pab) => (
+              <button
+                key={pab || 'ALL'}
+                type="button"
+                onClick={() => setSelectedPabellon(pab)}
+                className={`h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800/60'
+                  }`}
+              >
+                {pab ? `Pab. ${pab}` : 'Ambos'}
+              </button>
+            ))}
+          </div>
+
+          {/* Selector de Carrera Desplegable (Limpio y profesional, sustituye las 16 pastillas desbordadas) */}
+          {carrerasUnicas.length > 0 && (
+            <div className="hidden sm:inline-flex relative items-center shrink-0">
+              <select
+                value={selectedCarrera}
+                onChange={(e) => setSelectedCarrera(e.target.value)}
+                className={`h-7 pl-2.5 pr-7 text-xs font-bold rounded-xl border transition appearance-none cursor-pointer max-w-[210px] truncate ${
+                  selectedCarrera
+                    ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-2xs'
+                    : 'bg-slate-100 dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700'
+                }`}
+                title="Filtrar por carrera"
+              >
+                <option value="">Todas las carreras ({carrerasUnicas.length})</option>
+                {carrerasUnicas.map(c => (
+                  <option key={c} value={c} className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-white">
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 pointer-events-none text-slate-400 dark:text-zinc-400" />
+            </div>
+          )}
+
+          {/* Boton Toggle Filtros Avanzados (Solo en móvil para no saturar) */}
           <button
             type="button"
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
@@ -1346,89 +1433,77 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           </button>
         </div>
 
-        {/* Seccion de Filtros Secundarios: Pabellon, Pisos y Carrera (Plegable en movil, siempre visible en desktop) */}
-        <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:flex-col sm:gap-2`}>
-          <div className="flex flex-col sm:flex-row items-center gap-1.5">
-            {/* Pabellón Pills */}
-            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto">
-              {['', 'A', 'B'].map((pab) => (
-                <button
-                  key={pab || 'ALL'}
-                  type="button"
-                  onClick={() => setSelectedPabellon(pab)}
-                  className={`flex-1 sm:flex-initial h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800/60'
-                    }`}
-                >
-                  {pab ? `Pab. ${pab}` : 'Ambos'}
-                </button>
-              ))}
-            </div>
-
-            {/* Pisos Pills (Selección Múltiple) */}
-            <div className="flex items-center gap-1 overflow-x-auto sm:flex-wrap scrollbar-none w-full sm:w-auto shrink-0 py-0.5">
-              {pisosDisponibles.map((p) => {
-                const isTodos = p.val === '';
-                const isSelected = isTodos
-                  ? selectedPisos.length === 0
-                  : selectedPisos.includes(p.val);
-
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => handleTogglePiso(p.val)}
-                    className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 ${
-                      isSelected
-                        ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                        : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-                    }`}
-                    title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
-                  >
-                    <span>{p.short}</span>
-                    {!isTodos && isSelected && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Fila Pisos (Horizontal con scroll suave y selección múltiple) + Pabellón/Carrera en móvil */}
+        <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:items-center sm:gap-1.5`}>
+          {/* Pabellón Pills (En móvil dentro del menú filtros) */}
+          <div className="flex sm:hidden items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full">
+            {['', 'A', 'B'].map((pab) => (
+              <button
+                key={pab || 'ALL'}
+                type="button"
+                onClick={() => setSelectedPabellon(pab)}
+                className={`flex-1 h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+              >
+                {pab ? `Pab. ${pab}` : 'Ambos'}
+              </button>
+            ))}
           </div>
 
-          {/* Filtro rápido por Carrera / Facultad */}
+          {/* Carrera Select (En móvil dentro del menú filtros) */}
           {carrerasUnicas.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">Carrera:</span>
-              <button
-                type="button"
-                onClick={() => setSelectedCarrera('')}
-                className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${selectedCarrera === ''
-                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
+            <div className="flex sm:hidden relative items-center w-full">
+              <select
+                value={selectedCarrera}
+                onChange={(e) => setSelectedCarrera(e.target.value)}
+                className={`w-full h-8 pl-3 pr-8 text-xs font-bold rounded-xl border transition appearance-none cursor-pointer ${
+                  selectedCarrera
+                    ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black'
+                    : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300'
                 }`}
               >
-                Todas
-              </button>
-              {carrerasUnicas.map((car) => {
-                const isSel = selectedCarrera === car;
-                return (
-                  <button
-                    key={car}
-                    type="button"
-                    onClick={() => setSelectedCarrera(isSel ? '' : car)}
-                    className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition active:scale-95 shrink-0 whitespace-nowrap ${isSel
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-                    }`}
-                    title={car}
-                  >
-                    {car}
-                  </button>
-                );
-              })}
+                <option value="">Todas las carreras ({carrerasUnicas.length})</option>
+                {carrerasUnicas.map(c => (
+                  <option key={c} value={c} className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-white">
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 pointer-events-none text-slate-400 dark:text-zinc-400" />
             </div>
           )}
+
+          {/* Pisos Pills (Con selección múltiple táctil) */}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full shrink-0 py-0.5">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 hidden sm:inline mr-1">Pisos:</span>
+            {pisosDisponibles.map((p) => {
+              const isTodos = p.val === '';
+              const isSelected = isTodos
+                ? selectedPisos.length === 0
+                : selectedPisos.includes(p.val);
+
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => handleTogglePiso(p.val)}
+                  className={`h-6.5 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
+                  }`}
+                  title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
+                >
+                  <span>{p.short}</span>
+                  {!isTodos && isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Fila 3: Vistas (Clases vs Aulas Libres) + Pastillas de Estado Rápidas */}
@@ -1588,9 +1663,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 }}
                 className={`h-6.5 px-2 rounded-lg font-mono text-[11px] font-bold transition whitespace-nowrap active:scale-95 shrink-0 ${
                   isSelected
-                    ? 'bg-[#FDBA30] text-slate-950 font-black'
-                    : isCurrent
-                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                    : isCurrent && blockMode === 'CURRENT'
+                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 font-black'
                       : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
                 }`}
                 title={`Bloque ${b.start} a ${b.end}`}

@@ -721,6 +721,21 @@ async function handleApiRequest(context) {
       const obs = (body.obs || body.observaciones || '').trim();
       const hoja = 'RESERVAS';
 
+      // Validar si el aula ya está reservada para esa misma fecha/día y rango de horas
+      const conflict = await db.prepare(`
+        SELECT * FROM reservas
+        WHERE UPPER(TRIM(aula)) = UPPER(TRIM(?))
+        AND (fecha = ? OR UPPER(TRIM(dia)) = UPPER(TRIM(?)))
+        AND inicio < ? AND final > ?
+      `).bind(aula, fechaStr, dia, final, inicio).first();
+
+      if (conflict) {
+        return json({
+          success: false,
+          error: `El aula ${aula} ya se encuentra reservada por ${conflict.docente || 'otro usuario'} de ${conflict.inicio} a ${conflict.final}.`
+        }, 400);
+      }
+
       await db.prepare(`
         INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, motivo, usuario, prioridad, obs, hoja, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
