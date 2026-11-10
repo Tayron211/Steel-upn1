@@ -1388,7 +1388,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
           {/* Filtro rápido por Carrera / Facultad */}
           {carrerasUnicas.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-thin">
+            <div className="flex items-center gap-1.5 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 whitespace-nowrap">Carrera:</span>
               <button
                 type="button"
@@ -1523,7 +1523,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
 
         {/* Fila 4: Bloques de hora horizontales (Discretos y Simétricos) */}
-        <div className="flex items-center gap-1 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-thin text-[11px]">
+        <div className="flex items-center gap-1 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px]">
           <button
             onClick={() => {
               setBlockMode('ALL');
@@ -2591,8 +2591,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 h-36">
-                        {/* Columna Horas (00 a 23) */}
-                        <div className="overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                        {/* Columna Horas (00 a 23) sin scrollbars blancos */}
+                        <div className="overflow-y-auto space-y-1 pr-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                           {HOURS_24.map(h => {
                             const isSelected = selH === h;
                             return (
@@ -2603,7 +2603,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                                   const m = selM || '00';
                                   setManualTardeTime(`${h}:${m}`);
                                 }}
-                                className={`w-full py-1 rounded-lg font-mono text-xs font-bold transition text-center ${
+                                className={`w-full py-1.5 rounded-xl font-mono text-xs font-bold transition text-center ${
                                   isSelected
                                     ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
                                     : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
@@ -2615,8 +2615,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                           })}
                         </div>
 
-                        {/* Columna Minutos (00 a 59) */}
-                        <div className="overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                        {/* Columna Minutos (00 a 59) sin scrollbars blancos */}
+                        <div className="overflow-y-auto space-y-1 pr-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                           {MINUTES_60.map(m => {
                             const isSelected = selM === m;
                             return (

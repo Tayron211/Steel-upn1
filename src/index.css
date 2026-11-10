@@ -50,7 +50,26 @@ input, textarea, select {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Ensure dark mode applies to native scrollbars, inputs, and popups */
+html.dark, .dark {
+  color-scheme: dark;
+  scrollbar-color: #3f3f46 transparent;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
 /* Minimalist scrollbars (Light & Dark AMOLED) */
+* {
+  scrollbar-width: thin;
+}
+
+.dark * {
+  scrollbar-color: #3f3f46 transparent;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -70,6 +89,17 @@ input, textarea, select {
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #52525b;
+}
+
+/* Utility to completely hide scrollbars while preserving mouse/touch scrolling */
+.scrollbar-none {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* =========================================================
