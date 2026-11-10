@@ -5,6 +5,7 @@
 import { buildMasterExcelFromTemplate } from '../../src/utils/excelTemplateExporter';
 import { 
   pushToExcel, 
+  syncBidirectional,
   pullIfExcelChanged, 
   debugInspect, 
   ensureTables,
@@ -1273,7 +1274,7 @@ async function handleApiRequest(context) {
     }
 
     if (path === '/api/onedrive/sync' && method === 'POST') {
-      const result = await pushToExcel(db);
+      const result = await syncBidirectional(db);
       return json(result);
     }
 

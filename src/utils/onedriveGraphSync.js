@@ -536,6 +536,7 @@ async function pullRecords(db, specName, used) {
   const claimed = new Set();
   const stmts = [];
   let changes = 0;
+  const newInsertedIds = [];
 
   for (const rec of recs) {
     const k = spec.key(rec);
@@ -562,13 +563,12 @@ async function pullRecords(db, specName, used) {
     } else {
       changes++;
       const id = `xl_${specName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      newInsertedIds.push(id);
       stmts.push(spec.insert(db, id, rec));
     }
   }
 
-  // Si se eliminaron filas en el Excel, eliminarlas de la base de datos
-  // REGLA CRÍTICA: Solo eliminar filas que YA EXISTÍAN previamente en el snapshot de Excel (ids:${specName}).
-  // Las filas nuevas creadas en la app NO están en el snapshot aún y NUNCA deben ser borradas aquí.
+  // Si se eliminaron filas en el Excel, eliminarlas de la base de datos (Sincronización Bidireccional)
   let snapshotIds = new Set();
   try {
     const rawSnap = await getState(db, `ids:${specName}`);
@@ -578,11 +578,24 @@ async function pullRecords(db, specName, used) {
     }
   } catch (_) { }
 
-  if (snapshotIds.size > 0) {
-    for (const r of dbRows) {
-      if (snapshotIds.has(r.id) && !claimed.has(r.id)) {
+  const isRowRecent = (r) => {
+    if (!r || !r.created_at) return false;
+    const t = new Date(r.created_at.includes('Z') ? r.created_at : r.created_at.replace(' ', 'T') + 'Z').getTime();
+    return !isNaN(t) && (Date.now() - t < 45000);
+  };
+
+  const survivingIds = [];
+  for (const r of dbRows) {
+    if (claimed.has(r.id)) {
+      survivingIds.push(r.id);
+    } else {
+      // Si la fila no está en Excel:
+      // Si existía en el snapshot previo, o si se fuerza la sincronización, o si no es una creación ultra-reciente (<45s):
+      if (snapshotIds.has(r.id) || (snapshotIds.size === 0 && !isRowRecent(r)) || opts?.force) {
         changes++;
         stmts.push(db.prepare(`DELETE FROM ${spec.table} WHERE id = ?`).bind(r.id));
+      } else {
+        survivingIds.push(r.id);
       }
     }
   }
@@ -594,10 +607,15 @@ async function pullRecords(db, specName, used) {
       console.error(`Error in batch ${specName}:`, err);
     }
   }
+
+  // Guardar snapshot de IDs para que futuros borrados en Excel se detecten inmediatamente
+  const allCurrentIds = [...survivingIds, ...newInsertedIds];
+  await setState(db, `ids:${specName}`, JSON.stringify(allCurrentIds));
+
   return changes;
 }
 
-async function pullAsistencia(db, used) {
+async function pullAsistencia(db, used, opts = {}) {
   const hdr = findHeader(used, ['AULA', 'NRC']);
   if (!hdr) return 0;
   const c = hdr.cells;
@@ -630,11 +648,12 @@ async function pullAsistencia(db, used) {
     const pun = rawPu ? (rawPu === '-' ? '-' : rawPu) : '-';
     const obs = iOb >= 0 ? String(row[iOb] ?? '').trim() : '';
     for (const d of list) {
-      // PROTECCIÓN CONTRA SOBREESCRITURA DE CAMBIOS DE LA APP:
-      // Si el registro fue modificado en la app en los últimos 5 minutos (300 s), NO sobreescribirlo
-      if (d.updated_at) {
+      // PROTECCIÓN CONTRA SOBREESCRITURA:
+      // Si opts.force es true (sincronización manual / explícita), NO omitir nada.
+      // Si no es force, solo omitir si fue modificado en la app en los últimos 45s.
+      if (!opts?.force && d.updated_at) {
         const upMs = new Date(d.updated_at.includes('Z') ? d.updated_at : d.updated_at.replace(' ', 'T') + 'Z').getTime();
-        if (!isNaN(upMs) && Date.now() - upMs < 300000) {
+        if (!isNaN(upMs) && Date.now() - upMs < 45000) {
           continue;
         }
       }
@@ -660,13 +679,13 @@ async function pullAsistencia(db, used) {
   return stmts.length;
 }
 
-export async function pullFromExcel(db, token, itemId) {
+export async function pullFromExcel(db, token, itemId, opts = {}) {
   let total = 0;
   const as = await loadUsed(token, itemId, 'CONTROL ASISTENCIA');
-  if (as) total += await pullAsistencia(db, as);
+  if (as) total += await pullAsistencia(db, as, opts);
   for (const name of ['tickets', 'manuales', 'reservas']) {
     const used = await loadUsed(token, itemId, SPECS[name].sheet);
-    if (used) total += await pullRecords(db, name, used);
+    if (used) total += await pullRecords(db, name, used, opts);
   }
   return total;
 }
@@ -956,100 +975,107 @@ export async function pushToExcel(db, opts = {}) {
   const { token, row } = acc;
   const onlySheet = opts?.onlySheet || null;
 
-  const doPush = async () => {
-    // Si ya tenemos el ID del archivo maestro guardado, usarlo directamente sin demorar buscando en todo OneDrive
-    let targetFile = (row.item_id && row.file_name) ? { id: row.item_id, name: row.file_name } : null;
-    if (!targetFile) {
-      const targets = await findTargets(token, row);
-      if (targets.length === 0) return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
-      targetFile = targets.find((t) => /TEST/i.test(t.name)) || targets.find((t) => t.id === row.item_id) || targets[0];
-      if (targetFile.id !== row.item_id) {
-        await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(targetFile.id, targetFile.name).run();
-      }
-    }
+async function doPushInternal(db, token, targetFile, onlySheet) {
+  const report = [];
 
-    const report = [];
+  // 1) Asistencia (ultra-rápido: solo actualiza CONTROL ASISTENCIA si fue lo que cambió)
+  if (!onlySheet || onlySheet === 'asistencia') {
+    const asRes = await db.prepare(
+      'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
+    ).all();
+    const asRows = asRes.results || [];
+    const asReport = await pushAsistencia(db, token, targetFile.id, asRows);
+    report.push({ file: targetFile.name, asistencia: asReport });
+  }
 
-    // 1) Asistencia (ultra-rápido: solo actualiza CONTROL ASISTENCIA si fue lo que cambió)
-    if (!onlySheet || onlySheet === 'asistencia') {
-      const asRes = await db.prepare(
-        'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
-      ).all();
-      const asRows = asRes.results || [];
-      const asReport = await pushAsistencia(db, token, targetFile.id, asRows);
-      report.push({ file: targetFile.name, asistencia: asReport });
-    }
+  // 2) Otras hojas (tickets, manuales, reservas)
+  if (!onlySheet || onlySheet !== 'asistencia') {
+    const fetchTickets = !onlySheet || onlySheet === 'tickets';
+    const fetchManuales = !onlySheet || onlySheet === 'manuales';
+    const fetchReservas = !onlySheet || onlySheet === 'reservas';
+    const needCtx = fetchTickets || fetchManuales;
 
-    // 2) Otras hojas (tickets, manuales, reservas)
-    if (!onlySheet || onlySheet !== 'asistencia') {
-      const fetchTickets = !onlySheet || onlySheet === 'tickets';
-      const fetchManuales = !onlySheet || onlySheet === 'manuales';
-      const fetchReservas = !onlySheet || onlySheet === 'reservas';
-      const needCtx = fetchTickets || fetchManuales;
+    const [ticketsRes, manualesRes, reservasRes, asRes] = await Promise.all([
+      fetchTickets ? db.prepare(SPECS.tickets.select).all() : Promise.resolve({ results: [] }),
+      fetchManuales ? db.prepare(SPECS.manuales.select).all() : Promise.resolve({ results: [] }),
+      fetchReservas ? db.prepare(SPECS.reservas.select).all() : Promise.resolve({ results: [] }),
+      needCtx ? db.prepare('SELECT nrc, docente, curso, carrera FROM asistencia').all() : Promise.resolve({ results: [] })
+    ]);
 
-      const [ticketsRes, manualesRes, reservasRes, asRes] = await Promise.all([
-        fetchTickets ? db.prepare(SPECS.tickets.select).all() : Promise.resolve({ results: [] }),
-        fetchManuales ? db.prepare(SPECS.manuales.select).all() : Promise.resolve({ results: [] }),
-        fetchReservas ? db.prepare(SPECS.reservas.select).all() : Promise.resolve({ results: [] }),
-        needCtx ? db.prepare('SELECT nrc, docente, curso, carrera FROM asistencia').all() : Promise.resolve({ results: [] })
-      ]);
+    const nrcMap = new Map();
+    const courseMap = new Map();
+    if (needCtx) {
+      for (const a of (asRes.results || [])) {
+        const k = String(a.nrc || '').trim();
+        const unpadded = k ? k.replace(/^0+/, '') : '';
+        const padded = k ? k.padStart(5, '0') : '';
+        const cursoUpper = String(a.curso || '').trim().toUpperCase();
+        const obj = { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' };
 
-      const nrcMap = new Map();
-      const courseMap = new Map();
-      if (needCtx) {
-        for (const a of (asRes.results || [])) {
-          const k = String(a.nrc || '').trim();
-          const unpadded = k ? k.replace(/^0+/, '') : '';
-          const padded = k ? k.padStart(5, '0') : '';
-          const cursoUpper = String(a.curso || '').trim().toUpperCase();
-          const obj = { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' };
+        if (k && (!nrcMap.has(k) || (!nrcMap.get(k).carrera && obj.carrera))) nrcMap.set(k, obj);
+        if (unpadded && (!nrcMap.has(unpadded) || (!nrcMap.get(unpadded).carrera && obj.carrera))) nrcMap.set(unpadded, obj);
+        if (padded && (!nrcMap.has(padded) || (!nrcMap.get(padded).carrera && obj.carrera))) nrcMap.set(padded, obj);
 
-          if (k && (!nrcMap.has(k) || (!nrcMap.get(k).carrera && obj.carrera))) nrcMap.set(k, obj);
-          if (unpadded && (!nrcMap.has(unpadded) || (!nrcMap.get(unpadded).carrera && obj.carrera))) nrcMap.set(unpadded, obj);
-          if (padded && (!nrcMap.has(padded) || (!nrcMap.get(padded).carrera && obj.carrera))) nrcMap.set(padded, obj);
-
-          if (cursoUpper && (!courseMap.has(cursoUpper) || (!courseMap.get(cursoUpper).carrera && obj.carrera))) {
-            courseMap.set(cursoUpper, obj);
-          }
+        if (cursoUpper && (!courseMap.has(cursoUpper) || (!courseMap.get(cursoUpper).carrera && obj.carrera))) {
+          courseMap.set(cursoUpper, obj);
         }
       }
-      const ctx = { nrcMap, courseMap };
-
-      const fileReport = { file: targetFile.name };
-      if (fetchTickets) {
-        fileReport.tickets = await pushRecords(db, token, targetFile.id, 'tickets', ctx, true, ticketsRes.results || []);
-      }
-      if (fetchManuales) {
-        fileReport.manuales = await pushRecords(db, token, targetFile.id, 'manuales', ctx, true, manualesRes.results || []);
-      }
-      if (fetchReservas) {
-        fileReport.reservas = await pushRecords(db, token, targetFile.id, 'reservas', ctx, true, reservasRes.results || []);
-      }
-      report.push(fileReport);
     }
+    const ctx = { nrcMap, courseMap };
 
-    // Actualizar timestamps de modificación de CONTROL DOCENTE
-    const modControlAfter = await itemMod(token, primary.id);
-    if (modControlAfter) {
-      await setState(db, 'excel_mod', modControlAfter);
-      await setState(db, 'excel_mod_control', modControlAfter);
+    const fileReport = { file: targetFile.name };
+    if (fetchTickets) {
+      fileReport.tickets = await pushRecords(db, token, targetFile.id, 'tickets', ctx, true, ticketsRes.results || []);
     }
-    await setState(db, 'last_push', String(Date.now()));
-    await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
+    if (fetchManuales) {
+      fileReport.manuales = await pushRecords(db, token, targetFile.id, 'manuales', ctx, true, manualesRes.results || []);
+    }
+    if (fetchReservas) {
+      fileReport.reservas = await pushRecords(db, token, targetFile.id, 'reservas', ctx, true, reservasRes.results || []);
+    }
+    report.push(fileReport);
+  }
 
-    return {
-      success: true,
-      connected: true,
-      filesUpdated: report,
-      message: 'Archivo maestro sincronizado exitosamente con OneDrive'
-    };
+  // Actualizar timestamps de modificación de CONTROL DOCENTE
+  const modControlAfter = await itemMod(token, targetFile.id);
+  if (modControlAfter) {
+    await setState(db, 'excel_mod', modControlAfter);
+    await setState(db, 'excel_mod_control', modControlAfter);
+  }
+  await setState(db, 'last_push', String(Date.now()));
+  await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
+
+  return {
+    success: true,
+    connected: true,
+    filesUpdated: report,
+    message: 'Archivo maestro sincronizado exitosamente con OneDrive'
   };
+}
+
+/** BD -> Excel (sincroniza de forma directa al archivo maestro en OneDrive) */
+export async function pushToExcel(db, opts = {}) {
+  await ensureTables(db);
+  const acc = await getAccess(db);
+  if (!acc) return { success: false, connected: false, message: 'OneDrive aún no vinculado' };
+  const { token, row } = acc;
+  const onlySheet = opts?.onlySheet || null;
+
+  let targetFile = (row.item_id && row.file_name) ? { id: row.item_id, name: row.file_name } : null;
+  if (!targetFile) {
+    const targets = await findTargets(token, row);
+    if (targets.length === 0) return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
+    targetFile = targets.find((t) => /TEST/i.test(t.name)) || targets.find((t) => t.id === row.item_id) || targets[0];
+    if (targetFile.id !== row.item_id) {
+      await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(targetFile.id, targetFile.name).run();
+    }
+  }
 
   const result = await withLock(db, 'sync', async () => {
     let out;
     for (let n = 0; n < 2; n++) {
       await setState(db, 'dirty', '0');
-      out = await doPush();
+      out = await doPushInternal(db, token, targetFile, onlySheet);
       if ((await getState(db, 'dirty')) !== '1') break;
     }
     return out;
@@ -1057,6 +1083,56 @@ export async function pushToExcel(db, opts = {}) {
   if (result && result.busy) {
     await setState(db, 'dirty', '1');
     return { success: true, queued: true };
+  }
+  return result;
+}
+
+/** Sincronización BIDIRECCIONAL completa (Excel <-> BD):
+ * 1. PULL prioritario desde Excel para adoptar cualquier celda borrada o editada en Excel.
+ * 2. PUSH hacia Excel para reflejar cualquier borrado o nuevo registro hecho en la app.
+ */
+export async function syncBidirectional(db, opts = {}) {
+  await ensureTables(db);
+  const acc = await getAccess(db);
+  if (!acc) return { success: false, connected: false, message: 'OneDrive aún no vinculado' };
+  const { token, row } = acc;
+
+  let targetFile = (row.item_id && row.file_name) ? { id: row.item_id, name: row.file_name } : null;
+  if (!targetFile) {
+    const targets = await findTargets(token, row);
+    if (targets.length === 0) return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
+    targetFile = targets.find((t) => /TEST/i.test(t.name)) || targets.find((t) => t.id === row.item_id) || targets[0];
+    if (targetFile.id !== row.item_id) {
+      await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(targetFile.id, targetFile.name).run();
+    }
+  }
+
+  const result = await withLock(db, 'sync', async () => {
+    // 1) PULL primero desde Excel con force: true (elimina en BD lo borrado en Excel, limpia celdas vacías)
+    let pullChanges = 0;
+    try {
+      pullChanges = await pullFromExcel(db, token, targetFile.id, { force: true });
+    } catch (err) {
+      console.error('Error en pull bidireccional:', err);
+    }
+
+    // 2) PUSH hacia Excel para consolidar (vacía en Excel filas sobrantes si se borró en la app)
+    await setState(db, 'dirty', '0');
+    const pushResult = await doPushInternal(db, token, targetFile, null);
+
+    await markDbWrite(db);
+
+    return {
+      success: true,
+      connected: true,
+      pullChanges,
+      pushResult,
+      message: 'Sincronización bidireccional completada con éxito'
+    };
+  });
+
+  if (result && result.busy) {
+    return { success: false, busy: true, message: 'Sincronización en curso, por favor espere unos segundos' };
   }
   return result;
 }
