@@ -2644,38 +2644,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 })()}
               </div>
 
-              {/* Accesos rápidos de hora 100% Simétricos y más compactos */}
-              <div className="grid grid-cols-3 gap-1.5 pt-0.5">
-                <button
-                  type="button"
-                  onClick={() => setManualTardeTime(getCurrentTimeStr())}
-                  className="h-8 px-1 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
-                  title="Hora actual"
-                >
-                  Hora Actual
-                </button>
-                <button
-                  type="button"
-                  onClick={() => item.horaInicioProg && setManualTardeTime(item.horaInicioProg)}
-                  className="h-8 px-1 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center truncate"
-                  title={`Hora programada: ${item.horaInicioProg || '--:--'}`}
-                >
-                  Prog. ({item.horaInicioProg || '--:--'})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const [h, m] = (manualTardeTime || getCurrentTimeStr()).split(':').map(Number);
-                    const nextM = (m + 5) % 60;
-                    const nextH = m + 5 >= 60 ? (h + 1) % 24 : h;
-                    setManualTardeTime(`${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`);
-                  }}
-                  className="h-8 px-1 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition active:scale-95 flex items-center justify-center text-center"
-                >
-                  +5 min
-                </button>
-              </div>
-
               {/* Botones de Acción 50% - 50% Perfectamente Simétricos y más chicos */}
               <div className="grid grid-cols-2 gap-2 pt-1.5">
                 <button
