@@ -386,6 +386,16 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     return [...set].sort();
   }, [data]);
 
+  const [isCarreraModalOpen, setIsCarreraModalOpen] = useState(false);
+  const [carreraSearch, setCarreraSearch] = useState('');
+  const carreraModalFade = useFadeModal(isCarreraModalOpen, () => setIsCarreraModalOpen(false), 200);
+
+  const carrerasFiltradas = useMemo(() => {
+    if (!carreraSearch.trim()) return carrerasUnicas;
+    const q = carreraSearch.toLowerCase();
+    return carrerasUnicas.filter(c => c.toLowerCase().includes(q));
+  }, [carrerasUnicas, carreraSearch]);
+
   // Función para alternar selección múltiple de pisos
   const handleTogglePiso = (val) => {
     if (!val) {
@@ -1389,28 +1399,27 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             ))}
           </div>
 
-          {/* Selector de Carrera Desplegable (Limpio y profesional, sustituye las 16 pastillas desbordadas) */}
+          {/* Selector de Carrera (Botón que abre ventana personalizada acorde a la app) */}
           {carrerasUnicas.length > 0 && (
-            <div className="hidden sm:inline-flex relative items-center shrink-0">
-              <select
-                value={selectedCarrera}
-                onChange={(e) => setSelectedCarrera(e.target.value)}
-                className={`h-7 pl-2.5 pr-7 text-xs font-bold rounded-xl border transition appearance-none cursor-pointer max-w-[210px] truncate ${
-                  selectedCarrera
-                    ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-2xs'
-                    : 'bg-slate-100 dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700'
-                }`}
-                title="Filtrar por carrera"
-              >
-                <option value="">Todas las carreras ({carrerasUnicas.length})</option>
-                {carrerasUnicas.map(c => (
-                  <option key={c} value={c} className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-white">
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2 pointer-events-none text-slate-400 dark:text-zinc-400" />
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCarreraSearch('');
+                setIsCarreraModalOpen(true);
+              }}
+              className={`hidden sm:inline-flex h-7 px-2.5 rounded-xl border text-xs font-bold transition items-center gap-1.5 active:scale-95 shrink-0 max-w-[210px] ${
+                selectedCarrera
+                  ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-2xs'
+                  : 'bg-slate-100 dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800'
+              }`}
+              title="Filtrar por carrera"
+            >
+              <GraduationCap className={`w-3.5 h-3.5 shrink-0 ${selectedCarrera ? 'text-slate-950' : 'text-amber-500'}`} />
+              <span className="truncate">
+                {selectedCarrera || `Carreras (${carrerasUnicas.length})`}
+              </span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
+            </button>
           )}
 
           {/* Boton Toggle Filtros Avanzados (Solo en móvil para no saturar) */}
@@ -1452,27 +1461,26 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             ))}
           </div>
 
-          {/* Carrera Select (En móvil dentro del menú filtros) */}
+          {/* Carrera Button (En móvil dentro del menú filtros, abre ventana acorde a la app) */}
           {carrerasUnicas.length > 0 && (
-            <div className="flex sm:hidden relative items-center w-full">
-              <select
-                value={selectedCarrera}
-                onChange={(e) => setSelectedCarrera(e.target.value)}
-                className={`w-full h-8 pl-3 pr-8 text-xs font-bold rounded-xl border transition appearance-none cursor-pointer ${
-                  selectedCarrera
-                    ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black'
-                    : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300'
-                }`}
-              >
-                <option value="">Todas las carreras ({carrerasUnicas.length})</option>
-                {carrerasUnicas.map(c => (
-                  <option key={c} value={c} className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-white">
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 pointer-events-none text-slate-400 dark:text-zinc-400" />
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCarreraSearch('');
+                setIsCarreraModalOpen(true);
+              }}
+              className={`flex sm:hidden h-8 px-3 rounded-xl border text-xs font-bold transition items-center justify-between w-full active:scale-98 ${
+                selectedCarrera
+                  ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black'
+                  : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 truncate">
+                <GraduationCap className={`w-4 h-4 shrink-0 ${selectedCarrera ? 'text-slate-950' : 'text-amber-500'}`} />
+                <span className="truncate">{selectedCarrera || `Todas las carreras (${carrerasUnicas.length})`}</span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            </button>
           )}
 
           {/* Pisos Pills (Con selección múltiple táctil) */}
@@ -2877,6 +2885,142 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         document.body
       );
     })()
+  }
+  {/* VENTANA MODAL PARA SELECCIONAR CARRERA (100% PERSONALIZADA ACORDE A LA APP) */}
+  {
+    carreraModalFade.shouldRender && typeof document !== 'undefined' && createPortal(
+      <div
+        className={`fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 ${carreraModalFade.backdropClass}`}
+        onClick={() => carreraModalFade.requestClose()}
+      >
+        <div
+          className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${carreraModalFade.modalClass} flex flex-col max-h-[85vh] animate-scale-up`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Encabezado */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 mb-3 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/80 flex items-center justify-center text-amber-900 dark:text-amber-300 shrink-0">
+                <GraduationCap className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+                  Filtrar por Carrera
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-tight">
+                  {carrerasUnicas.length} carreras disponibles
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => carreraModalFade.requestClose()}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+              title="Cerrar ventana"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+
+          {/* Buscador de carreras */}
+          <div className="relative mb-3 shrink-0">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 stroke-[2.2]" />
+            <input
+              type="text"
+              value={carreraSearch}
+              onChange={(e) => setCarreraSearch(e.target.value)}
+              placeholder="Buscar carrera (ej: Derecho, Marketing...)"
+              className="w-full pl-8 pr-7 py-2 text-xs bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30] transition font-bold"
+              autoFocus
+            />
+            {carreraSearch && (
+              <button
+                type="button"
+                onClick={() => setCarreraSearch('')}
+                className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Lista de carreras con scroll temático oscuro */}
+          <div className="overflow-y-auto space-y-1.5 pr-1 flex-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {/* Opción: Todas las Carreras */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCarrera('');
+                carreraModalFade.requestClose();
+              }}
+              className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition flex items-center justify-between active:scale-98 ${
+                selectedCarrera === ''
+                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                  : 'bg-slate-50 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-800 dark:text-zinc-200 border border-slate-200/60 dark:border-zinc-800/80'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <GraduationCap className={`w-4 h-4 shrink-0 ${selectedCarrera === '' ? 'text-slate-950' : 'text-amber-500'}`} />
+                <span>Todas las carreras</span>
+              </div>
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold ${
+                selectedCarrera === '' ? 'bg-slate-950 text-white' : 'bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+              }`}>
+                {countTotal} clases
+              </span>
+            </button>
+
+            {/* Carreras filtradas */}
+            {carrerasFiltradas.length === 0 ? (
+              <div className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
+                No se encontraron carreras que coincidan
+              </div>
+            ) : (
+              carrerasFiltradas.map((car) => {
+                const isSel = selectedCarrera === car;
+                const carClassCount = data.filter(c => String(c.carrera || '').trim() === car).length;
+                return (
+                  <button
+                    key={car}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCarrera(car);
+                      carreraModalFade.requestClose();
+                    }}
+                    className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition flex items-center justify-between active:scale-98 ${
+                      isSel
+                        ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                        : 'bg-slate-50 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-800 dark:text-zinc-200 border border-slate-200/60 dark:border-zinc-800/80'
+                    }`}
+                  >
+                    <span className="break-words pr-2">{car}</span>
+                    {carClassCount > 0 && (
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md shrink-0 font-bold ${
+                        isSel ? 'bg-slate-950 text-white' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                      }`}>
+                        {carClassCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* Pie de modal */}
+          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => carreraModalFade.requestClose()}
+              className="w-full h-9 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-95 flex items-center justify-center text-center"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )
   }
     </div>
   );
