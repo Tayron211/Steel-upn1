@@ -632,6 +632,42 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     setManualTardeTime(initialTime);
   };
 
+  const handleTimeChange = (raw) => {
+    if (!raw) {
+      setManualTardeTime('');
+      return;
+    }
+    // Permitir dígitos y dos puntos
+    const sanitized = raw.replace(/[^\d:]/g, '').slice(0, 5);
+    const digitsOnly = sanitized.replace(/\D/g, '');
+    // Si escribe 3 dígitos seguidos sin dos puntos (ej: 171), insertar ':' automáticamente
+    if (!sanitized.includes(':') && digitsOnly.length >= 3) {
+      setManualTardeTime(`${digitsOnly.slice(0, 2)}:${digitsOnly.slice(2, 4)}`);
+      return;
+    }
+    setManualTardeTime(sanitized);
+  };
+
+  const handleTimeBlur = () => {
+    if (!manualTardeTime) return;
+    let t = manualTardeTime.trim();
+    if (/^\d{3,4}$/.test(t)) {
+      const padded = t.padStart(4, '0');
+      t = `${padded.slice(0, 2)}:${padded.slice(2, 4)}`;
+    } else if (/^\d{1,2}:\d{1,2}$/.test(t)) {
+      const [h, m] = t.split(':');
+      t = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+    } else if (/^\d{1,2}$/.test(t)) {
+      t = `${t.padStart(2, '0')}:00`;
+    }
+    const parts = t.split(':');
+    if (parts.length === 2) {
+      let h = Math.min(23, Math.max(0, parseInt(parts[0], 10) || 0));
+      let m = Math.min(59, Math.max(0, parseInt(parts[1], 10) || 0));
+      setManualTardeTime(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    }
+  };
+
   const handleOpenFaltaOptions = (item) => {
     setFaltaOptionsItem(item);
   };
@@ -639,9 +675,18 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const handleSaveManualTarde = async (e) => {
     if (e) e.preventDefault();
     const item = manualTardeFade.cachedData || manualTardeItem;
-    if (!item || !manualTardeTime) return;
+    if (!item) return;
 
-    const timeVal = manualTardeTime.trim();
+    let timeVal = (manualTardeTime || getCurrentTimeStr()).trim();
+    if (/^\d{3,4}$/.test(timeVal)) {
+      const padded = timeVal.padStart(4, '0');
+      timeVal = `${padded.slice(0, 2)}:${padded.slice(2, 4)}`;
+    } else if (/^\d{1,2}:\d{1,2}$/.test(timeVal)) {
+      const [h, m] = timeVal.split(':');
+      timeVal = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+    } else if (!timeVal.includes(':')) {
+      timeVal = getCurrentTimeStr();
+    }
     const updates = {
       asistencia: 'SI',
       puntualidad: 'TARDE',
@@ -2436,7 +2481,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   })()
   }
 
-  {/* MODAL PARA CAMBIAR HORA MANUALMENTE AL MANTENER PRESIONADO 'TARDE' */}
+  {/* VENTANA MODAL PARA CAMBIAR HORA MANUALMENTE AL MANTENER PRESIONADO 'TARDE' (100% VENTANA CENTRADA) */}
   {
     manualTardeFade.shouldRender && typeof document !== 'undefined' && (() => {
       const item = manualTardeFade.cachedData || manualTardeItem;
@@ -2444,15 +2489,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
       return createPortal(
         <div
-          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 ${manualTardeFade.backdropClass}`}
+          className={`fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-md flex items-center justify-center z-[9999] p-4 ${manualTardeFade.backdropClass}`}
           onClick={() => manualTardeFade.requestClose()}
         >
           <div
-            className={`apple-liquid-modal rounded-t-[28px] sm:rounded-2xl max-w-sm w-full p-4 sm:p-5 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${manualTardeFade.modalClass}`}
+            className={`apple-liquid-modal rounded-2xl sm:rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl overflow-hidden ${manualTardeFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3 sm:hidden"></div>
-
             <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-zinc-800 mb-3.5">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs">
@@ -2479,17 +2522,26 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             <form onSubmit={handleSaveManualTarde} className="space-y-3">
               <div>
                 <label className="block text-center text-[10px] font-black text-slate-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
-                  Hora de Llegada Real
+                  Hora de Llegada Real (Formato 24 hrs)
                 </label>
                 <div className="flex justify-center">
                   <input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9:]*"
+                    maxLength={5}
                     value={manualTardeTime}
-                    onChange={(e) => setManualTardeTime(e.target.value)}
+                    onChange={(e) => handleTimeChange(e.target.value)}
+                    onBlur={handleTimeBlur}
+                    placeholder="17:16"
                     required
-                    className="w-36 text-center font-mono font-black text-2xl py-1.5 px-2 rounded-xl border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner [&::-webkit-datetime-edit]:text-center [&::-webkit-datetime-edit-fields-wrapper]:mx-auto [&::-webkit-datetime-edit-fields-wrapper]:justify-center [&::-webkit-datetime-edit]:justify-center [text-align-last:center]"
+                    autoFocus
+                    className="w-36 text-center font-mono font-black text-2xl py-1.5 px-3 rounded-xl border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 placeholder:text-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner tracking-widest"
                   />
                 </div>
+                <p className="text-center text-[10px] text-slate-400 dark:text-zinc-500 mt-1 font-medium">
+                  Escribe la hora directamente con el teclado
+                </p>
               </div>
 
               {/* Accesos rápidos de hora 100% Simétricos y más compactos */}
@@ -2548,7 +2600,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     })()
   }
 
-  {/* MODAL DE OPCIONES AL MANTENER PRESIONADO 'FALTA' (CLASE REMOTA / CLASE ADELANTADA) */}
+  {/* VENTANA MODAL DE OPCIONES AL MANTENER PRESIONADO 'FALTA' (100% VENTANA CENTRADA) */}
   {
     faltaOptionsFade.shouldRender && typeof document !== 'undefined' && (() => {
       const item = faltaOptionsFade.cachedData || faltaOptionsItem;
@@ -2556,15 +2608,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
       return createPortal(
         <div
-          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 ${faltaOptionsFade.backdropClass}`}
+          className={`fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-md flex items-center justify-center z-[9999] p-4 ${faltaOptionsFade.backdropClass}`}
           onClick={() => faltaOptionsFade.requestClose()}
         >
           <div
-            className={`apple-liquid-modal rounded-t-[28px] sm:rounded-2xl max-w-sm w-full p-4 sm:p-5 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${faltaOptionsFade.modalClass}`}
+            className={`apple-liquid-modal rounded-2xl sm:rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl overflow-hidden ${faltaOptionsFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3 sm:hidden"></div>
-
             <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-zinc-800 mb-3.5">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 flex items-center justify-center shadow-xs">
@@ -2641,6 +2691,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       );
     })()
   }
-    </div >
+    </div>
   );
 }
