@@ -396,7 +396,7 @@ async function pullFromLinkedExcelToWeb(buffer) {
     await fetch('/api/import-excel-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ asistencia, tickets, manualSheets, reservas, clearExisting: true })
+      body: JSON.stringify({ asistencia, tickets, manualSheets, reservas, clearExisting: false })
     });
   }
 }
@@ -405,12 +405,17 @@ async function checkExternalExcelChange() {
   if (!cachedHandle || isSyncingNow) return;
   try {
     const file = await cachedHandle.getFile();
+    // Si acabamos de escribir localmente en los últimos 15s, ignorar cambios (es el propio sistema sincronizando)
+    if (lastLocalSyncAt && Date.now() - lastLocalSyncAt < 15000) {
+      lastKnownFileModified = file.lastModified;
+      return;
+    }
     if (!lastKnownFileModified) {
       lastKnownFileModified = file.lastModified;
       return;
     }
-    // Si el archivo en disco cambió (el usuario editó o borró algo en Excel)
-    if (file.lastModified > lastKnownFileModified + 800) {
+    // Si el archivo en disco cambió (el usuario editó o borró algo en Excel externamente)
+    if (file.lastModified > lastKnownFileModified + 2500) {
       isSyncingNow = true;
       notifyListeners({ linked: true, fileName: cachedHandle.name, status: 'syncing' });
       const buf = await file.arrayBuffer();

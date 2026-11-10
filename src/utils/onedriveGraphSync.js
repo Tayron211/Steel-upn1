@@ -608,7 +608,7 @@ async function pullAsistencia(db, used) {
   const iFin = colOf(c, ['HORA FINAL REAL']);
   const iAs = colOf(c, ['ASISTENCIA']);
   const iPu = colOf(c, ['PUNTUALIDAD']);
-  const iOb = colOf(c, ['OBSERVACION']);
+  const iOb = colOf(c, ['OBSERVACION', 'OBSERVACIÓN', 'OBS', 'OBSER']);
   const dbRows = (await db.prepare('SELECT * FROM asistencia').all()).results || [];
   const byKey = new Map();
   for (const r of dbRows) {
@@ -630,6 +630,15 @@ async function pullAsistencia(db, used) {
     const pun = rawPu ? (rawPu === '-' ? '-' : rawPu) : '-';
     const obs = iOb >= 0 ? String(row[iOb] ?? '').trim() : '';
     for (const d of list) {
+      // PROTECCIÓN CONTRA SOBREESCRITURA DE CAMBIOS DE LA APP:
+      // Si el registro fue modificado en la app en los últimos 5 minutos (300 s), NO sobreescribirlo
+      if (d.updated_at) {
+        const upMs = new Date(d.updated_at.includes('Z') ? d.updated_at : d.updated_at.replace(' ', 'T') + 'Z').getTime();
+        if (!isNaN(upMs) && Date.now() - upMs < 300000) {
+          continue;
+        }
+      }
+
       const diff =
         (ini !== String(d.hora_inicio_real || '')) ||
         (fin !== String(d.hora_final_real || '')) ||
@@ -760,7 +769,7 @@ async function pushAsistencia(db, token, itemId, preRows) {
     },
     { idx: colOf(c, ['ASISTENCIA']), get: (d) => (String(d.asistencia || '').toUpperCase() === 'PENDIENTE' ? '' : d.asistencia || '') },
     { idx: colOf(c, ['PUNTUALIDAD']), get: (d) => (d.puntualidad || '') },
-    { idx: colOf(c, ['OBSERVACION']), get: (d) => d.observacion || '' }
+    { idx: colOf(c, ['OBSERVACION', 'OBSERVACIÓN', 'OBS', 'OBSER']), get: (d) => d.observacion || '' }
   ].filter((m) => m.idx >= 0);
   if (managed.length === 0) return { skipped: 'sin columnas' };
 
@@ -863,7 +872,7 @@ async function withLock(db, name, fn) {
   }
 }
 
-/** Excel -> BD si CONTROL DOCENTE - TAY.xlsx fue modificado externamente */
+/** Excel -> BD si CONTROL DOCENTE fue modificado externamente (por un humano en Excel) */
 export async function pullIfExcelChanged(db) {
   await ensureTables(db);
   const acc = await getAccess(db);
@@ -872,10 +881,25 @@ export async function pullIfExcelChanged(db) {
   const controlId = row.item_id;
   if (!controlId) return { success: false, connected: false };
 
+  // 1) Si la app tiene escrituras locales pendientes (dirty) o muy recientes (últimos 45 s),
+  // NO hacer pull para evitar pisar los datos de la app con un Excel que aún se está sincronizando.
+  const dirty = await getState(db, 'dirty');
+  if (dirty === '1') {
+    return { success: true, pulled: false, skipped: 'dirty_pending' };
+  }
+  const lastWriteTs = await getState(db, 'last_write_ts');
+  if (lastWriteTs && Date.now() - Number(lastWriteTs) < 45000) {
+    return { success: true, pulled: false, skipped: 'cooldown_recent_write' };
+  }
+
   const modControl = await itemMod(token, controlId);
   const lastControl = (await getState(db, 'excel_mod_control')) || (await getState(db, 'excel_mod'));
 
-  if (!lastControl && modControl) await setState(db, 'excel_mod_control', modControl);
+  if (!lastControl && modControl) {
+    await setState(db, 'excel_mod_control', modControl);
+    await setState(db, 'excel_mod', modControl);
+    return { success: true, pulled: false };
+  }
 
   const controlChanged = Boolean(modControl && lastControl && modControl !== lastControl);
   if (!controlChanged) {
@@ -906,12 +930,14 @@ export async function pullIfExcelChanged(db) {
   });
 }
 
-/** BD -> Excel (sincroniza CONTROL DOCENTE - TAY.xlsx como archivo maestro único: asistencia, tickets, manuales y reservas) */
-export async function pushToExcel(db) {
+/** BD -> Excel (sincroniza de forma ultra-rápida y directa al archivo maestro en OneDrive) */
+export async function pushToExcel(db, opts = {}) {
   await ensureTables(db);
   const acc = await getAccess(db);
   if (!acc) return { success: false, connected: false, message: 'OneDrive aún no vinculado' };
   const { token, row } = acc;
+  const onlySheet = opts?.onlySheet || null;
+
   const doPush = async () => {
     const targets = await findTargets(token, row);
     if (targets.length === 0) return { success: false, message: 'No se encontró archivo CONTROL DOCENTE en OneDrive' };
@@ -920,65 +946,62 @@ export async function pushToExcel(db) {
       await db.prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'").bind(primary.id, primary.name).run();
     }
 
-    // 1) Sincronizar primero Excel -> BD de CONTROL DOCENTE SOLAMENTE si fue editado externamente en OneDrive
-    let pulled = 0;
-    const modControl = await itemMod(token, primary.id);
-    const lastModControl = (await getState(db, 'excel_mod_control')) || (await getState(db, 'excel_mod'));
-
-    if (modControl && lastModControl && modControl !== lastModControl) {
-      try {
-        pulled += await pullFromExcel(db, token, primary.id);
-      } catch (e) {
-        console.error('Error importando desde Control Docente:', e);
-      }
-    }
-
-    if (pulled > 0) await markDbWrite(db);
-
-    // 2) BD -> Excel (CONTROL DOCENTE: asistencia, tickets, manuales, reservas)
-    const [asRes, ticketsRes, manualesRes, reservasRes] = await Promise.all([
-      db.prepare(
-        'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
-      ).all(),
-      db.prepare(SPECS.tickets.select).all(),
-      db.prepare(SPECS.manuales.select).all(),
-      db.prepare(SPECS.reservas.select).all()
-    ]);
-    const asRows = asRes.results || [];
-    const preRows = {
-      tickets: ticketsRes.results || [],
-      manuales: manualesRes.results || [],
-      reservas: reservasRes.results || []
-    };
-    const nrcMap = new Map();
-    const courseMap = new Map();
-    for (const a of asRows) {
-      const k = String(a.nrc || '').trim();
-      const unpadded = k ? k.replace(/^0+/, '') : '';
-      const padded = k ? k.padStart(5, '0') : '';
-      const cursoUpper = String(a.curso || '').trim().toUpperCase();
-      const obj = { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' };
-
-      if (k && (!nrcMap.has(k) || (!nrcMap.get(k).carrera && obj.carrera))) nrcMap.set(k, obj);
-      if (unpadded && (!nrcMap.has(unpadded) || (!nrcMap.get(unpadded).carrera && obj.carrera))) nrcMap.set(unpadded, obj);
-      if (padded && (!nrcMap.has(padded) || (!nrcMap.get(padded).carrera && obj.carrera))) nrcMap.set(padded, obj);
-
-      if (cursoUpper && (!courseMap.has(cursoUpper) || (!courseMap.get(cursoUpper).carrera && obj.carrera))) {
-        courseMap.set(cursoUpper, obj);
-      }
-    }
-    const ctx = { nrcMap, courseMap };
+    const targetFile = primary;
     const report = [];
-    for (const t of targets) {
-      const isPrimary = t.id === primary.id;
-      const r = {
-        file: t.name,
-        asistencia: await pushAsistencia(db, token, t.id, asRows),
-        tickets: await pushRecords(db, token, t.id, 'tickets', ctx, isPrimary, preRows.tickets),
-        manuales: await pushRecords(db, token, t.id, 'manuales', ctx, isPrimary, preRows.manuales),
-        reservas: await pushRecords(db, token, t.id, 'reservas', ctx, isPrimary, preRows.reservas)
-      };
-      report.push(r);
+
+    // 1) Asistencia (si no hay filtro o se pidió asistencia)
+    if (!onlySheet || onlySheet === 'asistencia') {
+      const asRes = await db.prepare(
+        'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
+      ).all();
+      const asRows = asRes.results || [];
+      const asReport = await pushAsistencia(db, token, targetFile.id, asRows);
+      report.push({ file: targetFile.name, asistencia: asReport });
+    }
+
+    // 2) Otras hojas (tickets, manuales, reservas)
+    if (!onlySheet || onlySheet !== 'asistencia') {
+      const fetchTickets = !onlySheet || onlySheet === 'tickets';
+      const fetchManuales = !onlySheet || onlySheet === 'manuales';
+      const fetchReservas = !onlySheet || onlySheet === 'reservas';
+
+      const [ticketsRes, manualesRes, reservasRes, asRes] = await Promise.all([
+        fetchTickets ? db.prepare(SPECS.tickets.select).all() : Promise.resolve({ results: [] }),
+        fetchManuales ? db.prepare(SPECS.manuales.select).all() : Promise.resolve({ results: [] }),
+        fetchReservas ? db.prepare(SPECS.reservas.select).all() : Promise.resolve({ results: [] }),
+        db.prepare('SELECT nrc, docente, curso, carrera FROM asistencia').all()
+      ]);
+
+      const nrcMap = new Map();
+      const courseMap = new Map();
+      for (const a of (asRes.results || [])) {
+        const k = String(a.nrc || '').trim();
+        const unpadded = k ? k.replace(/^0+/, '') : '';
+        const padded = k ? k.padStart(5, '0') : '';
+        const cursoUpper = String(a.curso || '').trim().toUpperCase();
+        const obj = { docente: a.docente || '', curso: a.curso || '', carrera: a.carrera || '' };
+
+        if (k && (!nrcMap.has(k) || (!nrcMap.get(k).carrera && obj.carrera))) nrcMap.set(k, obj);
+        if (unpadded && (!nrcMap.has(unpadded) || (!nrcMap.get(unpadded).carrera && obj.carrera))) nrcMap.set(unpadded, obj);
+        if (padded && (!nrcMap.has(padded) || (!nrcMap.get(padded).carrera && obj.carrera))) nrcMap.set(padded, obj);
+
+        if (cursoUpper && (!courseMap.has(cursoUpper) || (!courseMap.get(cursoUpper).carrera && obj.carrera))) {
+          courseMap.set(cursoUpper, obj);
+        }
+      }
+      const ctx = { nrcMap, courseMap };
+
+      const fileReport = { file: targetFile.name };
+      if (fetchTickets) {
+        fileReport.tickets = await pushRecords(db, token, targetFile.id, 'tickets', ctx, true, ticketsRes.results || []);
+      }
+      if (fetchManuales) {
+        fileReport.manuales = await pushRecords(db, token, targetFile.id, 'manuales', ctx, true, manualesRes.results || []);
+      }
+      if (fetchReservas) {
+        fileReport.reservas = await pushRecords(db, token, targetFile.id, 'reservas', ctx, true, reservasRes.results || []);
+      }
+      report.push(fileReport);
     }
 
     // Actualizar timestamps de modificación de CONTROL DOCENTE
@@ -993,9 +1016,8 @@ export async function pushToExcel(db) {
     return { 
       success: true, 
       connected: true, 
-      pulled, 
       filesUpdated: report, 
-      message: 'Archivo maestro CONTROL DOCENTE - TEST.xlsx sincronizado al 100%' 
+      message: 'Archivo maestro sincronizado exitosamente con OneDrive' 
     };
   };
 

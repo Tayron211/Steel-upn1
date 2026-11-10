@@ -93,8 +93,13 @@ export async function onRequest(context) {
             const nowMs = String(Date.now());
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
-            // Disparar sincronización directa a OneDrive (pushToExcel maneja lock, snapshot y dirty)
-            await pushToExcel(db);
+            // Disparar sincronización directa y rápida a OneDrive según el módulo afectado
+            let onlySheet = null;
+            if (p.includes('/attendance')) onlySheet = 'asistencia';
+            else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
+            else if (p.includes('/tickets') || p.includes('/atenciones')) onlySheet = 'tickets';
+            else if (p.includes('/manual-sheets')) onlySheet = 'manuales';
+            await pushToExcel(db, { onlySheet });
           } catch (err) {
             console.error('Auto sync to OneDrive error:', err);
           }
