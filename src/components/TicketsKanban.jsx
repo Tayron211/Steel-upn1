@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createDbChangeGate } from '../utils/webSignGate';
-import { 
-  HandHelping, 
-  Search, 
-  Clock, 
-  CheckCircle2, 
-  Trash2, 
-  X, 
+import {
+  HandHelping,
+  Search,
+  Clock,
+  CheckCircle2,
+  Trash2,
+  X,
   RotateCcw,
   Check,
   User,
@@ -31,6 +31,7 @@ import SignatureCanvas from './SignatureCanvas';
 import { useFadeModal } from '../utils/useFadeModal';
 import CustomSelect from './CustomSelect';
 import CustomDatePicker from './CustomDatePicker';
+import CustomTimePicker from './CustomTimePicker';
 import { useAssistants } from '../utils/assistants';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
@@ -186,8 +187,8 @@ const getTicketPabPisoText = (ticket) => {
   return parts.join(' ');
 };
 
-export default function TicketsKanban({ 
-  initialNewTicket, 
+export default function TicketsKanban({
+  initialNewTicket,
   onClearInitialTicket,
   openModalTrigger = null,
   onConsumeModalTrigger = null,
@@ -271,12 +272,12 @@ export default function TicketsKanban({
           const merged = json.data.map(r => {
             const existing = roomMap.get(r.abrv);
             if (existing) {
-              return { 
-                ...existing, 
-                nombre: r.nombre || existing.nombre, 
+              return {
+                ...existing,
+                nombre: r.nombre || existing.nombre,
                 piso: r.piso || existing.piso,
                 pabellon: r.pabellon || existing.pabellon,
-                aforo: r.aforo || existing.aforo 
+                aforo: r.aforo || existing.aforo
               };
             }
             const nLower = (r.nombre || '').toLowerCase();
@@ -305,7 +306,7 @@ export default function TicketsKanban({
           setRoomsList(merged);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const filteredCalendarRooms = useMemo(() => {
@@ -335,10 +336,10 @@ export default function TicketsKanban({
       }
       if (calendarSearch.trim()) {
         const q = calendarSearch.trim().toLowerCase();
-        return room.abrv.toLowerCase().includes(q) || 
-               (room.nombre && room.nombre.toLowerCase().includes(q)) ||
-               (room.tag && room.tag.toLowerCase().includes(q)) ||
-               (room.tipoAmbiente && room.tipoAmbiente.toLowerCase().includes(q));
+        return room.abrv.toLowerCase().includes(q) ||
+          (room.nombre && room.nombre.toLowerCase().includes(q)) ||
+          (room.tag && room.tag.toLowerCase().includes(q)) ||
+          (room.tipoAmbiente && room.tipoAmbiente.toLowerCase().includes(q));
       }
       return true;
     });
@@ -380,7 +381,7 @@ export default function TicketsKanban({
         if (!fRecepcion && typeof localStorage !== 'undefined') {
           fRecepcion = localStorage.getItem(`upn_sign_recepcion_${t.id}`);
         }
-      } catch (e) {}
+      } catch (e) { }
       return {
         ...t,
         firmaEntrega: fEntrega || null,
@@ -414,7 +415,7 @@ export default function TicketsKanban({
       if (json.success && Array.isArray(json.data)) {
         setTickets(mergeWithLocalSignatures(json.data));
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   useEffect(() => {
@@ -479,11 +480,11 @@ export default function TicketsKanban({
     setLoanRango(computeRango(newTime));
   };
 
-  // Generador oficial de Tabla de Préstamos en HTML y TSV (10 columnas oficiales de ATENCIONES 2026-2)
-  // FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PABELLÓN | TIPO DE SOLICITUD | ESTADO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
+  // Generador oficial de Tabla de Préstamos en HTML y TSV (12 columnas oficiales de ATENCIONES 2026-2)
+  // FECHA | DIA | HORA DE REPORTE | RANGO | AMBIENTE | PISO | PABELLÓN | TIPO DE SOLICITUD | ESTADO | USUARIO | DESCRIPCIÓN / SOLUCIÓN | RESPONSABLE
   const generateTicketsTableData = (items) => {
     const list = Array.isArray(items) ? items : [items];
-    const headers = ['FECHA', 'DIA', 'HORA DE REPORTE', 'RANGO', 'AMBIENTE', 'PABELLÓN', 'TIPO DE SOLICITUD', 'ESTADO', 'DESCRIPCIÓN / SOLUCIÓN', 'RESPONSABLE'];
+    const headers = ['FECHA', 'DIA', 'HORA DE REPORTE', 'RANGO', 'AMBIENTE', 'PISO', 'PABELLÓN', 'TIPO DE SOLICITUD', 'ESTADO', 'USUARIO', 'DESCRIPCIÓN / SOLUCIÓN', 'RESPONSABLE'];
 
     const thStyle = 'background-color:#FFC000;color:#000000;font-weight:bold;border:1px solid #000000;padding:6px 10px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:nowrap;';
     const tdCenter = 'border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;background-color:#FFFFFF;color:#000000;white-space:nowrap;';
@@ -510,15 +511,21 @@ export default function TicketsKanban({
 
       const rango = ticket.rango || computeRango(hora);
       const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
+      const piso = cleanExcelVal(ticket.piso) || deduceFloor(ambiente) || 'PRIMER PISO';
       const cleanPab = cleanExcelVal(ticket.pabellon);
       const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
       const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
       const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
+      const usuario = ticket.usuario || (String(ticket.descripcionSolucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE');
       const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
       const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
 
       const isAtendido = estado === 'ATENDIDO' || estado === 'DEVUELTO' || estado === 'RESUELTO';
-      const tdEstado = `border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;font-weight:bold;background-color:${isAtendido ? '#C6EFCE' : '#FFEB9C'};color:${isAtendido ? '#006100' : '#9C5700'};white-space:nowrap;`;
+      const isProceso = estado === 'EN PROCESO';
+      const bgCol = isAtendido ? '#C6EFCE' : isProceso ? '#FFC7CE' : '#FFEB9C';
+      const textCol = isAtendido ? '#006100' : isProceso ? '#9C0006' : '#9C5700';
+
+      const tdEstado = `border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;font-weight:bold;background-color:${bgCol};color:${textCol};white-space:nowrap;`;
 
       return `<tr>
         <td style="${tdCenter}">${fecha}</td>
@@ -526,9 +533,11 @@ export default function TicketsKanban({
         <td style="${tdCenter}">${hora}</td>
         <td style="${tdCenter}">${rango}</td>
         <td style="${tdCenter}">${ambiente}</td>
+        <td style="${tdCenter}">${piso}</td>
         <td style="${tdCenter}">${pabellon}</td>
         <td style="${tdLeft}">${tipo}</td>
         <td style="${tdEstado}">${estado}</td>
+        <td style="${tdCenter}">${usuario}</td>
         <td style="${tdLeft}">${descripcion}</td>
         <td style="${tdLeft}">${responsable}</td>
       </tr>`;
@@ -570,14 +579,16 @@ export default function TicketsKanban({
 
       const rango = ticket.rango || computeRango(hora);
       const ambiente = (ticket.ambiente || 'DOCENCIA').toUpperCase().trim();
+      const piso = cleanExcelVal(ticket.piso) || deduceFloor(ambiente) || 'PRIMER PISO';
       const cleanPab = cleanExcelVal(ticket.pabellon);
       const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
       const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
       const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
+      const usuario = ticket.usuario || (String(ticket.descripcionSolucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE');
       const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
       const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
 
-      return [fecha, dia, hora, rango, ambiente, pabellon, tipo, estado, descripcion, responsable].join('\t');
+      return [fecha, dia, hora, rango, ambiente, piso, pabellon, tipo, estado, usuario, descripcion, responsable].join('\t');
     });
 
     const plain = [headers.join('\t'), ...plainRows].join('\n');
@@ -706,14 +717,14 @@ export default function TicketsKanban({
       if (json.success) {
         const createdTicket = json.data;
         if (finalFirmaRecepcion) {
-          try { 
-            localStorage.setItem(`upn_sign_recepcion_${createdTicket.id}`, finalFirmaRecepcion); 
-          } catch (e) {}
+          try {
+            localStorage.setItem(`upn_sign_recepcion_${createdTicket.id}`, finalFirmaRecepcion);
+          } catch (e) { }
         }
 
         setTickets(prev => [createdTicket, ...prev]);
         setToastMessage('✅ Préstamo registrado con éxito en ATENCIONES');
-        
+
         // Reset form
         setPersonName('');
         setRoomInput('');
@@ -738,22 +749,22 @@ export default function TicketsKanban({
   // Dinámica Paso 2: Al devolver el objeto, el docente/alumno vuelve a firmar ("Entregué")
   const handleConfirmReturnWithSignature = async (ticket, passedSignature = null) => {
     const drawnReturnSign = passedSignature || (returnSignCanvasRef.current ? returnSignCanvasRef.current.getDataUrl() : null);
-    
+
     try {
       if (drawnReturnSign) {
         // Esta firma certifica que el docente/alumno ENTREGÓ el material de vuelta
         localStorage.setItem(`upn_sign_entrega_${ticket.id}`, drawnReturnSign);
         localStorage.setItem(`upn_sign_devolucion_${ticket.id}`, drawnReturnSign);
       }
-    } catch (e) {}
+    } catch (e) { }
 
     const now = new Date();
     const returnTime = now.toTimeString().slice(0, 5);
-    const newDesc = ticket.descripcionSolucion.includes('DEVUELTO') 
-      ? ticket.descripcionSolucion 
+    const newDesc = ticket.descripcionSolucion.includes('DEVUELTO')
+      ? ticket.descripcionSolucion
       : `${ticket.descripcionSolucion} [DEVUELTO ${returnTime}]`;
 
-    const updates = { 
+    const updates = {
       estado: 'ATENDIDO',
       descripcionSolucion: newDesc,
       firmaEntrega: drawnReturnSign || ticket.firmaEntrega || null,
@@ -781,10 +792,10 @@ export default function TicketsKanban({
 
   // Recibir devolución directa sin firma (por si el docente tuvo que salir de prisa)
   const handleMarkReturnedDirect = async (ticket) => {
-    const updates = { 
+    const updates = {
       estado: 'ATENDIDO',
-      descripcionSolucion: ticket.descripcionSolucion.includes('DEVUELTO') 
-        ? ticket.descripcionSolucion 
+      descripcionSolucion: ticket.descripcionSolucion.includes('DEVUELTO')
+        ? ticket.descripcionSolucion
         : `${ticket.descripcionSolucion} [DEVUELTO]`
     };
 
@@ -815,7 +826,7 @@ export default function TicketsKanban({
 
     try {
       localStorage.setItem(`upn_sign_recepcion_${ticketId}`, drawnSignature);
-    } catch (e) {}
+    } catch (e) { }
 
     const updates = { firmaRecepcion: drawnSignature };
     setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...updates } : t));
@@ -862,7 +873,7 @@ export default function TicketsKanban({
   const filteredTickets = useMemo(() => {
     if (!search.trim()) return tickets;
     const s = search.toLowerCase();
-    return tickets.filter(t => 
+    return tickets.filter(t =>
       (t.ambiente || '').toLowerCase().includes(s) ||
       (t.tipoSolicitud || '').toLowerCase().includes(s) ||
       (t.descripcionSolucion || '').toLowerCase().includes(s)
@@ -941,11 +952,10 @@ export default function TicketsKanban({
                 if (document.documentElement) document.documentElement.scrollTop = 0;
                 if (document.body) document.body.scrollTop = 0;
               }}
-              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
-                activeViewTab === 'ACTIVOS'
+              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${activeViewTab === 'ACTIVOS'
                   ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
                   : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <span>Activos</span>
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-[#FDBA30] text-slate-950">
@@ -960,11 +970,10 @@ export default function TicketsKanban({
                 if (document.documentElement) document.documentElement.scrollTop = 0;
                 if (document.body) document.body.scrollTop = 0;
               }}
-              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
-                activeViewTab === 'CONCLUIDOS'
+              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${activeViewTab === 'CONCLUIDOS'
                   ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
                   : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <span>Devoluciones</span>
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none bg-emerald-500 text-white">
@@ -1031,7 +1040,7 @@ export default function TicketsKanban({
               const isReceivingInline = inlineReceiveTicketId === ticket.id;
 
               return (
-                <div 
+                <div
                   key={ticket.id}
                   className="bg-white dark:bg-[#0c0c0f] border-2 border-amber-400/70 dark:border-amber-500/40 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between hover:border-amber-500 transition-all overflow-hidden relative"
                 >
@@ -1253,7 +1262,7 @@ export default function TicketsKanban({
               const ben = parseBeneficiary(ticket.descripcionSolucion);
 
               return (
-                <div 
+                <div
                   key={ticket.id}
                   className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between opacity-95 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
                 >
@@ -1387,11 +1396,11 @@ export default function TicketsKanban({
           MODAL DE SELECCIÓN DE AULAS ESTILO CALENDARIO (Distribución de Sede)
           ========================================================================= */}
       {roomCalendarFade.shouldRender && createPortal(
-        <div 
+        <div
           className={`fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm ${roomCalendarFade.backdropClass}`}
           onClick={() => roomCalendarFade.requestClose()}
         >
-          <div 
+          <div
             className={`w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${roomCalendarFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1427,11 +1436,10 @@ export default function TicketsKanban({
                 <button
                   type="button"
                   onClick={() => setCalendarPabellon('A')}
-                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
-                    calendarPabellon === 'A'
+                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${calendarPabellon === 'A'
                       ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Building2 className="w-3.5 h-3.5" />
                   <span>Pabellón A</span>
@@ -1439,11 +1447,10 @@ export default function TicketsKanban({
                 <button
                   type="button"
                   onClick={() => setCalendarPabellon('B')}
-                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
-                    calendarPabellon === 'B'
+                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${calendarPabellon === 'B'
                       ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Building2 className="w-3.5 h-3.5" />
                   <span>Pabellón B</span>
@@ -1451,11 +1458,10 @@ export default function TicketsKanban({
                 <button
                   type="button"
                   onClick={() => setCalendarPabellon('TODOS')}
-                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
-                    calendarPabellon === 'TODOS'
+                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${calendarPabellon === 'TODOS'
                       ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span>Todos</span>
@@ -1466,29 +1472,28 @@ export default function TicketsKanban({
               <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar text-xs">
                 {['TODOS', 'SÓTANO', '1ER PISO', '2DO PISO', '3ER PISO', '4TO PISO', '5TO PISO'].map((pisoKey) => {
                   const isActive = calendarPiso === pisoKey;
-                  const label = pisoKey === 'TODOS' 
-                    ? 'Todos los Pisos' 
-                    : pisoKey === 'SÓTANO' 
-                      ? 'Sótano' 
-                      : pisoKey === '1ER PISO' 
-                        ? 'Piso 1' 
-                        : pisoKey === '2DO PISO' 
-                          ? 'Piso 2' 
-                          : pisoKey === '3ER PISO' 
-                            ? 'Piso 3' 
-                            : pisoKey === '4TO PISO' 
-                              ? 'Piso 4' 
+                  const label = pisoKey === 'TODOS'
+                    ? 'Todos los Pisos'
+                    : pisoKey === 'SÓTANO'
+                      ? 'Sótano'
+                      : pisoKey === '1ER PISO'
+                        ? 'Piso 1'
+                        : pisoKey === '2DO PISO'
+                          ? 'Piso 2'
+                          : pisoKey === '3ER PISO'
+                            ? 'Piso 3'
+                            : pisoKey === '4TO PISO'
+                              ? 'Piso 4'
                               : 'Piso 5';
                   return (
                     <button
                       key={pisoKey}
                       type="button"
                       onClick={() => setCalendarPiso(pisoKey)}
-                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
-                        isActive
+                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${isActive
                           ? 'bg-slate-950 dark:bg-zinc-800 text-[#FDBA30] font-black shadow-xs'
                           : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
-                      }`}
+                        }`}
                     >
                       {label}
                     </button>
@@ -1512,11 +1517,10 @@ export default function TicketsKanban({
                       key={cat.id}
                       type="button"
                       onClick={() => setCalendarCategory(cat.id)}
-                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
-                        isActive
+                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${isActive
                           ? 'bg-amber-400 text-slate-950 font-black shadow-xs ring-1 ring-amber-500/50'
                           : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
-                      }`}
+                        }`}
                     >
                       {cat.label}
                     </button>
@@ -1574,73 +1578,64 @@ export default function TicketsKanban({
                           setToastMessage(`✅ ${room.nombre || room.abrv} seleccionada (Aforo: ${room.aforo} pers.)`);
                           setTimeout(() => setToastMessage(''), 1800);
                         }}
-                        className={`p-2 sm:p-2.5 rounded-2xl border transition-all duration-150 flex flex-col items-center justify-between text-center active:scale-95 group relative min-h-[92px] ${
-                          isSelected
+                        className={`p-2 sm:p-2.5 rounded-2xl border transition-all duration-150 flex flex-col items-center justify-between text-center active:scale-95 group relative min-h-[92px] ${isSelected
                             ? 'bg-[#FDBA30] text-slate-950 border-[#FDBA30] shadow-md ring-2 ring-amber-400 font-black'
                             : 'bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 hover:bg-amber-50/40 dark:hover:bg-amber-950/20'
-                        }`}
+                          }`}
                       >
-                        <span className={`font-mono text-sm sm:text-base font-black tracking-tight leading-none ${
-                          isSelected ? 'text-slate-950' : 'text-slate-900 dark:text-white'
-                        }`}>
+                        <span className={`font-mono text-sm sm:text-base font-black tracking-tight leading-none ${isSelected ? 'text-slate-950' : 'text-slate-900 dark:text-white'
+                          }`}>
                           {room.abrv}
                         </span>
 
                         {/* Subtítulo dinámico con data del Excel: TALLER ESPECIALIZADO, TALLER ARQ, LAB ESP, LAB CÓMPUTO, AULA */}
                         <div className="mt-1">
                           {isTallerEsp ? (
-                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${
-                              isSelected
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${isSelected
                                 ? 'bg-slate-950 text-purple-300 border-slate-950'
                                 : 'bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/60'
-                            }`}>
+                              }`}>
                               Taller Espec.
                             </span>
                           ) : isTallerArq ? (
-                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${
-                              isSelected
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${isSelected
                                 ? 'bg-slate-950 text-teal-300 border-slate-950'
                                 : 'bg-teal-50 dark:bg-teal-950/70 text-teal-700 dark:text-teal-300 border-teal-200/80 dark:border-teal-800/60'
-                            }`}>
+                              }`}>
                               Taller Arq.
                             </span>
                           ) : isLabEsp ? (
-                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${
-                              isSelected
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${isSelected
                                 ? 'bg-slate-950 text-sky-300 border-slate-950'
                                 : 'bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border-sky-200/80 dark:border-sky-800/60'
-                            }`}>
+                              }`}>
                               Lab. Espec.
                             </span>
                           ) : isLabComputo ? (
-                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${
-                              isSelected
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${isSelected
                                 ? 'bg-slate-950 text-blue-300 border-slate-950'
                                 : 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60'
-                            }`}>
+                              }`}>
                               Lab. Cómputo
                             </span>
                           ) : isOficina ? (
-                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${
-                              isSelected
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md inline-block leading-tight border ${isSelected
                                 ? 'bg-slate-950 text-amber-300 border-slate-950'
                                 : 'bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60'
-                            }`}>
+                              }`}>
                               Oficina
                             </span>
                           ) : (
-                            <span className={`text-[9.5px] font-bold leading-tight ${
-                              isSelected ? 'text-slate-900 font-black' : 'text-slate-500 dark:text-zinc-400'
-                            }`}>
+                            <span className={`text-[9.5px] font-bold leading-tight ${isSelected ? 'text-slate-900 font-black' : 'text-slate-500 dark:text-zinc-400'
+                              }`}>
                               Aula
                             </span>
                           )}
                         </div>
 
                         {/* Aforo oficial de la Hoja AMBIENTES */}
-                        <div className={`mt-1 flex items-center justify-center gap-1 text-[10px] font-bold tracking-tight ${
-                          isSelected ? 'text-slate-950' : 'text-slate-500 dark:text-zinc-400'
-                        }`}>
+                        <div className={`mt-1 flex items-center justify-center gap-1 text-[10px] font-bold tracking-tight ${isSelected ? 'text-slate-950' : 'text-slate-500 dark:text-zinc-400'
+                          }`}>
                           <Users className="w-3 h-3 stroke-[2.2] shrink-0" />
                           <span>{room.aforo} pers.</span>
                         </div>
@@ -1819,11 +1814,10 @@ export default function TicketsKanban({
                           {returnTimeStr ? `${returnTimeStr} hrs` : (detailTicket.estado === 'ATENDIDO' ? 'Concluido' : 'Pendiente')}
                         </div>
                       </div>
-                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${
-                        detailTicket.estado === 'ATENDIDO' 
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${detailTicket.estado === 'ATENDIDO'
                           ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
                           : 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
-                      }`}>
+                        }`}>
                         {detailTicket.estado === 'ATENDIDO' ? '✓ DEVUELTO' : '⏳ PENDIENTE'}
                       </span>
                     </div>
@@ -1949,11 +1943,11 @@ export default function TicketsKanban({
           MODAL FLOTANTE: REGISTRAR ATENCIÓN / PRÉSTAMO CON FADE IN Y FADE OUT
           ========================================================================= */}
       {newLoanFade.shouldRender && typeof document !== 'undefined' && createPortal(
-        <div 
+        <div
           className={`fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm ${newLoanFade.backdropClass}`}
           onClick={() => newLoanFade.requestClose()}
         >
-          <div 
+          <div
             className={`w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${newLoanFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1982,13 +1976,13 @@ export default function TicketsKanban({
               </button>
             </div>
 
-            {/* Contenido del Formulario Scrolleable */}
-            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
-              <form id="new-loan-modal-form" onSubmit={handleRegisterLoan} className="space-y-4">
-                
-                {/* 1. Columnas: FECHA, DIA, HORA DE REPORTE, RANGO */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
-                  <div>
+            {/* Contenido del Formulario Scrolleable Simplificado y Elegante */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 max-h-[80vh] scrollbar-none">
+              <form id="new-loan-modal-form" onSubmit={handleRegisterLoan} className="space-y-3.5">
+
+                {/* 1. Fila de Horario: Fecha, Hora y Rango Automático */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 items-end">
+                  <div className="sm:col-span-5">
                     <label className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                       <span>Fecha</span>
                       <span className="text-amber-500 font-black">{getDayOfWeek(loanDate)}</span>
@@ -2000,133 +1994,104 @@ export default function TicketsKanban({
                     />
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-4">
                     <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                       Hora de Reporte
                     </label>
-                    <input
-                      type="time"
-                      required
+                    <CustomTimePicker
                       value={loanTime}
-                      onChange={(e) => handleTimeChange(e.target.value)}
-                      className="w-full h-9 px-3 text-xs font-mono font-bold bg-white dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#FDBA30]"
+                      onChange={handleTimeChange}
+                      required
                     />
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-3">
                     <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
-                      Rango Horario
+                      Rango
                     </label>
-                    <input
-                      type="text"
-                      value={loanRango}
-                      onChange={(e) => setLoanRango(e.target.value)}
-                      placeholder="ej. 10:00 – 11:00"
-                      className="w-full h-9 px-3 text-xs font-mono font-bold bg-white dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#FDBA30]"
-                    />
+                    <div className="h-10 px-2.5 bg-slate-100 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl flex items-center justify-center font-mono font-bold text-xs text-amber-600 dark:text-amber-400 tracking-tight text-center">
+                      {loanRango || computeRango(loanTime)}
+                    </div>
                   </div>
                 </div>
 
-                {/* 2. Columnas: AMBIENTE, PISO, PABELLÓN */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Ambiente / Aula
-                    </label>
-                    {roomInput && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                          Pabellón {roomInput.startsWith('B') ? 'B' : (roomInput.startsWith('A') ? 'A' : 'SEDE')}
-                        </span>
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                {/* 2. Fila: Ambiente / Aula y Solicitante */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                  {/* Aula Unificada */}
+                  <div className="sm:col-span-5">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Ambiente / Aula
+                      </label>
+                      {roomInput && (
+                        <span className="text-[10px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">
                           {deduceFloor(roomInput)}
                         </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsRoomCalendarOpen(true)}
-                      className={`w-full h-10 px-3 text-xs font-mono font-bold rounded-xl border transition flex items-center justify-between active:scale-98 ${
-                        roomInput
-                          ? 'bg-amber-100/80 dark:bg-amber-950/50 border-amber-400 dark:border-amber-700 text-amber-950 dark:text-amber-200'
-                          : 'bg-slate-50 dark:bg-[#141418] border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 hover:border-amber-400 dark:hover:border-amber-500'
-                      }`}
-                      title="Abrir mapa de aulas estilo calendario"
-                    >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="truncate">{roomInput ? `Aula ${roomInput}` : 'Elegir en Mapa de Aulas'}</span>
-                      </div>
-                      {roomInput ? (
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRoomInput('');
-                          }}
-                          className="p-1 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
-                          title="Quitar aula"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-black uppercase tracking-tight bg-slate-200 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-slate-700 dark:text-zinc-300">
-                          Buscar
-                        </span>
                       )}
-                    </button>
-
-                    <input
-                      type="text"
-                      value={roomInput}
-                      onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                      placeholder="O escribe aula manual (ej. B206, A509)"
-                      className="w-full h-10 px-3 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30]"
-                    />
-                  </div>
-                </div>
-
-                {/* 3. Columnas: USUARIO y SOLICITANTE */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                      Usuario (Rol)
-                    </label>
-                    <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800">
-                      <button
-                        type="button"
-                        onClick={() => setBeneficiaryType('DOCENTE')}
-                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
-                          beneficiaryType === 'DOCENTE'
-                            ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <User className="w-3.5 h-3.5 stroke-[2.4]" />
-                        <span>Docente</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setBeneficiaryType('ALUMNO')}
-                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
-                          beneficiaryType === 'ALUMNO'
-                            ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <GraduationCap className="w-3.5 h-3.5 stroke-[2.4]" />
-                        <span>Alumno</span>
-                      </button>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        value={roomInput}
+                        onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                        placeholder="Ej. B206, A509..."
+                        className="w-full h-10 pl-3 pr-20 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30]"
+                      />
+                      <div className="absolute right-1 flex items-center gap-1">
+                        {roomInput && (
+                          <button
+                            type="button"
+                            onClick={() => setRoomInput('')}
+                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded"
+                            title="Limpiar aula"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setIsRoomCalendarOpen(true)}
+                          className="h-8 px-2 text-[11px] font-bold bg-[#FDBA30] hover:bg-amber-400 text-slate-950 rounded-lg flex items-center gap-1 transition active:scale-95"
+                          title="Elegir desde mapa de aulas"
+                        >
+                          <Calendar className="w-3 h-3 stroke-[2.4]" />
+                          <span>Mapa</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                      {beneficiaryType === 'DOCENTE' ? 'Nombre del Docente' : 'Nombre / Código del Alumno'}
-                    </label>
+                  {/* Solicitante con Selector de Rol */}
+                  <div className="sm:col-span-7">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Solicitante
+                      </label>
+                      <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => setBeneficiaryType('DOCENTE')}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                            beneficiaryType === 'DOCENTE'
+                              ? 'bg-[#FDBA30] text-slate-950 font-black'
+                              : 'text-slate-500 dark:text-zinc-400'
+                          }`}
+                        >
+                          Docente
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBeneficiaryType('ALUMNO')}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                            beneficiaryType === 'ALUMNO'
+                              ? 'bg-[#FDBA30] text-slate-950 font-black'
+                              : 'text-slate-500 dark:text-zinc-400'
+                          }`}
+                        >
+                          Alumno
+                        </button>
+                      </div>
+                    </div>
                     <input
                       id="prestamo-person-name"
                       type="text"
@@ -2139,18 +2104,18 @@ export default function TicketsKanban({
                   </div>
                 </div>
 
-                {/* 4. Columna: TIPO DE SOLICITUD (11 Materiales exactos + OTRO / MANUAL con MULTISELECCIÓN) */}
+                {/* 3. Materiales: Pastillas Compactas y Elegantes */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Tipo de Solicitud (Multiselección de Materiales)
+                      Materiales Solicitados
                     </label>
-                    <span className="text-[10px] font-mono font-bold text-amber-500 truncate max-w-[200px]">
-                      {selectedMaterials.length > 0 ? selectedMaterials.join(', ') : 'Ninguno seleccionado'}
+                    <span className="text-[10px] font-bold text-amber-500">
+                      {selectedMaterials.length > 0 ? `${selectedMaterials.length} seleccionado(s)` : 'Selecciona material'}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     {CORE_MATERIALS.map(item => {
                       const isSelected = selectedMaterials.includes(item.id);
                       return (
@@ -2158,14 +2123,15 @@ export default function TicketsKanban({
                           key={item.id}
                           type="button"
                           onClick={() => toggleMaterial(item.id)}
-                          className={`min-h-[2.5rem] py-1.5 px-2.5 rounded-xl text-[11px] font-bold transition flex items-center justify-between gap-1 active:scale-95 border ${
+                          className={`h-8 px-2.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 active:scale-95 border ${
                             isSelected
-                              ? 'bg-[#FDBA30] dark:bg-[#FDBA30] text-slate-950 dark:text-slate-950 border-amber-500 font-black shadow-xs ring-2 ring-amber-400/50'
-                              : 'bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 border-slate-300 dark:border-zinc-800 shadow-2xs'
+                              ? 'bg-[#FDBA30] text-slate-950 border-amber-500 font-black shadow-xs ring-1 ring-amber-400'
+                              : 'bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
                           }`}
                         >
-                          <span className="truncate">{item.icon} {item.label}</span>
-                          {isSelected && <Check className="w-4 h-4 stroke-[3] text-slate-950 shrink-0" />}
+                          <span>{item.icon}</span>
+                          <span>{item.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3] text-slate-950 shrink-0 ml-0.5" />}
                         </button>
                       );
                     })}
@@ -2180,16 +2146,16 @@ export default function TicketsKanban({
                         value={manualItemText}
                         onChange={(e) => setManualItemText(e.target.value)}
                         placeholder="Escribe el material solicitado manualmente (ej. PARLANTE, EXTENSIÓN, DISPLAYPORT)..."
-                        className="w-full h-10 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                        className="w-full h-9 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   )}
                 </div>
 
-                {/* 5. Columnas: ESTADO y RESPONSABLE */}
+                {/* 4. Estado y Responsable */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                       Estado
                     </label>
                     <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800">
@@ -2220,7 +2186,7 @@ export default function TicketsKanban({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                       Responsable / Asistente
                     </label>
                     <CustomSelect
@@ -2233,31 +2199,31 @@ export default function TicketsKanban({
                   </div>
                 </div>
 
-                {/* 6. Columna: DESCRIPCIÓN / SOLUCIÓN */}
+                {/* 5. Detalle / Solución */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-                    Descripción / Solución (Detalle adicional opcional)
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                    Descripción / Detalle Opcional
                   </label>
                   <input
                     type="text"
                     value={loanDescription}
                     onChange={(e) => setLoanDescription(e.target.value)}
                     placeholder="Ej. Proyector no muestra imagen, uso en laboratorio, configuración de periféricos..."
-                    className="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-medium focus:outline-none focus:border-[#FDBA30]"
+                    className="w-full h-9 px-3 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-medium focus:outline-none focus:border-[#FDBA30]"
                   />
                 </div>
 
-                {/* 7. Firma del Solicitante (Recibí Conforme) */}
+                {/* 6. Firma del Solicitante */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                     Firma del Solicitante (Recibí Conforme)
                   </label>
-                  <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-slate-200 dark:border-zinc-800 space-y-1">
+                  <div className="bg-slate-50 dark:bg-zinc-900/60 p-2 rounded-2xl border border-slate-200 dark:border-zinc-800">
                     <SignatureCanvas
                       ref={solicitanteFormSignRef}
                       title="Firma del Solicitante"
-                      subtitle="Firma directamente con el dedo en pantalla o toca pantalla amplia"
-                      height={90}
+                      subtitle="Toca para firmar en pantalla amplia o directamente aquí"
+                      height={75}
                       compact={true}
                     />
                   </div>

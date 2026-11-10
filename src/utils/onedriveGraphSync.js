@@ -116,15 +116,15 @@ async function gfetch(token, url, init = {}) {
   let json = null;
   try {
     json = await res.json();
-  } catch (_) {}
+  } catch (_) { }
   return { ok: res.ok, status: res.status, json };
 }
 
 // Tablas e índices para Cloudflare D1
 export async function ensureTables(db) {
-  try { await db.prepare('ALTER TABLE reservas ADD COLUMN motivo TEXT').run(); } catch (_) {}
-  try { await db.prepare('ALTER TABLE reservas ADD COLUMN obs TEXT').run(); } catch (_) {}
-  try { await db.prepare('ALTER TABLE reservas ADD COLUMN hoja TEXT').run(); } catch (_) {}
+  try { await db.prepare('ALTER TABLE reservas ADD COLUMN motivo TEXT').run(); } catch (_) { }
+  try { await db.prepare('ALTER TABLE reservas ADD COLUMN obs TEXT').run(); } catch (_) { }
+  try { await db.prepare('ALTER TABLE reservas ADD COLUMN hoja TEXT').run(); } catch (_) { }
 }
 async function getState(db, k) {
   const r = await db.prepare('SELECT v FROM onedrive_state WHERE k = ?').bind(k).first();
@@ -180,7 +180,7 @@ async function getAccess(db) {
       row.item_id = targets[0].id;
       row.file_name = targets[0].name;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   return { token, row };
 }
@@ -576,7 +576,7 @@ async function pullRecords(db, specName, used) {
       const arr = JSON.parse(rawSnap);
       if (Array.isArray(arr)) snapshotIds = new Set(arr);
     }
-  } catch (_) {}
+  } catch (_) { }
 
   if (snapshotIds.size > 0) {
     for (const r of dbRows) {
@@ -741,6 +741,22 @@ async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot, preRo
   const endAbs = startAbs + matrix.length - 1;
   const address = `${colLetter(used.columnIndex + minC)}${startAbs}:${colLetter(used.columnIndex + maxC)}${endAbs}`;
   const res = await patchFormulas(token, itemId, spec.sheet, address, matrix, fmtMatrix);
+
+  // Asegurar formato centrado en la columna ESTADO para la hoja de atenciones / préstamos
+  if (specName === 'tickets') {
+    try {
+      const estadoCol = cols.find((c) => c.k === 'estado');
+      if (estadoCol) {
+        const colLet = colLetter(used.columnIndex + estadoCol.idx);
+        const estadoAddr = `${colLet}${startAbs}:${colLet}${endAbs}`;
+        await gfetch(token, `${G}/me/drive/items/${itemId}/workbook/worksheets/${enc(spec.sheet)}/range(address='${estadoAddr}')/format`, {
+          method: 'PATCH',
+          body: JSON.stringify({ horizontalAlignment: 'Center', verticalAlignment: 'Center' })
+        });
+      }
+    } catch (_) {}
+  }
+
   if (saveSnapshot) await setState(db, `ids:${specName}`, JSON.stringify(rows.map((r) => r.id)));
   return { updated: rows.length, status: res.status };
 }
@@ -755,17 +771,19 @@ async function pushAsistencia(db, token, itemId, preRows) {
   const iAula = colOf(c, ['AULA']);
   const iNrc = colOf(c, ['NRC']);
   const managed = [
-    { idx: colOf(c, ['HORA INICIO REAL']), get: (d) => {
+    {
+      idx: colOf(c, ['HORA INICIO REAL']), get: (d) => {
         if (!d.hora_inicio_real) return '';
         if (d.hora_inicio_real === '-') return '-';
         return hhmmToFrac(d.hora_inicio_real);
-      } 
+      }
     },
-    { idx: colOf(c, ['HORA FINAL REAL']), get: (d) => {
+    {
+      idx: colOf(c, ['HORA FINAL REAL']), get: (d) => {
         if (!d.hora_final_real) return '';
         if (d.hora_final_real === '-') return '-';
         return hhmmToFrac(d.hora_final_real);
-      } 
+      }
     },
     { idx: colOf(c, ['ASISTENCIA']), get: (d) => (String(d.asistencia || '').toUpperCase() === 'PENDIENTE' ? '' : d.asistencia || '') },
     { idx: colOf(c, ['PUNTUALIDAD']), get: (d) => (d.puntualidad || '') },
@@ -921,11 +939,11 @@ export async function pullIfExcelChanged(db) {
       await markDbWrite(db);
     }
 
-    return { 
-      success: true, 
-      pulled: true, 
-      changes: totalChanges, 
-      controlChanged 
+    return {
+      success: true,
+      pulled: true,
+      changes: totalChanges,
+      controlChanged
     };
   });
 }
@@ -1019,11 +1037,11 @@ export async function pushToExcel(db, opts = {}) {
     await setState(db, 'last_push', String(Date.now()));
     await db.prepare("UPDATE onedrive_auth SET updated_at = datetime('now') WHERE id = 'primary'").run();
 
-    return { 
-      success: true, 
-      connected: true, 
-      filesUpdated: report, 
-      message: 'Archivo maestro sincronizado exitosamente con OneDrive' 
+    return {
+      success: true,
+      connected: true,
+      filesUpdated: report,
+      message: 'Archivo maestro sincronizado exitosamente con OneDrive'
     };
   };
 

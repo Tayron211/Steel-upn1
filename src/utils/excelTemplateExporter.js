@@ -304,6 +304,8 @@ function updateAtencionesXml(sheetXml, ticketsList) {
     const fRango = `TEXT(HOUR(C${r}),"00")&amp;":00 – "&amp;TEXT(MOD(HOUR(C${r})+1,24),"00")&amp;":00"`;
     const fPiso = `VLOOKUP($E${r},AMBIENTES!$C$3:$H$66,4,FALSE)`;
 
+    const estadoStyle = (estado === 'ATENDIDO' || estado === 'DEVUELTO' || estado === 'RESUELTO') ? 157 : 193;
+
     const cells = [
       serialDate !== null ? xmlCellNumber(`A${r}`, 202, serialDate) : xmlCellString(`A${r}`, 202, fechaStr),
       xmlCellFormulaStr(`B${r}`, 196, fDia, diaCached),
@@ -313,7 +315,7 @@ function updateAtencionesXml(sheetXml, ticketsList) {
       xmlCellFormulaStr(`F${r}`, 182, fPiso, pisoCached),
       xmlCellString(`G${r}`, 182, pabellon),
       xmlCellString(`H${r}`, 179, tipoSol),
-      xmlCellString(`I${r}`, 193, estado),
+      xmlCellString(`I${r}`, estadoStyle, estado),
       xmlCellString(`J${r}`, 196, usuario),
       xmlCellString(`K${r}`, 182, desc),
       xmlCellString(`L${r}`, 196, resp),
@@ -327,6 +329,7 @@ function updateAtencionesXml(sheetXml, ticketsList) {
   });
 
   const lastRow = Math.max(3, list.length + 2);
+  const cfMax = Math.max(5000, lastRow + 200);
   let updated = sheetXml.replace(
     /<sheetData>[\s\S]*?<\/sheetData>/,
     `<sheetData>${rowsXml.join('')}</sheetData>`
@@ -337,8 +340,8 @@ function updateAtencionesXml(sheetXml, ticketsList) {
   );
   updated = updated.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:P${lastRow}"/>`);
   updated = updated.replace(/<mergeCell ref="A1:[KL]1"\/>/, '<mergeCell ref="A1:L1"/>');
-  updated = updated.replace(/sqref="I3:I\d+"/, `sqref="I3:I${lastRow}"`);
-  updated = updated.replace(/<xm:sqref>I3:I\d+<\/xm:sqref>/, `<xm:sqref>I3:I${lastRow}</xm:sqref>`);
+  updated = updated.replace(/sqref="I3:I\d+"/g, `sqref="I3:I${cfMax}"`);
+  updated = updated.replace(/<xm:sqref>I3:I\d+<\/xm:sqref>/g, `<xm:sqref>I3:I${cfMax}</xm:sqref>`);
   updated = updated.replace(/<xm:sqref>[KL]3:[KL]\d+<\/xm:sqref>/, `<xm:sqref>L3:L${lastRow}</xm:sqref>`);
   updated = updated.replace(/<xm:sqref>E3:E\d+<\/xm:sqref>/, `<xm:sqref>E3:E${lastRow}</xm:sqref>`);
 

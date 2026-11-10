@@ -85,9 +85,9 @@ const isCodeDuplicate = (code, currentSheets) => {
   });
 };
 
-export default function ManualSheetsView({ 
-  initialClassData, 
-  onClearInitialClass, 
+export default function ManualSheetsView({
+  initialClassData,
+  onClearInitialClass,
   initialOpenTrigger = null,
   onConsumeTrigger = null
 }) {
@@ -268,7 +268,7 @@ export default function ManualSheetsView({
       setToastMessage(`✅ Hoja ${json.data?.codigo || cleanCode} registrada correctamente`);
       setTimeout(() => setToastMessage(''), 3000);
       // Sincronizar de inmediato con OneDrive
-      fetch('/api/onedrive/sync', { method: 'POST' }).catch(() => {});
+      fetch('/api/onedrive/sync', { method: 'POST' }).catch(() => { });
     } catch (err) {
       console.error(err);
       alert('Error de conexión al registrar la hoja. Intente nuevamente.');
@@ -466,8 +466,8 @@ export default function ManualSheetsView({
             <button
               onClick={() => setFilterMotivo('')}
               className={`h-7 px-3 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${!filterMotivo
-                  ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
+                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
                 }`}
             >
               Todos ({validSheets.length})
@@ -478,8 +478,8 @@ export default function ManualSheetsView({
                 key={m}
                 onClick={() => setFilterMotivo(filterMotivo === m ? '' : m)}
                 className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${filterMotivo === m
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/70 dark:border-zinc-800'
+                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/70 dark:border-zinc-800'
                   }`}
               >
                 {m}
@@ -777,13 +777,12 @@ export default function ManualSheetsView({
                       }}
                       placeholder="095"
                       maxLength={4}
-                      className={`w-full h-9 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border rounded-r-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-black transition ${
-                        isDuplicate
+                      className={`w-full h-9 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border rounded-r-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-black transition ${isDuplicate
                           ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200'
                           : formData.codigo.trim()
-                          ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20'
-                          : 'border-slate-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20'
-                      }`}
+                            ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20'
+                            : 'border-slate-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20'
+                        }`}
                     />
                     {isDuplicate ? (
                       <div className="absolute right-2.5 text-rose-600 dark:text-rose-400 pointer-events-none">
@@ -837,11 +836,10 @@ export default function ManualSheetsView({
                       onChange={(e) => handleNrcLookup(e.target.value)}
                       onBlur={() => handleNrcLookup(formData.nrc)}
                       placeholder="Ej: 20476"
-                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-bold transition ${
-                        nrcMatchFound
+                      className={`w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 font-mono font-bold transition ${nrcMatchFound
                           ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20'
                           : 'border-slate-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20'
-                      }`}
+                        }`}
                     />
                     {nrcMatchFound && (
                       <div className="absolute right-2.5 top-2.5 text-emerald-600 dark:text-emerald-400">
@@ -948,11 +946,10 @@ export default function ManualSheetsView({
                 <button
                   type="submit"
                   disabled={isDuplicate || !formData.codigo.trim()}
-                  className={`h-11 sm:h-12 rounded-2xl text-xs font-black transition flex items-center justify-center text-center shadow-xs ${
-                    isDuplicate || !formData.codigo.trim()
+                  className={`h-11 sm:h-12 rounded-2xl text-xs font-black transition flex items-center justify-center text-center shadow-xs ${isDuplicate || !formData.codigo.trim()
                       ? 'bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-not-allowed'
                       : 'bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 active:scale-95'
-                  }`}
+                    }`}
                 >
                   Generar y Registrar
                 </button>
