@@ -1212,9 +1212,19 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     });
   }, [data, statusFilter, selectedCarrera]);
 
-  // Compute Free Classrooms (Aulas Libres en este momento)
+  // Compute Free Classrooms (Aulas Libres en este momento o bloque seleccionado)
   const freeRooms = useMemo(() => {
-    const busyRoomCodes = new Set(data.map(c => (c.aula || '').toUpperCase().trim()));
+    const targetHour = (blockMode === 'CUSTOM' && selectedHora)
+      ? selectedHora
+      : getCurrentHourBlock();
+
+    // Si data contiene todas las clases del día (modo ALL), filtramos solo las del bloque actual/seleccionado
+    // para no marcar como ocupada un aula solo porque tuvo clase 8 horas antes o después
+    const classesInTarget = (blockMode === 'ALL')
+      ? data.filter(c => (c.horaInicioProg || '').trim() === targetHour)
+      : data;
+
+    const busyRoomCodes = new Set(classesInTarget.map(c => (c.aula || '').toUpperCase().trim()));
     return rooms.filter(r => {
       if (selectedPabellon && r.pabellon !== selectedPabellon) return false;
       if (selectedPisos.length > 0) {
@@ -1223,7 +1233,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       }
       return !busyRoomCodes.has((r.abrv || '').toUpperCase().trim());
     });
-  }, [data, rooms, selectedPabellon, selectedPisos]);
+  }, [data, rooms, selectedPabellon, selectedPisos, blockMode, selectedHora]);
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
@@ -1421,127 +1431,152 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           )}
         </div>
 
-        {/* Fila 3: Modos Rápidos + Contadores KPI de Estado en Barra Limpia */}
+        {/* Fila 3: Vistas (Clases vs Aulas Libres) + Pastillas de Estado Rápidas */}
         <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800 flex-wrap pb-0.5">
-          <div className="flex items-center gap-1 shrink-0 flex-wrap">
+          {/* Segmentado de Vista: Clases o Aulas Libres */}
+          <div className="inline-flex items-center p-0.5 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0">
             <button
+              type="button"
               onClick={() => {
-                setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
-                setSelectedHora('');
-              }}
-              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${blockMode === 'CURRENT'
-                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-                }`}
-            >
-              <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
-              <span>Actual ({getCurrentHourBlock()})</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setBlockMode(blockMode === 'NEXT' ? 'ALL' : 'NEXT');
-                setSelectedHora('');
-              }}
-              className={`h-7 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${blockMode === 'NEXT'
-                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-                }`}
-            >
-              <span>Sig.</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setViewMode(viewMode === 'FREE_ROOMS' ? 'CLASSES' : 'FREE_ROOMS');
+                setViewMode('CLASSES');
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
               }}
-              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${viewMode === 'FREE_ROOMS'
-                  ? 'bg-emerald-600 text-white font-black shadow-2xs'
-                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
-                }`}
+              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 flex items-center gap-1.5 ${
+                viewMode === 'CLASSES'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-black'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
             >
-              <DoorOpen className="w-3 h-3" />
-              <span>Libres ({freeRooms.length})</span>
+              <span>Clases</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${viewMode === 'CLASSES' ? 'bg-slate-200 dark:bg-zinc-700 text-slate-800 dark:text-zinc-200' : 'bg-slate-200/60 dark:bg-zinc-800 text-slate-500'}`}>
+                {countTotal}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('FREE_ROOMS');
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              }}
+              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 flex items-center gap-1.5 ${
+                viewMode === 'FREE_ROOMS'
+                  ? 'bg-emerald-600 text-white shadow-xs font-black'
+                  : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-200'
+              }`}
+            >
+              <DoorOpen className="w-3.5 h-3.5 stroke-[2.2]" />
+              <span>Libres</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${viewMode === 'FREE_ROOMS' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'}`}>
+                {freeRooms.length}
+              </span>
             </button>
           </div>
 
-          {/* Pastillas KPI para filtrar con 1 toque */}
-          <div className="flex items-center gap-1 text-[11px] shrink-0">
-            <button
-              onClick={() => {
-                setViewMode('CLASSES');
-                setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL');
-              }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'PUNTUAL'
-                  ? 'bg-emerald-600 text-white font-black'
-                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+          {/* Pastillas KPI para filtrar por estado (Solo en modo Clases) */}
+          {viewMode === 'CLASSES' && (
+            <div className="flex items-center gap-1 text-[11px] shrink-0">
+              <button
+                type="button"
+                onClick={() => setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL')}
+                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                  statusFilter === 'PUNTUAL'
+                    ? 'bg-emerald-600 text-white font-black'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
                 }`}
-            >
-              ✓ {countPuntual}
-            </button>
+                title="Filtrar puntuales"
+              >
+                ✓ {countPuntual}
+              </button>
 
-            <button
-              onClick={() => {
-                setViewMode('CLASSES');
-                setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE');
-              }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'TARDE'
-                  ? 'bg-amber-500 text-slate-950 font-black'
-                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+              <button
+                type="button"
+                onClick={() => setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE')}
+                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                  statusFilter === 'TARDE'
+                    ? 'bg-amber-500 text-slate-950 font-black'
+                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100'
                 }`}
-            >
-              🕒 {countTarde}
-            </button>
+                title="Filtrar tardanzas"
+              >
+                🕒 {countTarde}
+              </button>
 
-            <button
-              onClick={() => {
-                setViewMode('CLASSES');
-                setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA');
-              }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'FALTA'
-                  ? 'bg-rose-600 text-white font-black'
-                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
+              <button
+                type="button"
+                onClick={() => setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA')}
+                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                  statusFilter === 'FALTA'
+                    ? 'bg-rose-600 text-white font-black'
+                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100'
                 }`}
-            >
-              ✕ {countFalta}
-            </button>
+                title="Filtrar faltas"
+              >
+                ✕ {countFalta}
+              </button>
 
-            <button
-              onClick={() => {
-                setViewMode('CLASSES');
-                setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE');
-              }}
-              className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${statusFilter === 'PENDIENTE'
-                  ? 'bg-slate-800 text-white dark:bg-zinc-700 font-black shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
+              <button
+                type="button"
+                onClick={() => setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE')}
+                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                  statusFilter === 'PENDIENTE'
+                    ? 'bg-slate-800 text-white dark:bg-zinc-700 font-black shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
                 }`}
-            >
-              Pend: {countPendiente}
-            </button>
-          </div>
+                title="Filtrar pendientes"
+              >
+                Pend: {countPendiente}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Fila 4: Bloques de hora horizontales (Discretos y Simétricos) */}
-        <div className="flex items-center gap-1 overflow-x-auto sm:flex-wrap py-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px]">
+        {/* Fila 4: Selector de Horario Unificado (Limpio, horizontal y sin duplicados) */}
+        <div className="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px]">
+          {/* Botón Ahora (Bloque actual en vivo) */}
           <button
+            type="button"
+            onClick={() => {
+              setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
+              setSelectedHora('');
+            }}
+            className={`h-6.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 ${
+              blockMode === 'CURRENT'
+                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs ring-1 ring-amber-400'
+                : 'bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200/60 dark:border-zinc-800'
+            }`}
+            title={`Filtrar al bloque en curso (${getCurrentHourBlock()})`}
+          >
+            <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
+            <span>Ahora ({getCurrentHourBlock()})</span>
+          </button>
+
+          {/* Botón Todo el Día */}
+          <button
+            type="button"
             onClick={() => {
               setBlockMode('ALL');
               setSelectedHora('');
             }}
-            className={`h-6 px-2.5 rounded-md font-bold transition whitespace-nowrap active:scale-95 ${blockMode === 'ALL' && !selectedHora
-                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+            className={`h-6.5 px-2.5 rounded-lg text-xs font-bold transition whitespace-nowrap active:scale-95 shrink-0 ${
+              blockMode === 'ALL' && !selectedHora
+                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800'
-              }`}
+            }`}
           >
-            Todo
+            Todo el día
           </button>
+
+          <span className="h-4 w-px bg-slate-200 dark:bg-zinc-800 shrink-0 mx-0.5"></span>
+
+          {/* Bloques de Hora de Clase */}
           {REAL_BLOCKS.map(b => {
             const isSelected = blockMode === 'CUSTOM' && selectedHora === b.start;
             const isCurrent = b.start === getCurrentHourBlock();
             return (
               <button
                 key={b.start}
+                type="button"
                 onClick={() => {
                   if (isSelected) {
                     setBlockMode('ALL');
@@ -1551,12 +1586,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     setSelectedHora(b.start);
                   }
                 }}
-                className={`h-6 px-2 rounded-md font-mono font-bold transition whitespace-nowrap active:scale-95 ${isSelected
+                className={`h-6.5 px-2 rounded-lg font-mono text-[11px] font-bold transition whitespace-nowrap active:scale-95 shrink-0 ${
+                  isSelected
                     ? 'bg-[#FDBA30] text-slate-950 font-black'
                     : isCurrent
-                      ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300'
+                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60'
                       : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-                  }`}
+                }`}
+                title={`Bloque ${b.start} a ${b.end}`}
               >
                 {b.start}
               </button>
@@ -1565,63 +1602,70 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
       </div>
 
-      {/* Active Filter Pill indicator if statusFilter != 'ALL' */}
-      {statusFilter !== 'ALL' && viewMode !== 'FREE_ROOMS' && (
-        <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800">
-          <span className="text-slate-600 dark:text-zinc-300 font-medium">
-            Filtrando por estado: <strong className="text-slate-900 dark:text-white font-bold uppercase">{statusFilter}</strong>
-          </span>
+      {/* Barra compacta de filtros activos (Ahorra más de 120px de espacio vertical en pantallas pequeñas) */}
+      {(statusFilter !== 'ALL' || blockMode !== 'ALL' || selectedPisos.length > 0 || selectedCarrera) && viewMode !== 'FREE_ROOMS' && (
+        <div className="flex items-center gap-1.5 flex-wrap px-1 text-xs animate-fade-in">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Filtrando:</span>
+          {statusFilter !== 'ALL' && (
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-[11px] font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition"
+              title="Quitar filtro de estado"
+            >
+              <span>{statusFilter}</span>
+              <X className="w-3 h-3 stroke-[2.2]" />
+            </button>
+          )}
+          {blockMode !== 'ALL' && (
+            <button
+              type="button"
+              onClick={() => {
+                setBlockMode('ALL');
+                setSelectedHora('');
+              }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 transition"
+              title="Volver a todo el día"
+            >
+              <Clock className="w-3 h-3 text-amber-500" />
+              <span>{blockMode === 'CURRENT' ? `Ahora (${getCurrentHourBlock()})` : `Bloque ${selectedHora}`}</span>
+              <X className="w-3 h-3 stroke-[2.2]" />
+            </button>
+          )}
+          {selectedPisos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedPisos([])}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 transition"
+              title="Ver todos los pisos"
+            >
+              <span>Pisos: {pisosDisponibles.filter(p => selectedPisos.includes(p.val)).map(p => p.short).join('+')}</span>
+              <X className="w-3 h-3 stroke-[2.2]" />
+            </button>
+          )}
+          {selectedCarrera && (
+            <button
+              type="button"
+              onClick={() => setSelectedCarrera('')}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 transition"
+              title="Ver todas las carreras"
+            >
+              <span className="truncate max-w-[120px]">{selectedCarrera}</span>
+              <X className="w-3 h-3 stroke-[2.2]" />
+            </button>
+          )}
           <button
-            onClick={() => setStatusFilter('ALL')}
-            className="text-amber-700 dark:text-amber-400 hover:text-amber-800 text-[11px] font-bold inline-flex items-center gap-1"
-          >
-            <span>Ver todas ({countTotal})</span>
-            <X className="w-3 h-3 stroke-[2.2]" />
-          </button>
-        </div>
-      )}
-
-      {/* Active Schedule Mode Indicator if blockMode != 'ALL' */}
-      {blockMode !== 'ALL' && viewMode !== 'FREE_ROOMS' && (
-        <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60">
-          <span className="text-amber-950 dark:text-amber-200 font-medium">
-            Horario: <strong className="font-bold">
-              {blockMode === 'RESTO'
-                ? `Próximas horas / Resto del día (desde las ${getCurrentHourBlock()})`
-                : blockMode === 'CURRENT'
-                  ? `Bloque actual (${getCurrentHourBlock()})`
-                  : blockMode === 'NEXT'
-                    ? `Bloque siguiente (${getNextHourBlock()})`
-                    : `Bloque ${selectedHora}`}
-            </strong>
-          </span>
-          <button
+            type="button"
             onClick={() => {
+              setStatusFilter('ALL');
               setBlockMode('ALL');
               setSelectedHora('');
+              setSelectedPisos([]);
+              setSelectedCarrera('');
             }}
-            className="text-amber-800 dark:text-amber-300 hover:underline text-[11px] font-bold inline-flex items-center gap-1"
+            className="text-[11px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 underline ml-auto py-0.5"
           >
-            <span>Ver todo el día</span>
-            <X className="w-3 h-3 stroke-[2.2]" />
-          </button>
-        </div>
-      )}
-
-      {/* Active Floor Filter Pill indicator if selectedPisos.length > 0 */}
-      {selectedPisos.length > 0 && viewMode !== 'FREE_ROOMS' && (
-        <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60">
-          <span className="text-amber-950 dark:text-amber-200 font-medium">
-            Filtrando {selectedPisos.length === 1 ? 'piso' : 'pisos'}: <strong className="font-bold">
-              {pisosDisponibles.filter(p => selectedPisos.includes(p.val)).map(p => p.short).join(' + ')}
-            </strong>
-          </span>
-          <button
-            onClick={() => setSelectedPisos([])}
-            className="text-amber-800 dark:text-amber-300 hover:underline text-[11px] font-bold inline-flex items-center gap-1"
-          >
-            <span>Ver todos los pisos</span>
-            <X className="w-3 h-3 stroke-[2.2]" />
+            Limpiar todo
           </button>
         </div>
       )}
