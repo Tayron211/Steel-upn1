@@ -32,8 +32,12 @@ import {
   Copy,
   Table,
   LayoutGrid,
-  Filter
+  Filter,
+  ChevronDown
 } from 'lucide-react';
+
+const HOURS_24 = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES_60 = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
@@ -567,7 +571,11 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   // Modales de Acción al Mantener Presionado
   const [manualTardeItem, setManualTardeItem] = useState(null);
   const [manualTardeTime, setManualTardeTime] = useState('');
-  const manualTardeFade = useFadeModal(manualTardeItem, () => setManualTardeItem(null), 200);
+  const [showTimePickerMenu, setShowTimePickerMenu] = useState(false);
+  const manualTardeFade = useFadeModal(manualTardeItem, () => {
+    setManualTardeItem(null);
+    setShowTimePickerMenu(false);
+  }, 200);
 
   const [faltaOptionsItem, setFaltaOptionsItem] = useState(null);
   const faltaOptionsFade = useFadeModal(faltaOptionsItem, () => setFaltaOptionsItem(null), 200);
@@ -630,6 +638,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     setManualTardeItem(item);
     const initialTime = (item.horaInicioReal && item.horaInicioReal !== '-') ? item.horaInicioReal : getCurrentTimeStr();
     setManualTardeTime(initialTime);
+    setShowTimePickerMenu(false);
   };
 
   const handleTimeChange = (raw) => {
@@ -2038,7 +2047,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     })()
   }
 
-  {/* IN-SITU QUICK ATTENTION DRAWER (Apple-Style Liquid Glass Bottom Sheet) con Fade In y Fade Out */ }
+  {/* IN-SITU QUICK ATTENTION MODAL WINDOW con Fade In y Fade Out */}
   {
     quickAttentionFade.shouldRender && typeof document !== 'undefined' && (() => {
       const activeItem = quickAttentionFade.cachedData || quickAttentionItem;
@@ -2046,16 +2055,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
       return createPortal(
         <div
-          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 ${quickAttentionFade.backdropClass}`}
+          className={`fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-md flex items-center justify-center z-[9999] p-4 ${quickAttentionFade.backdropClass}`}
           onClick={() => quickAttentionFade.requestClose()}
         >
           <div
-            className={`apple-liquid-modal rounded-t-[32px] sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl safe-bottom max-h-[90vh] overflow-y-auto ${quickAttentionFade.modalClass}`}
+            className={`apple-liquid-modal rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl overflow-hidden m-auto ${quickAttentionFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-slate-300/80 rounded-full mx-auto mb-3.5 sm:hidden"></div>
-
-            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3.5">
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-zinc-800 mb-3.5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 inline-flex items-center justify-center shadow-2xs">
                   <HandHelping className="w-4 h-4 stroke-[2.2]" />
@@ -2522,26 +2529,119 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             <form onSubmit={handleSaveManualTarde} className="space-y-3">
               <div>
                 <label className="block text-center text-[10px] font-black text-slate-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
-                  Hora de Llegada Real (Formato 24 hrs)
+                  Hora de Llegada Real (24 hrs)
                 </label>
+                
+                {/* Caja Principal con Reloj Dorado Visible y Selector In-App */}
                 <div className="flex justify-center">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9:]*"
-                    maxLength={5}
-                    value={manualTardeTime}
-                    onChange={(e) => handleTimeChange(e.target.value)}
-                    onBlur={handleTimeBlur}
-                    placeholder="17:16"
-                    required
-                    autoFocus
-                    className="w-36 text-center font-mono font-black text-2xl py-1.5 px-3 rounded-xl border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 placeholder:text-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner tracking-widest"
-                  />
+                  <div className="inline-flex items-center gap-2 py-1.5 px-3 rounded-2xl border-2 border-amber-400 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 shadow-inner transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setShowTimePickerMenu(prev => !prev)}
+                      className="p-1 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-900/50 text-amber-600 dark:text-amber-400 transition"
+                      title="Abrir selector de hora acorde a la app"
+                    >
+                      <Clock className="w-5 h-5 text-amber-500 dark:text-amber-400 stroke-[2.4]" />
+                    </button>
+                    
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9:]*"
+                      maxLength={5}
+                      value={manualTardeTime}
+                      onChange={(e) => handleTimeChange(e.target.value)}
+                      onBlur={handleTimeBlur}
+                      placeholder="17:16"
+                      required
+                      autoFocus
+                      className="w-24 text-center font-mono font-black text-2xl bg-transparent text-amber-950 dark:text-amber-200 placeholder:text-amber-400/40 focus:outline-none tracking-wider select-all"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowTimePickerMenu(prev => !prev)}
+                      className="p-1 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-900/50 text-amber-600 dark:text-amber-400 transition"
+                      title="Desplegar horas y minutos"
+                    >
+                      <ChevronDown className={`w-4 h-4 text-amber-500 dark:text-amber-400 stroke-[2.2] transition-transform duration-200 ${showTimePickerMenu ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-center text-[10px] text-slate-400 dark:text-zinc-500 mt-1 font-medium">
-                  Escribe la hora directamente con el teclado
+
+                <p className="text-center text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
+                  Escribe con el teclado (Ej: 17:16) o toca el reloj
                 </p>
+
+                {/* MENÚ DE SELECCIÓN DE HORA 100% INTEGRADO A LA APP (SIN MENÚS BLANCOS DEL NAVEGADOR) */}
+                {showTimePickerMenu && (() => {
+                  const parts = (manualTardeTime || '17:00').split(':');
+                  const selH = parts[0] || '17';
+                  const selM = parts[1] || '00';
+
+                  return (
+                    <div className="mt-2.5 p-2.5 bg-white dark:bg-[#121218] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl animate-fade-in">
+                      <div className="grid grid-cols-2 gap-2 text-center pb-1.5 mb-1.5 border-b border-slate-100 dark:border-zinc-800/80">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                          Hora ({selH})
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                          Minuto ({selM})
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 h-36">
+                        {/* Columna Horas (00 a 23) */}
+                        <div className="overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                          {HOURS_24.map(h => {
+                            const isSelected = selH === h;
+                            return (
+                              <button
+                                key={h}
+                                type="button"
+                                onClick={() => {
+                                  const m = selM || '00';
+                                  setManualTardeTime(`${h}:${m}`);
+                                }}
+                                className={`w-full py-1 rounded-lg font-mono text-xs font-bold transition text-center ${
+                                  isSelected
+                                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                                    : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                                }`}
+                              >
+                                {h}:00
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Columna Minutos (00 a 59) */}
+                        <div className="overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                          {MINUTES_60.map(m => {
+                            const isSelected = selM === m;
+                            return (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => {
+                                  const h = selH || '17';
+                                  setManualTardeTime(`${h}:${m}`);
+                                }}
+                                className={`w-full py-1 rounded-lg font-mono text-xs font-bold transition text-center ${
+                                  isSelected
+                                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                                    : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                                }`}
+                              >
+                                :{m}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Accesos rápidos de hora 100% Simétricos y más compactos */}
