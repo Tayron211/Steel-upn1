@@ -493,7 +493,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         }
       }
 
-      const defaultText = "Buenas, informacion sobre este docente aun no llega";
+      const defaultText = "Buenas, informacion sobre este docente aun no llega, su apoyo porfavor.";
       const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
 
       if (blob) {
@@ -545,7 +545,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     } catch (err) {
       console.error('Error sharing to WhatsApp:', err);
       classOptionsFade.requestClose(() => setSelectedClassOptions(null));
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent("Buenas, informacion sobre este docente aun no llega")}`, '_blank');
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent("Buenas, informacion sobre este docente aun no llega, su apoyo porfavor.")}`, '_blank');
     } finally {
       setIsSharingWhatsApp(false);
     }
