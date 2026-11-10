@@ -735,13 +735,14 @@ export default function TicketsKanban({
   };
 
   // Dinámica Paso 2: Al devolver el objeto, el docente/alumno vuelve a firmar ("Entregué")
-  const handleConfirmReturnWithSignature = async (ticket) => {
-    const drawnReturnSign = returnSignCanvasRef.current ? returnSignCanvasRef.current.getDataUrl() : null;
+  const handleConfirmReturnWithSignature = async (ticket, passedSignature = null) => {
+    const drawnReturnSign = passedSignature || (returnSignCanvasRef.current ? returnSignCanvasRef.current.getDataUrl() : null);
     
     try {
       if (drawnReturnSign) {
         // Esta firma certifica que el docente/alumno ENTREGÓ el material de vuelta
         localStorage.setItem(`upn_sign_entrega_${ticket.id}`, drawnReturnSign);
+        localStorage.setItem(`upn_sign_devolucion_${ticket.id}`, drawnReturnSign);
       }
     } catch (e) {}
 
@@ -754,8 +755,10 @@ export default function TicketsKanban({
     const updates = { 
       estado: 'ATENDIDO',
       descripcionSolucion: newDesc,
-      firmaEntrega: drawnReturnSign, // Firma de devolución ("Entregué")
-      fechaFirma: now.toISOString()
+      firmaEntrega: drawnReturnSign || ticket.firmaEntrega || null,
+      firmaDevolucion: drawnReturnSign || null,
+      fechaFirma: now.toISOString(),
+      fechaDevolucion: now.toISOString()
     };
 
     setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
@@ -769,6 +772,7 @@ export default function TicketsKanban({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
+      triggerAutoSyncLinkedExcel();
     } catch (err) {
       console.error(err);
     }
@@ -794,14 +798,15 @@ export default function TicketsKanban({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
+      triggerAutoSyncLinkedExcel();
     } catch (err) {
       console.error(err);
     }
   };
 
   // Guardar firma pendiente del solicitante (Recibí) en la tarjeta
-  const handleSaveCardSignature = async (ticketId) => {
-    const drawnSignature = cardSignCanvasRef.current ? cardSignCanvasRef.current.getDataUrl() : null;
+  const handleSaveCardSignature = async (ticketId, passedSignature = null) => {
+    const drawnSignature = passedSignature || (cardSignCanvasRef.current ? cardSignCanvasRef.current.getDataUrl() : null);
     if (!drawnSignature) {
       setInlineSignTicketId(null);
       return;
@@ -823,6 +828,7 @@ export default function TicketsKanban({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
+      triggerAutoSyncLinkedExcel();
     } catch (err) {
       console.error(err);
     }
@@ -1137,6 +1143,7 @@ export default function TicketsKanban({
                           height={85}
                           compact={true}
                           autoOpen={true}
+                          onConfirm={(signDataUrl) => handleSaveCardSignature(ticket.id, signDataUrl)}
                           onClose={() => setInlineSignTicketId(null)}
                         />
                         <div className="grid grid-cols-2 gap-1.5 pt-1">
@@ -1164,10 +1171,11 @@ export default function TicketsKanban({
                         <SignatureCanvas
                           ref={returnSignCanvasRef}
                           title="Firma de Devolución"
-                          subtitle="Firma directamente con el dedo en pantalla"
+                          subtitle="Firma directamente con el dedo o mouse"
                           height={85}
                           compact={true}
                           autoOpen={true}
+                          onConfirm={(signDataUrl) => handleConfirmReturnWithSignature(ticket, signDataUrl)}
                           onClose={() => setInlineReceiveTicketId(null)}
                         />
                         <div className="space-y-1.5 pt-1">

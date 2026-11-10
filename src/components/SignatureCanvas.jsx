@@ -10,11 +10,12 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     initialImage = null,
     strokeColor = '#0f172a',
     backgroundColor = '#ffffff',
-    lineWidth = 3.2,
+    lineWidth = 2.8,
     height = 120,
     compact = false,
     autoOpen = false,
     onSignChange,
+    onConfirm,
     onClose
   },
   ref
@@ -23,18 +24,21 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
   const containerRef = useRef(null);
   const isDrawingRef = useRef(false);
   const hasDrawnRef = useRef(Boolean(initialImage));
+  const lastPointRef = useRef({ x: 0, y: 0 });
+  const isConfirmedRef = useRef(false);
 
   const [savedDataUrl, setSavedDataUrl] = useState(initialImage || null);
   const [isModalOpen, setIsModalOpen] = useState(Boolean(autoOpen));
   const canvasFade = useFadeModal(isModalOpen, () => {
     setIsModalOpen(false);
-    if (onClose) {
+    if (!isConfirmedRef.current && onClose) {
       try {
         onClose();
       } catch (e) {
         console.error('Error on SignatureCanvas onClose:', e);
       }
     }
+    isConfirmedRef.current = false;
   }, 200);
   const [modalHasContent, setModalHasContent] = useState(Boolean(initialImage));
 
@@ -44,21 +48,24 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     setModalHasContent(Boolean(initialImage));
   }, [initialImage]);
 
-  // Configurar el lienzo amplio dentro del modal
+  // Configurar el lienzo amplio dentro del modal con resolución HD Retina
   const setupModalCanvas = (preloadImage = savedDataUrl) => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
     const rect = container.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
     const width = Math.max(Math.floor(rect.width), 280);
-    const modalHeight = window.innerWidth < 640 ? 260 : 320;
+    const modalHeight = window.innerWidth < 640 ? 260 : 340;
 
-    canvas.width = width * dpr;
-    canvas.height = modalHeight * dpr;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(modalHeight * dpr);
     canvas.style.width = `${width}px`;
     canvas.style.height = `${modalHeight}px`;
+    canvas._dpr = dpr;
+    canvas._cssWidth = width;
+    canvas._cssHeight = modalHeight;
 
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
@@ -66,6 +73,8 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     ctx.lineJoin = 'round';
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = lineWidth;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, width, modalHeight);
@@ -85,79 +94,167 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
   };
 
   useEffect(() => {
-    if (!isModalOpen) return;
-    const raf = requestAnimationFrame(() => {
-      setupModalCanvas(savedDataUrl);
-    });
-    const handleResize = () => {
-      const currentUrl =
-        hasDrawnRef.current && canvasRef.current
-          ? canvasRef.current.toDataURL('image/png')
-          : savedDataUrl;
-      setupModalCanvas(currentUrl);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [isModalOpen, strokeColor, backgroundColor]);
+    if (!canvasFade.shouldRender) return;
 
+    // Ejecución rápida inicial y tras finalizar la animación de entrada del modal
+    const timer1 = setTimeout(() => {
+      setupModalCanvas(savedDataUrl);
+    }, 40);
+
+    const timer2 = setTimeout(() => {
+      setupModalCanvas(savedDataUrl);
+    }, 260);
+
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      ro = new ResizeObserver((entries) => {
+        if (isDrawingRef.current) return;
+        for (const entry of entries) {
+          const cr = entry.contentRect;
+          if (cr && cr.width > 0) {
+            const canvas = canvasRef.current;
+            if (!canvas) continue;
+            const dpr = Math.max(window.devicePixelRatio || 1, 2);
+            const currentW = Math.round((canvas._cssWidth || 0) * dpr);
+            const targetW = Math.round(cr.width * dpr);
+            if (Math.abs(currentW - targetW) > 4) {
+              const currentUrl =
+                hasDrawnRef.current && canvasRef.current
+                  ? canvasRef.current.toDataURL('image/png')
+                  : savedDataUrl;
+              setupModalCanvas(currentUrl);
+            }
+          }
+        }
+      });
+      ro.observe(containerRef.current);
+    }
+
+    const handleWindowResize = () => {
+      if (!isDrawingRef.current) {
+        const currentUrl =
+          hasDrawnRef.current && canvasRef.current
+            ? canvasRef.current.toDataURL('image/png')
+            : savedDataUrl;
+        setupModalCanvas(currentUrl);
+      }
+    };
+    window.addEventListener('resize', handleWindowResize);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', handleWindowResize);
+    };
+  }, [canvasFade.shouldRender, strokeColor, backgroundColor]);
+
+  // Cálculo de coordenadas relativo al lienzo exacto en pantalla (sin desfasajes en escritorio ni móvil)
   const getCoordinates = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dpr = canvas._dpr || window.devicePixelRatio || 1;
+    const logicalW = canvas._cssWidth || (canvas.width / dpr);
+    const logicalH = canvas._cssHeight || (canvas.height / dpr);
+
+    const scaleX = rect.width > 0 ? logicalW / rect.width : 1;
+    const scaleY = rect.height > 0 ? logicalH / rect.height : 1;
+
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    }
+
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
     };
   };
 
-  const startDrawing = (e) => {
-    if (e.stopPropagation) e.stopPropagation();
-    if (e.cancelable && e.type.startsWith('touch')) {
-      e.preventDefault();
-    }
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const { x, y } = getCoordinates(e);
 
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    try {
+      if (e.target && e.target.setPointerCapture) {
+        e.target.setPointerCapture(e.pointerId);
+      }
+    } catch (_) {}
+
+    const coords = getCoordinates(e);
+    lastPointRef.current = coords;
     isDrawingRef.current = true;
     hasDrawnRef.current = true;
     setModalHasContent(true);
+
+    const ctx = canvas.getContext('2d');
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = lineWidth;
+
+    // Dibuja punto inicial suave para toques individuales
+    ctx.beginPath();
+    ctx.arc(coords.x, coords.y, lineWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = strokeColor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
   };
 
-  const draw = (e) => {
-    if (e.stopPropagation) e.stopPropagation();
+  const handlePointerMove = (e) => {
     if (!isDrawingRef.current) return;
-    if (e.cancelable && e.type.startsWith('touch')) {
-      e.preventDefault();
-    }
+    e.preventDefault();
+    e.stopPropagation();
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const { x, y } = getCoordinates(e);
 
-    ctx.lineTo(x, y);
+    const coords = getCoordinates(e);
+    const ctx = canvas.getContext('2d');
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = lineWidth;
+
+    // Curva de Bézier cuadrática para trazos de firma hiper-fluidos y sin pixelación
+    const midX = (lastPointRef.current.x + coords.x) / 2;
+    const midY = (lastPointRef.current.y + coords.y) / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+    ctx.quadraticCurveTo(lastPointRef.current.x, lastPointRef.current.y, midX, midY);
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
+
+    lastPointRef.current = coords;
   };
 
-  const stopDrawing = (e) => {
-    if (e.stopPropagation) e.stopPropagation();
+  const handlePointerUp = (e) => {
     if (!isDrawingRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
     isDrawingRef.current = false;
+    try {
+      if (e.target && e.target.hasPointerCapture && e.target.hasPointerCapture(e.pointerId)) {
+        e.target.releasePointerCapture(e.pointerId);
+      }
+    } catch (_) {}
   };
 
   const clearModalCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = canvas._dpr || window.devicePixelRatio || 1;
     const w = canvas.width / dpr;
     const h = canvas.height / dpr;
 
@@ -184,8 +281,12 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
     }
     const dataUrl = canvas.toDataURL('image/png');
     setSavedDataUrl(dataUrl);
+    isConfirmedRef.current = true;
     if (onSignChange) {
       onSignChange(dataUrl);
+    }
+    if (onConfirm) {
+      onConfirm(dataUrl);
     }
     canvasFade.requestClose(() => setIsModalOpen(false));
   };
@@ -328,23 +429,18 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
             {/* Lienzo Grande de Firma */}
             <div
               ref={containerRef}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchMove={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              className="w-full relative rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 dark:border-zinc-700 bg-white shadow-inner select-none"
+              className="w-full relative rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 dark:border-zinc-700 bg-white shadow-inner select-none touch-none"
               style={{ touchAction: 'none' }}
             >
               <canvas
                 ref={canvasRef}
-                className="block w-full cursor-crosshair relative z-10"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-                onTouchCancel={stopDrawing}
+                className="block w-full cursor-crosshair relative z-10 touch-none select-none"
+                style={{ touchAction: 'none' }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onPointerLeave={handlePointerUp}
               />
 
               {/* Línea guía visual superpuesta (no se guarda en el PNG) */}
