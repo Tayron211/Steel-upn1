@@ -967,14 +967,6 @@ export async function pullIfExcelChanged(db) {
   });
 }
 
-/** BD -> Excel (sincroniza de forma ultra-rápida y directa al archivo maestro en OneDrive) */
-export async function pushToExcel(db, opts = {}) {
-  await ensureTables(db);
-  const acc = await getAccess(db);
-  if (!acc) return { success: false, connected: false, message: 'OneDrive aún no vinculado' };
-  const { token, row } = acc;
-  const onlySheet = opts?.onlySheet || null;
-
 async function doPushInternal(db, token, targetFile, onlySheet) {
   const report = [];
 
