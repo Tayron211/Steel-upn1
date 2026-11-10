@@ -295,7 +295,25 @@ function updateAtencionesXml(sheetXml, ticketsList) {
     const pisoCached = (t.piso || 'SEGUNDO PISO').toUpperCase().trim();
     const pabellon = (t.pabellon || (ambiente.startsWith('B') ? 'B' : 'A')).toUpperCase().trim();
     const tipoSol = t.tipoSolicitud || t.tipo_solicitud || 'Soporte General';
-    const estado = (t.estado || 'ATENDIDO').toUpperCase().trim();
+
+    const hasSign1 = Boolean(
+      (t.firmaRecepcion && String(t.firmaRecepcion).length > 20) ||
+      (t.firma_recepcion && String(t.firma_recepcion).length > 20)
+    );
+    const hasSign2 = Boolean(
+      (t.firmaDevolucion && String(t.firmaDevolucion).length > 20) ||
+      (t.firma_devolucion && String(t.firma_devolucion).length > 20) ||
+      (t.firmaEntrega && String(t.firmaEntrega).length > 20) ||
+      (t.firma_entrega && String(t.firma_entrega).length > 20)
+    );
+    const isDevuelto = Boolean(
+      t.fechaDevolucion ||
+      t.fecha_devolucion ||
+      String(t.descripcionSolucion || t.descripcion_solucion || '').toUpperCase().includes('DEVUELTO')
+    );
+
+    // Solo saldrá ATENDIDO en el Excel cuando estén las dos firmas y devuelto. Mientras solo esté en una firma seguirá EN PROCESO
+    const estado = (hasSign1 && hasSign2 && isDevuelto) ? 'ATENDIDO' : 'EN PROCESO';
     const { usuario, desc } = extractTicketUsuarioAndDesc(t);
     const resp = t.responsable || 'Operaciones';
 
@@ -304,7 +322,7 @@ function updateAtencionesXml(sheetXml, ticketsList) {
     const fRango = `TEXT(HOUR(C${r}),"00")&amp;":00 – "&amp;TEXT(MOD(HOUR(C${r})+1,24),"00")&amp;":00"`;
     const fPiso = `VLOOKUP($E${r},AMBIENTES!$C$3:$H$66,4,FALSE)`;
 
-    const estadoStyle = (estado === 'ATENDIDO' || estado === 'DEVUELTO' || estado === 'RESUELTO') ? 157 : 193;
+    const estadoStyle = estado === 'ATENDIDO' ? 157 : 193;
 
     const cells = [
       serialDate !== null ? xmlCellNumber(`A${r}`, 202, serialDate) : xmlCellString(`A${r}`, 202, fechaStr),

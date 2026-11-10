@@ -309,7 +309,7 @@ async function handleApiRequest(context) {
       const activeOnly = url.searchParams.get('active') === '1';
       if (url.searchParams.get('count') === '1') {
         // Solo devuelve el número, sin traer todas las filas al cliente (contador del header)
-        let csql = 'SELECT COUNT(*) AS c FROM tickets WHERE 1=1';
+        let csql = "SELECT COUNT(*) AS c FROM tickets WHERE (periodo IS NULL OR periodo != '2026-1')";
         const cparams = [];
         if (activeOnly || estado === 'PENDIENTE') {
           csql += " AND (estado = 'PENDIENTE' OR estado = 'EN PROCESO' OR (estado != 'ATENDIDO' AND estado != 'DEVUELTO' AND estado != 'RESUELTO'))";
@@ -320,7 +320,7 @@ async function handleApiRequest(context) {
         const cr = cparams.length > 0 ? await db.prepare(csql).bind(...cparams).all() : await db.prepare(csql).all();
         return json({ success: true, count: cr.results && cr.results[0] ? Number(cr.results[0].c) : 0 });
       }
-      let sql = 'SELECT * FROM tickets WHERE 1=1';
+      let sql = "SELECT * FROM tickets WHERE (periodo IS NULL OR periodo != '2026-1')";
       const params = [];
       if (estado) {
         sql += ' AND estado = ?';
@@ -334,6 +334,11 @@ async function handleApiRequest(context) {
       const mapped = results.map(mapTicket);
 
       return json({ success: true, count: mapped.length, data: mapped });
+    }
+
+    if (path === '/api/tickets/clear-concluded' && method === 'POST') {
+      await db.prepare("DELETE FROM tickets WHERE estado = 'ATENDIDO' OR estado = 'DEVUELTO' OR periodo = '2026-1'").run();
+      return json({ success: true, message: 'Devoluciones eliminadas exitosamente' });
     }
 
     // Un solo ticket: lo usa el modal de firmas para no releer toda la tabla

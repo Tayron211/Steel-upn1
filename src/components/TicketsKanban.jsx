@@ -515,7 +515,24 @@ export default function TicketsKanban({
       const cleanPab = cleanExcelVal(ticket.pabellon);
       const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
       const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
-      const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
+      const hasSign1 = Boolean(
+        (ticket.firmaRecepcion && String(ticket.firmaRecepcion).length > 20) ||
+        (ticket.firma_recepcion && String(ticket.firma_recepcion).length > 20)
+      );
+      const hasSign2 = Boolean(
+        (ticket.firmaDevolucion && String(ticket.firmaDevolucion).length > 20) ||
+        (ticket.firma_devolucion && String(ticket.firma_devolucion).length > 20) ||
+        (ticket.firmaEntrega && String(ticket.firmaEntrega).length > 20) ||
+        (ticket.firma_entrega && String(ticket.firma_entrega).length > 20)
+      );
+      const isDevuelto = Boolean(
+        ticket.fechaDevolucion ||
+        ticket.fecha_devolucion ||
+        String(ticket.descripcionSolucion || ticket.descripcion || '').toUpperCase().includes('DEVUELTO')
+      );
+
+      // Solo saldrá ATENDIDO cuando estén las dos firmas y devuelto; mientras solo esté en una firma seguirá EN PROCESO
+      const estado = (hasSign1 && hasSign2 && isDevuelto) ? 'ATENDIDO' : 'EN PROCESO';
       const usuario = ticket.usuario || (String(ticket.descripcionSolucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE');
       const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
       const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
@@ -583,7 +600,24 @@ export default function TicketsKanban({
       const cleanPab = cleanExcelVal(ticket.pabellon);
       const pabellon = cleanPab || (ambiente.startsWith('B') ? 'B' : (ambiente.startsWith('A') ? 'A' : 'SEDE'));
       const tipo = (ticket.tipoSolicitud || 'PROYECTOR').toUpperCase().trim();
-      const estado = (ticket.estado || 'ATENDIDO').toUpperCase().trim();
+      const hasSign1 = Boolean(
+        (ticket.firmaRecepcion && String(ticket.firmaRecepcion).length > 20) ||
+        (ticket.firma_recepcion && String(ticket.firma_recepcion).length > 20)
+      );
+      const hasSign2 = Boolean(
+        (ticket.firmaDevolucion && String(ticket.firmaDevolucion).length > 20) ||
+        (ticket.firma_devolucion && String(ticket.firma_devolucion).length > 20) ||
+        (ticket.firmaEntrega && String(ticket.firmaEntrega).length > 20) ||
+        (ticket.firma_entrega && String(ticket.firma_entrega).length > 20)
+      );
+      const isDevuelto = Boolean(
+        ticket.fechaDevolucion ||
+        ticket.fecha_devolucion ||
+        String(ticket.descripcionSolucion || ticket.descripcion || '').toUpperCase().includes('DEVUELTO')
+      );
+
+      // Solo saldrá ATENDIDO cuando estén las dos firmas y devuelto; mientras solo esté en una firma seguirá EN PROCESO
+      const estado = (hasSign1 && hasSign2 && isDevuelto) ? 'ATENDIDO' : 'EN PROCESO';
       const usuario = ticket.usuario || (String(ticket.descripcionSolucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE');
       const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
       const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
@@ -764,8 +798,19 @@ export default function TicketsKanban({
       ? ticket.descripcionSolucion
       : `${ticket.descripcionSolucion} [DEVUELTO ${returnTime}]`;
 
+    // REGLA ESTRICTA: Solo saldrá ATENDIDO cuando estén las DOS firmas (inicial + devolución) y devuelto.
+    // Mientras solo esté en una firma (o ninguna), seguirá EN PROCESO.
+    const hasInitialSign = Boolean(
+      (ticket.firmaRecepcion && String(ticket.firmaRecepcion).length > 20) ||
+      (ticket.firma_recepcion && String(ticket.firma_recepcion).length > 20) ||
+      localStorage.getItem(`upn_sign_recepcion_${ticket.id}`)
+    );
+    const hasReturnSign = Boolean(drawnReturnSign && String(drawnReturnSign).length > 20);
+
+    const finalEstado = (hasInitialSign && hasReturnSign) ? 'ATENDIDO' : 'EN PROCESO';
+
     const updates = {
-      estado: 'ATENDIDO',
+      estado: finalEstado,
       descripcionSolucion: newDesc,
       firmaEntrega: drawnReturnSign || ticket.firmaEntrega || null,
       firmaDevolucion: drawnReturnSign || null,
@@ -775,8 +820,12 @@ export default function TicketsKanban({
 
     setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
     setInlineReceiveTicketId(null);
-    setToastMessage('✅ Material devuelto con éxito');
-    setTimeout(() => setToastMessage(''), 2500);
+    if (finalEstado === 'ATENDIDO') {
+      setToastMessage('✅ Material devuelto con doble firma (Concluido y Atendido)');
+    } else {
+      setToastMessage('⏳ Devolución registrada con una sola firma (Permanece En Proceso hasta completar ambas firmas)');
+    }
+    setTimeout(() => setToastMessage(''), 3000);
 
     try {
       await fetch(`/api/tickets/${ticket.id}`, {
@@ -792,17 +841,38 @@ export default function TicketsKanban({
 
   // Recibir devolución directa sin firma (por si el docente tuvo que salir de prisa)
   const handleMarkReturnedDirect = async (ticket) => {
+    const now = new Date();
+    const returnTime = now.toTimeString().slice(0, 5);
+    const hasInitialSign = Boolean(
+      (ticket.firmaRecepcion && String(ticket.firmaRecepcion).length > 20) ||
+      (ticket.firma_recepcion && String(ticket.firma_recepcion).length > 20) ||
+      localStorage.getItem(`upn_sign_recepcion_${ticket.id}`)
+    );
+    const hasReturnSign = Boolean(
+      (ticket.firmaDevolucion && String(ticket.firmaDevolucion).length > 20) ||
+      (ticket.firmaEntrega && String(ticket.firmaEntrega).length > 20) ||
+      localStorage.getItem(`upn_sign_devolucion_${ticket.id}`)
+    );
+
+    // Si no tiene ambas firmas, sigue EN PROCESO
+    const finalEstado = (hasInitialSign && hasReturnSign) ? 'ATENDIDO' : 'EN PROCESO';
+
     const updates = {
-      estado: 'ATENDIDO',
+      estado: finalEstado,
       descripcionSolucion: ticket.descripcionSolucion.includes('DEVUELTO')
         ? ticket.descripcionSolucion
-        : `${ticket.descripcionSolucion} [DEVUELTO]`
+        : `${ticket.descripcionSolucion} [DEVUELTO ${returnTime}]`,
+      fechaDevolucion: now.toISOString()
     };
 
     setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...updates } : t));
     setInlineReceiveTicketId(null);
-    setToastMessage(`✅ Material devuelto y archivado`);
-    setTimeout(() => setToastMessage(''), 2500);
+    if (finalEstado === 'ATENDIDO') {
+      setToastMessage('✅ Material devuelto con doble firma (Concluido)');
+    } else {
+      setToastMessage('⏳ Devolución registrada sin firma completa (Permanece En Proceso)');
+    }
+    setTimeout(() => setToastMessage(''), 3000);
 
     try {
       await fetch(`/api/tickets/${ticket.id}`, {
@@ -828,10 +898,35 @@ export default function TicketsKanban({
       localStorage.setItem(`upn_sign_recepcion_${ticketId}`, drawnSignature);
     } catch (e) { }
 
-    const updates = { firmaRecepcion: drawnSignature };
+    const targetTicket = tickets.find(t => t.id === ticketId);
+    const hasReturnSign = Boolean(
+      targetTicket && (
+        (targetTicket.firmaDevolucion && String(targetTicket.firmaDevolucion).length > 20) ||
+        (targetTicket.firmaEntrega && String(targetTicket.firmaEntrega).length > 20) ||
+        localStorage.getItem(`upn_sign_devolucion_${ticketId}`)
+      )
+    );
+    const isDevuelto = Boolean(
+      targetTicket && (
+        targetTicket.fechaDevolucion ||
+        String(targetTicket.descripcionSolucion || '').toUpperCase().includes('DEVUELTO')
+      )
+    );
+
+    const finalEstado = (drawnSignature && hasReturnSign && isDevuelto) ? 'ATENDIDO' : 'EN PROCESO';
+
+    const updates = {
+      firmaRecepcion: drawnSignature,
+      estado: finalEstado,
+      fechaFirma: new Date().toISOString()
+    };
     setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...updates } : t));
     setInlineSignTicketId(null);
-    setToastMessage('✅ Firma de recepción guardada');
+    if (finalEstado === 'ATENDIDO') {
+      setToastMessage('✅ Ambas firmas completadas y material devuelto (Atendido)');
+    } else {
+      setToastMessage('✅ Firma de recepción guardada (Permanece En Proceso hasta devolución)');
+    }
     setTimeout(() => setToastMessage(''), 2500);
 
     try {
@@ -843,6 +938,24 @@ export default function TicketsKanban({
       triggerAutoSyncLinkedExcel();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Limpiar todas las devoluciones archivadas en la app
+  const handleClearConcluded = async () => {
+    if (!window.confirm('¿Está seguro de limpiar todas las devoluciones archivadas en la app?')) return;
+    try {
+      const res = await fetch('/api/tickets/clear-concluded', { method: 'POST' });
+      const j = await res.json();
+      if (j && j.success) {
+        setTickets(prev => prev.filter(t => t.estado === 'PENDIENTE' || t.estado === 'EN PROCESO'));
+        setToastMessage('✅ Devoluciones limpiadas exitosamente en la app');
+        setTimeout(() => setToastMessage(''), 2500);
+      }
+    } catch (err) {
+      console.error(err);
+      setToastMessage('❌ Error al limpiar devoluciones');
+      setTimeout(() => setToastMessage(''), 2500);
     }
   };
 
@@ -981,6 +1094,19 @@ export default function TicketsKanban({
               </span>
             </button>
           </div>
+
+          {/* Botón para Limpiar Devoluciones (solo visible en la pestaña Devoluciones si hay registros) */}
+          {activeViewTab === 'CONCLUIDOS' && concludedLoans.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearConcluded}
+              className="h-9 px-3 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 shadow-xs transition inline-flex items-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0"
+              title="Limpiar todas las devoluciones archivadas"
+            >
+              <Trash2 className="w-4 h-4 stroke-[2]" />
+              <span className="hidden sm:inline">Limpiar Devoluciones</span>
+            </button>
+          )}
 
           {/* Botón Principal: Registrar Préstamo (Alineado a la derecha en móvil para pulgar derecho) */}
           <button

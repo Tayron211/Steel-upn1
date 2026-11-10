@@ -333,7 +333,33 @@ const SPECS = {
     hasUpdated: true,
     select: "SELECT * FROM tickets WHERE periodo IS NULL OR periodo != '2026-1'",
     sort: (a, b) => String(a.fecha || '').localeCompare(String(b.fecha || '')) || String(a.hora_reporte || '').localeCompare(String(b.hora_reporte || '')),
-    prefill: (r) => ({ ...r, usuario: r.usuario || (String(r.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE') }),
+    prefill: (r) => {
+      const hasSign1 = Boolean(
+        (r.firma_recepcion && String(r.firma_recepcion).length > 20) ||
+        (r.firmaRecepcion && String(r.firmaRecepcion).length > 20)
+      );
+      const hasSign2 = Boolean(
+        (r.firma_devolucion && String(r.firma_devolucion).length > 20) ||
+        (r.firmaDevolucion && String(r.firmaDevolucion).length > 20) ||
+        (r.firma_entrega && String(r.firma_entrega).length > 20) ||
+        (r.firmaEntrega && String(r.firmaEntrega).length > 20)
+      );
+      const isDevuelto = Boolean(
+        r.fecha_devolucion ||
+        r.fechaDevolucion ||
+        String(r.descripcion_solucion || r.descripcionSolucion || '').toUpperCase().includes('DEVUELTO')
+      );
+
+      // Regla: Solo saldrá ATENDIDO en el Excel cuando estén las dos firmas Y esté devuelto.
+      // Mientras solo esté en una firma (o ninguna), seguirá EN PROCESO.
+      const computedEstado = (hasSign1 && hasSign2 && isDevuelto) ? 'ATENDIDO' : 'EN PROCESO';
+
+      return {
+        ...r,
+        estado: computedEstado,
+        usuario: r.usuario || (String(r.descripcion_solucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE')
+      };
+    },
     insert: (db, id, r) =>
       db
         .prepare(
