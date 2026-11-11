@@ -1108,7 +1108,7 @@ export default function ManualSheetsView({
                     placeholder="Seleccionar asistente"
                   />
                 ) : (
-                  <div className="h-10 sm:h-11 px-3.5 flex items-center bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white select-none">
+                  <div className="h-10 sm:h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 select-none">
                     <span className="truncate">{getLoggedAssistantName()}</span>
                   </div>
                 )}
