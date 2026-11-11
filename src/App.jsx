@@ -68,27 +68,57 @@ export default function App() {
     setAuthUser(null);
   };
 
-  // AMOLED Dark Mode State with LocalStorage Persistence
+  // AMOLED Dark Mode State with Automatic Mobile System Detection
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('upn_theme');
-      if (saved) return saved === 'dark';
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+      return Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     }
-    return false;
+    return true;
   });
 
+  // Keep DOM class and data-mode attribute synchronized
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('upn_theme', 'dark');
+      document.documentElement.setAttribute('data-mode', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('upn_theme', 'light');
+      document.documentElement.setAttribute('data-mode', 'light');
     }
   }, [darkMode]);
 
-  const toggleDarkMode = () => setDarkMode(prev => !prev);
+  // Real-time listener for mobile device system dark/light mode switches
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const handleSystemThemeChange = (e) => {
+      const saved = localStorage.getItem('upn_theme');
+      // If user hasn't explicitly chosen a theme via button, auto-adapt to mobile system
+      if (!saved) {
+        setDarkMode(e.matches);
+      }
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+      return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(handleSystemThemeChange);
+      return () => mediaQuery.removeListener(handleSystemThemeChange);
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      const next = !prev;
+      localStorage.setItem('upn_theme', next ? 'dark' : 'light');
+      return next;
+    });
+  };
 
   // Cross-module states
   const [newTicketPrefill, setNewTicketPrefill] = useState(null);

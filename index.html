@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full dark" style="background-color:#000000;">
+<html lang="es" class="h-full" style="background-color:#000000;">
   <head>
     <meta charset="UTF-8" />
     <style>
@@ -17,12 +17,22 @@
     <script>
       (function() {
         try {
-          var theme = localStorage.getItem('upn_theme');
-          var supportDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (theme === 'light') {
-            document.documentElement.classList.remove('dark');
-          } else {
-            document.documentElement.classList.add('dark');
+          var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+          function applyTheme() {
+            var saved = localStorage.getItem('upn_theme');
+            var isDark = saved ? (saved === 'dark') : (mq ? mq.matches : true);
+            if (isDark) {
+              document.documentElement.classList.add('dark');
+              document.documentElement.setAttribute('data-mode', 'dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+              document.documentElement.setAttribute('data-mode', 'light');
+            }
+          }
+          applyTheme();
+          if (mq) {
+            if (mq.addEventListener) mq.addEventListener('change', applyTheme);
+            else if (mq.addListener) mq.addListener(applyTheme);
           }
         } catch(e) {}
       })();
