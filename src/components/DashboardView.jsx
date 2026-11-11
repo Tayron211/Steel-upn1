@@ -1899,6 +1899,26 @@ export default function DashboardView() {
             {syncMessage}
           </div>
         )}
+
+        {/* Firma Sobria de Autor tipo Marca de Agua */}
+        <div className="pt-12 pb-6 flex flex-col items-center justify-center select-none">
+          <div className="flex items-center gap-3 w-full max-w-xs mb-3.5 opacity-40 dark:opacity-25">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-slate-400 dark:to-zinc-600" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[#FDBA30] shadow-[0_0_8px_rgba(253,186,48,0.5)]" />
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-slate-400 dark:to-zinc-600" />
+          </div>
+
+          <div className="flex items-center gap-2 text-slate-400/80 dark:text-zinc-500 text-[11px] sm:text-xs font-mono tracking-widest uppercase">
+            <span className="opacity-75">Desarrollado por</span>
+            <span className="font-bold text-slate-600 dark:text-zinc-400 tracking-[0.18em]">
+              Tayron Salinas
+            </span>
+          </div>
+
+          <span className="text-[9px] font-mono tracking-[0.25em] text-slate-400/50 dark:text-zinc-700 uppercase mt-1">
+            UPN Control Docente &bull; Sede Comas
+          </span>
+        </div>
       </div>
 
       {/* Modal de Confirmación para Limpiar Columnas de Asistencia (N a R) */}
