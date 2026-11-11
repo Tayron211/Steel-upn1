@@ -24,7 +24,8 @@ import {
   Copy,
   Table,
   LayoutGrid,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
