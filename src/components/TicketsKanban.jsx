@@ -363,6 +363,19 @@ export default function TicketsKanban({
     });
   }, [roomsList, calendarPabellon, calendarPiso, calendarCategory, calendarSearch]);
 
+  const currentRoomInfo = useMemo(() => {
+    if (!roomInput) return null;
+    const clean = roomInput.toUpperCase().trim();
+    return roomsList.find(r => r.abrv === clean) || null;
+  }, [roomInput, roomsList]);
+
+  const currentRoomUbicacion = useMemo(() => {
+    if (currentRoomInfo?.piso && currentRoomInfo?.pabellon) {
+      return `${currentRoomInfo.piso} - ${currentRoomInfo.pabellon}`;
+    }
+    return deduceFloor(roomInput) || '';
+  }, [currentRoomInfo, roomInput]);
+
   const parseBeneficiary = (desc = '') => {
     const raw = String(desc || '');
     const matchAlumno = raw.match(/\[🎓?\s*ALUMNO(?::\s*([^\]]+))?\]/i);
@@ -2171,49 +2184,41 @@ export default function TicketsKanban({
 
                 {/* 2. Fila: Ambiente / Aula y Solicitante */}
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                  {/* Ambiente / Aula Rediseñado */}
+                  {/* Ambiente / Aula con el Estilo Selector Visual de Reservas */}
                   <div className="sm:col-span-5">
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                         Ambiente / Aula
                       </label>
-                      {roomInput && (
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                          {deduceFloor(roomInput)}
+                      {currentRoomUbicacion && (
+                        <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-zinc-500 sm:hidden">
+                          {currentRoomUbicacion}
                         </span>
                       )}
                     </div>
-                    
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        value={roomInput}
-                        onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                        placeholder="Ej. B206, A509, DOCENCIA..."
-                        className="w-full h-10 pl-3.5 pr-22 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30] transition"
-                      />
-                      <div className="absolute right-1.5 flex items-center gap-1">
-                        {roomInput && (
-                          <button
-                            type="button"
-                            onClick={() => setRoomInput('')}
-                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded"
-                            title="Limpiar"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setIsRoomCalendarOpen(true)}
-                          className="h-7 px-2.5 text-[11px] font-black bg-[#FDBA30] hover:bg-amber-400 text-slate-950 rounded-lg flex items-center gap-1 transition active:scale-95 shadow-2xs cursor-pointer"
-                          title="Explorar directorio de aulas"
-                        >
-                          <Building2 className="w-3 h-3 stroke-[2.4]" />
-                          <span>Aulas</span>
-                        </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsRoomCalendarOpen(true)}
+                      className="w-full h-10 px-3 bg-slate-50 dark:bg-[#141418] hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white transition flex items-center justify-between gap-2 overflow-hidden cursor-pointer active:scale-[0.99] group text-left"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0">
+                          {roomInput || 'ELEGIR'}
+                        </span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 truncate">
+                          {currentRoomInfo?.nombre || currentRoomInfo?.tipoAmbiente || currentRoomInfo?.tag || (roomInput ? `Aula ${roomInput}` : 'Seleccionar aula o laboratorio')}
+                        </span>
                       </div>
-                    </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {currentRoomUbicacion && (
+                          <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hidden sm:inline-block">
+                            {currentRoomUbicacion}
+                          </span>
+                        )}
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0 stroke-[2.5] group-hover:text-amber-500 transition-colors" />
+                      </div>
+                    </button>
                   </div>
 
                   {/* Solicitante con Selector de Rol */}
