@@ -1169,7 +1169,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       estado: quickAttentionStatus,
       usuario: quickAttentionBeneficiary,
       descripcionSolucion: `${personTag} ${quickAttentionNotes || `Préstamo de ${finalTipo} en aula ${quickAttentionItem.aula}`}`,
-      responsable: quickAttentionResponsable || 'TAYRON SALINAS'
+      responsable: (isAdmin() ? quickAttentionResponsable : getLoggedAssistantName()) || getLoggedAssistantName()
     };
 
     try {
@@ -1237,7 +1237,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             motivo: `DOCENTE DE REEMPLAZO (${suplente})`,
             docenteReemplazo: suplente,
             detalle: `Docente Titular: ${activeModalItem.docente || ''} | Reemplaza: ${suplente}`,
-            asistente: 'TAYRON SALINAS'
+            asistente: getLoggedAssistantName()
           })
         });
         setToastMessage(`✅ Docente de reemplazo "${suplente}" registrado en hoja manual y Excel`);

@@ -20,6 +20,7 @@ import QRCode from 'qrcode';
 import SignatureCanvas from './SignatureCanvas';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
+import { getLoggedAssistantName } from '../utils/auth';
 import { generateCargoPdf, formatCargoNumber } from '../utils/cargoPdfGenerator';
 import { useFadeModal } from '../utils/useFadeModal';
 
@@ -28,7 +29,7 @@ export default function SignatureModal({
   isOpen,
   onClose,
   onSaveSignatures,
-  defaultAssistant = 'TAYRON SALINAS'
+  defaultAssistant = getLoggedAssistantName()
 }) {
   const signModalFade = useFadeModal(isOpen && Boolean(ticket), onClose, 200);
   const asistentes = useAssistants();

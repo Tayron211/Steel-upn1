@@ -19,19 +19,33 @@ import {
 const TABS = ['attendance', 'operations', 'tickets', 'dashboard'];
 
 const TAB_HASH_MAP = {
-  attendance: '#ronda',
-  tickets: '#prestamos',
+  attendance: '#control',
   operations: '#operaciones',
+  tickets: '#prestamos',
   dashboard: '#metricas'
 };
 
+const TAB_TITLES = {
+  attendance: 'Control Docente · UPN Comas',
+  operations: 'Operaciones · UPN Comas',
+  tickets: 'Préstamos & Soporte · UPN Comas',
+  dashboard: 'Métricas & Análisis · UPN Comas'
+};
+
 const HASH_TAB_MAP = {
+  '#control': 'attendance',
   '#ronda': 'attendance',
   '#asistencia': 'attendance',
+  '#operaciones': 'operations',
+  '#operaciones/manual': 'operations',
+  '#operaciones/reservas': 'operations',
+  '#operaciones/ambientes': 'operations',
+  '#fichas': 'operations',
+  '#reservas': 'operations',
+  '#ambientes': 'operations',
   '#prestamos': 'tickets',
   '#atenciones': 'tickets',
   '#tickets': 'tickets',
-  '#operaciones': 'operations',
   '#metricas': 'dashboard',
   '#dashboard': 'dashboard'
 };
@@ -167,13 +181,17 @@ export default function App() {
       setOpenReservationModalTrigger(null);
     }
     setActiveTab(targetTab);
-    const targetHash = TAB_HASH_MAP[targetTab] || '#ronda';
+    const targetHash = TAB_HASH_MAP[targetTab] || '#control';
+    const title = TAB_TITLES[targetTab] || 'UPN · Control Docente & Operaciones';
+    document.title = title;
+
     if (pushState) {
-      window.history.pushState({ tab: targetTab }, '', targetHash);
+      if (window.location.hash.toLowerCase() !== targetHash) {
+        window.history.pushState({ tab: targetTab }, title, targetHash);
+      }
     } else {
-      window.history.replaceState({ tab: targetTab }, '', targetHash);
+      window.history.replaceState({ tab: targetTab }, title, targetHash);
     }
-    // Siempre mandar al encabezado superior
     scrollToTopGlobal();
   };
 
@@ -182,7 +200,7 @@ export default function App() {
     scrollToTopGlobal();
   }, [activeTab, operationsSubTab]);
 
-  // Sync initial hash and handle Browser Back / Forward buttons (Multi-page experience)
+  // Sync initial hash and handle Browser Back / Forward buttons (True Multi-Page Experience)
   useEffect(() => {
     const currentHash = window.location.hash.toLowerCase();
     const signMatch = window.location.hash.match(/^#firmar-(.+)$/);
@@ -191,7 +209,15 @@ export default function App() {
     } else {
       const initialTab = HASH_TAB_MAP[currentHash] || 'attendance';
       setActiveTab(initialTab);
-      window.history.replaceState({ tab: initialTab }, '', TAB_HASH_MAP[initialTab]);
+      if (currentHash === '#reservas' || currentHash === '#operaciones/reservas') {
+        setOperationsSubTab('reservations');
+      } else if (currentHash === '#ambientes' || currentHash === '#operaciones/ambientes') {
+        setOperationsSubTab('rooms');
+      }
+      const targetHash = TAB_HASH_MAP[initialTab] || '#control';
+      const title = TAB_TITLES[initialTab] || 'UPN · Control Docente & Operaciones';
+      document.title = title;
+      window.history.replaceState({ tab: initialTab }, title, targetHash);
     }
 
     const handlePopState = (e) => {
@@ -201,14 +227,37 @@ export default function App() {
         return;
       }
       setMobileSignTicketId(null);
+
+      // Cerrar modales si se presiona atrás
+      setOpenNewLoanModalTrigger(null);
+      setOpenManualModalTrigger(null);
+      setOpenReservationModalTrigger(null);
+
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#reservas' || hash === '#operaciones/reservas') {
+        setOperationsSubTab('reservations');
+      } else if (hash === '#ambientes' || hash === '#operaciones/ambientes') {
+        setOperationsSubTab('rooms');
+      } else if (hash === '#operaciones' || hash === '#fichas') {
+        setOperationsSubTab('manual');
+      }
+
       const tabFromState = e.state?.tab;
-      const tabFromHash = HASH_TAB_MAP[window.location.hash.toLowerCase()];
+      const tabFromHash = HASH_TAB_MAP[hash];
       const resolvedTab = tabFromState || tabFromHash || 'attendance';
       setActiveTab(resolvedTab);
+
+      const title = TAB_TITLES[resolvedTab] || 'UPN · Control Docente & Operaciones';
+      document.title = title;
+      scrollToTopGlobal();
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
   }, []);
 
   // Multi-user silent background update for pending counter
@@ -216,7 +265,7 @@ export default function App() {
 
   const updatePendingCount = async (force = false) => {
     try {
-      if (!force && !(await dbChanged())) return; // sin escrituras nuevas -> no gastar lecturas de D1
+      if (!force && !(await dbChanged())) return;
       const res = await fetch('/api/tickets?active=1&count=1');
       const json = await res.json();
       if (json.success) {
@@ -233,7 +282,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Excel de OneDrive -> App: consulta cada 30 s si el Excel fue editado directamente y trae los cambios
+  // Excel de OneDrive -> App: consulta cada 30 s si el Excel fue editado directamente
   useEffect(() => {
     let stopped = false;
     const pullExcel = async () => {
@@ -255,7 +304,7 @@ export default function App() {
     };
   }, []);
 
-  // Interceptor global para sincronizar automáticamente cada cambio en tiempo real con el Excel de OneDrive vinculado
+  // Interceptor global para sincronizar automáticamente cada cambio en tiempo real con OneDrive
   useEffect(() => {
     restoreLinkedExcelIfPossible();
     if (typeof window === 'undefined' || window.__upnFetchIntercepted) return;
@@ -273,7 +322,6 @@ export default function App() {
           (method === 'POST' || method === 'PUT' || method === 'DELETE')
         ) {
           triggerAutoSyncLinkedExcel();
-          // Solo los cambios de tickets alteran el contador de pendientes
           if (urlStr.includes('/api/tickets')) updatePendingCount(true);
         }
       } catch (e) { }
@@ -281,75 +329,75 @@ export default function App() {
     };
   }, []);
 
-  // Mobile Touch Swipe Handlers (Swipe left/right between tabs)
-  const handleTouchStart = (e) => {
-    if (!e.touches || e.touches.length !== 1) return;
-    const touch = e.touches[0];
+  // Mobile Touch Swipe Gesture Controller (Avance y Retroceso táctil fluido en toda la pantalla)
+  useEffect(() => {
+    if (!authUser || mobileSignTicketId) return;
 
-    // Detect if gesture originates inside horizontally scrollable container, canvas, input, or modal
-    let target = e.target;
-    let isIgnored = false;
-    while (target && target !== document.body) {
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT' ||
-        target.tagName === 'CANVAS' ||
-        target.closest?.('canvas') ||
-        target.classList.contains('overflow-x-auto') ||
-        target.getAttribute('role') === 'dialog' ||
-        target.classList.contains('apple-liquid-modal') ||
-        target.closest?.('[role="dialog"]') ||
-        target.closest?.('.fixed')
-      ) {
-        isIgnored = true;
-        break;
-      }
-      try {
-        const style = window.getComputedStyle(target);
+    const onTouchStart = (e) => {
+      if (!e.touches || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+
+      // Ignorar únicamente si el toque inicia sobre canvas de firma, inputs de texto o selectores
+      let target = e.target;
+      while (target && target !== document.body) {
         if (
-          (style.overflowX === 'auto' || style.overflowX === 'scroll') &&
-          target.scrollWidth > target.clientWidth
+          target.tagName === 'CANVAS' ||
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.getAttribute('role') === 'dialog'
         ) {
-          isIgnored = true;
-          break;
+          touchRef.current.active = false;
+          return;
         }
-      } catch (err) { }
-      target = target.parentElement;
-    }
-
-    touchRef.current = {
-      startX: touch.clientX,
-      startY: touch.clientY,
-      startTime: Date.now(),
-      isIgnored
-    };
-  };
-
-  const handleTouchEnd = (e) => {
-    // Si se tocó un canvas, modal, input, o si hay un canvas en pantalla, nunca cambiar de pestaña
-    if (touchRef.current.isIgnored || !e.changedTouches || e.changedTouches.length !== 1) return;
-    if (typeof document !== 'undefined' && (document.querySelector('canvas') || document.querySelector('[role="dialog"]'))) {
-      return;
-    }
-
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchRef.current.startX;
-    const deltaY = touch.clientY - touchRef.current.startY;
-    const elapsed = Date.now() - touchRef.current.startTime;
-
-    // Gesture criteria: Fast swipe (< 600ms), displacement > 60px, predominantly horizontal
-    if (elapsed < 600 && Math.abs(deltaX) >= 60 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
-      const currentIndex = TABS.indexOf(activeTab);
-      if (deltaX < -60 && currentIndex < TABS.length - 1) {
-        // Swipe left -> advance to next tab
-        navigateTab(TABS[currentIndex + 1], true);
-      } else if (deltaX > 60 && currentIndex > 0) {
-        // Swipe right -> go to previous tab
-        navigateTab(TABS[currentIndex - 1], true);
+        target = target.parentElement;
       }
-    }
-  };
+
+      touchRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        startTime: Date.now(),
+        active: true
+      };
+    };
+
+    const onTouchEnd = (e) => {
+      if (!touchRef.current.active) return;
+      touchRef.current.active = false;
+
+      const touch = e.changedTouches ? e.changedTouches[0] : null;
+      if (!touch) return;
+
+      const deltaX = touch.clientX - touchRef.current.startX;
+      const deltaY = touch.clientY - touchRef.current.startY;
+      const elapsed = Date.now() - touchRef.current.startTime;
+
+      // Criterios de swipe móvil natural:
+      // - Gesto de pulgar fluido (< 750ms)
+      // - Desplazamiento horizontal claro (>= 45px)
+      // - Claramente horizontal sobre vertical: |deltaX| > |deltaY| * 1.2
+      if (elapsed < 750 && Math.abs(deltaX) >= 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+        const currentIndex = TABS.indexOf(activeTab);
+        if (deltaX < -45 && currentIndex < TABS.length - 1) {
+          // Deslizar izquierda (←) -> Avanzar a la siguiente pestaña
+          navigateTab(TABS[currentIndex + 1], true);
+        } else if (deltaX > 45 && currentIndex > 0) {
+          // Deslizar derecha (→) -> Retroceder a la pestaña anterior
+          navigateTab(TABS[currentIndex - 1], true);
+        }
+      }
+    };
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [activeTab, authUser, mobileSignTicketId]);
 
   const handleOpenTicketFromClass = (ticketData) => {
     setNewTicketPrefill(ticketData);
@@ -413,8 +461,6 @@ export default function App() {
       <SplashScreen minDuration={2200} />
       <div
         className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
       {/* Top Mobile/Desktop App Header with AMOLED Mode Toggle */}
       <Navbar

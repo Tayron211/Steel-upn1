@@ -43,11 +43,13 @@ export default function OperationsHub({
   }, [openReservationModalTrigger]);
 
   const switchSubTab = (target) => {
-    // Al dar clic en una subpestaña (Hojas Manuales, Reservas, Ambientes),
-    // NUNCA debe abrirse una ventana modal a menos que se use su respectivo botón de registro.
     if (onConsumeManualModalTrigger) onConsumeManualModalTrigger();
     if (onConsumeReservationModalTrigger) onConsumeReservationModalTrigger();
     setSubTab(target);
+    const subHash = target === 'reservations' ? '#reservas' : (target === 'rooms' ? '#ambientes' : '#operaciones');
+    if (window.location.hash.toLowerCase() !== subHash) {
+      window.history.pushState({ tab: 'operations', subTab: target }, '', subHash);
+    }
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;

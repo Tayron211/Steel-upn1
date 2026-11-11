@@ -15,6 +15,7 @@ import {
 import SignatureCanvas from './SignatureCanvas';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
+import { getLoggedAssistantName } from '../utils/auth';
 
 export default function MobileSignView({ ticketId, onBack }) {
   const asistentes = useAssistants();
@@ -48,7 +49,7 @@ export default function MobileSignView({ ticketId, onBack }) {
               if (match && match[2]) setPersonName(match[2].trim());
             } else if (!found.firmaEntrega && found.firmaRecepcion) {
               setRole('entrega');
-              setPersonName(found.entregadoPor || found.responsable || 'TAYRON SALINAS');
+              setPersonName(found.entregadoPor || found.responsable || getLoggedAssistantName());
             } else {
               setRole('recepcion');
               const match = (found.descripcionSolucion || '').match(/\[(🎓\s*ALUMNO|👨‍🏫\s*DOCENTE):\s*([^\]]+)\]/i);
@@ -72,7 +73,7 @@ export default function MobileSignView({ ticketId, onBack }) {
     setRole(selected);
     if (!ticket) return;
     if (selected === 'entrega') {
-      setPersonName(ticket.entregadoPor || ticket.responsable || 'TAYRON SALINAS');
+      setPersonName(ticket.entregadoPor || ticket.responsable || getLoggedAssistantName());
     } else {
       const match = (ticket.descripcionSolucion || '').match(/\[(🎓\s*ALUMNO|👨‍🏫\s*DOCENTE):\s*([^\]]+)\]/i);
       setPersonName(match && match[2] ? match[2].trim() : (ticket.recibidoPor || ''));

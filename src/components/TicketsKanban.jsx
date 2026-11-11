@@ -207,8 +207,19 @@ export default function TicketsKanban({
   // Form State (100% Sincronizado con las 12 columnas de ATENCIONES 2026-2)
   // Columna 1 & 2: FECHA y DIA
   const [loanDate, setLoanDate] = useState(() => new Date().toISOString().split('T')[0]);
-  // Columna 3 & 4: HORA DE REPORTE y RANGO
+  // Columna 3 & 4: HORA DE ENTREGA y HORA DE DEVOLUCIÓN
+  const computeDefaultReturnTime = (timeStr) => {
+    try {
+      const [h, m] = (timeStr || '09:00').split(':').map(Number);
+      const nextH = (h + 1) % 24;
+      return `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    } catch (_) {
+      return '10:00';
+    }
+  };
+
   const [loanTime, setLoanTime] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [loanReturnTime, setLoanReturnTime] = useState(() => computeDefaultReturnTime(new Date().toTimeString().slice(0, 5)));
   const [loanRango, setLoanRango] = useState(() => computeRango(new Date().toTimeString().slice(0, 5)));
   // Columna 5, 6, 7: AMBIENTE, PISO y PABELLÓN
   const [roomInput, setRoomInput] = useState('');
@@ -485,6 +496,7 @@ export default function TicketsKanban({
   const handleTimeChange = (newTime) => {
     setLoanTime(newTime);
     setLoanRango(computeRango(newTime));
+    setLoanReturnTime(computeDefaultReturnTime(newTime));
   };
 
   // Generador oficial de Tabla de Préstamos en HTML y TSV (12 columnas oficiales de ATENCIONES 2026-2)
@@ -542,7 +554,7 @@ export default function TicketsKanban({
       const estado = (hasSign1 && hasSign2 && isDevuelto) ? 'ATENDIDO' : 'EN PROCESO';
       const usuario = ticket.usuario || (String(ticket.descripcionSolucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE');
       const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
-      const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
+      const responsable = (ticket.responsable || getLoggedAssistantName()).toUpperCase().trim();
 
       const isAtendido = estado === 'ATENDIDO' || estado === 'DEVUELTO' || estado === 'RESUELTO';
       const isProceso = estado === 'EN PROCESO';
@@ -627,7 +639,7 @@ export default function TicketsKanban({
       const estado = (hasSign1 && hasSign2 && isDevuelto) ? 'ATENDIDO' : 'EN PROCESO';
       const usuario = ticket.usuario || (String(ticket.descripcionSolucion || '').toUpperCase().includes('ALUMNO') ? 'ALUMNO' : 'DOCENTE');
       const descripcion = ticket.descripcionSolucion || ticket.descripcion || '';
-      const responsable = (ticket.responsable || 'TAYRON SALINAS').toUpperCase().trim();
+      const responsable = (ticket.responsable || getLoggedAssistantName()).toUpperCase().trim();
 
       return [fecha, dia, hora, rango, ambiente, piso, pabellon, tipo, estado, usuario, descripcion, responsable].join('\t');
     });
@@ -717,8 +729,9 @@ export default function TicketsKanban({
 
     const personTag = personName.trim() ? `: ${personName.trim().toUpperCase()}` : '';
     const prefix = beneficiaryType === 'ALUMNO' ? `[🎓 ALUMNO${personTag}]` : `[👨‍🏫 DOCENTE${personTag}]`;
+    const returnTag = finalReturnTime ? ` [Devolución: ${finalReturnTime}]` : '';
     const extraDetail = loanDescription.trim() ? ` - ${loanDescription.trim()}` : '';
-    const finalDesc = `${prefix} ${matDesc}${extraDetail}`;
+    const finalDesc = `${prefix} ${matDesc}${returnTag}${extraDetail}`;
 
     // Capturar Firma del Solicitante que recibe el material ("Recibí conforme")
     const finalFirmaRecepcion = solicitanteFormSignRef.current ? solicitanteFormSignRef.current.getDataUrl() : null;
@@ -727,6 +740,7 @@ export default function TicketsKanban({
     const finalDay = getDayOfWeek(finalDate) || 'LUNES';
     const finalTime = loanTime || new Date().toTimeString().slice(0, 5);
     const finalRango = loanRango || computeRango(finalTime);
+    const finalReturnTime = loanReturnTime || '';
 
     const payload = {
       fecha: finalDate,
@@ -1913,9 +1927,9 @@ export default function TicketsKanban({
                       </div>
                       <div className="text-xs font-black text-amber-600 dark:text-amber-400 mt-0.5 break-words flex items-center gap-1.5">
                         <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 flex items-center justify-center text-[10px] font-black shrink-0">
-                          {(detailTicket.responsable || 'T').charAt(0).toUpperCase()}
+                          {(detailTicket.responsable || getLoggedAssistantName()).charAt(0).toUpperCase()}
                         </span>
-                        <span className="truncate">{detailTicket.responsable || 'TAYRON SALINAS'}</span>
+                        <span className="truncate">{detailTicket.responsable || getLoggedAssistantName()}</span>
                       </div>
                     </div>
 
@@ -2113,9 +2127,10 @@ export default function TicketsKanban({
             <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 max-h-[80vh] scrollbar-none">
               <form id="new-loan-modal-form" onSubmit={handleRegisterLoan} className="space-y-3.5">
 
-                {/* 1. Fila de Horario: Fecha, Hora y Rango Automático */}
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 items-end">
-                  <div className="sm:col-span-5">
+                {/* 1. Fila de Horario Simplificada: Fecha, Hora de Entrega y Hora de Devolución */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 items-end">
+                  {/* Fecha */}
+                  <div className="sm:col-span-4">
                     <label className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                       <span>Fecha</span>
                       <span className="text-amber-500 font-black">{getDayOfWeek(loanDate)}</span>
@@ -2127,9 +2142,11 @@ export default function TicketsKanban({
                     />
                   </div>
 
+                  {/* Hora de Entrega */}
                   <div className="sm:col-span-4">
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
-                      Hora de Reporte
+                    <label className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                      <span>Hora Entrega</span>
+                      <span className="text-[10px] font-mono font-semibold text-slate-400">Prestado</span>
                     </label>
                     <CustomTimePicker
                       value={loanTime}
@@ -2138,65 +2155,91 @@ export default function TicketsKanban({
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
-                      Rango
+                  {/* Hora de Devolución */}
+                  <div className="sm:col-span-4">
+                    <label className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                      <span>Hora Devolución</span>
+                      <span className="text-[10px] font-mono font-semibold text-emerald-500">Estimada</span>
                     </label>
-                    <div className="h-10 px-2.5 bg-slate-100 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl flex items-center justify-center font-mono font-bold text-xs text-amber-600 dark:text-amber-400 tracking-tight text-center">
-                      {loanRango || computeRango(loanTime)}
-                    </div>
+                    <CustomTimePicker
+                      value={loanReturnTime}
+                      onChange={(val) => setLoanReturnTime(val)}
+                      required
+                    />
                   </div>
                 </div>
 
                 {/* 2. Fila: Ambiente / Aula y Solicitante */}
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                  {/* Aula Unificada */}
-                  <div className="sm:col-span-5">
-                    <div className="flex items-center justify-between mb-1">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  {/* Ambiente / Aula Rediseñado */}
+                  <div className="sm:col-span-5 space-y-1.5">
+                    <div className="flex items-center justify-between">
                       <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                         Ambiente / Aula
                       </label>
                       {roomInput && (
-                        <span className="text-[10px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                           {deduceFloor(roomInput)}
                         </span>
                       )}
                     </div>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        value={roomInput}
-                        onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                        placeholder="Ej. B206, A509..."
-                        className="w-full h-10 pl-3 pr-20 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30]"
-                      />
-                      <div className="absolute right-1 flex items-center gap-1">
+                    
+                    <div className="flex items-center gap-1.5">
+                      {/* Input Principal del Aula */}
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={roomInput}
+                          onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                          placeholder="Ej. B206, A509..."
+                          className="w-full h-10 pl-3 pr-8 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30] transition"
+                        />
                         {roomInput && (
                           <button
                             type="button"
                             onClick={() => setRoomInput('')}
-                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded"
                             title="Limpiar aula"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => setIsRoomCalendarOpen(true)}
-                          className="h-8 px-2 text-[11px] font-bold bg-[#FDBA30] hover:bg-amber-400 text-slate-950 rounded-lg flex items-center gap-1 transition active:scale-95"
-                          title="Elegir desde mapa de aulas"
-                        >
-                          <Calendar className="w-3 h-3 stroke-[2.4]" />
-                          <span>Mapa</span>
-                        </button>
                       </div>
+
+                      {/* Botón de Pabellones (reemplaza 'Mapa') */}
+                      <button
+                        type="button"
+                        onClick={() => setIsRoomCalendarOpen(true)}
+                        className="h-10 px-3 text-xs font-black bg-[#FDBA30] hover:bg-amber-400 text-slate-950 rounded-xl flex items-center gap-1.5 transition active:scale-95 shrink-0 shadow-xs cursor-pointer"
+                        title="Explorar directorio de pabellones y aulas UPN Comas"
+                      >
+                        <Building2 className="w-3.5 h-3.5 stroke-[2.4]" />
+                        <span>Pabellones</span>
+                      </button>
+                    </div>
+
+                    {/* Chips rápidos de acceso común */}
+                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pt-0.5">
+                      {['DOCENCIA', 'A-201', 'B-101', 'AUDITORIO'].map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => setRoomInput(chip)}
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded-lg border transition active:scale-95 ${
+                            roomInput === chip
+                              ? 'bg-amber-500/20 text-amber-500 border-amber-500/40 font-bold'
+                              : 'bg-slate-100 dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border-slate-200/60 dark:border-zinc-800 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          {chip}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
                   {/* Solicitante con Selector de Rol */}
-                  <div className="sm:col-span-7">
-                    <div className="flex items-center justify-between mb-1">
+                  <div className="sm:col-span-7 space-y-1.5">
+                    <div className="flex items-center justify-between">
                       <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                         Solicitante
                       </label>

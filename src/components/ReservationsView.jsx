@@ -253,6 +253,24 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     prioridad: 'NORMAL'
   });
 
+  // Mantener actualizado el asistente autenticado si cambia la sesión o se abre el modal
+  useEffect(() => {
+    const handleAuth = () => {
+      setFormData(prev => ({ ...prev, usuario: getLoggedAssistantName() }));
+    };
+    window.addEventListener('auth:change', handleAuth);
+    return () => window.removeEventListener('auth:change', handleAuth);
+  }, []);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setFormData(prev => ({
+        ...prev,
+        usuario: isAdmin() ? (prev.usuario || getLoggedAssistantName()) : getLoggedAssistantName()
+      }));
+    }
+  }, [isModalOpen]);
+
   const handleTogglePiso = (val) => {
     if (!val) {
       setSelectedPisos([]);
@@ -459,7 +477,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       const finalUbicacion = (userUbicacion || fallbackUbicacion).toUpperCase();
       const finalDetalle = (formData.detalle || formData.motivo || 'USO DE LABORATORIO').toUpperCase().trim();
       const finalDocente = (formData.docente || '').toUpperCase().trim();
-      const finalUsuario = (formData.usuario || 'TAYRON SALINAS').toUpperCase().trim();
+      const finalUsuario = (isAdmin() ? (formData.usuario || getLoggedAssistantName()) : getLoggedAssistantName()).toUpperCase().trim();
       const finalPrioridad = (formData.prioridad || 'NORMAL').toUpperCase().trim();
 
       const payload = {
