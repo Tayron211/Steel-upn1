@@ -147,11 +147,11 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   <ChevronDown className={`w-3.5 h-3.5 text-amber-700 dark:text-zinc-400 transition-transform duration-200 shrink-0 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Menú Desplegable */}
+                {/* Menú Desplegable: Solo Iconos de Acciones */}
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-[#121216] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#121216] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                     {/* Cabecera del Usuario */}
-                    <div className="px-3 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 mb-1">
+                    <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {authUser?.name || authUser?.displayName}
                       </div>
@@ -160,66 +160,56 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       </div>
                     </div>
 
-                    {/* Opción 1: Cambio de Modo Claro / Oscuro */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onToggleDarkMode();
-                      }}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2.5">
+                    {/* Fila de Solo Iconos */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* 1. Modo Claro / Oscuro */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onToggleDarkMode();
+                        }}
+                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        title={darkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro (AMOLED)'}
+                      >
                         {darkMode ? (
                           <Sun className="w-4 h-4 text-amber-400" />
                         ) : (
                           <Moon className="w-4 h-4 text-slate-700" />
                         )}
-                        <span>{darkMode ? 'Modo Claro' : 'Modo Oscuro (AMOLED)'}</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                        {darkMode ? 'Oscuro' : 'Claro'}
-                      </span>
-                    </button>
+                      </button>
 
-                    {/* Opción 2: Sincronización con OneDrive */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSyncOneDrive();
-                      }}
-                      disabled={isSyncing}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition-colors disabled:opacity-60 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2.5">
+                      {/* 2. Sincronizar OneDrive */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSyncOneDrive();
+                        }}
+                        disabled={isSyncing}
+                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-2xs"
+                        title="Sincronizar OneDrive (Excel ↔ App)"
+                      >
                         {isSyncing ? (
                           <RefreshCw className="w-4 h-4 text-amber-500 animate-spin" />
                         ) : syncSuccess ? (
-                          <Check className="w-4 h-4 text-emerald-500" />
+                          <Check className="w-4 h-4 text-emerald-500 stroke-[2.5]" />
                         ) : (
                           <Cloud className="w-4 h-4 text-sky-500" />
                         )}
-                        <span>Sincronizar OneDrive</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-sky-600 dark:text-sky-400 uppercase bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.5 rounded">
-                        {isSyncing ? 'Sincronizando...' : syncSuccess ? 'Al día ✓' : 'Excel ↔ App'}
-                      </span>
-                    </button>
+                      </button>
 
-                    {/* Separador */}
-                    <div className="my-1 border-t border-slate-100 dark:border-zinc-800/80" />
-
-                    {/* Opción 3: Cerrar Sesión */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        onLogout();
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
-                    >
-                      <LogOut className="w-4 h-4 stroke-[2.2]" />
-                      <span>Cerrar Sesión</span>
-                    </button>
+                      {/* 3. Cerrar Sesión */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          onLogout();
+                        }}
+                        className="h-10 rounded-xl flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-950/70 border border-rose-200/80 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        title="Cerrar Sesión"
+                      >
+                        <LogOut className="w-4 h-4 stroke-[2.2]" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
