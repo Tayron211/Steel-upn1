@@ -386,7 +386,7 @@ export default function App() {
   if (mobileSignTicketId) {
     return (
       <>
-        <SplashScreen minDuration={800} />
+        <SplashScreen minDuration={2000} />
         <MobileSignView
           ticketId={mobileSignTicketId}
           onBack={() => {
@@ -402,7 +402,7 @@ export default function App() {
   if (!authUser) {
     return (
       <>
-        <SplashScreen minDuration={600} />
+        <SplashScreen minDuration={2200} />
         <LoginScreen onLogin={setAuthUser} />
       </>
     );
@@ -410,7 +410,7 @@ export default function App() {
 
   return (
     <>
-      <SplashScreen minDuration={1000} />
+      <SplashScreen minDuration={2200} />
       <div
         className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
         onTouchStart={handleTouchStart}

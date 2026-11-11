@@ -5,7 +5,7 @@ import React, { useEffect } from 'react';
  * Controla la transición de salida suave del Splash Screen institucional
  * que se renderiza directamente en index.html fuera de #root (0ms latency, sin glitches ni flash blanco).
  */
-export default function SplashScreen({ minDuration = 1100, onFinished }) {
+export default function SplashScreen({ minDuration = 2200, onFinished }) {
   useEffect(() => {
     const splash = document.getElementById('upn-boot-splash');
     if (!splash) {
@@ -15,7 +15,7 @@ export default function SplashScreen({ minDuration = 1100, onFinished }) {
 
     const timer = setTimeout(() => {
       // Iniciar desvanecimiento cinematográfico ultra suave
-      splash.style.transition = 'opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+      splash.style.transition = 'opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
       splash.style.opacity = '0';
       splash.style.transform = 'scale(1.02)';
       splash.style.pointerEvents = 'none';
@@ -31,7 +31,7 @@ export default function SplashScreen({ minDuration = 1100, onFinished }) {
           }
         } catch (_) {}
         if (onFinished) onFinished();
-      }, 680);
+      }, 720);
 
       return () => clearTimeout(removeTimer);
     }, minDuration);
