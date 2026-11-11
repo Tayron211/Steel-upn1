@@ -5,10 +5,6 @@ import { useFadeModal } from '../utils/useFadeModal';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const COMMON_MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
-const QUICK_BLOCKS = [
-  '07:30', '09:10', '10:50', '12:30',
-  '14:30', '16:10', '17:50', '19:30', '21:10'
-];
 
 export default function CustomTimePicker({
   value = '09:00',
@@ -54,12 +50,6 @@ export default function CustomTimePicker({
     if (onChange) {
       onChange(`${newH}:${newM}`);
     }
-  };
-
-  const handleQuickSelect = (block) => {
-    const [bh, bm] = block.split(':');
-    handleSelectTime(bh, bm);
-    pickerFade.requestClose(() => setIsOpen(false));
   };
 
   const handleSetNow = () => {
@@ -138,32 +128,6 @@ export default function CustomTimePicker({
                 </div>
               </div>
 
-              {/* Accesos Rápidos de Bloques Universitarios */}
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block mb-1.5">
-                  Bloques Académicos Rápidos
-                </span>
-                <div className="grid grid-cols-3 gap-1">
-                  {QUICK_BLOCKS.map((blk) => {
-                    const isCur = value === blk;
-                    return (
-                      <button
-                        key={blk}
-                        type="button"
-                        onClick={() => handleQuickSelect(blk)}
-                        className={`h-7 rounded-lg text-[11px] font-mono font-bold transition active:scale-95 border ${
-                          isCur
-                            ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
-                            : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:border-amber-400'
-                        }`}
-                      >
-                        {blk}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Selector de Horas y Minutos en 2 Columnas Limpias */}
               <div className="grid grid-cols-2 gap-2.5 pt-1">
                 {/* Columna Horas */}
@@ -171,7 +135,7 @@ export default function CustomTimePicker({
                   <span className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider block mb-1 text-center">
                     Hora
                   </span>
-                  <div className="max-h-36 overflow-y-auto space-y-1 p-1 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/80 dark:border-zinc-800 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="max-h-44 overflow-y-auto space-y-1 p-1 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/80 dark:border-zinc-800 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {HOURS.map((h) => {
                       const isSel = selectedH === h;
                       return (
@@ -197,7 +161,7 @@ export default function CustomTimePicker({
                   <span className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider block mb-1 text-center">
                     Minutos
                   </span>
-                  <div className="max-h-36 overflow-y-auto space-y-1 p-1 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/80 dark:border-zinc-800 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="max-h-44 overflow-y-auto space-y-1 p-1 bg-slate-50 dark:bg-zinc-900/60 rounded-xl border border-slate-200/80 dark:border-zinc-800 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {COMMON_MINUTES.map((m) => {
                       const isSel = selectedM === m;
                       return (

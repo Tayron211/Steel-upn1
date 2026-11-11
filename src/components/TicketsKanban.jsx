@@ -2172,8 +2172,8 @@ export default function TicketsKanban({
                 {/* 2. Fila: Ambiente / Aula y Solicitante */}
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                   {/* Ambiente / Aula Rediseñado */}
-                  <div className="sm:col-span-5 space-y-1.5">
-                    <div className="flex items-center justify-between">
+                  <div className="sm:col-span-5">
+                    <div className="flex items-center justify-between mb-1">
                       <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                         Ambiente / Aula
                       </label>
@@ -2184,56 +2184,35 @@ export default function TicketsKanban({
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-1.5">
-                      {/* Input Principal del Aula */}
-                      <div className="relative flex-1">
-                        <input
-                          type="text"
-                          value={roomInput}
-                          onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-                          placeholder="Ej. B206, A509..."
-                          className="w-full h-10 pl-3 pr-8 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30] transition"
-                        />
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        value={roomInput}
+                        onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                        placeholder="Ej. B206, A509, DOCENCIA..."
+                        className="w-full h-10 pl-3.5 pr-22 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30] transition"
+                      />
+                      <div className="absolute right-1.5 flex items-center gap-1">
                         {roomInput && (
                           <button
                             type="button"
                             onClick={() => setRoomInput('')}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded"
-                            title="Limpiar aula"
+                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded"
+                            title="Limpiar"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         )}
-                      </div>
-
-                      {/* Botón de Pabellones (reemplaza 'Mapa') */}
-                      <button
-                        type="button"
-                        onClick={() => setIsRoomCalendarOpen(true)}
-                        className="h-10 px-3 text-xs font-black bg-[#FDBA30] hover:bg-amber-400 text-slate-950 rounded-xl flex items-center gap-1.5 transition active:scale-95 shrink-0 shadow-xs cursor-pointer"
-                        title="Explorar directorio de pabellones y aulas UPN Comas"
-                      >
-                        <Building2 className="w-3.5 h-3.5 stroke-[2.4]" />
-                        <span>Pabellones</span>
-                      </button>
-                    </div>
-
-                    {/* Chips rápidos de acceso común */}
-                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pt-0.5">
-                      {['DOCENCIA', 'A-201', 'B-101', 'AUDITORIO'].map((chip) => (
                         <button
-                          key={chip}
                           type="button"
-                          onClick={() => setRoomInput(chip)}
-                          className={`text-[10px] font-mono px-2 py-0.5 rounded-lg border transition active:scale-95 ${
-                            roomInput === chip
-                              ? 'bg-amber-500/20 text-amber-500 border-amber-500/40 font-bold'
-                              : 'bg-slate-100 dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border-slate-200/60 dark:border-zinc-800 hover:text-slate-900 dark:hover:text-white'
-                          }`}
+                          onClick={() => setIsRoomCalendarOpen(true)}
+                          className="h-7 px-2.5 text-[11px] font-black bg-[#FDBA30] hover:bg-amber-400 text-slate-950 rounded-lg flex items-center gap-1 transition active:scale-95 shadow-2xs cursor-pointer"
+                          title="Explorar directorio de aulas"
                         >
-                          {chip}
+                          <Building2 className="w-3 h-3 stroke-[2.4]" />
+                          <span>Aulas</span>
                         </button>
-                      ))}
+                      </div>
                     </div>
                   </div>
 
@@ -2374,11 +2353,8 @@ export default function TicketsKanban({
                         className="h-10 text-xs font-bold"
                       />
                     ) : (
-                      <div className="h-10 px-3.5 flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 select-none">
+                      <div className="h-10 px-3.5 flex items-center bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white select-none">
                         <span className="truncate">{getLoggedAssistantName()}</span>
-                        <span className="text-[10px] font-mono text-amber-700 dark:text-amber-300 uppercase tracking-wider bg-amber-200/60 dark:bg-amber-950 px-2 py-0.5 rounded-md">
-                          Autenticado
-                        </span>
                       </div>
                     )}
                   </div>
