@@ -115,10 +115,10 @@ export default function LoginScreen({ onLogin }) {
             <div className="login-visual-hero">
               <div className="login-visual-title">
                 <span className="login-title-white">Portal Corporativo de</span>
-                <span className="text-gradient-upn">Control Docente & Operaciones</span>
+                <span className="text-gradient-upn">Control Docente</span>
               </div>
               <div className="login-visual-subtitle">
-                Sistema de Control de Asistencia y Operaciones • Campus Comas
+                Campus Comas
               </div>
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function LoginScreen({ onLogin }) {
             </div>
             <h2 className="login-form-title">Iniciar Sesión</h2>
             <p className="login-form-subtitle">
-              Control Docente • Campus Comas
+              Campus Comas
             </p>
           </div>
 
@@ -174,7 +174,7 @@ export default function LoginScreen({ onLogin }) {
                   type="text"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
-                  placeholder="ej: tsalinas, apalomino, apascual..."
+                  placeholder="Usuario (ej: tsalinas, apalomino)"
                   required
                   className="login-input"
                   style={{ paddingLeft: '52px', paddingRight: '16px' }}
@@ -182,12 +182,6 @@ export default function LoginScreen({ onLogin }) {
                   autoFocus
                 />
               </div>
-              {matchedUser && (
-                <div className="text-[11px] font-bold text-slate-500 mt-1 pl-1 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Asistente: <strong className="text-slate-800 dark:text-zinc-200">{detectedDisplayName}</strong></span>
-                </div>
-              )}
             </div>
 
             {/* Campo: Contraseña */}
@@ -225,9 +219,6 @@ export default function LoginScreen({ onLogin }) {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 pl-1">
-                Tip: PIN simple (1234) o tu apellido en minúsculas.
-              </p>
             </div>
 
             {/* Alerta de Error si las credenciales fallan */}

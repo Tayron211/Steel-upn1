@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   ClipboardCheck, 
@@ -11,7 +11,8 @@ import {
   Cloud,
   RefreshCw,
   Check,
-  LogOut
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 import UpnLogo from './UpnLogo';
 import OneDriveSyncModal from './OneDriveSyncModal';
@@ -29,6 +30,24 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [showOneDriveModal, setShowOneDriveModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [userMenuOpen]);
 
   const handleSyncOneDrive = async () => {
     if (isSyncing) return;
@@ -71,7 +90,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const formattedTime = time.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 
   const navItems = [
-    { id: 'attendance', label: 'Ronda', icon: ClipboardCheck },
+    { id: 'attendance', label: 'Control', icon: ClipboardCheck },
     { id: 'operations', label: 'Operaciones', icon: Layers },
     { id: 'tickets', label: 'Préstamos', icon: HandHelping, badge: pendingTicketsCount },
     { id: 'dashboard', label: 'Métricas', icon: BarChart3 }
@@ -93,81 +112,116 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
               if (document.documentElement) document.documentElement.scrollTop = 0;
               if (document.body) document.body.scrollTop = 0;
             }}
-            title="Ir al inicio (Ronda Académica)"
+            title="Ir al inicio (Control Docente)"
           >
             <UpnLogo variant="horizontal" />
           </div>
 
-          {/* Header Right: OneDrive Sync + AMOLED Toggle + Apple Minimalist Live Clock Pill */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Quick OneDrive Sync Icon Button */}
-            <button
-              type="button"
-              onClick={handleSyncOneDrive}
-              disabled={isSyncing}
-              className={`h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xs shrink-0 ${
-                isSyncing
-                  ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                  : syncSuccess
-                  ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-200 hover:text-sky-600 dark:hover:text-sky-400'
-              }`}
-              title="Sincronizar con OneDrive (Excel ↔ App)"
-              aria-label="Sincronizar con OneDrive"
-            >
-              {isSyncing ? (
-                <RefreshCw className="w-4 h-4 stroke-[2.4] text-amber-500 animate-spin" />
-              ) : syncSuccess ? (
-                <Check className="w-4 h-4 stroke-[3] text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <Cloud className="w-4 h-4 stroke-[2.3] text-sky-600 dark:text-sky-400" />
-              )}
-            </button>
-
-            {/* Dark / Light Mode Toggle Button */}
-            <button
-              type="button"
-              onClick={onToggleDarkMode}
-              className="h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-90 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-amber-400 shadow-2xs shrink-0"
-              title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro AMOLED'}
-              aria-label="Alternar modo de pantalla"
-            >
-              {darkMode ? (
-                <Sun className="w-4 h-4 stroke-[2.4] text-amber-400 animate-pulse" />
-              ) : (
-                <Moon className="w-4 h-4 stroke-[2.3] text-slate-700" />
-              )}
-            </button>
-
+          {/* Header Right: Reloj Minimalista + Botón Desplegable del Asistente */}
+          <div className="flex items-center gap-2 shrink-0">
             {/* Live Clock Pill */}
-            <div className="flex items-center gap-2 bg-slate-100/90 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-2.5 sm:px-3 py-1.5 rounded-full text-slate-800 dark:text-zinc-200 shadow-2xs whitespace-nowrap shrink-0">
+            <div className="hidden sm:flex items-center gap-2 bg-slate-100/90 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-3 py-1.5 rounded-full text-slate-800 dark:text-zinc-200 shadow-2xs whitespace-nowrap shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
+              <span className="text-[11px] font-bold tracking-tight whitespace-nowrap font-mono">
                 {currentDayName} {formattedTime}
               </span>
             </div>
 
-            {/* Asistente Autenticado & Botón de Salir */}
+            {/* Botón de Nombre con Menú Desplegable (Modo Claro/Oscuro + Sincronización OneDrive + Cerrar Sesión) */}
             {authUser && (
-              <div className="flex items-center gap-1.5 pl-0.5">
-                <div
-                  className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800/80 px-2 sm:px-2.5 py-1 rounded-full text-amber-900 dark:text-amber-300 text-[11px] font-bold shadow-2xs"
-                  title={`Asistente en sesión: ${authUser.name}`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                  <span className="max-w-[75px] sm:max-w-[130px] truncate uppercase font-mono">
-                    {authUser.name || authUser.displayName}
-                  </span>
-                </div>
+              <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
-                  onClick={onLogout}
-                  className="h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-90 bg-slate-100 hover:bg-rose-50 dark:bg-zinc-900 dark:hover:bg-rose-950/60 border border-slate-200/80 dark:border-zinc-800 hover:border-rose-300 dark:hover:border-rose-800 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 shadow-2xs shrink-0"
-                  title="Cerrar sesión de asistente"
-                  aria-label="Cerrar sesión"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className={`h-9 px-3 sm:px-3.5 rounded-full flex items-center gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${
+                    userMenuOpen
+                      ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-2 ring-amber-400/30'
+                      : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-amber-200/80 dark:border-zinc-800 text-amber-950 dark:text-zinc-100'
+                  }`}
+                  title="Opciones de cuenta y sistema"
                 >
-                  <LogOut className="w-3.5 h-3.5 stroke-[2.3]" />
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  <span className="text-xs font-bold font-mono tracking-tight max-w-[100px] sm:max-w-[150px] truncate uppercase">
+                    {authUser?.name || authUser?.displayName || 'Asistente'}
+                  </span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-amber-700 dark:text-zinc-400 transition-transform duration-200 shrink-0 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
+
+                {/* Menú Desplegable */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-[#121216] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    {/* Cabecera del Usuario */}
+                    <div className="px-3 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 mb-1">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {authUser?.name || authUser?.displayName}
+                      </div>
+                      <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold uppercase mt-0.5">
+                        {authUser?.role === 'admin' ? 'Modo Administrador' : 'Modo Asistente'} • Comas
+                      </div>
+                    </div>
+
+                    {/* Opción 1: Cambio de Modo Claro / Oscuro */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onToggleDarkMode();
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {darkMode ? (
+                          <Sun className="w-4 h-4 text-amber-400" />
+                        ) : (
+                          <Moon className="w-4 h-4 text-slate-700" />
+                        )}
+                        <span>{darkMode ? 'Modo Claro' : 'Modo Oscuro (AMOLED)'}</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                        {darkMode ? 'Oscuro' : 'Claro'}
+                      </span>
+                    </button>
+
+                    {/* Opción 2: Sincronización con OneDrive */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSyncOneDrive();
+                      }}
+                      disabled={isSyncing}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition-colors disabled:opacity-60 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {isSyncing ? (
+                          <RefreshCw className="w-4 h-4 text-amber-500 animate-spin" />
+                        ) : syncSuccess ? (
+                          <Check className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <Cloud className="w-4 h-4 text-sky-500" />
+                        )}
+                        <span>Sincronizar OneDrive</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-sky-600 dark:text-sky-400 uppercase bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.5 rounded">
+                        {isSyncing ? 'Sincronizando...' : syncSuccess ? 'Al día ✓' : 'Excel ↔ App'}
+                      </span>
+                    </button>
+
+                    {/* Separador */}
+                    <div className="my-1 border-t border-slate-100 dark:border-zinc-800/80" />
+
+                    {/* Opción 3: Cerrar Sesión */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4 stroke-[2.2]" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -27,6 +27,7 @@ import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useFadeModal } from '../utils/useFadeModal';
 import { useAssistants } from '../utils/assistants';
+import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 
 import { CAMPUS_ROOMS } from '../utils/campusRooms';
 const CAMPUS_ROOMS_CATALOG = CAMPUS_ROOMS;
@@ -247,7 +248,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     docente: '',
     motivo: '',
     detalle: '',
-    usuario: 'TAYRON SALINAS',
+    usuario: getLoggedAssistantName(),
     obs: '',
     prioridad: 'NORMAL'
   });
@@ -512,7 +513,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       ubicacion: '2DO PISO - A',
       docente: '',
       detalle: '',
-      usuario: 'TAYRON SALINAS',
+      usuario: getLoggedAssistantName(),
       prioridad: 'NORMAL'
     });
   };
@@ -530,7 +531,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       ubicacion: room.piso ? `${room.piso} - ${room.pabellon}` : (deducePisoFromAula(room.abrv) || 'SEDE'),
       docente: '',
       detalle: '',
-      usuario: 'TAYRON SALINAS',
+      usuario: getLoggedAssistantName(),
       prioridad: 'NORMAL'
     });
     setIsModalOpen(true);
@@ -1612,12 +1613,21 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
                     10. USUARIO (Asistente / Responsable) *
                   </label>
-                  <CustomSelect
-                    value={formData.usuario}
-                    onChange={(val) => setFormData({ ...formData, usuario: val })}
-                    options={asistentes}
-                    placeholder="Seleccionar asistente"
-                  />
+                  {isAdmin() ? (
+                    <CustomSelect
+                      value={formData.usuario}
+                      onChange={(val) => setFormData({ ...formData, usuario: val })}
+                      options={asistentes}
+                      placeholder="Seleccionar asistente"
+                    />
+                  ) : (
+                    <div className="h-10 sm:h-11 px-3.5 flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 select-none">
+                      <span className="truncate">{getLoggedAssistantName()}</span>
+                      <span className="text-[10px] font-mono text-amber-700 dark:text-amber-300 uppercase tracking-wider bg-amber-200/60 dark:bg-amber-950 px-2 py-0.5 rounded-md">
+                        Autenticado
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div>

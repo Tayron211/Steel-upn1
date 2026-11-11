@@ -435,6 +435,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   // In-situ Quick Attention Bottom Sheet (Saves 80% time by recording loan right here!)
   const asistentes = useAssistants();
+  const [quickAttentionItem, setQuickAttentionItem] = useState(null);
   const [quickAttentionResponsable, setQuickAttentionResponsable] = useState(() => getLoggedAssistantName());
 
   useEffect(() => {
@@ -442,7 +443,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       setQuickAttentionResponsable(getLoggedAssistantName());
     }
   }, [quickAttentionItem]);
-  const [quickAttentionItem, setQuickAttentionItem] = useState(null);
   const [quickAttentionBeneficiary, setQuickAttentionBeneficiary] = useState('DOCENTE');
   const [quickAttentionTipo, setQuickAttentionTipo] = useState('PROYECTOR');
   const [quickSelectedMaterials, setQuickSelectedMaterials] = useState(['PROYECTOR']);
