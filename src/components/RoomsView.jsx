@@ -9,12 +9,23 @@ import {
   ArrowRight,
   X
 } from 'lucide-react';
+import { useSlidingIndicator } from '../utils/useSlidingIndicator';
+
+const PAB_ORDER = ['', 'A', 'B'];
 
 export default function RoomsView({ onSelectRoomForSchedule }) {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterPabellon, setFilterPabellon] = useState('');
+  const pabSlide = useSlidingIndicator(filterPabellon || 'ALL', [rooms.length]);
+  const [pabTransition, setPabTransition] = useState({ pab: filterPabellon, dir: 'initial' });
+  if (pabTransition.pab !== filterPabellon) {
+    const prevIdx = PAB_ORDER.indexOf(pabTransition.pab);
+    const nextIdx = PAB_ORDER.indexOf(filterPabellon);
+    setPabTransition({ pab: filterPabellon, dir: nextIdx < prevIdx ? 'prev' : 'next' });
+  }
+  const gridAnimClass = pabTransition.dir === 'prev' ? 'animate-slide-prev' : pabTransition.dir === 'next' ? 'animate-slide-next' : 'animate-fade-in';
 
   const loadRooms = async () => {
     setLoading(true);
@@ -61,27 +72,38 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
             <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Directorio de Ambientes & Aforos</h1>
           </div>
 
-          <div className="flex items-center gap-1 self-end sm:self-auto ml-auto sm:ml-0 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0">
+          <div
+            ref={pabSlide.containerRef}
+            className="relative flex items-center gap-1 self-end sm:self-auto ml-auto sm:ml-0 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0"
+          >
+            <span
+              aria-hidden="true"
+              style={pabSlide.pillStyle}
+              className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
+            />
             <button
               onClick={() => setFilterPabellon('')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center active:scale-95 ${
-                !filterPabellon ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              data-slide-active={!filterPabellon ? 'true' : undefined}
+              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
+                !filterPabellon ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Todos ({rooms.length})
             </button>
             <button
               onClick={() => setFilterPabellon('A')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center active:scale-95 ${
-                filterPabellon === 'A' ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              data-slide-active={filterPabellon === 'A' ? 'true' : undefined}
+              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
+                filterPabellon === 'A' ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Pabellón A
             </button>
             <button
               onClick={() => setFilterPabellon('B')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center justify-center active:scale-95 ${
-                filterPabellon === 'B' ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              data-slide-active={filterPabellon === 'B' ? 'true' : undefined}
+              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
+                filterPabellon === 'B' ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Pabellón B
@@ -123,7 +145,7 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba con otro código o filtro de pabellón.</p>
         </div>
       ) : (
-        <div key={`rooms-${filterPabellon}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4 animate-fade-in">
+        <div key={`rooms-${filterPabellon}`} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4 ${gridAnimClass}`}>
           {filtered.map(room => (
             <div
               key={room.abrv}

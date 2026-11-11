@@ -30,6 +30,7 @@ import {
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
 import { useFadeModal } from '../utils/useFadeModal';
+import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import CustomSelect from './CustomSelect';
 import CustomDatePicker from './CustomDatePicker';
 import CustomTimePicker from './CustomTimePicker';
@@ -281,6 +282,29 @@ export default function TicketsKanban({
   const [calendarCategory, setCalendarCategory] = useState('TODOS'); // 'TODOS' | 'AULA' | 'LABORATORIO' | 'TALLER'
   const [calendarSearch, setCalendarSearch] = useState('');
   const [roomsList, setRoomsList] = useState(CAMPUS_ROOMS);
+
+  // Sliding pill indicators across tabs, modal filters and selectors
+  const viewTabSlide = useSlidingIndicator(activeViewTab);
+  const calPabSlide = useSlidingIndicator(calendarPabellon, [roomCalendarFade.isMounted, roomCalendarFade.isVisible]);
+  const calPisoSlide = useSlidingIndicator(calendarPiso, [roomCalendarFade.isMounted, roomCalendarFade.isVisible]);
+  const calCatSlide = useSlidingIndicator(calendarCategory, [roomCalendarFade.isMounted, roomCalendarFade.isVisible]);
+  const benSlide = useSlidingIndicator(beneficiaryType, [newLoanFade.isMounted, newLoanFade.isVisible]);
+  const loanStatusSlide = useSlidingIndicator(loanStatus, [newLoanFade.isMounted, newLoanFade.isVisible]);
+
+  // Directional view slide between Activos and Devoluciones
+  const [viewTransition, setViewTransition] = useState(() => ({ tab: activeViewTab, dir: 'initial' }));
+  if (viewTransition.tab !== activeViewTab) {
+    setViewTransition({
+      tab: activeViewTab,
+      dir: activeViewTab === 'CONCLUIDOS' ? 'next' : 'prev'
+    });
+  }
+  const listAnimClass =
+    viewTransition.dir === 'prev'
+      ? 'animate-slide-prev'
+      : viewTransition.dir === 'next'
+        ? 'animate-slide-next'
+        : 'animate-fade-in';
 
   useEffect(() => {
     fetch('/api/rooms')
@@ -1092,7 +1116,15 @@ export default function TicketsKanban({
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shrink-0">
+          <div
+            ref={viewTabSlide.containerRef}
+            className="relative flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shrink-0"
+          >
+            <span
+              aria-hidden="true"
+              style={viewTabSlide.pillStyle}
+              className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-white dark:bg-zinc-800 shadow-xs"
+            />
             <button
               onClick={() => {
                 setActiveViewTab('ACTIVOS');
@@ -1100,8 +1132,9 @@ export default function TicketsKanban({
                 if (document.documentElement) document.documentElement.scrollTop = 0;
                 if (document.body) document.body.scrollTop = 0;
               }}
-              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${activeViewTab === 'ACTIVOS'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+              data-slide-active={activeViewTab === 'ACTIVOS' ? 'true' : undefined}
+              className={`relative z-10 h-8 px-3 rounded-lg font-bold text-xs transition-colors duration-200 flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${activeViewTab === 'ACTIVOS'
+                  ? 'text-slate-950 dark:text-white font-black'
                   : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
             >
@@ -1118,8 +1151,9 @@ export default function TicketsKanban({
                 if (document.documentElement) document.documentElement.scrollTop = 0;
                 if (document.body) document.body.scrollTop = 0;
               }}
-              className={`h-8 px-3 rounded-lg font-bold text-xs transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${activeViewTab === 'CONCLUIDOS'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs'
+              data-slide-active={activeViewTab === 'CONCLUIDOS' ? 'true' : undefined}
+              className={`relative z-10 h-8 px-3 rounded-lg font-bold text-xs transition-colors duration-200 flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${activeViewTab === 'CONCLUIDOS'
+                  ? 'text-slate-950 dark:text-white font-black'
                   : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
             >
@@ -1194,7 +1228,7 @@ export default function TicketsKanban({
             </p>
           </div>
         ) : (
-          <div key="activos" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
+          <div key="activos" className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 ${listAnimClass}`}>
             {activeLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
               const isSigningInline = inlineSignTicketId === ticket.id;
@@ -1418,7 +1452,7 @@ export default function TicketsKanban({
             <p className="text-xs text-slate-500 dark:text-zinc-400">No hay devoluciones registradas</p>
           </div>
         ) : (
-          <div key="devueltos" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
+          <div key="devueltos" className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 ${listAnimClass}`}>
             {concludedLoans.map(ticket => {
               const ben = parseBeneficiary(ticket.descripcionSolucion);
 
@@ -1593,12 +1627,21 @@ export default function TicketsKanban({
             {/* Controles de Navegación por Pabellón y Piso (Estilo Meses / Días de Calendario) */}
             <div className="p-4 border-b border-slate-100 dark:border-zinc-800 space-y-3 bg-white dark:bg-[#0c0c10]">
               {/* Selector de Pabellón */}
-              <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 text-xs font-bold">
+              <div
+                ref={calPabSlide.containerRef}
+                className="relative grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 text-xs font-bold"
+              >
+                <span
+                  aria-hidden="true"
+                  style={calPabSlide.pillStyle}
+                  className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-white dark:bg-zinc-800 shadow-xs ring-1 ring-amber-400/50"
+                />
                 <button
                   type="button"
+                  data-slide-active={calendarPabellon === 'A' ? 'true' : undefined}
                   onClick={() => setCalendarPabellon('A')}
-                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${calendarPabellon === 'A'
-                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
+                  className={`relative z-10 py-2 rounded-xl transition-colors duration-200 flex items-center justify-center gap-1.5 ${calendarPabellon === 'A'
+                      ? 'text-slate-950 dark:text-white font-black'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                 >
@@ -1607,9 +1650,10 @@ export default function TicketsKanban({
                 </button>
                 <button
                   type="button"
+                  data-slide-active={calendarPabellon === 'B' ? 'true' : undefined}
                   onClick={() => setCalendarPabellon('B')}
-                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${calendarPabellon === 'B'
-                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
+                  className={`relative z-10 py-2 rounded-xl transition-colors duration-200 flex items-center justify-center gap-1.5 ${calendarPabellon === 'B'
+                      ? 'text-slate-950 dark:text-white font-black'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                 >
@@ -1618,9 +1662,10 @@ export default function TicketsKanban({
                 </button>
                 <button
                   type="button"
+                  data-slide-active={calendarPabellon === 'TODOS' ? 'true' : undefined}
                   onClick={() => setCalendarPabellon('TODOS')}
-                  className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${calendarPabellon === 'TODOS'
-                      ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-xs ring-1 ring-amber-400/50'
+                  className={`relative z-10 py-2 rounded-xl transition-colors duration-200 flex items-center justify-center gap-1.5 ${calendarPabellon === 'TODOS'
+                      ? 'text-slate-950 dark:text-white font-black'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                 >
@@ -1630,7 +1675,15 @@ export default function TicketsKanban({
               </div>
 
               {/* Selector de Pisos (Estilo Pestañas de Calendario) */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar text-xs">
+              <div
+                ref={calPisoSlide.containerRef}
+                className="relative flex items-center gap-1 overflow-x-auto bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-slate-200/70 dark:border-zinc-800 no-scrollbar text-xs"
+              >
+                <span
+                  aria-hidden="true"
+                  style={calPisoSlide.pillStyle}
+                  className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-slate-950 dark:bg-zinc-800 shadow-xs"
+                />
                 {['TODOS', 'SÓTANO', '1ER PISO', '2DO PISO', '3ER PISO', '4TO PISO', '5TO PISO'].map((pisoKey) => {
                   const isActive = calendarPiso === pisoKey;
                   const label = pisoKey === 'TODOS'
@@ -1650,10 +1703,11 @@ export default function TicketsKanban({
                     <button
                       key={pisoKey}
                       type="button"
+                      data-slide-active={isActive ? 'true' : undefined}
                       onClick={() => setCalendarPiso(pisoKey)}
-                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${isActive
-                          ? 'bg-slate-950 dark:bg-zinc-800 text-[#FDBA30] font-black shadow-xs'
-                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                      className={`relative z-10 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors duration-200 active:scale-95 shrink-0 ${isActive
+                          ? 'text-[#FDBA30] font-black'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
                       {label}
@@ -1663,7 +1717,15 @@ export default function TicketsKanban({
               </div>
 
               {/* Filtro por Tipo Oficial de Ambiente (Hoja AMBIENTES de CONTROL DOCENTE.xlsx) */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+              <div
+                ref={calCatSlide.containerRef}
+                className="relative flex items-center gap-1 overflow-x-auto bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-slate-200/70 dark:border-zinc-800 no-scrollbar text-xs"
+              >
+                <span
+                  aria-hidden="true"
+                  style={calCatSlide.pillStyle}
+                  className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-amber-400 shadow-xs ring-1 ring-amber-500/50"
+                />
                 {[
                   { id: 'TODOS', label: 'Todos los Ambientes' },
                   { id: 'AULA', label: '🏫 Aulas' },
@@ -1677,10 +1739,11 @@ export default function TicketsKanban({
                     <button
                       key={cat.id}
                       type="button"
+                      data-slide-active={isActive ? 'true' : undefined}
                       onClick={() => setCalendarCategory(cat.id)}
-                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${isActive
-                          ? 'bg-amber-400 text-slate-950 font-black shadow-xs ring-1 ring-amber-500/50'
-                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                      className={`relative z-10 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors duration-200 active:scale-95 shrink-0 ${isActive
+                          ? 'text-slate-950 font-black'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
                       {cat.label}
@@ -2228,25 +2291,35 @@ export default function TicketsKanban({
                       <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                         Solicitante
                       </label>
-                      <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                      <div
+                        ref={benSlide.containerRef}
+                        className="relative inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800"
+                      >
+                        <span
+                          aria-hidden="true"
+                          style={benSlide.pillStyle}
+                          className="pointer-events-none absolute top-0 left-0 z-0 rounded-md bg-[#FDBA30] shadow-2xs"
+                        />
                         <button
                           type="button"
+                          data-slide-active={beneficiaryType === 'DOCENTE' ? 'true' : undefined}
                           onClick={() => setBeneficiaryType('DOCENTE')}
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                          className={`relative z-10 px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors duration-200 ${
                             beneficiaryType === 'DOCENTE'
-                              ? 'bg-[#FDBA30] text-slate-950 font-black'
-                              : 'text-slate-500 dark:text-zinc-400'
+                              ? 'text-slate-950 font-black'
+                              : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                           }`}
                         >
                           Docente
                         </button>
                         <button
                           type="button"
+                          data-slide-active={beneficiaryType === 'ALUMNO' ? 'true' : undefined}
                           onClick={() => setBeneficiaryType('ALUMNO')}
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                          className={`relative z-10 px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors duration-200 ${
                             beneficiaryType === 'ALUMNO'
-                              ? 'bg-[#FDBA30] text-slate-950 font-black'
-                              : 'text-slate-500 dark:text-zinc-400'
+                              ? 'text-slate-950 font-black'
+                              : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                           }`}
                         >
                           Alumno
@@ -2319,13 +2392,24 @@ export default function TicketsKanban({
                     <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                       Estado
                     </label>
-                    <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+                    <div
+                      ref={loanStatusSlide.containerRef}
+                      className="relative grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800"
+                    >
+                      <span
+                        aria-hidden="true"
+                        style={loanStatusSlide.pillStyle}
+                        className={`pointer-events-none absolute top-0 left-0 z-0 rounded-lg shadow-xs transition-[transform,width,height,background-color] duration-300 ${
+                          loanStatus === 'ATENDIDO' ? 'bg-emerald-600' : 'bg-amber-500'
+                        }`}
+                      />
                       <button
                         type="button"
+                        data-slide-active={loanStatus === 'EN PROCESO' ? 'true' : undefined}
                         onClick={() => setLoanStatus('EN PROCESO')}
-                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
+                        className={`relative z-10 h-8 rounded-lg text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1 active:scale-95 ${
                           loanStatus === 'EN PROCESO'
-                            ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                            ? 'text-slate-950 font-black'
                             : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
@@ -2334,10 +2418,11 @@ export default function TicketsKanban({
 
                       <button
                         type="button"
+                        data-slide-active={loanStatus === 'ATENDIDO' ? 'true' : undefined}
                         onClick={() => setLoanStatus('ATENDIDO')}
-                        className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 ${
+                        className={`relative z-10 h-8 rounded-lg text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1 active:scale-95 ${
                           loanStatus === 'ATENDIDO'
-                            ? 'bg-emerald-600 text-white font-black shadow-xs'
+                            ? 'text-white font-black'
                             : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >

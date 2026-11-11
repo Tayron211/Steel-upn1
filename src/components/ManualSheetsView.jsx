@@ -24,6 +24,7 @@ import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
+import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 
 // Copiar tabla HTML rica + TSV al portapapeles para pegar directo en Excel
 const copyRichTableToClipboard = async (plainText, htmlText) => {
@@ -142,6 +143,7 @@ export default function ManualSheetsView({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterMotivo, setFilterMotivo] = useState('');
+  const motivoSlide = useSlidingIndicator(filterMotivo || 'ALL', [sheets.length]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedForPrint, setSelectedForPrint] = useState(null);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
@@ -616,13 +618,24 @@ export default function ManualSheetsView({
             )}
           </div>
 
-          {/* Reason Filter Chips - Wrap cleanly without horizontal cutting */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          {/* Reason Filter Chips - Wrap cleanly with sliding pill */}
+          <div
+            ref={motivoSlide.containerRef}
+            className="relative flex flex-wrap items-center gap-1.5 text-xs bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-800"
+          >
+            <span
+              aria-hidden="true"
+              style={motivoSlide.pillStyle}
+              className={`pointer-events-none absolute top-0 left-0 z-0 rounded-lg shadow-2xs transition-[transform,width,height,background-color] duration-300 ${
+                !filterMotivo ? 'bg-slate-900 dark:bg-zinc-800' : 'bg-[#FDBA30]'
+              }`}
+            />
             <button
               onClick={() => setFilterMotivo('')}
-              className={`h-7 px-3 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${!filterMotivo
-                ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
-                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
+              data-slide-active={!filterMotivo ? 'true' : undefined}
+              className={`relative z-10 h-7 px-3 rounded-lg font-bold transition-colors duration-200 whitespace-nowrap active:scale-95 ${!filterMotivo
+                ? 'text-white font-black'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
             >
               Todos ({validSheets.length})
@@ -631,10 +644,11 @@ export default function ManualSheetsView({
             {motivos.slice(0, 5).map(m => (
               <button
                 key={m}
+                data-slide-active={filterMotivo === m ? 'true' : undefined}
                 onClick={() => setFilterMotivo(filterMotivo === m ? '' : m)}
-                className={`h-7 px-2.5 rounded-lg font-bold transition whitespace-nowrap active:scale-95 ${filterMotivo === m
-                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/70 dark:border-zinc-800'
+                className={`relative z-10 h-7 px-2.5 rounded-lg font-bold transition-colors duration-200 whitespace-nowrap active:scale-95 ${filterMotivo === m
+                  ? 'text-slate-950 font-black'
+                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
               >
                 {m}

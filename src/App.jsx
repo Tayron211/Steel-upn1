@@ -66,6 +66,14 @@ export default function App() {
     const hash = (typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '');
     return HASH_TAB_MAP[hash] || 'attendance';
   });
+  const [tabTransition, setTabTransition] = useState(() => ({ tab: activeTab, dir: 'initial' }));
+  if (tabTransition.tab !== activeTab) {
+    const prevIdx = TABS.indexOf(tabTransition.tab);
+    const nextIdx = TABS.indexOf(activeTab);
+    const nextDir = prevIdx !== -1 && nextIdx !== -1 && nextIdx < prevIdx ? 'prev' : 'next';
+    setTabTransition({ tab: activeTab, dir: nextDir });
+  }
+  const tabAnimClass = tabTransition.dir === 'prev' ? 'animate-slide-prev' : tabTransition.dir === 'next' ? 'animate-slide-next' : 'animate-tab-view';
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
 
   // Authentication State
@@ -475,9 +483,9 @@ export default function App() {
       />
 
       {/* Main Fluid App Container - Amplio en escritorio para máxima visibilidad */}
-      <main className="flex-1 max-w-[1880px] w-full mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-5 pb-32 md:pb-24">
+      <main className="flex-1 max-w-[1880px] w-full mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-5 pb-32 md:pb-24 overflow-x-hidden">
         {activeTab === 'attendance' && (
-          <div key="attendance" className="animate-tab-view">
+          <div key="attendance" className={tabAnimClass}>
             <ErrorBoundary>
               <AttendanceView
                 initialSearch={attendanceSearchPrefill}
@@ -490,7 +498,7 @@ export default function App() {
         )}
 
         {activeTab === 'tickets' && (
-          <div key="tickets" className="animate-tab-view">
+          <div key="tickets" className={tabAnimClass}>
             <ErrorBoundary>
               <TicketsKanban
                 initialNewTicket={newTicketPrefill}
@@ -504,7 +512,7 @@ export default function App() {
         )}
 
         {activeTab === 'operations' && (
-          <div key="operations" className="animate-tab-view">
+          <div key="operations" className={tabAnimClass}>
             <ErrorBoundary>
               <OperationsHub
                 initialClassData={manualSheetPrefill}
@@ -521,7 +529,7 @@ export default function App() {
         )}
 
         {activeTab === 'dashboard' && (
-          <div key="dashboard" className="animate-tab-view">
+          <div key="dashboard" className={tabAnimClass}>
             <ErrorBoundary>
               <DashboardView />
             </ErrorBoundary>

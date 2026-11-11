@@ -451,6 +451,36 @@ button:active {
   transform-origin: top;
 }
 
+@keyframes slideInFromRight {
+  0% {
+    opacity: 0;
+    transform: translate3d(26px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  0% {
+    opacity: 0;
+    transform: translate3d(-26px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-slide-next {
+  animation: slideInFromRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-slide-prev {
+  animation: slideInFromLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 /* Splash Screen Minimalist Hairline Progress */
 @keyframes splashProgress {
   0% {

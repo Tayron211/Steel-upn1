@@ -44,6 +44,7 @@ import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
+import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import { triggerAutoSyncLinkedExcel } from '../utils/liveExcelSync';
 import { toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
@@ -354,6 +355,42 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const selectedDayInfo = useMemo(() => {
     return weekDaysWithDates.find(w => w.name === selectedDia) || weekDaysWithDates[0];
   }, [weekDaysWithDates, selectedDia]);
+
+  // Sliding pill indicators across all filter & view strips
+  const daySlide = useSlidingIndicator(selectedDia);
+  const pabDesktopSlide = useSlidingIndicator(selectedPabellon || 'ALL');
+  const pabMobileSlide = useSlidingIndicator(selectedPabellon || 'ALL', [mobileFiltersOpen]);
+  const pisoSlideKey = selectedPisos.length === 0 ? 'ALL' : (selectedPisos.length === 1 ? selectedPisos[0] : '');
+  const pisoSlide = useSlidingIndicator(pisoSlideKey, [selectedPisos.length]);
+  const viewModeSlide = useSlidingIndicator(viewMode);
+  const statusSlide = useSlidingIndicator(statusFilter === 'ALL' ? '' : statusFilter, [viewMode]);
+  const timeSlideKey = blockMode === 'CURRENT' ? 'CURRENT' : (blockMode === 'CUSTOM' && selectedHora ? selectedHora : 'ALL');
+  const timeSlide = useSlidingIndicator(timeSlideKey);
+
+  // Directional slide direction when switching day or viewMode
+  const DAY_ORDER = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
+  const [contentTransition, setContentTransition] = useState(() => ({
+    dia: selectedDia,
+    viewMode,
+    dir: 'initial'
+  }));
+  if (contentTransition.dia !== selectedDia || contentTransition.viewMode !== viewMode) {
+    let nextDir = 'next';
+    if (contentTransition.viewMode !== viewMode) {
+      nextDir = viewMode === 'FREE_ROOMS' ? 'next' : 'prev';
+    } else {
+      const prevIdx = DAY_ORDER.indexOf(contentTransition.dia);
+      const nextIdx = DAY_ORDER.indexOf(selectedDia);
+      nextDir = prevIdx !== -1 && nextIdx !== -1 && nextIdx < prevIdx ? 'prev' : 'next';
+    }
+    setContentTransition({ dia: selectedDia, viewMode, dir: nextDir });
+  }
+  const gridSlideClass =
+    contentTransition.dir === 'prev'
+      ? 'animate-slide-prev'
+      : contentTransition.dir === 'next'
+        ? 'animate-slide-next'
+        : 'animate-fade-in';
 
   const handleResetDayToPending = async () => {
     if (!confirm(`¿Restablecer todas las clases de ${selectedDia} (${selectedDayInfo?.dateStr || ''}) a PENDIENTE?\nEsto limpiará las marcas ficticias o pasadas que no correspondan.`)) return;
@@ -1341,18 +1378,27 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       {/* Controlador Compacto, Ágil y Rápido */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-2.5 sm:p-3.5 shadow-xs space-y-2 transition-colors">
         {/* Fila 1: Selector de Día con Fechas Exactas y Badge HOY */}
-        <div className="grid grid-cols-7 gap-1 w-full">
+        <div
+          ref={daySlide.containerRef}
+          className="relative grid grid-cols-7 gap-1 w-full bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-slate-200/70 dark:border-zinc-800"
+        >
+          <span
+            aria-hidden="true"
+            style={daySlide.pillStyle}
+            className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-[#FDBA30] shadow-xs ring-2 ring-[#FDBA30]/40"
+          />
           {weekDaysWithDates.map((item) => {
             const isSelected = selectedDia === item.name;
             return (
               <button
                 key={item.name}
                 type="button"
+                data-slide-active={isSelected ? 'true' : undefined}
                 onClick={() => setSelectedDia(item.name)}
-                className={`h-9 sm:h-10 text-[10px] sm:text-xs font-bold rounded-xl transition-all flex flex-col items-center justify-center active:scale-95 leading-tight ${
+                className={`relative z-10 h-9 sm:h-10 text-[10px] sm:text-xs font-bold rounded-xl transition-colors duration-200 flex flex-col items-center justify-center active:scale-95 leading-tight ${
                   isSelected
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs ring-2 ring-[#FDBA30]/50'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-zinc-800'
+                    ? 'text-slate-950 font-black'
+                    : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-zinc-800/70'
                 }`}
                 title={`${item.name} (${item.dateStr})`}
               >
@@ -1391,15 +1437,24 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           </div>
 
           {/* Pabellón Pills (En desktop directo, en móvil compacto) */}
-          <div className="hidden sm:inline-flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0">
+          <div
+            ref={pabDesktopSlide.containerRef}
+            className="relative hidden sm:inline-flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0"
+          >
+            <span
+              aria-hidden="true"
+              style={pabDesktopSlide.pillStyle}
+              className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-2xs"
+            />
             {['', 'A', 'B'].map((pab) => (
               <button
                 key={pab || 'ALL'}
                 type="button"
+                data-slide-active={selectedPabellon === pab ? 'true' : undefined}
                 onClick={() => setSelectedPabellon(pab)}
-                className={`h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800/60'
+                className={`relative z-10 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 ${selectedPabellon === pab
+                    ? 'text-slate-950 font-black'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
               >
                 {pab ? `Pab. ${pab}` : 'Ambos'}
@@ -1453,14 +1508,23 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         {/* Fila Pisos (Horizontal con scroll suave y selección múltiple) + Pabellón/Carrera en móvil */}
         <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:items-center sm:gap-1.5`}>
           {/* Pabellón Pills (En móvil dentro del menú filtros) */}
-          <div className="flex sm:hidden items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full">
+          <div
+            ref={pabMobileSlide.containerRef}
+            className="relative flex sm:hidden items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full"
+          >
+            <span
+              aria-hidden="true"
+              style={pabMobileSlide.pillStyle}
+              className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-2xs"
+            />
             {['', 'A', 'B'].map((pab) => (
               <button
                 key={pab || 'ALL'}
                 type="button"
+                data-slide-active={selectedPabellon === pab ? 'true' : undefined}
                 onClick={() => setSelectedPabellon(pab)}
-                className={`flex-1 h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 ${selectedPabellon === pab
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
+                className={`relative z-10 flex-1 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 ${selectedPabellon === pab
+                    ? 'text-slate-950 font-black'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
               >
@@ -1491,50 +1555,75 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             </button>
           )}
 
-          {/* Pisos Pills (Con selección múltiple táctil) */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none w-full shrink-0 py-0.5">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 hidden sm:inline mr-1">Pisos:</span>
-            {pisosDisponibles.map((p) => {
-              const isTodos = p.val === '';
-              const isSelected = isTodos
-                ? selectedPisos.length === 0
-                : selectedPisos.includes(p.val);
+          {/* Pisos Pills (Con selección múltiple táctil y pill deslizante en selección única) */}
+          <div className="flex items-center gap-1.5 w-full overflow-x-auto scrollbar-none py-0.5">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 shrink-0 hidden sm:inline">Pisos:</span>
+            <div
+              ref={pisoSlide.containerRef}
+              className="relative inline-flex items-center gap-0.5 bg-slate-100/80 dark:bg-zinc-900/80 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0"
+            >
+              <span
+                aria-hidden="true"
+                style={pisoSlide.pillStyle}
+                className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-2xs"
+              />
+              {pisosDisponibles.map((p) => {
+                const isTodos = p.val === '';
+                const isSelected = isTodos
+                  ? selectedPisos.length === 0
+                  : selectedPisos.includes(p.val);
+                const isSlideOwner = isTodos
+                  ? selectedPisos.length === 0
+                  : selectedPisos.length === 1 && selectedPisos[0] === p.val;
 
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => handleTogglePiso(p.val)}
-                  className={`h-6.5 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 ${
-                    isSelected
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
-                  }`}
-                  title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
-                >
-                  <span>{p.short}</span>
-                  {!isTodos && isSelected && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
-                  )}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    data-slide-active={isSlideOwner ? 'true' : undefined}
+                    onClick={() => handleTogglePiso(p.val)}
+                    className={`relative z-10 h-6.5 px-2.5 rounded-lg text-[11px] font-bold transition-colors duration-200 active:scale-95 shrink-0 inline-flex items-center gap-1 ${
+                      isSelected
+                        ? `${selectedPisos.length > 1 ? 'bg-[#FDBA30] shadow-2xs ' : ''}text-slate-950 font-black`
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
+                  >
+                    <span>{p.short}</span>
+                    {!isTodos && isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         {/* Fila 3: Vistas (Clases vs Aulas Libres) + Pastillas de Estado Rápidas */}
         <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800 flex-wrap pb-0.5">
           {/* Segmentado de Vista: Clases o Aulas Libres */}
-          <div className="inline-flex items-center p-0.5 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0">
+          <div
+            ref={viewModeSlide.containerRef}
+            className="relative inline-flex items-center p-0.5 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0"
+          >
+            <span
+              aria-hidden="true"
+              style={viewModeSlide.pillStyle}
+              className={`pointer-events-none absolute top-0 left-0 z-0 rounded-lg shadow-xs transition-[transform,width,height,background-color] duration-300 ${
+                viewMode === 'FREE_ROOMS' ? 'bg-emerald-600' : 'bg-white dark:bg-zinc-800'
+              }`}
+            />
             <button
               type="button"
+              data-slide-active={viewMode === 'CLASSES' ? 'true' : undefined}
               onClick={() => {
                 setViewMode('CLASSES');
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
               }}
-              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 flex items-center gap-1.5 ${
+              className={`relative z-10 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 flex items-center gap-1.5 ${
                 viewMode === 'CLASSES'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-black'
+                  ? 'text-slate-900 dark:text-white font-black'
                   : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -1546,13 +1635,14 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
             <button
               type="button"
+              data-slide-active={viewMode === 'FREE_ROOMS' ? 'true' : undefined}
               onClick={() => {
                 setViewMode('FREE_ROOMS');
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
               }}
-              className={`h-7 px-2.5 rounded-lg text-xs font-bold transition active:scale-95 flex items-center gap-1.5 ${
+              className={`relative z-10 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 flex items-center gap-1.5 ${
                 viewMode === 'FREE_ROOMS'
-                  ? 'bg-emerald-600 text-white shadow-xs font-black'
+                  ? 'text-white font-black'
                   : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-200'
               }`}
             >
@@ -1566,13 +1656,30 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
           {/* Pastillas KPI para filtrar por estado (Solo en modo Clases) */}
           {viewMode === 'CLASSES' && (
-            <div className="flex items-center gap-1 text-[11px] shrink-0">
+            <div
+              ref={statusSlide.containerRef}
+              className="relative flex items-center gap-1 text-[11px] shrink-0"
+            >
+              <span
+                aria-hidden="true"
+                style={statusSlide.pillStyle}
+                className={`pointer-events-none absolute top-0 left-0 z-0 rounded-lg shadow-xs ${
+                  statusFilter === 'PUNTUAL'
+                    ? 'bg-emerald-600'
+                    : statusFilter === 'TARDE'
+                      ? 'bg-amber-500'
+                      : statusFilter === 'FALTA'
+                        ? 'bg-rose-600'
+                        : 'bg-slate-800 dark:bg-zinc-700'
+                }`}
+              />
               <button
                 type="button"
+                data-slide-active={statusFilter === 'PUNTUAL' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL')}
-                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                   statusFilter === 'PUNTUAL'
-                    ? 'bg-emerald-600 text-white font-black'
+                    ? 'text-white font-black'
                     : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
                 }`}
                 title="Filtrar puntuales"
@@ -1582,10 +1689,11 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
               <button
                 type="button"
+                data-slide-active={statusFilter === 'TARDE' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE')}
-                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                   statusFilter === 'TARDE'
-                    ? 'bg-amber-500 text-slate-950 font-black'
+                    ? 'text-slate-950 font-black'
                     : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100'
                 }`}
                 title="Filtrar tardanzas"
@@ -1595,10 +1703,11 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
               <button
                 type="button"
+                data-slide-active={statusFilter === 'FALTA' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA')}
-                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                   statusFilter === 'FALTA'
-                    ? 'bg-rose-600 text-white font-black'
+                    ? 'text-white font-black'
                     : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100'
                 }`}
                 title="Filtrar faltas"
@@ -1608,10 +1717,11 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
               <button
                 type="button"
+                data-slide-active={statusFilter === 'PENDIENTE' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE')}
-                className={`h-7 px-2 rounded-lg font-bold transition active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                   statusFilter === 'PENDIENTE'
-                    ? 'bg-slate-800 text-white dark:bg-zinc-700 font-black shadow-xs'
+                    ? 'text-white font-black'
                     : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
                 }`}
                 title="Filtrar pendientes"
@@ -1623,42 +1733,52 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
 
         {/* Fila 4: Selector de Horario Unificado (Limpio, horizontal y sin duplicados) */}
-        <div className="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px]">
+        <div
+          ref={timeSlide.containerRef}
+          className="relative flex items-center gap-1 overflow-x-auto bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-slate-200/60 dark:border-zinc-800 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px]"
+        >
+          <span
+            aria-hidden="true"
+            style={timeSlide.pillStyle}
+            className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
+          />
           {/* Botón Ahora (Bloque actual en vivo) */}
           <button
             type="button"
+            data-slide-active={blockMode === 'CURRENT' ? 'true' : undefined}
             onClick={() => {
               setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
               setSelectedHora('');
             }}
-            className={`h-6.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 ${
+            className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 ${
               blockMode === 'CURRENT'
-                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs ring-1 ring-amber-400'
-                : 'bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200/60 dark:border-zinc-800'
+                ? 'text-slate-950 font-black'
+                : 'text-slate-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/70'
             }`}
             title={`Filtrar al bloque en curso (${getCurrentHourBlock()})`}
           >
-            <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
+            <Clock className={`w-3 h-3 stroke-[2.4] ${blockMode === 'CURRENT' ? 'text-slate-950' : 'text-amber-500'}`} />
             <span>Ahora ({getCurrentHourBlock()})</span>
           </button>
 
           {/* Botón Todo el Día */}
           <button
             type="button"
+            data-slide-active={blockMode === 'ALL' && !selectedHora ? 'true' : undefined}
             onClick={() => {
               setBlockMode('ALL');
               setSelectedHora('');
             }}
-            className={`h-6.5 px-2.5 rounded-lg text-xs font-bold transition whitespace-nowrap active:scale-95 shrink-0 ${
+            className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 whitespace-nowrap active:scale-95 shrink-0 ${
               blockMode === 'ALL' && !selectedHora
-                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800'
+                ? 'text-slate-950 font-black'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800/70'
             }`}
           >
             Todo el día
           </button>
 
-          <span className="h-4 w-px bg-slate-200 dark:bg-zinc-800 shrink-0 mx-0.5"></span>
+          <span className="h-4 w-px bg-slate-300 dark:bg-zinc-700 shrink-0 mx-0.5 relative z-10"></span>
 
           {/* Bloques de Hora de Clase */}
           {REAL_BLOCKS.map(b => {
@@ -1668,6 +1788,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <button
                 key={b.start}
                 type="button"
+                data-slide-active={isSelected ? 'true' : undefined}
                 onClick={() => {
                   if (isSelected) {
                     setBlockMode('ALL');
@@ -1677,12 +1798,12 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     setSelectedHora(b.start);
                   }
                 }}
-                className={`h-6.5 px-2 rounded-lg font-mono text-[11px] font-bold transition whitespace-nowrap active:scale-95 shrink-0 ${
+                className={`relative z-10 h-6.5 px-2 rounded-lg font-mono text-[11px] font-bold transition-colors duration-200 whitespace-nowrap active:scale-95 shrink-0 ${
                   isSelected
-                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                    ? 'text-slate-950 font-black'
                     : isCurrent && blockMode === 'CURRENT'
                       ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 font-black'
-                      : 'bg-slate-100/70 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-zinc-800/70'
                 }`}
                 title={`Bloque ${b.start} a ${b.end}`}
               >
@@ -1784,7 +1905,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           </button>
         </div>
 
-        <div key={`${selectedDia}-${selectedHora}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5 animate-fade-in">
+        <div key={`${selectedDia}-${selectedHora}`} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5 ${gridSlideClass}`}>
           {freeRooms.map(room => (
             <div
               key={room.abrv}
@@ -1864,7 +1985,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         )}
       </div>
     ) : (
-      <div key={`${selectedDia}-${selectedPabellon}-${selectedHora}-${statusFilter}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-3.5 animate-fade-in">
+      <div key={`${selectedDia}-${selectedPabellon}-${selectedHora}-${statusFilter}`} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 sm:gap-3.5 ${gridSlideClass}`}>
         {displayedItems.map(item => {
           const isPuntual = item.puntualidad === 'PUNTUAL';
           const isTarde = item.puntualidad === 'TARDE';

@@ -6,6 +6,7 @@ import { createDbChangeGate } from '../utils/webSignGate';
 import { formatCargoNumber } from '../utils/cargoPdfGenerator';
 import OneDriveSyncModal from './OneDriveSyncModal';
 import { useFadeModal } from '../utils/useFadeModal';
+import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import {
   subscribeLiveExcelStatus,
   getLiveExcelState,
@@ -120,6 +121,23 @@ export default function DashboardView() {
 
   // Pestañas y Colecciones de Métricas por Apartado
   const [activeSectionTab, setActiveSectionTab] = useState('resumen');
+  const DASH_TABS = ['resumen', 'attendance', 'tickets', 'manual-sheets', 'reservations'];
+  const [sectionTransition, setSectionTransition] = useState(() => ({ tab: activeSectionTab, dir: 'initial' }));
+  if (sectionTransition.tab !== activeSectionTab) {
+    const prevIdx = DASH_TABS.indexOf(sectionTransition.tab);
+    const nextIdx = DASH_TABS.indexOf(activeSectionTab);
+    setSectionTransition({
+      tab: activeSectionTab,
+      dir: prevIdx !== -1 && nextIdx !== -1 && nextIdx < prevIdx ? 'prev' : 'next'
+    });
+  }
+  const sectionAnimClass =
+    sectionTransition.dir === 'prev'
+      ? 'animate-slide-prev'
+      : sectionTransition.dir === 'next'
+        ? 'animate-slide-next'
+        : 'animate-fade-in';
+
   const [attendanceData, setAttendanceData] = useState([]);
   const [ticketsData, setTicketsData] = useState([]);
   const [manualSheetsData, setManualSheetsData] = useState([]);
@@ -143,6 +161,13 @@ export default function DashboardView() {
   // Filtros interactivos para Reserva de Espacios
   const [reservaPabellonFilter, setReservaPabellonFilter] = useState('TODOS');
   const [reservaSearch, setReservaSearch] = useState('');
+
+  // Sliding pill indicators
+  const sectionTabSlide = useSlidingIndicator(activeSectionTab);
+  const docDiaSlide = useSlidingIndicator(docenteDiaFilter, [activeSectionTab]);
+  const docPabSlide = useSlidingIndicator(docentePabellonFilter, [activeSectionTab]);
+  const ticketMatSlide = useSlidingIndicator(ticketMaterialFilter, [activeSectionTab]);
+  const resPabSlide = useSlidingIndicator(reservaPabellonFilter, [activeSectionTab]);
 
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -925,7 +950,15 @@ export default function DashboardView() {
       </div>
 
       {/* Selector de Pestañas Interactivas por Apartado de la App */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none no-scrollbar">
+      <div
+        ref={sectionTabSlide.containerRef}
+        className="relative flex items-center gap-1.5 overflow-x-auto bg-slate-100/90 dark:bg-zinc-900/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 scrollbar-none no-scrollbar"
+      >
+        <span
+          aria-hidden="true"
+          style={sectionTabSlide.pillStyle}
+          className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-[#FDBA30] shadow-[0_2px_12px_rgba(253,186,48,0.35)]"
+        />
         {[
           { id: 'resumen', label: 'Resumen Global', icon: LayoutDashboard, count: null },
           { id: 'attendance', label: 'Control Docente', icon: GraduationCap, count: attendanceData.length },
@@ -939,11 +972,12 @@ export default function DashboardView() {
             <button
               key={tab.id}
               type="button"
+              data-slide-active={isActive ? 'true' : undefined}
               onClick={() => setActiveSectionTab(tab.id)}
-              className={`h-11 px-4 rounded-2xl flex items-center gap-2.5 text-xs font-black transition-all active:scale-95 shrink-0 whitespace-nowrap shadow-xs ${
+              className={`relative z-10 h-10 px-3.5 rounded-xl flex items-center gap-2 text-xs font-black transition-colors duration-200 active:scale-95 shrink-0 whitespace-nowrap ${
                 isActive
-                  ? 'bg-[#FDBA30] text-slate-950 border border-amber-400 shadow-[0_2px_12px_rgba(253,186,48,0.35)]'
-                  : 'bg-white hover:bg-slate-100 dark:bg-[#0c0c0f] dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200/90 dark:border-zinc-800'
+                  ? 'text-slate-950'
+                  : 'text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white'
               }`}
             >
               <Icon className={`w-4 h-4 stroke-[2.4] ${isActive ? 'text-slate-950' : 'text-slate-500 dark:text-zinc-400'}`} />
@@ -952,7 +986,7 @@ export default function DashboardView() {
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                   isActive
                     ? 'bg-black/15 text-slate-950'
-                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                    : 'bg-white/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
                 }`}>
                   {tab.count}
                 </span>
@@ -966,7 +1000,7 @@ export default function DashboardView() {
       {/* PESTAÑA 1: RESUMEN GLOBAL                                */}
       {/* ======================================================== */}
       {activeSectionTab === 'resumen' && (
-        <div key="resumen" className="space-y-4 animate-fade-in">
+        <div key="resumen" className={`space-y-4 ${sectionAnimClass}`}>
           {/* Selector de día para el resumen diario */}
           <div className="flex items-center justify-between flex-wrap gap-2 bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3 shadow-xs">
             <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">
@@ -1158,7 +1192,7 @@ export default function DashboardView() {
       {/* PESTAÑA 2: CONTROL DOCENTE (ASISTENCIA)                   */}
       {/* ======================================================== */}
       {activeSectionTab === 'attendance' && (
-        <div key="attendance" className="space-y-4 animate-fade-in">
+        <div key="attendance" className={`space-y-4 ${sectionAnimClass}`}>
           {/* Barra de Filtros Interactivos: Día & Pabellón */}
           <div className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-4 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1170,18 +1204,27 @@ export default function DashboardView() {
               </div>
 
               {/* Botones de Días con TODOS */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              <div
+                ref={docDiaSlide.containerRef}
+                className="relative flex items-center gap-1 overflow-x-auto bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-800 scrollbar-none"
+              >
+                <span
+                  aria-hidden="true"
+                  style={docDiaSlide.pillStyle}
+                  className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
+                />
                 {['TODOS', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'].map(d => {
                   const isSel = docenteDiaFilter === d;
                   return (
                     <button
                       key={d}
                       type="button"
+                      data-slide-active={isSel ? 'true' : undefined}
                       onClick={() => setDocenteDiaFilter(d)}
-                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition active:scale-95 whitespace-nowrap ${
+                      className={`relative z-10 px-2.5 py-1 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                         isSel
-                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                          : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'
+                          ? 'text-slate-950 font-black'
+                          : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       {d === 'TODOS' ? 'Todos los días' : d === 'MIERCOLES' ? 'MIÉ' : d.slice(0, 3)}
@@ -1204,18 +1247,27 @@ export default function DashboardView() {
                 />
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div
+                ref={docPabSlide.containerRef}
+                className="relative flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-900/90 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800"
+              >
+                <span
+                  aria-hidden="true"
+                  style={docPabSlide.pillStyle}
+                  className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
+                />
                 {['TODOS', 'A', 'B'].map(pab => {
                   const isPab = docentePabellonFilter === pab;
                   return (
                     <button
                       key={pab}
                       type="button"
+                      data-slide-active={isPab ? 'true' : undefined}
                       onClick={() => setDocentePabellonFilter(pab)}
-                      className={`h-10 px-3.5 text-xs font-bold rounded-xl border transition active:scale-95 ${
+                      className={`relative z-10 h-8 px-3.5 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                         isPab
-                          ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
-                          : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
+                          ? 'text-slate-950 font-black'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       {pab === 'TODOS' ? 'Todos Pabellones' : `Pabellón ${pab}`}
@@ -1361,7 +1413,7 @@ export default function DashboardView() {
       {/* PESTAÑA 3: PRÉSTAMOS DE MATERIAL                          */}
       {/* ======================================================== */}
       {activeSectionTab === 'tickets' && (
-        <div key="tickets" className="space-y-4 animate-fade-in">
+        <div key="tickets" className={`space-y-4 ${sectionAnimClass}`}>
           {/* KPI Cards Interactivos de Préstamos */}
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -1407,18 +1459,27 @@ export default function DashboardView() {
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div
+              ref={ticketMatSlide.containerRef}
+              className="relative flex flex-wrap items-center gap-1.5 bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-slate-200/70 dark:border-zinc-800"
+            >
+              <span
+                aria-hidden="true"
+                style={ticketMatSlide.pillStyle}
+                className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-[#FDBA30] shadow-xs"
+              />
               {['TODOS', 'PROYECTOR', 'CABLE HDMI', 'PUNTERO', 'MOUSE', 'CAMARA WEB', 'ADAPTADOR', 'AUDIFONOS', 'CUTTING'].map(mat => {
                 const isSel = ticketMaterialFilter === mat;
                 return (
                   <button
                     key={mat}
                     type="button"
+                    data-slide-active={isSel ? 'true' : undefined}
                     onClick={() => setTicketMaterialFilter(mat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${
+                    className={`relative z-10 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors duration-200 active:scale-95 ${
                       isSel
-                        ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+                        ? 'text-slate-950 font-black'
+                        : 'text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white'
                     }`}
                   >
                     {mat}
@@ -1529,7 +1590,7 @@ export default function DashboardView() {
       {/* PESTAÑA 4: HOJAS MANUALES                                */}
       {/* ======================================================== */}
       {activeSectionTab === 'manual-sheets' && (
-        <div key="manual-sheets" className="space-y-4 animate-fade-in">
+        <div key="manual-sheets" className={`space-y-4 ${sectionAnimClass}`}>
           {/* KPI Cards Interactivos de Hojas Manuales */}
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -1633,7 +1694,7 @@ export default function DashboardView() {
       {/* PESTAÑA 5: RESERVA DE ESPACIOS                           */}
       {/* ======================================================== */}
       {activeSectionTab === 'reservations' && (
-        <div key="reservations" className="space-y-4 animate-fade-in">
+        <div key="reservations" className={`space-y-4 ${sectionAnimClass}`}>
           {/* KPI Cards Interactivos de Reservas */}
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -1735,16 +1796,25 @@ export default function DashboardView() {
                 />
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div
+                ref={resPabSlide.containerRef}
+                className="relative flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-900/90 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0"
+              >
+                <span
+                  aria-hidden="true"
+                  style={resPabSlide.pillStyle}
+                  className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
+                />
                 {['TODOS', 'A', 'B'].map(pab => (
                   <button
                     key={pab}
                     type="button"
+                    data-slide-active={reservaPabellonFilter === pab ? 'true' : undefined}
                     onClick={() => setReservaPabellonFilter(pab)}
-                    className={`h-10 px-3.5 text-xs font-bold rounded-xl border transition active:scale-95 ${
+                    className={`relative z-10 h-8 px-3.5 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                       reservaPabellonFilter === pab
-                        ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
-                        : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
+                        ? 'text-slate-950 font-black'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     {pab === 'TODOS' ? 'Todos' : `Pab ${pab}`}

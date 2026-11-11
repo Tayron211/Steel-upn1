@@ -26,6 +26,7 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useFadeModal } from '../utils/useFadeModal';
+import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import { useAssistants } from '../utils/assistants';
 import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 
@@ -167,6 +168,47 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const roomPickerModalFade = useFadeModal(isRoomPickerOpen, () => {
     setIsRoomPickerOpen(false);
   }, 200);
+
+  // Sliding pill indicators across filter & view strips
+  const viewModeSlide = useSlidingIndicator(viewMode);
+  const activeDayKey = viewMode === 'FREE_ROOMS'
+    ? String(selectedDayOffset ?? 0)
+    : (selectedDayOffset === null ? 'ALL' : String(selectedDayOffset));
+  const dateSlide = useSlidingIndicator(activeDayKey, [viewMode]);
+  const pabSlide = useSlidingIndicator(selectedPabellon || 'ALL', [mobileFiltersOpen]);
+  const pisoSlideKey = selectedPisos.length === 0 ? 'ALL' : (selectedPisos.length === 1 ? selectedPisos[0] : '');
+  const pisoSlide = useSlidingIndicator(pisoSlideKey, [selectedPisos.length, mobileFiltersOpen]);
+  const currentHoraRef = getCurrentHourBlock();
+  const horaSlideKey = !selectedHoraBlock ? 'ANY' : (selectedHoraBlock === currentHoraRef ? 'CURRENT' : selectedHoraBlock);
+  const horaSlide = useSlidingIndicator(horaSlideKey, [viewMode]);
+
+  const pickerCatSlide = useSlidingIndicator(pickerCategory, [roomPickerModalFade.isMounted, roomPickerModalFade.isVisible]);
+  const pickerPabSlide = useSlidingIndicator(pickerPabellon || 'ALL', [roomPickerModalFade.isMounted, roomPickerModalFade.isVisible]);
+  const pickerPisoSlide = useSlidingIndicator(pickerPiso || 'ALL', [roomPickerModalFade.isMounted, roomPickerModalFade.isVisible]);
+
+  // Directional slide animation for content grid
+  const [contentTransition, setContentTransition] = useState(() => ({
+    viewMode,
+    day: selectedDayOffset,
+    dir: 'initial'
+  }));
+  if (contentTransition.viewMode !== viewMode || contentTransition.day !== selectedDayOffset) {
+    let nextDir = 'next';
+    if (contentTransition.viewMode !== viewMode) {
+      nextDir = viewMode === 'FREE_ROOMS' ? 'next' : 'prev';
+    } else {
+      const prevIdx = contentTransition.day === null ? -1 : contentTransition.day;
+      const nextIdx = selectedDayOffset === null ? -1 : selectedDayOffset;
+      nextDir = nextIdx < prevIdx ? 'prev' : 'next';
+    }
+    setContentTransition({ viewMode, day: selectedDayOffset, dir: nextDir });
+  }
+  const contentAnimClass =
+    contentTransition.dir === 'prev'
+      ? 'animate-slide-prev'
+      : contentTransition.dir === 'next'
+        ? 'animate-slide-next'
+        : 'animate-fade-in';
 
   const closeModal = () => {
     reservationModalFade.requestClose();
@@ -846,13 +888,24 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
           <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
             {/* Conmutador entre Reservas Programadas y Aulas Libres */}
-            <div className="flex items-center bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+            <div
+              ref={viewModeSlide.containerRef}
+              className="relative flex items-center bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800"
+            >
+              <span
+                aria-hidden="true"
+                style={viewModeSlide.pillStyle}
+                className={`pointer-events-none absolute top-0 left-0 z-0 rounded-lg shadow-2xs transition-[transform,width,height,background-color] duration-300 ${
+                  viewMode === 'FREE_ROOMS' ? 'bg-emerald-600' : 'bg-white dark:bg-zinc-800'
+                }`}
+              />
               <button
                 type="button"
+                data-slide-active={viewMode === 'RESERVAS' ? 'true' : undefined}
                 onClick={() => setViewMode('RESERVAS')}
-                className={`h-8 px-3 rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 ${
+                className={`relative z-10 h-8 px-3 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 ${
                   viewMode === 'RESERVAS'
-                    ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
+                    ? 'text-slate-950 dark:text-white font-black'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -862,14 +915,15 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
               <button
                 type="button"
+                data-slide-active={viewMode === 'FREE_ROOMS' ? 'true' : undefined}
                 onClick={() => {
                   setViewMode('FREE_ROOMS');
                   if (selectedDayOffset === null) setSelectedDayOffset(0);
                 }}
-                className={`h-8 px-3 rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 ${
+                className={`relative z-10 h-8 px-3 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 ${
                   viewMode === 'FREE_ROOMS'
-                    ? 'bg-emerald-600 text-white font-black shadow-2xs'
-                    : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                    ? 'text-white font-black'
+                    : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-200'
                 }`}
               >
                 <DoorOpen className="w-3.5 h-3.5 stroke-[2.3]" />
@@ -938,17 +992,26 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           </button>
 
           <div
-            ref={dateScrollRef}
-            className="flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 scroll-smooth scrollbar-none flex-1 min-w-0"
+            ref={(el) => {
+              dateScrollRef.current = el;
+              dateSlide.containerRef.current = el;
+            }}
+            className="relative flex items-center gap-1.5 overflow-x-auto bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-slate-200/60 dark:border-zinc-800 scroll-smooth scrollbar-none flex-1 min-w-0"
           >
+            <span
+              aria-hidden="true"
+              style={dateSlide.pillStyle}
+              className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-slate-900 dark:bg-[#FDBA30] shadow-2xs"
+            />
             {viewMode === 'RESERVAS' && (
               <button
                 type="button"
+                data-slide-active={selectedDayOffset === null ? 'true' : undefined}
                 onClick={() => setSelectedDayOffset(null)}
-                className={`h-8 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 active:scale-95 ${
+                className={`relative z-10 h-8 px-3 rounded-xl text-xs font-bold transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-95 ${
                   selectedDayOffset === null
-                    ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
-                    : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
+                    ? 'text-white dark:text-slate-950 font-black'
+                    : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Todas las fechas
@@ -965,11 +1028,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 <button
                   key={d.fecha}
                   type="button"
+                  data-slide-active={isSelected ? 'true' : undefined}
                   onClick={() => setSelectedDayOffset(d.offset)}
-                  className={`h-8 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 active:scale-95 ${
+                  className={`relative z-10 h-8 px-3 rounded-xl text-xs font-bold transition-colors duration-200 whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 active:scale-95 ${
                     isSelected
-                      ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-2xs'
-                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
+                      ? 'text-white dark:text-slate-950 font-black'
+                      : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <span>{d.offset === 0 ? `Hoy (${d.diaShort})` : d.offset === 1 ? `Mañana (${d.diaShort})` : d.diaShort}</span>
@@ -1044,15 +1108,24 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         {/* Fila 3: Filtro Pabellón + Pisos (Plegable en móvil, siempre visible en desktop) */}
         <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 w-full pt-0.5`}>
           {/* Pabellón Pills */}
-          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto">
+          <div
+            ref={pabSlide.containerRef}
+            className="relative flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0 w-full sm:w-auto"
+          >
+            <span
+              aria-hidden="true"
+              style={pabSlide.pillStyle}
+              className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-white dark:bg-zinc-800 shadow-2xs"
+            />
             {['', 'A', 'B'].map((pab) => (
               <button
                 key={pab || 'ALL'}
                 type="button"
+                data-slide-active={selectedPabellon === pab ? 'true' : undefined}
                 onClick={() => setSelectedPabellon(pab)}
-                className={`flex-1 sm:flex-initial h-7 px-3 rounded-lg text-xs font-bold transition active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 flex-1 sm:flex-initial h-7 px-3 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
                   selectedPabellon === pab
-                    ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white font-black shadow-2xs'
+                    ? 'text-slate-950 dark:text-white font-black'
                     : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -1061,61 +1134,91 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             ))}
           </div>
 
-          {/* Pisos Pills (Selección Múltiple) */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5 w-full sm:w-auto">
-            {PISOS_DISPONIBLES.map((p) => {
-              const isTodos = p.val === '';
-              const isSelected = isTodos
-                ? selectedPisos.length === 0
-                : selectedPisos.includes(p.val);
+          {/* Pisos Pills (Selección Múltiple + pill deslizante en selección única) */}
+          <div className="flex items-center overflow-x-auto scrollbar-none py-0.5 w-full sm:w-auto">
+            <div
+              ref={pisoSlide.containerRef}
+              className="relative inline-flex items-center gap-0.5 bg-slate-100/80 dark:bg-zinc-900/80 p-0.5 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0"
+            >
+              <span
+                aria-hidden="true"
+                style={pisoSlide.pillStyle}
+                className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-2xs"
+              />
+              {PISOS_DISPONIBLES.map((p) => {
+                const isTodos = p.val === '';
+                const isSelected = isTodos
+                  ? selectedPisos.length === 0
+                  : selectedPisos.includes(p.val);
+                const isSlideOwner = isTodos
+                  ? selectedPisos.length === 0
+                  : selectedPisos.length === 1 && selectedPisos[0] === p.val;
 
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => handleTogglePiso(p.val)}
-                  className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition active:scale-95 shrink-0 inline-flex items-center gap-1 whitespace-nowrap ${
-                    isSelected
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                      : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                  title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
-                >
-                  <span>{p.short}</span>
-                  {!isTodos && isSelected && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
-                  )}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    data-slide-active={isSlideOwner ? 'true' : undefined}
+                    onClick={() => handleTogglePiso(p.val)}
+                    className={`relative z-10 h-7 px-2.5 rounded-lg text-[11px] font-bold transition-colors duration-200 active:scale-95 shrink-0 inline-flex items-center gap-1 whitespace-nowrap ${
+                      isSelected
+                        ? `${selectedPisos.length > 1 ? 'bg-[#FDBA30] shadow-2xs ' : ''}text-slate-950 font-black`
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
+                  >
+                    <span>{p.short}</span>
+                    {!isTodos && isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         {/* Fila 3 (En modo Aulas Libres): Selector de Bloque Horario para ver qué aulas están libres en esa hora */}
         {viewMode === 'FREE_ROOMS' && (
-          <div className="flex items-center gap-1 overflow-x-auto pt-1.5 border-t border-slate-100 dark:border-zinc-800 scrollbar-none text-[11px]">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mr-1 shrink-0">
+          <div
+            ref={horaSlide.containerRef}
+            className="relative flex items-center gap-1 overflow-x-auto bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-slate-200/60 dark:border-zinc-800 scrollbar-none text-[11px]"
+          >
+            <span
+              aria-hidden="true"
+              style={horaSlide.pillStyle}
+              className={`pointer-events-none absolute top-0 left-0 z-0 rounded-md shadow-2xs transition-[transform,width,height,background-color] duration-300 ${
+                selectedHoraBlock === currentHoraRef
+                  ? 'bg-emerald-600'
+                  : !selectedHoraBlock
+                    ? 'bg-slate-900 dark:bg-zinc-800'
+                    : 'bg-[#FDBA30]'
+              }`}
+            />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mr-1 ml-1 shrink-0 relative z-10">
               Horario:
             </span>
             <button
               type="button"
-              onClick={() => setSelectedHoraBlock(getCurrentHourBlock())}
-              className={`h-6 px-2.5 rounded-md font-bold transition whitespace-nowrap shrink-0 inline-flex items-center gap-1 active:scale-95 ${
-                selectedHoraBlock === getCurrentHourBlock()
-                  ? 'bg-emerald-600 text-white font-black shadow-2xs'
-                  : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+              data-slide-active={selectedHoraBlock === currentHoraRef ? 'true' : undefined}
+              onClick={() => setSelectedHoraBlock(currentHoraRef)}
+              className={`relative z-10 h-6 px-2.5 rounded-md font-bold transition-colors duration-200 whitespace-nowrap shrink-0 inline-flex items-center gap-1 active:scale-95 ${
+                selectedHoraBlock === currentHoraRef
+                  ? 'text-white font-black'
+                  : 'text-emerald-700 dark:text-emerald-300 hover:bg-white/60 dark:hover:bg-zinc-800/70'
               }`}
             >
               <Clock className="w-3 h-3 stroke-[2.4]" />
-              <span>Actual ({getCurrentHourBlock()})</span>
+              <span>Actual ({currentHoraRef})</span>
             </button>
 
             <button
               type="button"
+              data-slide-active={!selectedHoraBlock ? 'true' : undefined}
               onClick={() => setSelectedHoraBlock('')}
-              className={`h-6 px-2.5 rounded-md font-bold transition whitespace-nowrap shrink-0 active:scale-95 ${
+              className={`relative z-10 h-6 px-2.5 rounded-md font-bold transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-95 ${
                 !selectedHoraBlock
-                  ? 'bg-slate-900 dark:bg-zinc-800 text-white font-black'
+                  ? 'text-white font-black'
                   : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
               }`}
             >
@@ -1123,16 +1226,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </button>
 
             {REAL_BLOCKS.map((b) => {
-              const isSelected = selectedHoraBlock === b.start;
+              const isSelected = selectedHoraBlock === b.start && b.start !== currentHoraRef;
               return (
                 <button
                   key={b.start}
                   type="button"
+                  data-slide-active={isSelected ? 'true' : undefined}
                   onClick={() => setSelectedHoraBlock(b.start)}
-                  className={`h-6 px-2 rounded-md font-mono font-bold transition whitespace-nowrap shrink-0 active:scale-95 ${
+                  className={`relative z-10 h-6 px-2 rounded-md font-mono font-bold transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-95 ${
                     isSelected
-                      ? 'bg-[#FDBA30] text-slate-950 font-black'
-                      : 'bg-slate-100/80 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'text-slate-950 font-black'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {b.start} - {b.end}
@@ -1184,7 +1288,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba seleccionando otro bloque horario, piso o pabellón.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5">
+            <div key={`free-${selectedDayOffset}-${selectedHoraBlock}`} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5 ${contentAnimClass}`}>
               {freeRooms.map((room) => {
                 const blockObj = REAL_BLOCKS.find(b => b.start === selectedHoraBlock);
                 return (
@@ -1294,7 +1398,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </div>
           </div>
         ) : (
-          <div key={`reservas-${selectedDayOffset}-${selectedPabellon}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4 animate-fade-in">
+          <div key={`reservas-${selectedDayOffset}-${selectedPabellon}`} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4 ${contentAnimClass}`}>
             {filtered.map(r => {
               const isImportante = r.prioridad === 'IMPORTANTE';
               const rm = roomMap[(r.aula || '').toUpperCase().trim()];
@@ -1704,7 +1808,15 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               </div>
 
               {/* Pestañas por Tipo de Ambiente Libre: Todos | Aulas | Laboratorios | Talleres | Especiales */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+              <div
+                ref={pickerCatSlide.containerRef}
+                className="relative flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 overflow-x-auto no-scrollbar"
+              >
+                <span
+                  aria-hidden="true"
+                  style={pickerCatSlide.pillStyle}
+                  className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-2xs"
+                />
                 {[
                   { id: 'ALL', label: 'Todos Libres', count: freeRoomsForModalTime.length },
                   { id: 'AULA', label: '🏫 Aulas', count: freeRoomsForModalTime.filter(r => r.categoria === 'AULA').length },
@@ -1717,11 +1829,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <button
                       key={cat.id}
                       type="button"
+                      data-slide-active={active ? 'true' : undefined}
                       onClick={() => setPickerCategory(cat.id)}
-                      className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 active:scale-95 ${
+                      className={`relative z-10 h-7 px-2.5 rounded-lg text-[11px] font-bold transition-colors duration-200 whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 active:scale-95 ${
                         active
-                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
-                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-zinc-800'
+                          ? 'text-slate-950 font-black'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       <span>{cat.label}</span>
@@ -1737,7 +1850,15 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
               {/* Filtros de Pabellón y Piso */}
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+                <div
+                  ref={pickerPabSlide.containerRef}
+                  className="relative flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-800"
+                >
+                  <span
+                    aria-hidden="true"
+                    style={pickerPabSlide.pillStyle}
+                    className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-slate-900 dark:bg-[#FDBA30] shadow-2xs"
+                  />
                   {[
                     { label: 'Ambos Pab.', val: '' },
                     { label: 'Pab. A', val: 'A' },
@@ -1746,10 +1867,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <button
                       key={p.label}
                       type="button"
+                      data-slide-active={pickerPabellon === p.val ? 'true' : undefined}
                       onClick={() => setPickerPabellon(p.val)}
-                      className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition whitespace-nowrap ${
+                      className={`relative z-10 h-6 px-2.5 rounded-lg text-[10px] font-bold transition-colors duration-200 whitespace-nowrap ${
                         pickerPabellon === p.val
-                          ? 'bg-slate-900 dark:bg-[#FDBA30] text-white dark:text-slate-950 font-black'
+                          ? 'text-white dark:text-slate-950 font-black'
                           : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
@@ -1758,15 +1880,24 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   ))}
                 </div>
 
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 overflow-x-auto no-scrollbar">
+                <div
+                  ref={pickerPisoSlide.containerRef}
+                  className="relative flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 overflow-x-auto no-scrollbar"
+                >
+                  <span
+                    aria-hidden="true"
+                    style={pickerPisoSlide.pillStyle}
+                    className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-amber-500 shadow-2xs"
+                  />
                   {PISOS_DISPONIBLES.map(p => (
                     <button
                       key={p.label}
                       type="button"
+                      data-slide-active={pickerPiso === p.val ? 'true' : undefined}
                       onClick={() => setPickerPiso(p.val)}
-                      className={`h-6 px-2 rounded-lg text-[10px] font-bold transition whitespace-nowrap ${
+                      className={`relative z-10 h-6 px-2 rounded-lg text-[10px] font-bold transition-colors duration-200 whitespace-nowrap ${
                         pickerPiso === p.val
-                          ? 'bg-amber-500 text-slate-950 font-black'
+                          ? 'text-slate-950 font-black'
                           : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
