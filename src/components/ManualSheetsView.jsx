@@ -24,6 +24,52 @@ import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { useFadeModal } from '../utils/useFadeModal';
 
+// Copiar tabla HTML rica + TSV al portapapeles para pegar directo en Excel
+const copyRichTableToClipboard = async (plainText, htmlText) => {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.ClipboardItem) {
+    try {
+      const blobHtml = new Blob([htmlText], { type: 'text/html' });
+      const blobText = new Blob([plainText], { type: 'text/plain' });
+      const item = new window.ClipboardItem({
+        'text/html': blobHtml,
+        'text/plain': blobText
+      });
+      await navigator.clipboard.write([item]);
+      return true;
+    } catch (e) {
+      console.warn('ClipboardItem copy failed, trying fallback:', e);
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    try {
+      let copyOk = false;
+      const listener = (e) => {
+        e.preventDefault();
+        e.clipboardData.setData('text/html', htmlText);
+        e.clipboardData.setData('text/plain', plainText);
+        copyOk = true;
+      };
+      document.addEventListener('copy', listener);
+      const successful = document.execCommand('copy');
+      document.removeEventListener('copy', listener);
+      if (copyOk || successful) return true;
+    } catch (err) {
+      console.warn('Fallback copy listener falló:', err);
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(plainText);
+        return true;
+      } catch (e) {
+        console.warn('navigator.clipboard.writeText falló:', e);
+      }
+    }
+  }
+  return false;
+};
+
 // Detecta si la hoja es de reemplazo y extrae el nombre del docente reemplazante
 const isReemplazoSheet = (item) => (item?.motivo || '').toUpperCase().includes('REEMPLAZO');
 const getSuplente = (item) => {
@@ -98,6 +144,8 @@ export default function ManualSheetsView({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedForPrint, setSelectedForPrint] = useState(null);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
+  const [copiedAll, setCopiedAll] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [nrcLookupLoading, setNrcLookupLoading] = useState(false);
   const [nrcMatchFound, setNrcMatchFound] = useState(null);
@@ -335,6 +383,100 @@ export default function ManualSheetsView({
     }
   };
 
+  // Genera datos en formato oficial Excel (9 columnas: CÓDIGO, FECHA, NRC, DOCENTE, CURSO, CARRERA, MOTIVO, ASISTENTE, DOCENTE REEMPLAZANTE)
+  const generateManualSheetsTableData = (sheetsList) => {
+    const list = Array.isArray(sheetsList) ? sheetsList : [sheetsList];
+    const headers = ['CÓDIGO', 'FECHA', 'NRC', 'DOCENTE', 'CURSO', 'CARRERA', 'MOTIVO', 'ASISTENTE', 'DOCENTE REEMPLAZANTE'];
+
+    const thBase = 'border:1px solid #000000;background-color:#000000;color:#FFFFFF;padding:6px 10px;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;text-align:center;white-space:nowrap;';
+    const tdCenter = 'border:1px solid #000000;padding:5px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;white-space:nowrap;';
+    const tdLeft = 'border:1px solid #000000;padding:5px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:left;white-space:nowrap;';
+    const tdCode = 'border:1px solid #000000;padding:5px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;font-weight:bold;white-space:nowrap;';
+
+    const headerHtml = `<tr>${headers.map(h => `<th style="${thBase}">${h}</th>`).join('')}</tr>`;
+
+    const plainRows = [];
+    const htmlRows = list.map(item => {
+      const isReemplazo = isReemplazoSheet(item);
+      const suplenteName = getSuplente(item) || item.docente_reemplazo || item.docenteReemplazo || '';
+
+      const codigo = String(item.codigo || '').toUpperCase().trim().replace(/^LNI-/i, 'LN1-');
+      let fechaFmt = item.fecha || '';
+      if (fechaFmt && fechaFmt.includes('-')) {
+        const parts = fechaFmt.split('-');
+        if (parts.length === 3) {
+          fechaFmt = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+        }
+      }
+      const nrc = String(item.nrc || '').trim();
+      let doc = String(item.docente || '').trim().toUpperCase().replace(/\s*\[Reemplazo:.*\]$/i, '').trim();
+      const curso = String(item.curso || '').trim().toUpperCase();
+      const carrera = String(item.carrera || '').trim();
+      let motivo = String(item.motivo || '').trim().toUpperCase().replace(/\s*\([^)]*\)\s*$/, '').trim();
+      const asistente = String(item.asistente || 'TAYRON SALINAS').trim().toUpperCase();
+      const suplente = (isReemplazo && suplenteName) ? String(suplenteName).trim().toUpperCase() : '';
+
+      plainRows.push([codigo, fechaFmt, nrc, doc, curso, carrera, motivo, asistente, suplente].join('\t'));
+
+      return `<tr>
+  <td style="${tdCode}">${codigo}</td>
+  <td style="${tdCenter}">${fechaFmt}</td>
+  <td style="${tdCenter}">${nrc}</td>
+  <td style="${tdLeft}">${doc}</td>
+  <td style="${tdLeft}">${curso}</td>
+  <td style="${tdLeft}">${carrera}</td>
+  <td style="${tdLeft}">${motivo}</td>
+  <td style="${tdLeft}">${asistente}</td>
+  <td style="${tdLeft}">${suplente}</td>
+</tr>`;
+    });
+
+    const isSingle = list.length === 1;
+    // Para una sola fila (botón copiar de la fila), no incluir el encabezado TH para que al pegar en Excel caiga directamente en la fila seleccionada
+    const html = `<table border="1" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:10pt;">
+  <tbody>
+    ${isSingle ? htmlRows.join('\n') : `${headerHtml}\n${htmlRows.join('\n')}`}
+  </tbody>
+</table>`;
+
+    const plain = isSingle ? plainRows.join('\n') : [headers.join('\t'), ...plainRows].join('\n');
+    return { html, plain, codigo: isSingle ? list[0]?.codigo : null };
+  };
+
+  const handleCopyExcelRow = async (item) => {
+    try {
+      const { html, plain, codigo } = generateManualSheetsTableData(item);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setCopiedCode(codigo);
+        setToastMessage(`📋 Fila copiada para Excel (${codigo} · NRC ${item.nrc || ''})`);
+        setTimeout(() => setCopiedCode(null), 2500);
+        setTimeout(() => setToastMessage(''), 2500);
+      }
+    } catch (err) {
+      console.error('Error al copiar fila para Excel:', err);
+      setToastMessage('❌ Error al copiar fila');
+      setTimeout(() => setToastMessage(''), 2500);
+    }
+  };
+
+  const handleCopyAllSheetsExcel = async (list) => {
+    try {
+      const { html, plain } = generateManualSheetsTableData(list);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setCopiedAll(true);
+        setToastMessage(`📋 Tabla copiada para Excel (${list.length} filas con 9 columnas)`);
+        setTimeout(() => setCopiedAll(false), 2500);
+        setTimeout(() => setToastMessage(''), 2500);
+      }
+    } catch (err) {
+      console.error('Error al copiar tabla para Excel:', err);
+      setToastMessage('❌ Error al copiar tabla');
+      setTimeout(() => setToastMessage(''), 2500);
+    }
+  };
+
   const handleCopyVoucherText = (item) => {
     const isReemplazo = isReemplazoSheet(item);
     const suplenteName = getSuplente(item);
@@ -428,6 +570,18 @@ export default function ManualSheetsView({
             <span className="bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono whitespace-nowrap shrink-0">
               {validSheets.length} Emitidas
             </span>
+
+            {validSheets.length > 0 && (
+              <button
+                type="button"
+                onClick={() => handleCopyAllSheetsExcel(filtered)}
+                className="h-10 px-3.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-700 transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0"
+                title="Copiar tabla filtrada en formato oficial Excel (9 columnas)"
+              >
+                {copiedAll ? <Check className="w-4 h-4 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-4 h-4 stroke-[2.2]" />}
+                <span>{copiedAll ? '¡Tabla Copiada!' : 'Copiar Tabla Excel'}</span>
+              </button>
+            )}
 
             <button
               onClick={handleOpenNewModal}
@@ -570,12 +724,21 @@ export default function ManualSheetsView({
 
                 <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2">
                   <button
-                    onClick={() => handleCopyVoucherText(item)}
+                    onClick={() => handleCopyExcelRow(item)}
                     className="h-8 px-3 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95"
-                    title="Copiar texto para WhatsApp"
+                    title="Copiar fila en formato oficial Excel (9 columnas)"
                   >
-                    <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                    <span>Copiar</span>
+                    {copiedCode === item.codigo ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                        <span className="text-emerald-700 dark:text-emerald-400 font-black">¡Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <span>Copiar</span>
+                      </>
+                    )}
                   </button>
 
                   <button
@@ -682,12 +845,21 @@ export default function ManualSheetsView({
                       <td className="py-3 px-3 pr-4 whitespace-nowrap text-center align-middle w-[165px] min-w-[165px] sticky right-0 bg-white dark:bg-[#0c0c0f] group-hover:bg-slate-50 dark:group-hover:bg-[#15151a] z-10 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] dark:shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.6)] border-l border-slate-200/80 dark:border-zinc-800 transition-colors">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
-                            onClick={() => handleCopyVoucherText(item)}
+                            onClick={() => handleCopyExcelRow(item)}
                             className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shrink-0"
-                            title="Copiar texto para WhatsApp"
+                            title="Copiar fila en formato oficial Excel (9 columnas)"
                           >
-                            <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                            <span>Copiar</span>
+                            {copiedCode === item.codigo ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                                <span className="text-emerald-700 dark:text-emerald-400 font-black">¡Copiado!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                                <span>Copiar</span>
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => setSelectedForPrint(item)}
@@ -1094,12 +1266,22 @@ export default function ManualSheetsView({
                 <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
                   <button
                     type="button"
-                    onClick={() => handleCopyVoucherText(activeSheet)}
+                    onClick={() => handleCopyExcelRow(activeSheet)}
                     className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700"
-                    title="Copiar texto resumen"
+                    title="Copiar fila en formato oficial Excel (9 columnas)"
                   >
-                    {copiedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
-                    <span>{copiedSuccess ? '¡Copiado!' : 'Copiar'}</span>
+                    {copiedCode === activeSheet?.codigo ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
+                    <span>{copiedCode === activeSheet?.codigo ? '¡Copiado Excel!' : 'Copiar Excel'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopyVoucherText(activeSheet)}
+                    className="h-10 px-3 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/60 dark:border-zinc-800"
+                    title="Copiar texto para WhatsApp"
+                  >
+                    <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span className="hidden sm:inline">WhatsApp</span>
                   </button>
 
                   <button
