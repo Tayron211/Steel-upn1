@@ -126,7 +126,7 @@ async function main() {
     console.log('\n========================================================');
     console.log('  ¡DATA SINCRONIZADA CON ÉXITO!');
     console.log('  Nuevos NRCs, docentes, cursos y aulas ya están activos');
-    console.log('  en la web en vivo: https://steel-upn1.pages.dev');
+    console.log('  en la web en vivo: https://control-doc.pages.dev');
     console.log('========================================================\n');
   } catch (err) {
     console.error('\n[ERROR en la sincronización]:', err);

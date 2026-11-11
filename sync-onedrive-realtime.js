@@ -1,6 +1,6 @@
 /**
  * SINCRONIZADOR BIDIRECCIONAL EN TIEMPO REAL (24/7)
- * Conecta automáticamente tu archivo Excel (OneDrive / PC) <-> https://steel-upn1.pages.dev
+ * Conecta automáticamente tu archivo Excel (OneDrive / PC) <-> https://control-doc.pages.dev
  * - Si modificas y guardas el Excel -> Jala la data automáticamente a la Web App en tiempo real.
  * - Si registras algo en la Web App o desde celulares -> Guarda automáticamente en el Excel conservando colores y fórmulas.
  */
@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 const XLSX = require('xlsx');
 
-const API_BASE = process.env.API_BASE || 'https://steel-upn1.pages.dev';
+const API_BASE = process.env.API_BASE || 'https://control-doc.pages.dev';
 const targetPath = process.argv[2] || path.join(__dirname, 'CONTROL DOCENTE.xlsx');
 
 function sha256(buf) {

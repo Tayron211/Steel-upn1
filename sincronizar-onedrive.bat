@@ -4,7 +4,7 @@ color 0B
 echo ============================================================================
 echo   SINCRONIZADOR BIDIRECCIONAL EN TIEMPO REAL (24/7)
 echo   Cuenta vinculada: tayron.salinas@upn.edu.pe (CONTROL DOCENTE - Copia.xlsx)
-echo   Web en vivo     : https://steel-upn1.pages.dev
+echo   Web en vivo     : https://control-doc.pages.dev
 echo ============================================================================
 echo.
 

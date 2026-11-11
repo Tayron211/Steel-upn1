@@ -258,8 +258,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const handleAuth = () => {
       setFormData(prev => ({ ...prev, usuario: getLoggedAssistantName() }));
     };
-    window.addEventListener('auth:change', handleAuth);
-    return () => window.removeEventListener('auth:change', handleAuth);
+    window.addEventListener('steel:auth-changed', handleAuth);
+    return () => window.removeEventListener('steel:auth-changed', handleAuth);
   }, []);
 
   useEffect(() => {

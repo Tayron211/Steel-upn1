@@ -483,9 +483,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         const isDark = document.documentElement.classList.contains('dark');
         const bg = isDark ? '#0c0c0f' : '#ffffff';
 
-        // Ocultar temporalmente el menú de 3 puntos durante la captura para una tarjeta limpia
-        const dotsBtn = cardEl.querySelector('button[title*="opciones"]');
-        if (dotsBtn) dotsBtn.style.visibility = 'hidden';
+        // Ocultar botones de acción (Puntual/Tarde/Falta, menú 3 puntos y Copiar) para capturar solo la información de la tarjeta
+        const hiddenEls = Array.from(cardEl.querySelectorAll('[data-wa-hide]'));
+        const prevDisplays = hiddenEls.map((el) => el.style.display);
+        hiddenEls.forEach((el) => { el.style.display = 'none'; });
 
         try {
           blob = await toBlob(cardEl, {
@@ -513,7 +514,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             console.warn('html2canvas failed:', h2cErr);
           }
         } finally {
-          if (dotsBtn) dotsBtn.style.visibility = 'visible';
+          hiddenEls.forEach((el, idx) => { el.style.display = prevDisplays[idx]; });
         }
       }
 
@@ -1900,6 +1901,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     {(isPuntual || isTarde || isFalta || isReemplazo) && (
                       <button
                         type="button"
+                        data-wa-hide="true"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleCopyAttendanceRow(item);
@@ -1936,6 +1938,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     {/* Menú de Acciones Rápidas (Observación / Hoja / Préstamo) */}
                     <button
                       type="button"
+                      data-wa-hide="true"
                       onClick={() => setSelectedClassOptions(item)}
                       className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition inline-flex items-center justify-center active:scale-90"
                       title="Más opciones de aula"
@@ -1994,7 +1997,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               </div>
 
               {/* Fila Única y Simétrica de Toma de Asistencia (100% Adaptada a Modo Claro y Oscuro AMOLED) */}
-              <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <div data-wa-hide="true" className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   onClick={() => handleQuickStatus(item, 'PUNTUAL')}
                   className={`min-h-[44px] h-11 py-1 px-1 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isPuntual

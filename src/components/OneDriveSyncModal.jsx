@@ -47,7 +47,7 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
   if (!isOpen || typeof document === 'undefined') return null;
 
   const origin = window.location.origin.includes('localhost')
-    ? 'https://steel-upn1.pages.dev'
+    ? 'https://control-doc.pages.dev'
     : window.location.origin;
 
   const handleStartCloudAuth = async () => {

@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 > nul
 echo ========================================================
-echo   SINCRONIZACION AUTOMATICA - STEEL-UPN1
+echo   SINCRONIZACION AUTOMATICA - CONTROL DOCENTE UPN
 echo   GitHub: https://github.com/Tayron211/Steel-upn1
-echo   Cloudflare: https://steel-upn1.pages.dev
+echo   Cloudflare: https://control-doc.pages.dev
 echo ========================================================
 echo.
 
@@ -26,12 +26,12 @@ git push origin main
 
 echo.
 echo [3/3] Desplegando en vivo a Cloudflare Edge...
-call npx.cmd wrangler pages deploy dist --project-name=steel-upn1 --branch=main
+call npx.cmd wrangler pages deploy dist --project-name=control-doc --branch=main
 
 echo.
 echo ========================================================
 echo   SINCRONIZACION COMPLETADA CON EXITO!
-echo   Web en vivo: https://steel-upn1.pages.dev
+echo   Web en vivo: https://control-doc.pages.dev
 echo ========================================================
 echo.
 if "%~1"=="" pause

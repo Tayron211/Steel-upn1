@@ -1,5 +1,5 @@
 async function main(workbook: ExcelScript.Workbook) {
-  const API = "https://steel-upn1.pages.dev";
+  const API = "https://control-doc.pages.dev";
 
   let lastExcelHash = "";
   let lastWebHash = "";

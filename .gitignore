@@ -29,6 +29,10 @@ Thumbs.db
 
 # Wrangler & Cloudflare
 .wrangler/
+_worker.bundle
+
+# Office / Excel Temporary Files
+~$*
 
 # Local SQLite databases
 *.sqlite
