@@ -22,6 +22,7 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
+import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
 
 // Copiar tabla HTML rica + TSV al portapapeles para pegar directo en Excel
@@ -181,7 +182,7 @@ export default function ManualSheetsView({
     carrera: '',
     motivo: 'PROBLEMA CON AUTENTICADOR',
     docenteReemplazo: '',
-    asistente: 'TAYRON SALINAS'
+    asistente: getLoggedAssistantName()
   });
 
   // Validación en tiempo real: El código es ÚNICO e IRREPETIBLE
@@ -264,7 +265,7 @@ export default function ManualSheetsView({
       carrera: '',
       motivo: 'PROBLEMA CON AUTENTICADOR',
       docenteReemplazo: '',
-      asistente: formData.asistente || 'TAYRON SALINAS'
+      asistente: (isAdmin() ? formData.asistente : getLoggedAssistantName()) || getLoggedAssistantName()
     });
     setNrcMatchFound(null);
     setIsModalOpen(true);
@@ -333,7 +334,7 @@ export default function ManualSheetsView({
       carrera: '',
       motivo: 'PROBLEMA CON AUTENTICADOR',
       docenteReemplazo: '',
-      asistente: 'TAYRON SALINAS'
+      asistente: getLoggedAssistantName()
     });
     setNrcMatchFound(null);
   };
@@ -1096,15 +1097,24 @@ export default function ManualSheetsView({
                 </div>
               )}
 
-              {/* Fila 7: Asistente Emisor */}
+              {/* Fila 7: Asistente Emisor (Autocompletado y bloqueado para el asistente en sesión) */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">Asistente Emisor *</label>
-                <CustomSelect
-                  value={formData.asistente}
-                  onChange={(val) => setFormData({ ...formData, asistente: val })}
-                  options={asistentes}
-                  placeholder="Seleccionar asistente"
-                />
+                {isAdmin() ? (
+                  <CustomSelect
+                    value={formData.asistente}
+                    onChange={(val) => setFormData({ ...formData, asistente: val })}
+                    options={asistentes}
+                    placeholder="Seleccionar asistente"
+                  />
+                ) : (
+                  <div className="h-10 sm:h-11 px-3.5 flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 select-none">
+                    <span className="truncate">{getLoggedAssistantName()}</span>
+                    <span className="text-[10px] font-mono text-amber-700 dark:text-amber-300 uppercase tracking-wider bg-amber-200/60 dark:bg-amber-950 px-2 py-0.5 rounded-md">
+                      Autenticado
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">

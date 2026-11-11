@@ -7,7 +7,9 @@ import DashboardView from './components/DashboardView';
 import FloatingActionMenu from './components/FloatingActionMenu';
 import MobileSignView from './components/MobileSignView';
 import SplashScreen from './components/SplashScreen';
+import LoginScreen from './components/LoginScreen';
 import ErrorBoundary from './components/ErrorBoundary';
+import { getAuthUser, logout } from './utils/auth';
 import { createDbChangeGate } from './utils/webSignGate';
 import {
   triggerAutoSyncLinkedExcel,
@@ -51,6 +53,20 @@ export default function App() {
     return HASH_TAB_MAP[hash] || 'attendance';
   });
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
+
+  // Authentication State
+  const [authUser, setAuthUser] = useState(() => getAuthUser());
+
+  useEffect(() => {
+    const handleAuthChanged = () => setAuthUser(getAuthUser());
+    window.addEventListener('steel:auth-changed', handleAuthChanged);
+    return () => window.removeEventListener('steel:auth-changed', handleAuthChanged);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setAuthUser(null);
+  };
 
   // AMOLED Dark Mode State with LocalStorage Persistence
   const [darkMode, setDarkMode] = useState(() => {
@@ -352,9 +368,19 @@ export default function App() {
     );
   }
 
+  // Si no hay sesión activa, mostrar la pantalla de Login con el fondo 3D UPN
+  if (!authUser) {
+    return (
+      <>
+        <SplashScreen minDuration={600} />
+        <LoginScreen onLogin={setAuthUser} />
+      </>
+    );
+  }
+
   return (
     <>
-      <SplashScreen minDuration={1200} />
+      <SplashScreen minDuration={1000} />
       <div
         className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
         onTouchStart={handleTouchStart}
@@ -368,6 +394,8 @@ export default function App() {
         onResetData={handleResetData}
         darkMode={darkMode}
         onToggleDarkMode={toggleDarkMode}
+        authUser={authUser}
+        onLogout={handleLogout}
       />
 
       {/* Main Fluid App Container - Amplio en escritorio para máxima visibilidad */}

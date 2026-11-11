@@ -42,6 +42,7 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
+import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
 import { triggerAutoSyncLinkedExcel } from '../utils/liveExcelSync';
 import { toBlob } from 'html-to-image';
@@ -434,7 +435,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   // In-situ Quick Attention Bottom Sheet (Saves 80% time by recording loan right here!)
   const asistentes = useAssistants();
-  const [quickAttentionResponsable, setQuickAttentionResponsable] = useState('TAYRON SALINAS');
+  const [quickAttentionResponsable, setQuickAttentionResponsable] = useState(() => getLoggedAssistantName());
+
+  useEffect(() => {
+    if (!isAdmin()) {
+      setQuickAttentionResponsable(getLoggedAssistantName());
+    }
+  }, [quickAttentionItem]);
   const [quickAttentionItem, setQuickAttentionItem] = useState(null);
   const [quickAttentionBeneficiary, setQuickAttentionBeneficiary] = useState('DOCENTE');
   const [quickAttentionTipo, setQuickAttentionTipo] = useState('PROYECTOR');
@@ -2288,12 +2295,21 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1">
                 Responsable / Asistente
               </label>
-              <CustomSelect
-                value={quickAttentionResponsable}
-                onChange={setQuickAttentionResponsable}
-                options={asistentes}
-                placeholder="Seleccionar asistente"
-              />
+              {isAdmin() ? (
+                <CustomSelect
+                  value={quickAttentionResponsable}
+                  onChange={setQuickAttentionResponsable}
+                  options={asistentes}
+                  placeholder="Seleccionar asistente"
+                />
+              ) : (
+                <div className="h-10 px-3.5 flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 select-none">
+                  <span className="truncate">{getLoggedAssistantName()}</span>
+                  <span className="text-[10px] font-mono text-amber-700 dark:text-amber-300 uppercase tracking-wider bg-amber-200/60 dark:bg-amber-950 px-2 py-0.5 rounded-md">
+                    Autenticado
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>

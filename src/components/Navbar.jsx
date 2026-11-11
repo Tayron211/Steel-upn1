@@ -10,7 +10,8 @@ import {
   Moon,
   Cloud,
   RefreshCw,
-  Check
+  Check,
+  LogOut
 } from 'lucide-react';
 import UpnLogo from './UpnLogo';
 import OneDriveSyncModal from './OneDriveSyncModal';
@@ -22,7 +23,7 @@ import {
   syncAllDataToLinkedExcel
 } from '../utils/liveExcelSync';
 
-export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, darkMode, onToggleDarkMode }) {
+export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, darkMode, onToggleDarkMode, authUser, onLogout }) {
   const [time, setTime] = useState(new Date());
   const [liveExcel, setLiveExcel] = useState(() => getLiveExcelState());
   const [showOneDriveModal, setShowOneDriveModal] = useState(false);
@@ -145,6 +146,30 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 {currentDayName} {formattedTime}
               </span>
             </div>
+
+            {/* Asistente Autenticado & Botón de Salir */}
+            {authUser && (
+              <div className="flex items-center gap-1.5 pl-0.5">
+                <div
+                  className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800/80 px-2 sm:px-2.5 py-1 rounded-full text-amber-900 dark:text-amber-300 text-[11px] font-bold shadow-2xs"
+                  title={`Asistente en sesión: ${authUser.name}`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  <span className="max-w-[75px] sm:max-w-[130px] truncate uppercase font-mono">
+                    {authUser.name || authUser.displayName}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-90 bg-slate-100 hover:bg-rose-50 dark:bg-zinc-900 dark:hover:bg-rose-950/60 border border-slate-200/80 dark:border-zinc-800 hover:border-rose-300 dark:hover:border-rose-800 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 shadow-2xs shrink-0"
+                  title="Cerrar sesión de asistente"
+                  aria-label="Cerrar sesión"
+                >
+                  <LogOut className="w-3.5 h-3.5 stroke-[2.3]" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

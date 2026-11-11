@@ -33,6 +33,7 @@ import CustomSelect from './CustomSelect';
 import CustomDatePicker from './CustomDatePicker';
 import CustomTimePicker from './CustomTimePicker';
 import { useAssistants } from '../utils/assistants';
+import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 import { generateCargoPdf } from '../utils/cargoPdfGenerator';
 
 import { CAMPUS_ROOMS } from '../utils/campusRooms';
@@ -221,8 +222,14 @@ export default function TicketsKanban({
   const [personName, setPersonName] = useState('');
   // Columna 11: DESCRIPCIÓN / SOLUCIÓN
   const [loanDescription, setLoanDescription] = useState('');
-  // Columna 12: RESPONSABLE
-  const [loanResponsable, setLoanResponsable] = useState('TAYRON SALINAS');
+  // Columna 12: RESPONSABLE (Autocompletado con el asistente autenticado)
+  const [loanResponsable, setLoanResponsable] = useState(() => getLoggedAssistantName());
+
+  useEffect(() => {
+    if (!isAdmin()) {
+      setLoanResponsable(getLoggedAssistantName());
+    }
+  }, [isNewLoanModalOpen]);
 
   const [submittingLoan, setSubmittingLoan] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -463,7 +470,7 @@ export default function TicketsKanban({
     e.stopPropagation();
     const ben = parseBeneficiary(ticket.descripcionSolucion);
     const recipientName = ticket.recibidoPor || ben.name || 'Docente / Solicitante';
-    const assistantName = ticket.responsable || ticket.asistente || 'TAYRON SALINAS';
+    const assistantName = ticket.responsable || ticket.asistente || getLoggedAssistantName();
 
     generateCargoPdf({
       ticket,
@@ -730,7 +737,7 @@ export default function TicketsKanban({
       piso: floor,
       pabellon: pab,
       tipoSolicitud: matName,
-      responsable: loanResponsable || 'TAYRON SALINAS',
+      responsable: (isAdmin() ? loanResponsable : getLoggedAssistantName()) || getLoggedAssistantName(),
       estado: loanStatus || 'EN PROCESO',
       usuario: beneficiaryType, // 'DOCENTE' o 'ALUMNO'
       descripcionSolucion: finalDesc,
@@ -2315,13 +2322,22 @@ export default function TicketsKanban({
                     <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                       Responsable / Asistente
                     </label>
-                    <CustomSelect
-                      value={loanResponsable}
-                      onChange={setLoanResponsable}
-                      options={asistentes}
-                      placeholder="Responsable"
-                      className="h-10 text-xs font-bold"
-                    />
+                    {isAdmin() ? (
+                      <CustomSelect
+                        value={loanResponsable}
+                        onChange={setLoanResponsable}
+                        options={asistentes}
+                        placeholder="Responsable"
+                        className="h-10 text-xs font-bold"
+                      />
+                    ) : (
+                      <div className="h-10 px-3.5 flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 select-none">
+                        <span className="truncate">{getLoggedAssistantName()}</span>
+                        <span className="text-[10px] font-mono text-amber-700 dark:text-amber-300 uppercase tracking-wider bg-amber-200/60 dark:bg-amber-950 px-2 py-0.5 rounded-md">
+                          Autenticado
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
