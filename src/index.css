@@ -450,3 +450,26 @@ button:active {
   animation: softDropdownExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top;
 }
+
+/* Splash Screen Minimalist Hairline Progress */
+@keyframes splashProgress {
+  0% {
+    left: 0%;
+    width: 0%;
+    opacity: 0.5;
+  }
+  50% {
+    left: 25%;
+    width: 60%;
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    width: 15%;
+    opacity: 0.3;
+  }
+}
+
+.animate-splash-progress {
+  animation: splashProgress 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

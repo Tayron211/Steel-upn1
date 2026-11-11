@@ -6,6 +6,7 @@ import OperationsHub from './components/OperationsHub';
 import DashboardView from './components/DashboardView';
 import FloatingActionMenu from './components/FloatingActionMenu';
 import MobileSignView from './components/MobileSignView';
+import SplashScreen from './components/SplashScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { createDbChangeGate } from './utils/webSignGate';
 import {
@@ -338,22 +339,27 @@ export default function App() {
 
   if (mobileSignTicketId) {
     return (
-      <MobileSignView
-        ticketId={mobileSignTicketId}
-        onBack={() => {
-          setMobileSignTicketId(null);
-          navigateTab('tickets', true);
-        }}
-      />
+      <>
+        <SplashScreen minDuration={800} />
+        <MobileSignView
+          ticketId={mobileSignTicketId}
+          onBack={() => {
+            setMobileSignTicketId(null);
+            navigateTab('tickets', true);
+          }}
+        />
+      </>
     );
   }
 
   return (
-    <div
-      className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <>
+      <SplashScreen minDuration={1200} />
+      <div
+        className="min-h-screen bg-slate-50 dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
       {/* Top Mobile/Desktop App Header with AMOLED Mode Toggle */}
       <Navbar
         activeTab={activeTab}
@@ -440,5 +446,6 @@ export default function App() {
         }}
       />
     </div>
+    </>
   );
 }
