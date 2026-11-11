@@ -1473,60 +1473,34 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
-              {/* Fila 1: FECHA, DÍA Y MES (Columnas FECHA, MES, DIA) */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                <div className="sm:col-span-6">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    1. FECHA *
-                  </label>
-                  <CustomDatePicker
-                    value={formData.fecha}
-                    onChange={(val) => {
-                      if (!val) return;
-                      const dt = new Date(val + 'T12:00:00');
-                      const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
-                      const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
-                      setFormData(prev => ({
-                        ...prev,
-                        fecha: val,
-                        dia: computedDia,
-                        mes: computedMes
-                      }));
-                    }}
-                    required
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    2. MES
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={formData.mes || 'OCTUBRE'}
-                    className="w-full h-10 px-3 text-xs bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-700 dark:text-zinc-300 font-bold font-mono uppercase cursor-default"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    3. DIA
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={formData.dia || 'JUEVES'}
-                    className="w-full h-10 px-3 text-xs bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-700 dark:text-zinc-300 font-bold font-mono uppercase cursor-default"
-                  />
-                </div>
+              {/* Fila 1: FECHA (Calcula Día y Mes automáticamente para Excel) */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  Fecha de Reserva
+                </label>
+                <CustomDatePicker
+                  value={formData.fecha}
+                  onChange={(val) => {
+                    if (!val) return;
+                    const dt = new Date(val + 'T12:00:00');
+                    const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
+                    const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
+                    setFormData(prev => ({
+                      ...prev,
+                      fecha: val,
+                      dia: computedDia,
+                      mes: computedMes
+                    }));
+                  }}
+                  required
+                />
               </div>
 
-              {/* Fila 2: HORAS (Columnas INICIO y FINAL) */}
+              {/* Fila 2: HORARIO (Columnas INICIO y FINAL) */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    4. INICIO (Hora) *
+                    Hora Inicio
                   </label>
                   <CustomSelect
                     value={formData.inicio}
@@ -1538,7 +1512,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    5. FINAL (Hora) *
+                    Hora Fin
                   </label>
                   <CustomSelect
                     value={formData.final}
@@ -1549,87 +1523,78 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
               </div>
 
-              {/* Fila 3: AULA Y UBICACIÓN (Columnas AULA y UBICACIÓN) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    <span>6. AULA *</span>
-                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
-                      {freeRoomsForModalTime.length} libres
+              {/* Fila 3: AULA Y UBICACIÓN INTEGRADA (Columnas AULA y UBICACIÓN) */}
+              <div>
+                <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  <span>Ambiente / Aula</span>
+                  <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                    {freeRoomsForModalTime.length} libres en este horario
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickerSearch('');
+                    setIsRoomPickerOpen(true);
+                  }}
+                  className="w-full h-11 text-xs px-3 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition flex items-center justify-between gap-2 overflow-hidden cursor-pointer"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0">
+                      {formData.aula || 'ELEGIR'}
                     </span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPickerSearch('');
-                      setIsRoomPickerOpen(true);
-                    }}
-                    className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition flex items-center justify-between gap-2 overflow-hidden"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 font-mono font-black text-[11px] border border-amber-300/60 dark:border-amber-800/60 shrink-0">
-                        {formData.aula || 'ELEGIR'}
+                    <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 truncate">
+                      {roomMap[(formData.aula || '').toUpperCase().trim()]?.tipo ||
+                        roomMap[(formData.aula || '').toUpperCase().trim()]?.nombre ||
+                        'Seleccionar aula o laboratorio'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {formData.ubicacion && (
+                      <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hidden sm:inline-block">
+                        {formData.ubicacion}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-300 truncate">
-                        {roomMap[(formData.aula || '').toUpperCase().trim()]?.tipo ||
-                          roomMap[(formData.aula || '').toUpperCase().trim()]?.nombre ||
-                          'Seleccionar aula o lab'}
-                      </span>
-                    </div>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0 stroke-[2.5]" />
-                  </button>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    7. UBICACIÓN *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.ubicacion}
-                    onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value.toUpperCase() })}
-                    placeholder="Ej: 5TO PISO - A, 1ER PISO - B"
-                    className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
-                  />
-                </div>
+                    )}
+                    <ChevronDown className="w-4 h-4 text-slate-400 dark:text-zinc-500 shrink-0 stroke-[2.5]" />
+                  </div>
+                </button>
               </div>
 
-              {/* Fila 4: DOCENTE (Columna DOCENTE) */}
+              {/* Fila 4: DOCENTE SOLICITANTE */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  8. DOCENTE *
+                  Docente Solicitante
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.docente}
                   onChange={(e) => setFormData({ ...formData, docente: e.target.value.toUpperCase() })}
-                  placeholder="Apellidos y Nombres completos del docente solicitante"
+                  placeholder="Apellidos y Nombres completos del docente"
                   className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
                 />
               </div>
 
-              {/* Fila 5: DETALLE (Columna DETALLE) */}
+              {/* Fila 5: ACTIVIDAD / MOTIVO */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  9. DETALLE (Actividad / Motivo) *
+                  Actividad / Motivo de Reserva
                 </label>
-                <textarea
-                  rows="2"
+                <input
+                  type="text"
                   required
                   value={formData.detalle || formData.motivo}
                   onChange={(e) => setFormData({ ...formData, detalle: e.target.value.toUpperCase(), motivo: e.target.value.toUpperCase() })}
-                  placeholder="Ej: USO DE LABORATORIO, TALLER CULTURAL, CHARLA PARA PADRES..."
-                  className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none uppercase font-bold"
+                  placeholder="Ej: USO DE LABORATORIO, TALLER CULTURAL, CHARLA..."
+                  className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
                 />
               </div>
 
-              {/* Fila 6: USUARIO Y PRIORIDAD (Columnas USUARIO y PRIORIDAD) */}
+              {/* Fila 6: ASISTENTE RESPONSABLE Y PRIORIDAD */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    10. USUARIO (Asistente / Responsable) *
+                    Responsable / Asistente
                   </label>
                   {isAdmin() ? (
                     <CustomSelect
@@ -1647,7 +1612,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    11. PRIORIDAD *
+                    Prioridad
                   </label>
                   <CustomSelect
                     value={formData.prioridad}
