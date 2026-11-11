@@ -149,9 +149,9 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
                 {/* Menú Desplegable: Solo Iconos de Acciones */}
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#121216] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                     {/* Cabecera del Usuario */}
-                    <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2">
+                    <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2.5">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {authUser?.name || authUser?.displayName}
                       </div>
@@ -160,7 +160,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       </div>
                     </div>
 
-                    {/* Fila de Solo Iconos */}
+                    {/* Fila de Solo Iconos Estilizados */}
                     <div className="grid grid-cols-3 gap-2">
                       {/* 1. Modo Claro / Oscuro */}
                       <button
@@ -168,13 +168,13 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         onClick={() => {
                           onToggleDarkMode();
                         }}
-                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 border border-slate-200/80 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:border-amber-500/25 transition-all active:scale-95 cursor-pointer shadow-2xs"
                         title={darkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro (AMOLED)'}
                       >
                         {darkMode ? (
-                          <Sun className="w-4 h-4 text-amber-400" />
+                          <Sun className="w-4 h-4 text-amber-400 stroke-[2.2]" />
                         ) : (
-                          <Moon className="w-4 h-4 text-slate-700" />
+                          <Moon className="w-4 h-4 text-slate-700 stroke-[2.2]" />
                         )}
                       </button>
 
@@ -185,15 +185,15 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           handleSyncOneDrive();
                         }}
                         disabled={isSyncing}
-                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-2xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 border border-slate-200/80 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 dark:border-sky-500/25 transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-2xs"
                         title="Sincronizar OneDrive (Excel ↔ App)"
                       >
                         {isSyncing ? (
-                          <RefreshCw className="w-4 h-4 text-amber-500 animate-spin" />
+                          <RefreshCw className="w-4 h-4 text-amber-400 animate-spin stroke-[2.2]" />
                         ) : syncSuccess ? (
-                          <Check className="w-4 h-4 text-emerald-500 stroke-[2.5]" />
+                          <Check className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
                         ) : (
-                          <Cloud className="w-4 h-4 text-sky-500" />
+                          <Cloud className="w-4 h-4 text-sky-400 stroke-[2.2]" />
                         )}
                       </button>
 
@@ -204,7 +204,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           setUserMenuOpen(false);
                           onLogout();
                         }}
-                        className="h-10 rounded-xl flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-950/70 border border-rose-200/80 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-rose-50 hover:bg-rose-100 border border-rose-200/80 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:border-rose-500/25 dark:text-rose-400 transition-all active:scale-95 cursor-pointer shadow-2xs"
                         title="Cerrar Sesión"
                       >
                         <LogOut className="w-4 h-4 stroke-[2.2]" />

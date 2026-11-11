@@ -900,7 +900,7 @@ export default function DashboardView() {
     .slice(0, 7);
 
   return (
-    <div className="space-y-4 pb-36 md:pb-12">
+    <div className="space-y-4 pb-2">
       {/* Top Banner con Identidad Institucional */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/80 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1902,7 +1902,7 @@ export default function DashboardView() {
       </div>
 
       {/* Firma Sobria de Autor tipo Marca de Agua - Fuera de la tarjeta, hasta abajo en la parte negra */}
-      <div className="pt-16 pb-10 flex flex-col items-center justify-center select-none pointer-events-none">
+      <div className="pt-24 sm:pt-32 pb-4 flex flex-col items-center justify-center select-none pointer-events-none">
         <div className="flex items-center gap-3 w-full max-w-xs mb-3.5 opacity-40 dark:opacity-20">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-slate-400 dark:to-zinc-700" />
           <div className="w-1.5 h-1.5 rounded-full bg-[#FDBA30] shadow-[0_0_8px_rgba(253,186,48,0.5)]" />
