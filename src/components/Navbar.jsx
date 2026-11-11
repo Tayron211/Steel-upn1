@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import UpnLogo from './UpnLogo';
 import OneDriveSyncModal from './OneDriveSyncModal';
+import { useFadeModal } from '../utils/useFadeModal';
 import {
   linkOneDriveExcelFile,
   reauthorizeSavedExcel,
@@ -31,6 +32,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuFade = useFadeModal(userMenuOpen, () => setUserMenuOpen(false), 180);
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -148,8 +150,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 </button>
 
                 {/* Menú Desplegable: Solo Iconos de Acciones */}
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                {userMenuFade.shouldRender && (
+                  <div className={`absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
                     {/* Cabecera del Usuario */}
                     <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2.5">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
