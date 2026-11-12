@@ -100,6 +100,12 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   ];
 
   const activeIndex = Math.max(0, navItems.findIndex((item) => item.id === activeTab));
+  const prevNavIndexRef = useRef(activeIndex);
+  const navStepDistance = Math.abs(activeIndex - prevNavIndexRef.current);
+  const mobileSlideMs = Math.min(430, 280 + navStepDistance * 50);
+  useEffect(() => {
+    prevNavIndexRef.current = activeIndex;
+  }, [activeIndex]);
   const desktopNavSlide = useSlidingIndicator(activeTab, [pendingTicketsCount]);
 
   return (
@@ -285,6 +291,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 width: 'calc((100% - 12px) / 4)',
                 left: '6px',
                 transform: `translateX(${activeIndex * 100}%)`,
+                transition: `transform ${mobileSlideMs}ms cubic-bezier(0.22, 1, 0.36, 1)`,
               }}
             />
 
