@@ -1379,7 +1379,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     setSelectedPisos([]);
                     setSearch('');
                   }}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 transition"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 dark:hover:text-white transition"
                 >
                   Ver todas las reservas
                 </button>

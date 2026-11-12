@@ -1677,10 +1677,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 type="button"
                 data-slide-active={statusFilter === 'PUNTUAL' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL')}
-                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'PUNTUAL'
                     ? 'text-white font-black'
-                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 dark:hover:text-emerald-200'
                 }`}
                 title="Filtrar puntuales"
               >
@@ -1691,10 +1691,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 type="button"
                 data-slide-active={statusFilter === 'TARDE' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE')}
-                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'TARDE'
                     ? 'text-slate-950 font-black'
-                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100'
+                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 dark:hover:text-amber-200'
                 }`}
                 title="Filtrar tardanzas"
               >
@@ -1705,10 +1705,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 type="button"
                 data-slide-active={statusFilter === 'FALTA' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA')}
-                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'FALTA'
                     ? 'text-white font-black'
-                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100'
+                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 dark:hover:text-rose-200'
                 }`}
                 title="Filtrar faltas"
               >
@@ -1719,10 +1719,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 type="button"
                 data-slide-active={statusFilter === 'PENDIENTE' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE')}
-                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap ${
+                className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'PENDIENTE'
                     ? 'text-white font-black'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 dark:hover:text-white'
                 }`}
                 title="Filtrar pendientes"
               >
@@ -1836,7 +1836,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 setBlockMode('ALL');
                 setSelectedHora('');
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 transition"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 dark:hover:text-amber-200 transition"
               title="Volver a todo el día"
             >
               <Clock className="w-3 h-3 text-amber-500" />
@@ -1848,7 +1848,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             <button
               type="button"
               onClick={() => setSelectedPisos([])}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 transition"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 dark:hover:text-amber-200 transition"
               title="Ver todos los pisos"
             >
               <span>Pisos: {pisosDisponibles.filter(p => selectedPisos.includes(p.val)).map(p => p.short).join('+')}</span>
@@ -1859,7 +1859,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             <button
               type="button"
               onClick={() => setSelectedCarrera('')}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 transition"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 dark:hover:text-amber-200 transition"
               title="Ver todas las carreras"
             >
               <span className="truncate max-w-[120px]">{selectedCarrera}</span>
@@ -1978,7 +1978,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         {statusFilter !== 'ALL' && (
           <button
             onClick={() => setStatusFilter('ALL')}
-            className="mt-3 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition"
+            className="mt-3 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-bold text-xs rounded-xl transition"
           >
             Restablecer Filtro
           </button>

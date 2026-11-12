@@ -359,6 +359,10 @@ html:not(.dark) {
 }
 
 /* Smooth Fluid Micro-Interactions on Interactive Elements */
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
 button, a, input, select, textarea {
   transition-property: color, background-color, border-color, opacity, box-shadow, transform;
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
