@@ -30,6 +30,7 @@ import {
 import ToastBanner from './ToastBanner';
 import SignatureCanvas from './SignatureCanvas';
 import { useFadeModal } from '../utils/useFadeModal';
+import { FadeCollapse } from './FadeCollapse';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import CustomSelect from './CustomSelect';
 import CustomDatePicker from './CustomDatePicker';
@@ -1340,7 +1341,7 @@ export default function TicketsKanban({
                     </div>
 
                     {/* Panel de Firma Inicial si faltaba firmar */}
-                    {isSigningInline && (
+                    <FadeCollapse show={isSigningInline}>
                       <div className="my-2 p-2 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-2 overflow-hidden">
                         <SignatureCanvas
                           ref={cardSignCanvasRef}
@@ -1368,10 +1369,10 @@ export default function TicketsKanban({
                           </button>
                         </div>
                       </div>
-                    )}
+                    </FadeCollapse>
 
                     {/* PASO 2: Panel de Devolución (Diseño adaptable 100% contenido en tarjeta) */}
-                    {isReceivingInline && (
+                    <FadeCollapse show={isReceivingInline}>
                       <div className="my-2 p-2 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-2 overflow-hidden">
                         <SignatureCanvas
                           ref={returnSignCanvasRef}
@@ -1411,7 +1412,7 @@ export default function TicketsKanban({
                           </div>
                         </div>
                       </div>
-                    )}
+                    </FadeCollapse>
                   </div>
 
                   {/* Acciones de la Tarjeta en Activos */}
@@ -2371,7 +2372,7 @@ export default function TicketsKanban({
                     })}
                   </div>
 
-                  {selectedMaterials.includes('MANUAL') && (
+                  <FadeCollapse show={selectedMaterials.includes('MANUAL')}>
                     <div className="mt-2">
                       <input
                         type="text"
@@ -2383,7 +2384,7 @@ export default function TicketsKanban({
                         className="w-full h-9 px-3 text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
                       />
                     </div>
-                  )}
+                  </FadeCollapse>
                 </div>
 
                 {/* 4. Estado y Responsable */}

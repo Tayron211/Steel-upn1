@@ -44,6 +44,7 @@ import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
 import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
+import { FadeCollapse } from './FadeCollapse';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import { triggerAutoSyncLinkedExcel } from '../utils/liveExcelSync';
 import { toBlob } from 'html-to-image';
@@ -1506,7 +1507,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         </div>
 
         {/* Fila Pisos (Horizontal con scroll suave y selección múltiple) + Pabellón/Carrera en móvil */}
-        <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:items-center sm:gap-1.5`}>
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] sm:grid-rows-[1fr] sm:opacity-100 ${
+            mobileFiltersOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none sm:pointer-events-auto'
+          }`}
+        >
+          <div className="overflow-hidden sm:overflow-visible min-w-0">
+            <div className="flex flex-col gap-2 pt-1 sm:pt-0 border-t border-slate-100 dark:border-zinc-800 sm:border-t-0 sm:flex-row sm:items-center sm:gap-1.5">
           {/* Pabellón Pills (En móvil dentro del menú filtros) */}
           <div
             ref={pabMobileSlide.containerRef}
@@ -1596,6 +1603,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   </button>
                 );
               })}
+            </div>
+          </div>
             </div>
           </div>
         </div>
@@ -1815,8 +1824,8 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       </div>
 
       {/* Barra compacta de filtros activos (Ahorra más de 120px de espacio vertical en pantallas pequeñas) */}
-      {(statusFilter !== 'ALL' || blockMode !== 'ALL' || selectedPisos.length > 0 || selectedCarrera) && viewMode !== 'FREE_ROOMS' && (
-        <div className="flex items-center gap-1.5 flex-wrap px-1 text-xs animate-fade-in">
+      <FadeCollapse show={(statusFilter !== 'ALL' || blockMode !== 'ALL' || selectedPisos.length > 0 || selectedCarrera) && viewMode !== 'FREE_ROOMS'}>
+        <div className="flex items-center gap-1.5 flex-wrap px-1 text-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Filtrando:</span>
           {statusFilter !== 'ALL' && (
             <button
@@ -1880,7 +1889,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
             Limpiar todo
           </button>
         </div>
-      )}
+      </FadeCollapse>
 
       {/* VIEW MODE 1: FREE ROOMS (Aulas Disponibles / Libres Ahora) */}
   {
@@ -2400,7 +2409,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               })}
             </div>
 
-            {quickSelectedMaterials.includes('MANUAL') && (
+            <FadeCollapse show={quickSelectedMaterials.includes('MANUAL')}>
               <div className="mt-2">
                 <input
                   type="text"
@@ -2410,7 +2419,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   className="w-full text-xs font-bold px-3 py-2 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#FDBA30]"
                 />
               </div>
-            )}
+            </FadeCollapse>
           </div>
 
           {/* Detail notes & Assistant selector */}
@@ -2838,74 +2847,76 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </p>
 
                 {/* MENÚ DE SELECCIÓN DE HORA 100% INTEGRADO A LA APP (SIN MENÚS BLANCOS DEL NAVEGADOR) */}
-                {showTimePickerMenu && (() => {
-                  const parts = (manualTardeTime || '17:00').split(':');
-                  const selH = parts[0] || '17';
-                  const selM = parts[1] || '00';
+                <FadeCollapse show={showTimePickerMenu}>
+                  {(() => {
+                    const parts = (manualTardeTime || '17:00').split(':');
+                    const selH = parts[0] || '17';
+                    const selM = parts[1] || '00';
 
-                  return (
-                    <div className="mt-2.5 p-2.5 bg-white dark:bg-[#121218] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl animate-fade-in">
-                      <div className="grid grid-cols-2 gap-2 text-center pb-1.5 mb-1.5 border-b border-slate-100 dark:border-zinc-800/80">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                          Hora ({selH})
-                        </span>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                          Minuto ({selM})
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 h-36">
-                        {/* Columna Horas (00 a 23) sin scrollbars blancos */}
-                        <div className="overflow-y-auto space-y-1 pr-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                          {HOURS_24.map(h => {
-                            const isSelected = selH === h;
-                            return (
-                              <button
-                                key={h}
-                                type="button"
-                                onClick={() => {
-                                  const m = selM || '00';
-                                  setManualTardeTime(`${h}:${m}`);
-                                }}
-                                className={`w-full py-1.5 rounded-xl font-mono text-xs font-bold transition text-center ${
-                                  isSelected
-                                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                                    : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                                }`}
-                              >
-                                {h}:00
-                              </button>
-                            );
-                          })}
+                    return (
+                      <div className="mt-2.5 p-2.5 bg-white dark:bg-[#121218] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl">
+                        <div className="grid grid-cols-2 gap-2 text-center pb-1.5 mb-1.5 border-b border-slate-100 dark:border-zinc-800/80">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                            Hora ({selH})
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                            Minuto ({selM})
+                          </span>
                         </div>
 
-                        {/* Columna Minutos (00 a 59) sin scrollbars blancos */}
-                        <div className="overflow-y-auto space-y-1 pr-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                          {MINUTES_60.map(m => {
-                            const isSelected = selM === m;
-                            return (
-                              <button
-                                key={m}
-                                type="button"
-                                onClick={() => {
-                                  const h = selH || '17';
-                                  setManualTardeTime(`${h}:${m}`);
-                                }}
-                                className={`w-full py-1 rounded-lg font-mono text-xs font-bold transition text-center ${
-                                  isSelected
-                                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                                    : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                                }`}
-                              >
-                                :{m}
-                              </button>
-                            );
-                          })}
+                        <div className="grid grid-cols-2 gap-2 h-36">
+                          {/* Columna Horas (00 a 23) sin scrollbars blancos */}
+                          <div className="overflow-y-auto space-y-1 pr-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            {HOURS_24.map(h => {
+                              const isSelected = selH === h;
+                              return (
+                                <button
+                                  key={h}
+                                  type="button"
+                                  onClick={() => {
+                                    const m = selM || '00';
+                                    setManualTardeTime(`${h}:${m}`);
+                                  }}
+                                  className={`w-full py-1.5 rounded-xl font-mono text-xs font-bold transition text-center ${
+                                    isSelected
+                                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                                      : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                                  }`}
+                                >
+                                  {h}:00
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Columna Minutos (00 a 59) sin scrollbars blancos */}
+                          <div className="overflow-y-auto space-y-1 pr-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            {MINUTES_60.map(m => {
+                              const isSelected = selM === m;
+                              return (
+                                <button
+                                  key={m}
+                                  type="button"
+                                  onClick={() => {
+                                    const h = selH || '17';
+                                    setManualTardeTime(`${h}:${m}`);
+                                  }}
+                                  className={`w-full py-1 rounded-lg font-mono text-xs font-bold transition text-center ${
+                                    isSelected
+                                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                                      : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                                  }`}
+                                >
+                                  :{m}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
+                </FadeCollapse>
               </div>
 
               {/* Botones de Acción 50% - 50% Perfectamente Simétricos y más chicos */}
@@ -3031,7 +3042,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         onClick={() => carreraModalFade.requestClose()}
       >
         <div
-          className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${carreraModalFade.modalClass} flex flex-col max-h-[85vh] animate-scale-up`}
+          className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${carreraModalFade.modalClass} flex flex-col max-h-[85vh]`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Encabezado */}

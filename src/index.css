@@ -328,6 +328,17 @@ html:not(.dark) {
   }
 }
 
+@keyframes appleSpeedDialExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.75);
+  }
+}
+
 .animate-modal-fade,
 .animate-spring-up {
   animation: appleModalFadeEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -355,6 +366,11 @@ html:not(.dark) {
 
 .animate-speed-dial {
   animation: appleSpeedDialItem 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: bottom right;
+}
+
+.animate-speed-dial-out {
+  animation: appleSpeedDialExit 0.19s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: bottom right;
 }
 

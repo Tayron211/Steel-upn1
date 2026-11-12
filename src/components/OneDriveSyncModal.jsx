@@ -44,7 +44,7 @@ export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatus
     };
   }, [isOpen]);
 
-  if (!isOpen || typeof document === 'undefined') return null;
+  if (!fadeModal.shouldRender || typeof document === 'undefined') return null;
 
   const origin = window.location.origin.includes('localhost')
     ? 'https://control-doc.pages.dev'

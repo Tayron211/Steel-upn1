@@ -26,6 +26,7 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useFadeModal } from '../utils/useFadeModal';
+import { FadeDropdown } from './FadeCollapse';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import { useAssistants } from '../utils/assistants';
 import { getLoggedAssistantName, isAdmin } from '../utils/auth';
@@ -1106,7 +1107,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         </div>
 
         {/* Fila 3: Filtro Pabellón + Pisos (Plegable en móvil, siempre visible en desktop) */}
-        <div className={`${mobileFiltersOpen ? 'flex flex-col gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 animate-fade-in' : 'hidden'} sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 w-full pt-0.5`}>
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] sm:grid-rows-[1fr] sm:opacity-100 ${
+            mobileFiltersOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none sm:pointer-events-auto'
+          }`}
+        >
+          <div className="overflow-hidden sm:overflow-visible min-w-0">
+            <div className="flex flex-col gap-2 pt-1 sm:pt-0.5 border-t border-slate-100 dark:border-zinc-800 sm:border-t-0 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 w-full">
           {/* Pabellón Pills */}
           <div
             ref={pabSlide.containerRef}
@@ -1174,6 +1181,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   </button>
                 );
               })}
+            </div>
+          </div>
             </div>
           </div>
         </div>
@@ -1500,29 +1509,28 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           <ChevronDown className="w-3 h-3 stroke-[2.2]" />
                         </button>
 
-                        {copyMenuOpenId === r.id && (
-                          <div 
-                            className="absolute right-0 bottom-full mb-1 w-56 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl p-1 z-30 text-xs"
-                            onClick={(e) => e.stopPropagation()}
+                        <FadeDropdown
+                          show={copyMenuOpenId === r.id}
+                          className="absolute right-0 bottom-full mb-1 w-56 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl p-1 z-30 text-xs origin-bottom-right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleCopyReservation(r, false)}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-800 dark:text-zinc-200 font-semibold flex items-center gap-2"
                           >
-                            <button
-                              type="button"
-                              onClick={() => handleCopyReservation(r, false)}
-                              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-800 dark:text-zinc-200 font-semibold flex items-center gap-2"
-                            >
-                              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
-                              <span>Con Encabezados (Para correo)</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyReservation(r, true)}
-                              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-800 dark:text-zinc-200 font-semibold flex items-center gap-2"
-                            >
-                              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
-                              <span>Solo Datos (1 fila para Excel)</span>
-                            </button>
-                          </div>
-                        )}
+                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                            <span>Con Encabezados (Para correo)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyReservation(r, true)}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-800 dark:text-zinc-200 font-semibold flex items-center gap-2"
+                          >
+                            <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                            <span>Solo Datos (1 fila para Excel)</span>
+                          </button>
+                        </FadeDropdown>
                       </div>
 
                       <button
