@@ -25,6 +25,8 @@ import { useAssistants } from '../utils/assistants';
 import { getLoggedAssistantName, isAdmin } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
+import { toBlob } from 'html-to-image';
+import html2canvas from 'html2canvas';
 
 // Copiar tabla HTML rica + TSV al portapapeles para pegar directo en Excel
 const copyRichTableToClipboard = async (plainText, htmlText) => {
@@ -150,6 +152,7 @@ export default function ManualSheetsView({
   const [copiedCode, setCopiedCode] = useState(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
   const [nrcLookupLoading, setNrcLookupLoading] = useState(false);
   const [nrcMatchFound, setNrcMatchFound] = useState(null);
 
@@ -490,15 +493,139 @@ ${htmlRows.join('\n')}
     const suplenteName = getSuplente(item);
 
     const fechaFmt = item.fecha && item.fecha.includes('-') ? item.fecha.split('-').reverse().join('/') : (item.fecha || '');
-    let text = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\nN° Boleta: ${item.codigo}\nFecha: ${fechaFmt}\nNRC: ${item.nrc}\nDocente Titular: ${item.docente}\nCurso: ${item.curso}`;
+    let text = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\n*N° Boleta:* ${item.codigo}\n*Fecha:* ${fechaFmt}\n*NRC:* ${item.nrc}\n*Docente Titular:* ${item.docente}\n*Curso:* ${item.curso}`;
     if (isReemplazo && suplenteName) {
       text += `\n*Docente que Reemplaza:* ${suplenteName}`;
     }
-    text += `\nMotivo: ${item.motivo}\nAsistente Emisor: ${item.asistente || 'Operaciones Sede'}`;
+    if (item.aula) {
+      text += `\n*Aula:* ${item.aula}`;
+    }
+    text += `\n*Motivo:* ${item.motivo}\n*Asistente Emisor:* ${item.asistente || 'Operaciones Sede'}`;
 
     navigator.clipboard.writeText(text);
     setCopiedSuccess(true);
     setTimeout(() => setCopiedSuccess(false), 2500);
+  };
+
+  // Enviar automáticamente a WhatsApp: captura limpia de la tarjeta (sin botón cerrar ni botones de acción) + mensaje
+  const handleSendWhatsApp = async (item) => {
+    if (!item) return;
+    setIsSharingWhatsApp(true);
+
+    try {
+      const cardEl = document.getElementById(`manual-sheet-card-${item.id || item.codigo}`);
+      let blob = null;
+
+      const isReemplazo = isReemplazoSheet(item);
+      const suplenteName = getSuplente(item) || item.docente_reemplazo || item.docenteReemplazo || '';
+      const fechaFmt = item.fecha && item.fecha.includes('-')
+        ? item.fecha.split('-').reverse().join('/')
+        : (item.fecha || '');
+
+      let defaultText = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\n*N° Boleta:* ${item.codigo}\n*Fecha:* ${fechaFmt}\n*NRC:* ${item.nrc}\n*Docente Titular:* ${item.docente}\n*Curso:* ${item.curso}`;
+      if (isReemplazo && suplenteName) {
+        defaultText += `\n*Docente Reemplazante:* ${suplenteName}`;
+      }
+      if (item.aula) {
+        defaultText += `\n*Aula:* ${item.aula}`;
+      }
+      defaultText += `\n*Motivo:* ${item.motivo}\n*Asistente Emisor:* ${item.asistente || 'Operaciones Sede'}`;
+
+      if (cardEl) {
+        const isDark = document.documentElement.classList.contains('dark');
+        const bg = isDark ? '#0c0c10' : '#ffffff';
+
+        // Ocultar botón [X] de cerrar y la barra inferior de acciones para capturar únicamente la tarjeta de información
+        const hiddenEls = Array.from(cardEl.querySelectorAll('[data-wa-hide]'));
+        const prevDisplays = hiddenEls.map((el) => el.style.display);
+        hiddenEls.forEach((el) => { el.style.display = 'none'; });
+
+        try {
+          blob = await toBlob(cardEl, {
+            pixelRatio: 2,
+            backgroundColor: bg,
+            cacheBust: true,
+            style: {
+              transform: 'none',
+              transition: 'none',
+            }
+          });
+        } catch (imgErr) {
+          console.warn('toBlob fallback to html2canvas:', imgErr);
+          try {
+            const canvas = await html2canvas(cardEl, {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              backgroundColor: bg,
+              scrollX: 0,
+              scrollY: 0,
+            });
+            blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+          } catch (h2cErr) {
+            console.warn('html2canvas failed:', h2cErr);
+          }
+        } finally {
+          hiddenEls.forEach((el, idx) => { el.style.display = prevDisplays[idx]; });
+        }
+      }
+
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+
+      if (blob) {
+        const cleanCodigo = String(item.codigo || 'boleta').replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `hoja_manual_${cleanCodigo}.png`;
+        const imageFile = new File([blob], fileName, { type: 'image/png' });
+
+        // 1. En dispositivos móviles / apps que soportan compartir archivos (abre WhatsApp con la imagen adjunta)
+        if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+          printSheetFade.requestClose();
+          await navigator.share({
+            files: [imageFile],
+            text: defaultText,
+            title: `Hoja Manual ${item.codigo}`
+          });
+          return;
+        }
+
+        // 2. En PC / Escritorio (copia la imagen al portapapeles y abre WhatsApp Web para pegar con Ctrl+V)
+        let copied = false;
+        try {
+          if (navigator.clipboard && window.ClipboardItem) {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            copied = true;
+          }
+        } catch (clipErr) {
+          console.warn('Clipboard write error:', clipErr);
+        }
+
+        if (!copied) {
+          const dlUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = dlUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(dlUrl), 5000);
+        }
+
+        setToastMessage(copied ? '📸 ¡Captura copiada! En WhatsApp presiona Ctrl + V para adjuntarla.' : '📥 Captura descargada para adjuntar en WhatsApp.');
+        setTimeout(() => setToastMessage(''), 4500);
+      }
+
+      printSheetFade.requestClose();
+      window.open(waUrl, '_blank');
+    } catch (err) {
+      console.error('Error sharing to WhatsApp:', err);
+      printSheetFade.requestClose();
+      const fallbackText = `📋 *HOJA DE ASISTENCIA MANUAL - UPN COMAS*\n*N° Boleta:* ${item.codigo}\n*Docente:* ${item.docente}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(fallbackText)}`, '_blank');
+    } finally {
+      setIsSharingWhatsApp(false);
+    }
   };
 
   const motivos = [
@@ -1170,6 +1297,7 @@ ${htmlRows.join('\n')}
             onClick={() => printSheetFade.requestClose()}
           >
             <div
+              id={`manual-sheet-card-${activeSheet.id || activeSheet.codigo}`}
               className={`bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-900 dark:text-zinc-100 ${printSheetFade.modalClass} space-y-4 max-h-[90vh] overflow-y-auto`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1196,8 +1324,9 @@ ${htmlRows.join('\n')}
 
                 <button
                   type="button"
+                  data-wa-hide
                   onClick={() => printSheetFade.requestClose()}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0 print:hidden"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0 print:hidden cursor-pointer"
                   title="Cerrar ventana"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
@@ -1280,11 +1409,11 @@ ${htmlRows.join('\n')}
               </div>
 
               {/* Footer con Acciones */}
-              <div className="pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <div data-wa-hide className="pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => printSheetFade.requestClose()}
-                  className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition flex items-center justify-center active:scale-95 order-2 sm:order-1"
+                  className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition flex items-center justify-center active:scale-95 order-2 sm:order-1 cursor-pointer"
                 >
                   Cerrar
                 </button>
@@ -1293,7 +1422,7 @@ ${htmlRows.join('\n')}
                   <button
                     type="button"
                     onClick={() => handleCopyExcelRow(activeSheet)}
-                    className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700"
+                    className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700 cursor-pointer"
                     title="Copiar fila en formato oficial Excel (8 columnas)"
                   >
                     {copiedCode === activeSheet?.codigo ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
@@ -1302,18 +1431,23 @@ ${htmlRows.join('\n')}
 
                   <button
                     type="button"
-                    onClick={() => handleCopyVoucherText(activeSheet)}
-                    className="h-10 px-3 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/60 dark:border-zinc-800"
-                    title="Copiar texto para WhatsApp"
+                    disabled={isSharingWhatsApp}
+                    onClick={() => handleSendWhatsApp(activeSheet)}
+                    className="h-10 px-3.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700 disabled:opacity-50 cursor-pointer"
+                    title="Enviar captura e información por WhatsApp"
                   >
-                    <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                    {isSharingWhatsApp ? (
+                      <div className="w-3.5 h-3.5 border-2 border-slate-700 dark:border-zinc-300 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                    )}
                     <span className="hidden sm:inline">WhatsApp</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="flex-1 sm:flex-none h-10 px-4 text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95"
+                    className="flex-1 sm:flex-none h-10 px-4 text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                     title="Imprimir boleta física"
                   >
                     <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
