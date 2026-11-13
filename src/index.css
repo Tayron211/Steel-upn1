@@ -57,12 +57,12 @@ input, textarea, select {
 /* Ensure dark mode applies to native scrollbars, inputs, and popups */
 html.dark, body.dark, .dark {
   color-scheme: dark !important;
-  scrollbar-color: #3f3f46 #000000;
+  scrollbar-color: #3f3f46 transparent;
 }
 
 html:not(.dark) {
   color-scheme: light;
-  scrollbar-color: #cbd5e1 #f8fafc;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 /* Minimalist scrollbars matching the app theme */
@@ -75,10 +75,10 @@ html:not(.dark) {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: transparent !important;
 }
 .dark ::-webkit-scrollbar-track {
-  background: #000000;
+  background: transparent !important;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;

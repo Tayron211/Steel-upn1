@@ -81,7 +81,7 @@ export default function CustomTimePicker({
             onClick={() => pickerFade.requestClose(() => setIsOpen(false))}
           >
             <div
-              className={`bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-2xl max-w-sm w-full space-y-3.5 ${pickerFade.modalClass}`}
+              className={`bg-white dark:bg-[#0c0c10] border border-slate-200 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-2xl max-w-sm w-full space-y-3.5 overflow-hidden ${pickerFade.modalClass}`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Cabecera del Reloj */}

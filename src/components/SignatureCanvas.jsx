@@ -466,7 +466,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
           onClick={handleModalClose}
         >
           <div
-            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 ${canvasFade.modalClass}`}
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 ${canvasFade.modalClass} overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal de Firma */}

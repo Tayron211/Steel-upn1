@@ -1034,10 +1034,11 @@ ${htmlRows.join('\n')}
           onClick={() => closeModal()}
         >
           <div
-            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] overflow-y-auto ${newSheetFade.modalClass}`}
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] flex flex-col overflow-hidden ${newSheetFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800 mb-4">
+            {/* Header del Modal - Fijo */}
+            <div className="p-5 sm:p-6 pb-3.5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2.5 shrink-0">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs shrink-0">
                   <FileCheck2 className="w-5 h-5 stroke-[2.2]" />
@@ -1054,14 +1055,15 @@ ${htmlRows.join('\n')}
               <button
                 type="button"
                 onClick={() => closeModal()}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0 cursor-pointer"
                 title="Cerrar ventana"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col">
+              <div className="p-5 sm:p-6 space-y-3.5 flex-1">
               {/* Fila 1: Código y Fecha */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1260,25 +1262,28 @@ ${htmlRows.join('\n')}
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
+              </div>
+
+              <div className="p-5 sm:p-6 pt-3.5 border-t border-slate-100 dark:border-zinc-800 grid grid-cols-2 gap-3 shrink-0 bg-white/80 dark:bg-[#0c0c10]/80 backdrop-blur-xs">
                 <button
                   type="button"
                   onClick={() => closeModal()}
-                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95"
+                  className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isDuplicate || !formData.codigo.trim()}
-                  className={`h-11 sm:h-12 rounded-2xl text-xs font-black transition flex items-center justify-center text-center shadow-xs ${isDuplicate || !formData.codigo.trim()
+                  className={`h-11 sm:h-12 rounded-2xl text-xs font-black transition flex items-center justify-center text-center shadow-xs cursor-pointer ${isDuplicate || !formData.codigo.trim()
                       ? 'bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-not-allowed'
                       : 'bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 active:scale-95'
                     }`}
                 >
                   Generar y Registrar
                 </button>
-              </div></form>
+              </div>
+            </form>
           </div>
         </div>,
         document.body
@@ -1298,11 +1303,11 @@ ${htmlRows.join('\n')}
           >
             <div
               id={`manual-sheet-card-${activeSheet.id || activeSheet.codigo}`}
-              className={`bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-900 dark:text-zinc-100 ${printSheetFade.modalClass} space-y-4 max-h-[90vh] overflow-y-auto`}
+              className={`bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl max-w-lg w-full shadow-2xl text-slate-900 dark:text-zinc-100 ${printSheetFade.modalClass} flex flex-col max-h-[90vh] overflow-hidden`}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header del Modal - Simétrico y Adaptable en todos los formatos */}
-              <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-zinc-800">
+              {/* Header del Modal - Fijo */}
+              <div className="p-5 sm:p-6 pb-3.5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 shrink-0">
                 <div className="flex items-center gap-3 min-w-0 pr-1">
                   <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/70 flex items-center justify-center shadow-xs shrink-0">
                     <FileCheck2 className="w-5 h-5 stroke-[2.3]" />
@@ -1333,7 +1338,9 @@ ${htmlRows.join('\n')}
                 </button>
               </div>
 
-              {/* Motivo de Emisión destacado */}
+              {/* Cuerpo Scrolleable con scrollbar interior */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
+                {/* Motivo de Emisión destacado */}
               <div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/80 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300">
@@ -1407,9 +1414,10 @@ ${htmlRows.join('\n')}
                   </span>
                 </div>
               </div>
+              </div>
 
-              {/* Footer con Acciones */}
-              <div data-wa-hide className="pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2">
+              {/* Footer con Acciones - Fijo */}
+              <div data-wa-hide className="p-5 sm:p-6 pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0 bg-white/80 dark:bg-[#0c0c10]/80 backdrop-blur-xs">
                 <button
                   type="button"
                   onClick={() => printSheetFade.requestClose()}

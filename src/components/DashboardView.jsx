@@ -2001,7 +2001,7 @@ export default function DashboardView() {
           onClick={() => !isClearingColumns && clearConfirmFade.requestClose(() => setShowClearConfirmModal(false))}
         >
           <div
-            className={`apple-liquid-modal rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200/80 dark:border-rose-900/60 bg-white dark:bg-[#121216] ${clearConfirmFade.modalClass}`}
+            className={`apple-liquid-modal rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200/80 dark:border-rose-900/60 bg-white dark:bg-[#121216] ${clearConfirmFade.modalClass} overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3.5 mb-4">

@@ -2595,7 +2595,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           onClick={() => !savingReservation && reserveRoomFade.requestClose()}
         >
           <div
-            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${reserveRoomFade.modalClass} space-y-4`}
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${reserveRoomFade.modalClass} space-y-4 overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Encabezado */}
@@ -3042,7 +3042,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         onClick={() => carreraModalFade.requestClose()}
       >
         <div
-          className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${carreraModalFade.modalClass} flex flex-col max-h-[85vh]`}
+          className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${carreraModalFade.modalClass} flex flex-col max-h-[85vh] overflow-hidden`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Encabezado */}

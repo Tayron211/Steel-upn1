@@ -411,11 +411,11 @@ interface AllDataResponse {
       onClick={() => fadeModal.requestClose(onClose)}
     >
       <div
-        className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${fadeModal.modalClass} max-h-[92vh] overflow-y-auto space-y-3.5`}
+        className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${fadeModal.modalClass} max-h-[92vh] flex flex-col overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
+        {/* Header - Fijo */}
+        <div className="p-5 sm:p-6 pb-3.5 border-b border-slate-100 dark:border-zinc-800 flex items-start justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-11 h-11 rounded-2xl bg-sky-100 dark:bg-sky-950/80 border border-sky-200 dark:border-sky-800 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
               <Cloud className="w-5 h-5 stroke-[2.3]" />
@@ -432,11 +432,14 @@ interface AllDataResponse {
           <button
             type="button"
             onClick={() => fadeModal.requestClose(onClose)}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0 cursor-pointer"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
+
+        {/* Contenido Scrolleable con scrollbar interior */}
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-3.5 flex-1">
 
         {/* CONEXIÓN DIRECTA EN LA NUBE CON MICROSOFT 365 (SIN SCRIPTS) */}
         <div className="p-4 rounded-2xl bg-sky-50/80 dark:bg-sky-950/30 border-2 border-sky-300 dark:border-sky-700 space-y-3">
@@ -539,11 +542,14 @@ interface AllDataResponse {
           )}
         </div>
 
-        <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">
+        </div>
+
+        {/* Footer - Fijo */}
+        <div className="p-5 sm:p-6 pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex justify-end shrink-0 bg-white/80 dark:bg-[#0c0c10]/80 backdrop-blur-xs">
           <button
             type="button"
             onClick={() => fadeModal.requestClose(onClose)}
-            className="h-10 px-5 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition"
+            className="h-10 px-5 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition cursor-pointer"
           >
             Cerrar
           </button>
