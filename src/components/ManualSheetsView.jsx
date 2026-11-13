@@ -386,11 +386,11 @@ export default function ManualSheetsView({
     }
   };
 
-  // Genera datos en formato oficial Excel (9 columnas: CÓDIGO, FECHA, NRC, DOCENTE, CURSO, CARRERA, MOTIVO, ASISTENTE, DOCENTE REEMPLAZANTE)
-  // con encabezado amarillo oro (#FFC000), bordes negros y celdas blancas idéntico al modelo de control docente
+  // Genera datos en formato oficial Excel (8 columnas: CÓDIGO, FECHA, NRC, DOCENTE, CURSO, CARRERA, MOTIVO, DOCENTE REEMPLAZANTE)
+  // con encabezado amarillo oro (#FFC000), bordes negros y celdas blancas idéntico al modelo oficial (omitiendo la columna ASISTENTE)
   const generateManualSheetsTableData = (sheetsList) => {
     const list = Array.isArray(sheetsList) ? sheetsList : [sheetsList];
-    const headers = ['CÓDIGO', 'FECHA', 'NRC', 'DOCENTE', 'CURSO', 'CARRERA', 'MOTIVO', 'ASISTENTE', 'DOCENTE REEMPLAZANTE'];
+    const headers = ['CÓDIGO', 'FECHA', 'NRC', 'DOCENTE', 'CURSO', 'CARRERA', 'MOTIVO', 'DOCENTE REEMPLAZANTE'];
 
     const thBase = 'border:1px solid #000000;background-color:#FFC000;color:#000000;padding:6px 10px;font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:bold;text-align:center;white-space:nowrap;';
     const tdCenter = 'border:1px solid #000000;background-color:#FFFFFF;color:#000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;white-space:nowrap;';
@@ -415,10 +415,9 @@ export default function ManualSheetsView({
       const curso = String(item.curso || '').trim().toUpperCase();
       const carrera = String(item.carrera || '').trim();
       let motivo = String(item.motivo || '').trim().toUpperCase().replace(/\s*\([^)]*\)\s*$/, '').trim();
-      const asistente = String(item.asistente || 'TAYRON SALINAS').trim().toUpperCase();
       const suplente = (isReemplazo && suplenteName) ? String(suplenteName).trim().toUpperCase() : '';
 
-      plainRows.push([codigo, fechaFmt, nrc, doc, curso, carrera, motivo, asistente, suplente].join('\t'));
+      plainRows.push([codigo, fechaFmt, nrc, doc, curso, carrera, motivo, suplente].join('\t'));
 
       return `    <tr>
       <td style="${tdCode}">${codigo}</td>
@@ -428,7 +427,6 @@ export default function ManualSheetsView({
       <td style="${tdLeft}">${curso}</td>
       <td style="${tdLeft}">${carrera}</td>
       <td style="${tdLeft}">${motivo}</td>
-      <td style="${tdLeft}">${asistente}</td>
       <td style="${tdLeft}">${suplente}</td>
     </tr>`;
     });
@@ -476,7 +474,7 @@ ${htmlRows.join('\n')}
       const ok = await copyRichTableToClipboard(plain, html);
       if (ok) {
         setCopiedAll(true);
-        setToastMessage(`📋 Tabla copiada para Excel (${list.length} filas con 9 columnas)`);
+        setToastMessage(`📋 Tabla copiada para Excel (${list.length} filas con 8 columnas)`);
         setTimeout(() => setCopiedAll(false), 2500);
         setTimeout(() => setToastMessage(''), 2500);
       }
@@ -586,7 +584,7 @@ ${htmlRows.join('\n')}
                 type="button"
                 onClick={() => handleCopyAllSheetsExcel(filtered)}
                 className="h-10 px-3.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-700 transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0"
-                title="Copiar tabla filtrada en formato oficial Excel (9 columnas)"
+                title="Copiar tabla filtrada en formato oficial Excel (8 columnas)"
               >
                 {copiedAll ? <Check className="w-4 h-4 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-4 h-4 stroke-[2.2]" />}
                 <span>{copiedAll ? '¡Tabla Copiada!' : 'Copiar Tabla Excel'}</span>
@@ -748,7 +746,7 @@ ${htmlRows.join('\n')}
                   <button
                     onClick={() => handleCopyExcelRow(item)}
                     className="h-8 px-3 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1.5 active:scale-95"
-                    title="Copiar fila en formato oficial Excel (9 columnas)"
+                    title="Copiar fila en formato oficial Excel (8 columnas)"
                   >
                     {copiedCode === item.codigo ? (
                       <>
@@ -869,7 +867,7 @@ ${htmlRows.join('\n')}
                           <button
                             onClick={() => handleCopyExcelRow(item)}
                             className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg transition inline-flex items-center justify-center gap-1 active:scale-95 shrink-0"
-                            title="Copiar fila en formato oficial Excel (9 columnas)"
+                            title="Copiar fila en formato oficial Excel (8 columnas)"
                           >
                             {copiedCode === item.codigo ? (
                               <>
@@ -1296,7 +1294,7 @@ ${htmlRows.join('\n')}
                     type="button"
                     onClick={() => handleCopyExcelRow(activeSheet)}
                     className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700"
-                    title="Copiar fila en formato oficial Excel (9 columnas)"
+                    title="Copiar fila en formato oficial Excel (8 columnas)"
                   >
                     {copiedCode === activeSheet?.codigo ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
                     <span>{copiedCode === activeSheet?.codigo ? '¡Copiado Excel!' : 'Copiar Excel'}</span>
