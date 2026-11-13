@@ -163,11 +163,11 @@ export default function DashboardView() {
   const [reservaSearch, setReservaSearch] = useState('');
 
   // Sliding pill indicators
-  const sectionTabSlide = useSlidingIndicator(activeSectionTab);
-  const docDiaSlide = useSlidingIndicator(docenteDiaFilter, [activeSectionTab]);
-  const docPabSlide = useSlidingIndicator(docentePabellonFilter, [activeSectionTab]);
-  const ticketMatSlide = useSlidingIndicator(ticketMaterialFilter, [activeSectionTab]);
-  const resPabSlide = useSlidingIndicator(reservaPabellonFilter, [activeSectionTab]);
+  const sectionTabSlide = useSlidingIndicator(activeSectionTab, [stats, loading]);
+  const docDiaSlide = useSlidingIndicator(docenteDiaFilter, [activeSectionTab, stats]);
+  const docPabSlide = useSlidingIndicator(docentePabellonFilter, [activeSectionTab, stats]);
+  const ticketMatSlide = useSlidingIndicator(ticketMaterialFilter, [activeSectionTab, stats]);
+  const resPabSlide = useSlidingIndicator(reservaPabellonFilter, [activeSectionTab, stats]);
 
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -968,15 +968,18 @@ export default function DashboardView() {
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeSectionTab === tab.id;
+          const isFallbackBg = isActive && sectionTabSlide.pillStyle.opacity === 0;
           return (
             <button
               key={tab.id}
               type="button"
               data-slide-active={isActive ? 'true' : undefined}
               onClick={() => setActiveSectionTab(tab.id)}
-              className={`relative z-10 h-10 px-3.5 rounded-xl flex items-center gap-2 text-xs font-black transition-colors duration-200 active:scale-95 shrink-0 whitespace-nowrap ${
+              className={`relative z-10 h-10 px-3.5 rounded-xl flex items-center gap-2 text-xs font-black transition-colors duration-200 active:scale-95 shrink-0 whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? 'text-slate-950'
+                  ? isFallbackBg
+                    ? 'bg-[#FDBA30] text-slate-950 shadow-[0_2px_12px_rgba(253,186,48,0.35)]'
+                    : 'text-slate-950'
                   : 'text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white'
               }`}
             >
@@ -1221,9 +1224,9 @@ export default function DashboardView() {
                       type="button"
                       data-slide-active={isSel ? 'true' : undefined}
                       onClick={() => setDocenteDiaFilter(d)}
-                      className={`relative z-10 px-2.5 py-1 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap ${
+                      className={`relative z-10 px-2.5 py-1 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${
                         isSel
-                          ? 'text-slate-950 font-black'
+                          ? (docDiaSlide.pillStyle.opacity === 0 ? 'bg-[#FDBA30] text-slate-950 font-black' : 'text-slate-950 font-black')
                           : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
@@ -1264,9 +1267,9 @@ export default function DashboardView() {
                       type="button"
                       data-slide-active={isPab ? 'true' : undefined}
                       onClick={() => setDocentePabellonFilter(pab)}
-                      className={`relative z-10 h-8 px-3.5 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap ${
+                      className={`relative z-10 h-8 px-3.5 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${
                         isPab
-                          ? 'text-slate-950 font-black'
+                          ? (docPabSlide.pillStyle.opacity === 0 ? 'bg-[#FDBA30] text-slate-950 font-black' : 'text-slate-950 font-black')
                           : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
@@ -1476,9 +1479,9 @@ export default function DashboardView() {
                     type="button"
                     data-slide-active={isSel ? 'true' : undefined}
                     onClick={() => setTicketMaterialFilter(mat)}
-                    className={`relative z-10 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors duration-200 active:scale-95 ${
+                    className={`relative z-10 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors duration-200 active:scale-95 cursor-pointer ${
                       isSel
-                        ? 'text-slate-950 font-black'
+                        ? (ticketMatSlide.pillStyle.opacity === 0 ? 'bg-[#FDBA30] text-slate-950 font-black' : 'text-slate-950 font-black')
                         : 'text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white'
                     }`}
                   >
@@ -1811,9 +1814,9 @@ export default function DashboardView() {
                     type="button"
                     data-slide-active={reservaPabellonFilter === pab ? 'true' : undefined}
                     onClick={() => setReservaPabellonFilter(pab)}
-                    className={`relative z-10 h-8 px-3.5 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap ${
+                    className={`relative z-10 h-8 px-3.5 text-xs font-bold rounded-lg transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${
                       reservaPabellonFilter === pab
-                        ? 'text-slate-950 font-black'
+                        ? (resPabSlide.pillStyle.opacity === 0 ? 'bg-[#FDBA30] text-slate-950 font-black' : 'text-slate-950 font-black')
                         : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >

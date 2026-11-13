@@ -250,7 +250,9 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   }}
                   className={`relative z-10 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer ${
                     isActive
-                      ? 'text-slate-950 font-extrabold'
+                      ? desktopNavSlide.pillStyle.opacity === 0
+                        ? 'bg-[#FDBA30] text-slate-950 font-extrabold shadow-[0_2px_10px_rgba(253,186,48,0.35)]'
+                        : 'text-slate-950 font-extrabold'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >

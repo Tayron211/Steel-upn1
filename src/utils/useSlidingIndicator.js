@@ -15,12 +15,25 @@ const buildTransition = (durationMs = 300) =>
   `transform ${durationMs}ms cubic-bezier(0.22, 1, 0.36, 1), width ${durationMs}ms cubic-bezier(0.22, 1, 0.36, 1), height ${durationMs}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease`;
 
 export function useSlidingIndicator(activeKey, deps = []) {
-  const containerRef = useRef(null);
+  const containerNodeRef = useRef(null);
+  const [containerNode, setContainerNode] = useState(null);
+
+  const containerRef = useCallback((node) => {
+    containerNodeRef.current = node;
+    containerRef.current = node;
+    setContainerNode(node);
+  }, []);
+  if (!('current' in containerRef)) {
+    containerRef.current = null;
+  }
+
   const hasMountedRef = useRef(false);
   const prevKeyRef = useRef(activeKey);
   const lastRectRef = useRef({ opacity: 0, left: 0, top: 0, width: 0, height: 0 });
   const animatingUntilRef = useRef(0);
   const armRafRef = useRef(0);
+  const retryRafRef = useRef(0);
+
   const [pillStyle, setPillStyle] = useState({
     opacity: 0,
     transform: 'translate3d(0px, 0px, 0px)',
@@ -35,15 +48,28 @@ export function useSlidingIndicator(activeKey, deps = []) {
       if (armRafRef.current && typeof cancelAnimationFrame !== 'undefined') {
         cancelAnimationFrame(armRafRef.current);
       }
+      if (retryRafRef.current && typeof cancelAnimationFrame !== 'undefined') {
+        cancelAnimationFrame(retryRafRef.current);
+      }
     };
   }, []);
 
   const measure = useCallback((shouldAnimate, shouldCenterScroll) => {
-    const container = containerRef.current;
+    const container = containerNodeRef.current;
     if (!container) return;
 
     const activeEl = container.querySelector('[data-slide-active="true"]');
     if (!activeEl) {
+      if (typeof requestAnimationFrame !== 'undefined') {
+        if (retryRafRef.current) cancelAnimationFrame(retryRafRef.current);
+        retryRafRef.current = requestAnimationFrame(() => {
+          retryRafRef.current = 0;
+          const retryContainer = containerNodeRef.current;
+          if (retryContainer && retryContainer.querySelector('[data-slide-active="true"]')) {
+            measure(shouldAnimate, shouldCenterScroll);
+          }
+        });
+      }
       if (lastRectRef.current.opacity === 0) return;
       lastRectRef.current = { ...lastRectRef.current, opacity: 0 };
       setPillStyle((prev) => ({
@@ -59,7 +85,16 @@ export function useSlidingIndicator(activeKey, deps = []) {
     const width = activeEl.offsetWidth;
     const height = activeEl.offsetHeight;
 
-    if (width === 0 || height === 0) return;
+    if (width === 0 || height === 0) {
+      if (typeof requestAnimationFrame !== 'undefined') {
+        if (retryRafRef.current) cancelAnimationFrame(retryRafRef.current);
+        retryRafRef.current = requestAnimationFrame(() => {
+          retryRafRef.current = 0;
+          measure(shouldAnimate, shouldCenterScroll);
+        });
+      }
+      return;
+    }
 
     const prev = lastRectRef.current;
     const wasVisible = prev.opacity === 1;
@@ -135,32 +170,57 @@ export function useSlidingIndicator(activeKey, deps = []) {
   }, []);
 
   useLayoutEffect(() => {
+    const container = containerNode;
+    if (!container) return;
+
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        measure(false, false);
+      });
+      ro.observe(container);
+    }
+
+    let mo = null;
+    if (typeof MutationObserver !== 'undefined') {
+      mo = new MutationObserver(() => {
+        measure(false, false);
+      });
+      mo.observe(container, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-slide-active', 'class', 'style'],
+      });
+    }
+
+    // Measure on mount
+    const hadVisiblePill = lastRectRef.current.opacity === 1;
+    measure(hadVisiblePill, false);
+
+    return () => {
+      if (ro) ro.disconnect();
+      if (mo) mo.disconnect();
+    };
+  }, [containerNode, measure]);
+
+  useLayoutEffect(() => {
     const isInitial = !hasMountedRef.current;
     const keyChanged = prevKeyRef.current !== activeKey;
     prevKeyRef.current = activeKey;
 
-    measure(!isInitial, !isInitial && keyChanged);
+    if (containerNode) {
+      measure(!isInitial && keyChanged, !isInitial && keyChanged);
+    }
 
-    if (isInitial) {
-      // Enable transitions right after first paint
+    if (isInitial && containerNode) {
       const raf = requestAnimationFrame(() => {
         hasMountedRef.current = true;
       });
       return () => cancelAnimationFrame(raf);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeKey, measure, ...deps]);
-
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container || typeof ResizeObserver === 'undefined') return;
-
-    const ro = new ResizeObserver(() => {
-      measure(false, false);
-    });
-    ro.observe(container);
-    return () => ro.disconnect();
-  }, [measure]);
+  }, [activeKey, containerNode, measure, ...deps]);
 
   return { containerRef, pillStyle };
 }
