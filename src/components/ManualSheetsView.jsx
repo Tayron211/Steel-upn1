@@ -1421,19 +1421,9 @@ ${htmlRows.join('\n')}
                 <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
                   <button
                     type="button"
-                    onClick={() => handleCopyExcelRow(activeSheet)}
-                    className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700 cursor-pointer"
-                    title="Copiar fila en formato oficial Excel (8 columnas)"
-                  >
-                    {copiedCode === activeSheet?.codigo ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
-                    <span>{copiedCode === activeSheet?.codigo ? '¡Copiado Excel!' : 'Copiar Excel'}</span>
-                  </button>
-
-                  <button
-                    type="button"
                     disabled={isSharingWhatsApp}
                     onClick={() => handleSendWhatsApp(activeSheet)}
-                    className="h-10 px-3.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700 disabled:opacity-50 cursor-pointer"
+                    className="flex-1 sm:flex-none h-10 px-3.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition inline-flex items-center justify-center gap-1.5 active:scale-95 border border-slate-200/80 dark:border-zinc-700 disabled:opacity-50 cursor-pointer"
                     title="Enviar captura e información por WhatsApp"
                   >
                     {isSharingWhatsApp ? (
@@ -1441,7 +1431,7 @@ ${htmlRows.join('\n')}
                     ) : (
                       <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
                     )}
-                    <span className="hidden sm:inline">WhatsApp</span>
+                    <span>WhatsApp</span>
                   </button>
 
                   <button
