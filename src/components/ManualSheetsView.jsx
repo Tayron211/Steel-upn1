@@ -387,16 +387,15 @@ export default function ManualSheetsView({
   };
 
   // Genera datos en formato oficial Excel (9 columnas: CÓDIGO, FECHA, NRC, DOCENTE, CURSO, CARRERA, MOTIVO, ASISTENTE, DOCENTE REEMPLAZANTE)
+  // con encabezado amarillo oro (#FFC000), bordes negros y celdas blancas idéntico al modelo de control docente
   const generateManualSheetsTableData = (sheetsList) => {
     const list = Array.isArray(sheetsList) ? sheetsList : [sheetsList];
     const headers = ['CÓDIGO', 'FECHA', 'NRC', 'DOCENTE', 'CURSO', 'CARRERA', 'MOTIVO', 'ASISTENTE', 'DOCENTE REEMPLAZANTE'];
 
-    const thBase = 'border:1px solid #000000;background-color:#000000;color:#FFFFFF;padding:6px 10px;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;text-align:center;white-space:nowrap;';
-    const tdCenter = 'border:1px solid #000000;padding:5px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;white-space:nowrap;';
-    const tdLeft = 'border:1px solid #000000;padding:5px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:left;white-space:nowrap;';
-    const tdCode = 'border:1px solid #000000;padding:5px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;font-weight:bold;white-space:nowrap;';
-
-    const headerHtml = `<tr>${headers.map(h => `<th style="${thBase}">${h}</th>`).join('')}</tr>`;
+    const thBase = 'border:1px solid #000000;background-color:#FFC000;color:#000000;padding:6px 10px;font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:bold;text-align:center;white-space:nowrap;';
+    const tdCenter = 'border:1px solid #000000;background-color:#FFFFFF;color:#000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;white-space:nowrap;';
+    const tdLeft = 'border:1px solid #000000;background-color:#FFFFFF;color:#000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:left;white-space:nowrap;';
+    const tdCode = 'border:1px solid #000000;background-color:#FFFFFF;color:#000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:center;font-weight:bold;white-space:nowrap;';
 
     const plainRows = [];
     const htmlRows = list.map(item => {
@@ -421,28 +420,36 @@ export default function ManualSheetsView({
 
       plainRows.push([codigo, fechaFmt, nrc, doc, curso, carrera, motivo, asistente, suplente].join('\t'));
 
-      return `<tr>
-  <td style="${tdCode}">${codigo}</td>
-  <td style="${tdCenter}">${fechaFmt}</td>
-  <td style="${tdCenter}">${nrc}</td>
-  <td style="${tdLeft}">${doc}</td>
-  <td style="${tdLeft}">${curso}</td>
-  <td style="${tdLeft}">${carrera}</td>
-  <td style="${tdLeft}">${motivo}</td>
-  <td style="${tdLeft}">${asistente}</td>
-  <td style="${tdLeft}">${suplente}</td>
-</tr>`;
+      return `    <tr>
+      <td style="${tdCode}">${codigo}</td>
+      <td style="${tdCenter}">${fechaFmt}</td>
+      <td style="${tdCenter}">${nrc}</td>
+      <td style="${tdLeft}">${doc}</td>
+      <td style="${tdLeft}">${curso}</td>
+      <td style="${tdLeft}">${carrera}</td>
+      <td style="${tdLeft}">${motivo}</td>
+      <td style="${tdLeft}">${asistente}</td>
+      <td style="${tdLeft}">${suplente}</td>
+    </tr>`;
     });
 
     const isSingle = list.length === 1;
-    // Para una sola fila (botón copiar de la fila), no incluir el encabezado TH para que al pegar en Excel caiga directamente en la fila seleccionada
-    const html = `<table border="1" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:10pt;">
+    const html = `
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<!--StartFragment-->
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #000000;font-family:Calibri,Arial,sans-serif;font-size:10pt;">
+  <thead>
+    <tr>
+      ${headers.map(h => `<th style="${thBase}">${h}</th>`).join('')}
+    </tr>
+  </thead>
   <tbody>
-    ${isSingle ? htmlRows.join('\n') : `${headerHtml}\n${htmlRows.join('\n')}`}
+${htmlRows.join('\n')}
   </tbody>
-</table>`;
+</table>
+<!--EndFragment-->`.trim();
 
-    const plain = isSingle ? plainRows.join('\n') : [headers.join('\t'), ...plainRows].join('\n');
+    const plain = [headers.join('\t'), ...plainRows].join('\n');
     return { html, plain, codigo: isSingle ? list[0]?.codigo : null };
   };
 

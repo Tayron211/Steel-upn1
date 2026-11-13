@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  ClipboardCheck, 
-  HandHelping, 
-  Layers, 
+import {
+  ClipboardCheck,
+  HandHelping,
+  Layers,
   BarChart3,
   Clock,
   Sun,
@@ -143,11 +143,10 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className={`h-9 px-3 sm:px-3.5 rounded-full flex items-center gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${
-                    userMenuOpen
+                  className={`h-9 px-3 sm:px-3.5 rounded-full flex items-center gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${userMenuOpen
                       ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-2 ring-amber-400/30'
                       : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-amber-200/80 dark:border-zinc-800 text-amber-950 dark:text-zinc-100'
-                  }`}
+                    }`}
                   title="Opciones de cuenta y sistema"
                 >
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
@@ -248,20 +247,18 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                     if (document.documentElement) document.documentElement.scrollTop = 0;
                     if (document.body) document.body.scrollTop = 0;
                   }}
-                  className={`relative z-10 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer ${
-                    isActive
+                  className={`relative z-10 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer ${isActive
                       ? desktopNavSlide.pillStyle.opacity === 0
                         ? 'bg-[#FDBA30] text-slate-950 font-extrabold shadow-[0_2px_10px_rgba(253,186,48,0.35)]'
                         : 'text-slate-950 font-extrabold'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-4 h-4 stroke-[2.2] shrink-0 transition-colors ${isActive ? 'text-slate-950 stroke-[2.5]' : 'text-slate-500 dark:text-zinc-400'}`} />
                   <span>{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none transition-colors ${
-                      isActive ? 'bg-slate-950 text-[#FDBA30]' : 'bg-rose-500 text-white'
-                    }`}>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none transition-colors ${isActive ? 'bg-slate-950 text-[#FDBA30]' : 'bg-rose-500 text-white'
+                      }`}>
                       {item.badge}
                     </span>
                   )}
@@ -312,30 +309,27 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   }}
                   className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
                 >
-                  <Icon 
-                    className={`w-5 h-5 transition-transform duration-200 ${
-                      isActive 
-                        ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs' 
+                  <Icon
+                    className={`w-5 h-5 transition-transform duration-200 ${isActive
+                        ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs'
                         : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white stroke-[2]'
-                    }`} 
+                      }`}
                   />
-                  <span 
-                    className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
-                      isActive 
-                        ? 'font-black text-slate-950' 
+                  <span
+                    className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${isActive
+                        ? 'font-black text-slate-950'
                         : 'font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </span>
 
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span 
-                      className={`absolute top-0.5 right-2 min-w-4 h-4 px-1 flex items-center justify-center rounded-full text-[9px] font-black transition-all duration-200 shadow-xs ring-1 ring-white/70 ${
-                        isActive 
-                          ? 'bg-slate-950 text-[#FDBA30]' 
+                    <span
+                      className={`absolute top-0.5 right-2 min-w-4 h-4 px-1 flex items-center justify-center rounded-full text-[9px] font-black transition-all duration-200 shadow-xs ring-1 ring-white/70 ${isActive
+                          ? 'bg-slate-950 text-[#FDBA30]'
                           : 'bg-rose-500 text-white animate-pulse'
-                      }`}
+                        }`}
                     >
                       {item.badge}
                     </span>

@@ -20,11 +20,22 @@ export function useSlidingIndicator(activeKey, deps = []) {
 
   const containerRef = useCallback((node) => {
     containerNodeRef.current = node;
-    containerRef.current = node;
     setContainerNode(node);
   }, []);
-  if (!('current' in containerRef)) {
-    containerRef.current = null;
+
+  try {
+    Object.defineProperty(containerRef, 'current', {
+      configurable: true,
+      get() {
+        return containerNodeRef.current;
+      },
+      set(node) {
+        containerNodeRef.current = node;
+        setContainerNode(node);
+      },
+    });
+  } catch (_) {
+    containerRef.current = containerNodeRef.current;
   }
 
   const hasMountedRef = useRef(false);

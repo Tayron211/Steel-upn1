@@ -666,12 +666,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     // Formato delimitado por tabulaciones (TSV) - estándar universal para pegar en celdas de Excel
     const tsvText = onlyData ? values.join('\t') : `${headers.join('\t')}\n${values.join('\t')}`;
 
-    // Tabla HTML formateada para pegar directamente en correos (Gmail, Outlook, Webmail)
+    // Tabla HTML formateada para pegar directamente en correos y Excel
     const htmlTable = `
-<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:12px;border:1px solid #999999;text-align:center;">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<!--StartFragment-->
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:10pt;border:1px solid #000000;text-align:center;">
   ${!onlyData ? `<thead>
-    <tr style="background-color:#ECA000;color:#000000;font-weight:bold;text-transform:uppercase;">
-      ${headers.map(h => `<th style="padding:6px 12px;border:1px solid #999999;background-color:#ECA000;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:12px;">${h}</th>`).join('')}
+    <tr>
+      ${headers.map(h => `<th style="padding:6px 10px;border:1px solid #000000;background-color:#FFC000;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:bold;text-align:center;white-space:nowrap;">${h}</th>`).join('')}
     </tr>
   </thead>` : ''}
   <tbody>
@@ -679,11 +681,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       ${values.map((v, idx) => {
         const isLeft = idx === 6 || idx === 7;
         const isBold = idx === 0 || idx === 2 || idx === 3 || idx === 4;
-        return `<td style="padding:6px 12px;border:1px solid #999999;font-family:Calibri,Arial,sans-serif;font-size:12px;text-align:${isLeft ? 'left' : 'center'};${isBold ? 'font-weight:bold;' : ''}">${v || ''}</td>`;
+        return `<td style="padding:6px 8px;border:1px solid #000000;background-color:#FFFFFF;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:${isLeft ? 'left' : 'center'};${isBold ? 'font-weight:bold;' : ''};white-space:nowrap;">${v || ''}</td>`;
       }).join('')}
     </tr>
   </tbody>
-</table>`.trim();
+</table>
+<!--EndFragment-->`.trim();
 
     try {
       if (navigator.clipboard && window.ClipboardItem) {
@@ -995,7 +998,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           <div
             ref={(el) => {
               dateScrollRef.current = el;
-              dateSlide.containerRef.current = el;
+              dateSlide.containerRef(el);
             }}
             className="relative flex items-center gap-1.5 overflow-x-auto bg-slate-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-slate-200/60 dark:border-zinc-800 scroll-smooth scrollbar-none flex-1 min-w-0"
           >
@@ -1009,9 +1012,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 type="button"
                 data-slide-active={selectedDayOffset === null ? 'true' : undefined}
                 onClick={() => setSelectedDayOffset(null)}
-                className={`relative z-10 h-8 px-3 rounded-xl text-xs font-bold transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-95 ${
+                className={`relative z-10 h-8 px-3 rounded-xl text-xs font-bold transition-colors duration-200 whitespace-nowrap shrink-0 active:scale-95 cursor-pointer ${
                   selectedDayOffset === null
-                    ? 'text-white dark:text-slate-950 font-black'
+                    ? (dateSlide.pillStyle.opacity === 0
+                        ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-xs'
+                        : 'text-white dark:text-slate-950 font-black')
                     : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -1031,9 +1036,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   type="button"
                   data-slide-active={isSelected ? 'true' : undefined}
                   onClick={() => setSelectedDayOffset(d.offset)}
-                  className={`relative z-10 h-8 px-3 rounded-xl text-xs font-bold transition-colors duration-200 whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 active:scale-95 ${
+                  className={`relative z-10 h-8 px-3 rounded-xl text-xs font-bold transition-colors duration-200 whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 active:scale-95 cursor-pointer ${
                     isSelected
-                      ? 'text-white dark:text-slate-950 font-black'
+                      ? (dateSlide.pillStyle.opacity === 0
+                          ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black shadow-xs'
+                          : 'text-white dark:text-slate-950 font-black')
                       : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -1877,9 +1884,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                       type="button"
                       data-slide-active={pickerPabellon === p.val ? 'true' : undefined}
                       onClick={() => setPickerPabellon(p.val)}
-                      className={`relative z-10 h-6 px-2.5 rounded-lg text-[10px] font-bold transition-colors duration-200 whitespace-nowrap ${
+                      className={`relative z-10 h-6 px-2.5 rounded-lg text-[10px] font-bold transition-colors duration-200 whitespace-nowrap cursor-pointer ${
                         pickerPabellon === p.val
-                          ? 'text-white dark:text-slate-950 font-black'
+                          ? (pickerPabSlide.pillStyle.opacity === 0
+                              ? 'bg-slate-900 text-white dark:bg-[#FDBA30] dark:text-slate-950 font-black'
+                              : 'text-white dark:text-slate-950 font-black')
                           : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
