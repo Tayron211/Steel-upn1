@@ -13,12 +13,41 @@ import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 
 const PAB_ORDER = ['', 'A', 'B'];
 
+const PISOS_DISPONIBLES = [
+  { label: 'Todos los pisos', short: 'Todos', val: '' },
+  { label: 'Sótano', short: 'Sót', val: 'SOT' },
+  { label: '1er Piso', short: 'P1', val: '1ER PISO' },
+  { label: '2do Piso', short: 'P2', val: '2DO PISO' },
+  { label: '3er Piso', short: 'P3', val: '3ER PISO' },
+  { label: '4to Piso', short: 'P4', val: '4TO PISO' },
+  { label: '5to Piso', short: 'P5', val: '5TO PISO' }
+];
+
+const matchesPiso = (pisoField, targetVal) => {
+  if (!targetVal) return true;
+  if (!pisoField) return false;
+  const f = String(pisoField).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const t = String(targetVal).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (t === 'SOT' || t.includes('SOT')) return f.includes('SOT');
+  if (t === '1ER PISO' || t === '1') return f.includes('1') || f.includes('PRIMER');
+  if (t === '2DO PISO' || t === '2') return f.includes('2') || f.includes('SEGUND');
+  if (t === '3ER PISO' || t === '3') return f.includes('3') || f.includes('TERCER');
+  if (t === '4TO PISO' || t === '4') return f.includes('4') || f.includes('CUART');
+  if (t === '5TO PISO' || t === '5') return f.includes('5') || f.includes('QUINT');
+  return f.includes(t);
+};
+
 export default function RoomsView({ onSelectRoomForSchedule }) {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterPabellon, setFilterPabellon] = useState('');
+  const [selectedPisos, setSelectedPisos] = useState([]);
+
   const pabSlide = useSlidingIndicator(filterPabellon || 'ALL', [rooms.length]);
+  const pisoSlideKey = selectedPisos.length === 0 ? 'ALL' : (selectedPisos.length === 1 ? selectedPisos[0] : '');
+  const pisoSlide = useSlidingIndicator(pisoSlideKey, [selectedPisos.length]);
+
   const [pabTransition, setPabTransition] = useState({ pab: filterPabellon, dir: 'initial' });
   if (pabTransition.pab !== filterPabellon) {
     const prevIdx = PAB_ORDER.indexOf(pabTransition.pab);
@@ -26,6 +55,18 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
     setPabTransition({ pab: filterPabellon, dir: nextIdx < prevIdx ? 'prev' : 'next' });
   }
   const gridAnimClass = pabTransition.dir === 'prev' ? 'animate-slide-prev' : pabTransition.dir === 'next' ? 'animate-slide-next' : 'animate-fade-in';
+
+  const handleTogglePiso = (pisoVal) => {
+    if (pisoVal === '') {
+      setSelectedPisos([]);
+      return;
+    }
+    if (selectedPisos.includes(pisoVal)) {
+      setSelectedPisos(selectedPisos.filter(p => p !== pisoVal));
+    } else {
+      setSelectedPisos([...selectedPisos, pisoVal]);
+    }
+  };
 
   const loadRooms = async () => {
     setLoading(true);
@@ -48,12 +89,17 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
 
   const filtered = rooms.filter(r => {
     if (filterPabellon && r.pabellon !== filterPabellon) return false;
+    if (selectedPisos.length > 0) {
+      const match = selectedPisos.some(p => matchesPiso(r.piso, p));
+      if (!match) return false;
+    }
     if (search) {
       const q = search.toLowerCase();
       return (
         (r.abrv && r.abrv.toLowerCase().includes(q)) ||
         (r.nombre && r.nombre.toLowerCase().includes(q)) ||
-        (r.tipo && r.tipo.toLowerCase().includes(q))
+        (r.tipo && r.tipo.toLowerCase().includes(q)) ||
+        (r.piso && r.piso.toLowerCase().includes(q))
       );
     }
     return true;
@@ -63,7 +109,7 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
     <div className="space-y-4 pb-36 md:pb-12">
       {/* Top Banner - Light Minimalist */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -72,42 +118,90 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
             <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Directorio de Ambientes & Aforos</h1>
           </div>
 
-          <div
-            ref={pabSlide.containerRef}
-            className="relative flex items-center gap-1 self-end sm:self-auto ml-auto sm:ml-0 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0"
-          >
-            <span
-              aria-hidden="true"
-              style={pabSlide.pillStyle}
-              className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
-            />
-            <button
-              onClick={() => setFilterPabellon('')}
-              data-slide-active={!filterPabellon ? 'true' : undefined}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
-                !filterPabellon ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Pabellón Filter */}
+            <div
+              ref={pabSlide.containerRef}
+              className="relative flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0"
             >
-              Todos ({rooms.length})
-            </button>
-            <button
-              onClick={() => setFilterPabellon('A')}
-              data-slide-active={filterPabellon === 'A' ? 'true' : undefined}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
-                filterPabellon === 'A' ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              <span
+                aria-hidden="true"
+                style={pabSlide.pillStyle}
+                className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={() => setFilterPabellon('')}
+                data-slide-active={!filterPabellon ? 'true' : undefined}
+                className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
+                  !filterPabellon ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Todos ({rooms.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterPabellon('A')}
+                data-slide-active={filterPabellon === 'A' ? 'true' : undefined}
+                className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
+                  filterPabellon === 'A' ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Pabellón A
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterPabellon('B')}
+                data-slide-active={filterPabellon === 'B' ? 'true' : undefined}
+                className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
+                  filterPabellon === 'B' ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Pabellón B
+              </button>
+            </div>
+
+            {/* Pisos Filter */}
+            <div
+              ref={pisoSlide.containerRef}
+              className="relative flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 shrink-0 overflow-x-auto max-w-full"
             >
-              Pabellón A
-            </button>
-            <button
-              onClick={() => setFilterPabellon('B')}
-              data-slide-active={filterPabellon === 'B' ? 'true' : undefined}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center justify-center active:scale-95 ${
-                filterPabellon === 'B' ? 'text-slate-950 font-black' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Pabellón B
-            </button>
+              <span
+                aria-hidden="true"
+                style={pisoSlide.pillStyle}
+                className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-xs"
+              />
+              {PISOS_DISPONIBLES.map((p) => {
+                const isTodos = p.val === '';
+                const isSelected = isTodos
+                  ? selectedPisos.length === 0
+                  : selectedPisos.includes(p.val);
+                const isSlideOwner = isTodos
+                  ? selectedPisos.length === 0
+                  : selectedPisos.length === 1 && selectedPisos[0] === p.val;
+
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    data-slide-active={isSlideOwner ? 'true' : undefined}
+                    onClick={() => handleTogglePiso(p.val)}
+                    className={`relative z-10 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 shrink-0 inline-flex items-center gap-1 whitespace-nowrap ${
+                      isSelected
+                        ? `${selectedPisos.length > 1 ? 'bg-[#FDBA30] shadow-xs ' : ''}text-slate-950 font-black`
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
+                  >
+                    <span className="hidden sm:inline">{p.label === 'Todos los pisos' ? 'Todos' : p.label}</span>
+                    <span className="sm:hidden">{p.short}</span>
+                    {!isTodos && isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -142,10 +236,10 @@ export default function RoomsView({ onSelectRoomForSchedule }) {
         <div className="text-center py-16 bg-white dark:bg-[#0c0c0f] rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs px-4">
           <Building2 className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-2 stroke-[1.8]" />
           <p className="text-sm font-bold text-slate-700 dark:text-zinc-200">No se encontraron aulas</p>
-          <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba con otro código o filtro de pabellón.</p>
+          <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">Prueba con otro código o filtro de pabellón o piso.</p>
         </div>
       ) : (
-        <div key={`rooms-${filterPabellon}`} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4 ${gridAnimClass}`}>
+        <div key={`rooms-${filterPabellon}-${selectedPisos.join('_')}`} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4 ${gridAnimClass}`}>
           {filtered.map(room => (
             <div
               key={room.abrv}
