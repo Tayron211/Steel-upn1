@@ -705,7 +705,7 @@ async function handleApiRequest(context) {
         query += ' AND UPPER(dia) = ?';
         params.push(dia.toUpperCase());
       }
-      query += ' ORDER BY fecha DESC, inicio ASC';
+      query += ' ORDER BY created_at DESC, fecha DESC, inicio ASC';
 
       const { results } = await db.prepare(query).bind(...params).all();
       return json({ success: true, count: results.length, data: results });
@@ -738,11 +738,12 @@ async function handleApiRequest(context) {
         .map(s => s.trim().toUpperCase())
         .filter(Boolean);
 
+      const targetIso = (fechaStr || '').slice(0, 10);
       const existingReservas = await db.prepare(`
         SELECT * FROM reservas
-        WHERE (fecha = ? OR UPPER(TRIM(dia)) = UPPER(TRIM(?)))
+        WHERE (fecha = ? OR (fecha IS NULL AND UPPER(TRIM(dia)) = UPPER(TRIM(?))))
         AND inicio < ? AND final > ?
-      `).bind(fechaStr, dia, final, inicio).all();
+      `).bind(targetIso, dia, final, inicio).all();
 
       if (existingReservas && Array.isArray(existingReservas.results)) {
         for (const existing of existingReservas.results) {
@@ -1051,7 +1052,7 @@ async function handleApiRequest(context) {
              OR (curso IS NOT NULL AND curso != '')
           ORDER BY fecha DESC, id DESC
         `).all(),
-        db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all()
+        db.prepare('SELECT * FROM reservas ORDER BY created_at DESC, fecha DESC, inicio ASC').all()
       ]);
 
       const asistencia = (asistRes.results || []).map(r => ({
@@ -1129,7 +1130,7 @@ async function handleApiRequest(context) {
              OR (curso IS NOT NULL AND curso != '')
           ORDER BY fecha DESC, id DESC
         `).all(),
-        db.prepare('SELECT * FROM reservas ORDER BY fecha DESC, inicio ASC').all()
+        db.prepare('SELECT * FROM reservas ORDER BY created_at DESC, fecha DESC, inicio ASC').all()
       ]);
 
       const asistencia = (asistRes.results || []).map(r => ({

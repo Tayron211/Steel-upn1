@@ -616,6 +616,11 @@ async function pullRecords(db, specName, used) {
       survivingIds.push(r.id);
     } else {
       // Si la fila no está en Excel:
+      // Las reservas creadas en la app (id que empieza con 'res_') son persistentes y no deben ser eliminadas por pull
+      if (specName === 'reservas' && String(r.id || '').startsWith('res_')) {
+        survivingIds.push(r.id);
+        continue;
+      }
       // Si existía en el snapshot previo, o si se fuerza la sincronización, o si no es una creación ultra-reciente (<45s):
       if (snapshotIds.has(r.id) || (snapshotIds.size === 0 && !isRowRecent(r)) || opts?.force) {
         changes++;

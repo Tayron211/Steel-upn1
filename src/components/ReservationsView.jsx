@@ -130,6 +130,25 @@ const timeToMins = (tStr) => {
   return (h || 0) * 60 + (m || 0);
 };
 
+const normalizeDateStr = (d) => {
+  if (!d) return '';
+  const str = String(d).trim();
+  if (/^\d{5}$/.test(str)) {
+    const num = Number(str);
+    const dt = new Date(Math.round((num - 25569) * 86400000));
+    if (!Number.isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+  }
+  const ymd = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (ymd) {
+    return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
+  }
+  const dmy = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if (dmy) {
+    return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  }
+  return str.slice(0, 10);
+};
+
 export default function ReservationsView({ initialOpenTrigger = null, onConsumeTrigger = null }) {
   const asistentes = useAssistants();
   const [reservas, setReservas] = useState([]);
@@ -138,6 +157,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [modalDayClasses, setModalDayClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [docentesList, setDocentesList] = useState([]);
+  const [docenteSuggestionsOpen, setDocenteSuggestionsOpen] = useState(false);
   const [selectedMes, setSelectedMes] = useState(''); // '' = Todos los meses
 
   // Vista: 'RESERVAS' (Reservas registradas) | 'FREE_ROOMS' (Aulas libres hoy y próximos días)
@@ -382,6 +404,44 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     return () => window.removeEventListener('upn:excel-pulled', handlePulled);
   }, []);
 
+  // Cargar lista completa de docentes de la universidad desde el horario (Excel) para autocompletado inteligente
+  useEffect(() => {
+    fetch('/api/attendance')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && Array.isArray(json.data)) {
+          const docs = Array.from(
+            new Set(
+              json.data
+                .map(c => (c.docente || '').trim().toUpperCase())
+                .filter(d => d && !d.includes('#N/D') && !d.includes('#N/A') && d.length > 3)
+            )
+          ).sort();
+          setDocentesList(docs);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const allKnownDocentes = useMemo(() => {
+    const set = new Set(docentesList);
+    reservas.forEach(r => {
+      const d = (r.docente || '').trim().toUpperCase();
+      if (d && !d.includes('#N/D') && !d.includes('#N/A') && d.length > 3) {
+        set.add(d);
+      }
+    });
+    return Array.from(set).sort();
+  }, [docentesList, reservas]);
+
+  const docenteSuggestions = useMemo(() => {
+    const q = (formData.docente || '').trim().toUpperCase();
+    if (!q || q.length < 2) return [];
+    return allKnownDocentes
+      .filter(d => d.includes(q) && d !== q)
+      .slice(0, 8);
+  }, [allKnownDocentes, formData.docente]);
+
   useEffect(() => {
     loadScheduleForDay(activeDayInfo.diaName);
   }, [activeDayInfo.diaName]);
@@ -457,7 +517,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const freeRoomsForModalTime = useMemo(() => {
     const bStart = timeToMins(formData.inicio);
     const bEnd = timeToMins(formData.final);
-    const targetFecha = formData.fecha;
+    const targetFecha = normalizeDateStr(formData.fecha);
 
     return allRooms.filter(rm => {
       const code = (rm.abrv || '').toUpperCase().trim();
@@ -471,11 +531,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       });
       if (classConflict) return false;
 
-      // Conflicto con otras reservas en esa misma fecha
+      // Conflicto con otras reservas en esa misma fecha (evitar cualquier aula ocupada)
       const resConflict = reservas.some(r => {
         const rRooms = getReservationRooms(r);
         if (!rRooms.includes(code)) return false;
-        if (r.fecha !== targetFecha) return false;
+        const rFecha = normalizeDateStr(r.fecha);
+        if (rFecha && targetFecha) {
+          if (rFecha !== targetFecha) return false;
+        } else if (normalizeDay(r.dia) !== normalizeDay(formData.dia)) {
+          return false;
+        }
         const rStart = timeToMins(r.inicio || r.hora_inicio);
         const rEnd = timeToMins(r.final || r.hora_fin);
         return rStart < bEnd && rEnd > bStart;
@@ -484,7 +549,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
       return true;
     });
-  }, [allRooms, modalDayClasses, reservas, formData.fecha, formData.inicio, formData.final]);
+  }, [allRooms, modalDayClasses, reservas, formData.fecha, formData.dia, formData.inicio, formData.final]);
 
   // Si las aulas seleccionadas pasan a estar ocupadas al cambiar fecha u horario, mantener solo las que sigan libres
   useEffect(() => {
@@ -497,14 +562,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         ...prev,
         aulas: [firstFree.abrv],
         aula: firstFree.abrv,
-        ubicacion: `${firstFree.piso} - ${firstFree.pabellon}`
+        ubicacion: firstFree.piso ? `${firstFree.piso} - ${firstFree.pabellon}` : (deducePisoFromAula(firstFree.abrv) || 'SEDE')
       }));
+      setSelectedAulas([firstFree.abrv]);
     } else if (validRooms.length > 0 && validRooms.length !== currentRooms.length) {
       setFormData(prev => ({
         ...prev,
         aulas: validRooms,
         aula: validRooms.join(', ')
       }));
+      setSelectedAulas(validRooms);
     }
   }, [isModalOpen, freeRoomsForModalTime]);
 
@@ -528,6 +595,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   }, [freeRoomsForModalTime, pickerCategory, pickerPabellon, pickerPiso, pickerSearch]);
 
   const handleToggleRoomInPicker = (rmAbrv) => {
+    const isFree = freeRoomsForModalTime.some(r => r.abrv === rmAbrv);
+    if (!isFree) return;
     setSelectedAulas(prev => {
       if (prev.includes(rmAbrv)) {
         return prev.filter(a => a !== rmAbrv);
@@ -557,9 +626,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    const cleanAulas = getReservationRooms(formData);
+    if (cleanAulas.length === 0) {
+      alert('Por favor selecciona al menos un ambiente libre para reservar.');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const cleanAulas = getReservationRooms(formData);
-      const cleanAula = cleanAulas.length > 0 ? cleanAulas.join(', ') : (formData.aula || '').toUpperCase().trim();
+      const cleanAula = cleanAulas.join(', ');
       const firstRm = roomMap[cleanAulas[0]];
       const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
       const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
@@ -614,6 +691,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       console.error(err);
       setToastMessage('❌ Error al registrar reserva');
       setTimeout(() => setToastMessage(''), 3000);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -626,14 +705,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       dia: target.diaName,
       inicio: blockObj.start,
       final: blockObj.end,
-      aulas: ['A201'],
-      aula: 'A201',
-      ubicacion: '2DO PISO - A',
+      aulas: [],
+      aula: '',
+      ubicacion: '',
       docente: '',
       detalle: '',
       usuario: getLoggedAssistantName(),
       prioridad: 'NORMAL'
     });
+    setSelectedAulas([]);
+    setDocenteSuggestionsOpen(false);
   };
 
   const handleOpenReserveForFreeRoom = (room) => {
@@ -785,7 +866,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   // Filtrado de Reservas Registradas (por Mes, Día/Fecha, Pabellón, Piso, Hora y Texto)
   const filtered = useMemo(() => {
-    return reservas.filter(r => {
+    const list = reservas.filter(r => {
       const codeList = getReservationRooms(r);
       const code = codeList[0] || (r.aula || '').toUpperCase().trim();
       const rm = roomMap[code];
@@ -826,9 +907,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       if (selectedDayOffset !== null) {
         const target = upcomingDays[selectedDayOffset];
         if (target) {
-          const sameFecha = r.fecha === target.fecha;
-          const sameDia = normalizeDay(r.dia) === target.diaName;
-          if (!sameFecha && !sameDia) return false;
+          const rDateNorm = normalizeDateStr(r.fecha);
+          const tDateNorm = normalizeDateStr(target.fecha);
+          if (rDateNorm && tDateNorm) {
+            if (rDateNorm !== tDateNorm) return false;
+          } else {
+            const sameDia = normalizeDay(r.dia) === target.diaName;
+            if (!sameDia) return false;
+          }
         }
       }
 
@@ -845,6 +931,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         );
       }
       return true;
+    });
+
+    const sorted = [...list];
+    if (selectedDayOffset !== null) {
+      return sorted.sort((a, b) => timeToMins(a.inicio || a.hora_inicio) - timeToMins(b.inicio || b.hora_inicio));
+    }
+    return sorted.sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at.includes('Z') ? a.created_at : a.created_at.replace(' ', 'T') + 'Z').getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at.includes('Z') ? b.created_at : b.created_at.replace(' ', 'T') + 'Z').getTime() : 0;
+      if (aTime && bTime && aTime !== bTime) return bTime - aTime;
+      return String(b.fecha || '').localeCompare(String(a.fecha || '')) || (timeToMins(a.inicio || a.hora_inicio) - timeToMins(b.inicio || b.hora_inicio));
     });
   }, [reservas, selectedMes, roomMap, selectedPabellon, selectedPisos, selectedDayOffset, upcomingDays, search]);
 
@@ -878,10 +975,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           c => (c.aula || '').toUpperCase().trim() === code
         );
 
-        // Reservas registradas en esta aula para esa fecha
-        const reservasInRoom = reservas.filter(
-          r => getReservationRooms(r).includes(code) && r.fecha === target.fecha
-        );
+        // Reservas registradas en esta aula para esa fecha (comparación exacta de fecha)
+        const reservasInRoom = reservas.filter(r => {
+          if (!getReservationRooms(r).includes(code)) return false;
+          const rDateNorm = normalizeDateStr(r.fecha);
+          const tDateNorm = normalizeDateStr(target.fecha);
+          if (rDateNorm && tDateNorm) return rDateNorm === tDateNorm;
+          return normalizeDay(r.dia) === target.diaName;
+        });
 
         // Verificar si está ocupada en el bloque horario seleccionado
         let isBusyInSelectedBlock = false;
@@ -1757,19 +1858,58 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </button>
               </div>
 
-              {/* Fila 4: DOCENTE SOLICITANTE */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Docente Solicitante
+              {/* Fila 4: DOCENTE SOLICITANTE CON AUTOCOMPLETADO DESDE EXCEL */}
+              <div className="relative">
+                <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  <span>Docente Solicitante *</span>
+                  {allKnownDocentes.length > 0 && (
+                    <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">
+                      {allKnownDocentes.length} docentes disponibles
+                    </span>
+                  )}
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.docente}
-                  onChange={(e) => setFormData({ ...formData, docente: e.target.value.toUpperCase() })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, docente: e.target.value.toUpperCase() });
+                    setDocenteSuggestionsOpen(true);
+                  }}
+                  onFocus={() => setDocenteSuggestionsOpen(true)}
                   placeholder="Apellidos y Nombres completos del docente"
                   className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
                 />
+                {docenteSuggestionsOpen && docenteSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-56 overflow-y-auto">
+                    <div className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-900/90 border-b border-slate-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center justify-between">
+                      <span>Docentes Sugeridos ({docenteSuggestions.length})</span>
+                      <button
+                        type="button"
+                        onClick={() => setDocenteSuggestionsOpen(false)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {docenteSuggestions.map((doc, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, docente: doc }));
+                          setDocenteSuggestionsOpen(false);
+                        }}
+                        className="w-full text-left px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 transition flex items-center justify-between group border-b border-slate-100 dark:border-zinc-800/50 last:border-b-0 cursor-pointer"
+                      >
+                        <span className="truncate">{doc}</span>
+                        <span className="text-[10px] text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shrink-0 font-black ml-2 uppercase">
+                          Elegir
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Fila 5: ACTIVIDAD / MOTIVO */}
@@ -1834,9 +1974,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </button>
                 <button
                   type="submit"
-                  className="h-11 sm:h-12 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95 cursor-pointer"
+                  disabled={isSubmitting || getReservationRooms(formData).length === 0}
+                  className="h-11 sm:h-12 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95 cursor-pointer"
                 >
-                  Confirmar Reserva
+                  {isSubmitting ? 'Guardando Reserva...' : 'Confirmar Reserva'}
                 </button>
               </div>
             </form>
