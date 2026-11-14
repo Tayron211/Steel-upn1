@@ -1,8 +1,8 @@
 {
-  "version": "1.0.6",
-  "versionCode": 7,
+  "version": "1.0.7",
+  "versionCode": 8,
   "releaseDate": "2026-11-14",
-  "notes": "Prueba de actualizacion v1.0.6 con efecto fade e instalador directo",
+  "notes": "v1.0.7 con instalador directo en hilo UI y cache interna",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  RotateCw, 
-  Download, 
-  CheckCircle2, 
-  X, 
-  ArrowRight, 
+import {
+  RotateCw,
+  Download,
+  CheckCircle2,
+  X,
+  ArrowRight,
   ShieldCheck,
   RefreshCw
 } from 'lucide-react';
-import { triggerDirectApkInstall } from '../utils/appUpdateChecker';
+import { triggerDirectApkInstall, AppInstaller } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
 import { useFadeModal } from '../utils/useFadeModal';
 
@@ -25,6 +25,17 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
   if (!isCapacitorNative() || !fade.shouldRender || !info) return null;
 
   const handleUpdate = async () => {
+    if (progress >= 100) {
+      try {
+        if (AppInstaller?.launchInstaller) {
+          await AppInstaller.launchInstaller();
+          return;
+        }
+      } catch (err) {
+        console.warn('Reintentando instalación directa:', err);
+      }
+    }
+
     setDownloading(true);
     setProgress(5);
     setDownloadStarted(true);
@@ -43,13 +54,13 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
   };
 
   return (
-    <div 
+    <div
       className={`fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none ${fade.backdropClass}`}
       onClick={() => {
         if (!info.forceUpdate && !downloading) fade.requestClose();
       }}
     >
-      <div 
+      <div
         className={`bg-white dark:bg-[#0c0c10] border-2 border-amber-400 dark:border-amber-500/80 rounded-2xl p-4 sm:p-5 max-w-sm w-full shadow-[0_16px_50px_rgba(253,186,48,0.3)] space-y-3.5 ${fade.modalClass}`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -114,14 +125,14 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
               <span className="font-mono font-black">{progress}%</span>
             </div>
             <div className="w-full h-2 rounded-full bg-emerald-200/60 dark:bg-emerald-900/60 overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all duration-300 rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </div>
             <p className="text-[10px] text-emerald-700 dark:text-emerald-400 leading-tight">
-              {progress >= 100 
-                ? 'Listo. Confirma la instalación en la ventana del sistema.' 
+              {progress >= 100
+                ? 'Listo. Confirma la instalación en la ventana del sistema.'
                 : 'La descarga se realiza en segundo plano y abrirá el paquete automáticamente.'}
             </p>
           </div>
@@ -135,10 +146,15 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
             disabled={downloading && progress < 100}
             className="w-full h-10 px-4 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 font-black text-xs tracking-tight transition active:scale-95 shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
           >
-            {downloading ? (
+            {downloading && progress < 100 ? (
               <>
                 <RefreshCw className="w-4 h-4 text-slate-950 animate-spin" />
-                <span>{progress >= 100 ? 'Iniciando Instalador...' : `Descargando (${progress}%)...`}</span>
+                <span>Descargando ({progress}%)...</span>
+              </>
+            ) : progress >= 100 ? (
+              <>
+                <Download className="w-4 h-4 stroke-[2.4]" />
+                <span>Abrir Instalador de Android</span>
               </>
             ) : (
               <>
