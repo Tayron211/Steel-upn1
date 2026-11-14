@@ -57,9 +57,22 @@ import { isCapacitorNative } from '../utils/statusBarHelper';
 export const formatPeriodoDisplay = (val) => {
   if (!val) return '';
   const s = String(val).trim().toUpperCase();
+  if (s.includes('#N/D') || s.includes('#N/A') || s.includes('#')) return '';
   if (s === '226434' || s.startsWith('226434') || s === 'UG') return 'UG';
   if (s === '226534' || s.startsWith('226534') || s === 'WA') return 'WA';
-  return s;
+  return '';
+};
+
+// Validador de texto limpio para ocultar basura de fórmulas de Excel (#N/D, #N/A, #VALOR!, etc.)
+export const isValidText = (val) => {
+  if (!val) return false;
+  const s = String(val).trim();
+  if (!s || s === '-' || s === 'NULL' || s === 'UNDEFINED') return false;
+  const upper = s.toUpperCase();
+  if (upper.includes('#N/D') || upper.includes('#N/A') || upper.includes('#VALOR') || upper.includes('#REF!')) {
+    return false;
+  }
+  return true;
 };
 
 // Helper universal para dibujar rectángulos redondeados en Canvas
@@ -174,8 +187,8 @@ export const generateCardCanvas = async (item, isDark = false) => {
   const cursoName = (item.curso || '').length > 48 ? (item.curso.slice(0, 46) + '...') : (item.curso || 'Curso');
   ctx.fillText(cursoName, 28, 148);
 
-  // Carrera (si existe)
-  if (item.carrera) {
+  // Carrera (si existe y es válida)
+  if (isValidText(item.carrera)) {
     ctx.fillStyle = isDark ? '#27272a' : '#f8fafc';
     ctx.beginPath();
     drawRoundedRect(ctx, 28, 168, 70, 24, 6);
@@ -211,9 +224,9 @@ export const generateCardCanvas = async (item, isDark = false) => {
   ctx.textAlign = 'right';
   ctx.fillText(`${item.horaInicioProg || '--:--'} - ${item.horaFinalProg || '--:--'}`, width - 45, 238);
 
-  // Observación (si existe)
+  // Observación (si existe y es válida)
   let footerY = 278;
-  if (item.observacion) {
+  if (isValidText(item.observacion)) {
     ctx.fillStyle = isDark ? 'rgba(120, 53, 15, 0.35)' : '#fef3c7';
     ctx.strokeStyle = isDark ? '#92400e' : '#fde68a';
     ctx.lineWidth = 1;
@@ -2362,7 +2375,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     </span>
                   </div>
 
-                  {item.carrera && (
+                  {isValidText(item.carrera) && (
                     <div className="flex items-center gap-2 text-[10px] font-bold mt-1">
                       <span className="bg-slate-50 dark:bg-zinc-900/80 text-slate-600 dark:text-zinc-300 px-2 py-0.5 rounded border border-slate-200/80 dark:border-zinc-700">
                         Carrera
@@ -2381,7 +2394,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                   </div>
 
                   {/* Observación Compacta (Clic para editar) */}
-                  {item.observacion && (
+                  {isValidText(item.observacion) && (
                     <div
                       onClick={() => {
                         setActiveModalItem(item);
@@ -2497,7 +2510,12 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </span>
                 <div className="min-w-0">
                   <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{activeOptions.docente}</div>
-                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {activeOptions.nrc}{activeOptions.periodo ? ` (${formatPeriodoDisplay(activeOptions.periodo)})` : ''} · {activeOptions.curso}{activeOptions.carrera ? ' · ' + activeOptions.carrera : ''}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">
+                    NRC {activeOptions.nrc}
+                    {formatPeriodoDisplay(activeOptions.periodo) ? ` (${formatPeriodoDisplay(activeOptions.periodo)})` : ''}
+                    {isValidText(activeOptions.curso) ? ` · ${activeOptions.curso}` : ''}
+                    {isValidText(activeOptions.carrera) ? ` · ${activeOptions.carrera}` : ''}
+                  </div>
                 </div>
               </div>
               <button

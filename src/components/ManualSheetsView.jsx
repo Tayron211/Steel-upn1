@@ -846,7 +846,7 @@ ${htmlRows.join('\n')}
                   <p className="text-xs text-slate-800 dark:text-zinc-200 font-bold leading-snug break-words">
                     {item.curso}
                   </p>
-                  {item.carrera && (
+                  {item.carrera && !item.carrera.includes('#N/D') && !item.carrera.includes('#N/A') && (
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5 break-words">
                       {item.carrera}
                     </p>
@@ -950,7 +950,7 @@ ${htmlRows.join('\n')}
                         <div className="font-bold text-slate-900 dark:text-white text-xs leading-snug break-words">
                           {item.curso}
                         </div>
-                        {item.carrera && (
+                        {item.carrera && !item.carrera.includes('#N/D') && !item.carrera.includes('#N/A') && (
                           <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium leading-tight mt-0.5 break-words">
                             {item.carrera}
                           </div>

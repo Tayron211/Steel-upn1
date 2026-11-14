@@ -357,14 +357,19 @@ export default function DashboardView() {
       const colPuntualidad = findCol(['PUNTUALIDAD']);
       const colObs = findCol(['OBSERVACION', 'OBSERVACIONES']);
 
+      const cleanCell = (v) => {
+        const s = String(v ?? '').trim();
+        return (s.includes('#N/D') || s.includes('#N/A') || s.includes('#VALOR') || s.includes('#REF!')) ? '' : s;
+      };
+
       const parsedClasses = [];
       for (let r = headerIdx + 1; r < rawRows.length; r++) {
         const row = rawRows[r];
         if (!row || row.length === 0) continue;
 
-        const aula = colAula >= 0 && row[colAula] ? String(row[colAula]).trim().toUpperCase() : (row[6] ? String(row[6]).trim().toUpperCase() : '');
-        const docente = colDocente >= 0 && row[colDocente] ? String(row[colDocente]).trim().toUpperCase() : (row[10] ? String(row[10]).trim().toUpperCase() : '');
-        const nrc = colNrc >= 0 && row[colNrc] ? String(row[colNrc]).trim() : (row[7] ? String(row[7]).trim() : '');
+        const aula = cleanCell(colAula >= 0 && row[colAula] ? String(row[colAula]).trim().toUpperCase() : (row[6] ? String(row[6]).trim().toUpperCase() : ''));
+        const docente = cleanCell(colDocente >= 0 && row[colDocente] ? String(row[colDocente]).trim().toUpperCase() : (row[10] ? String(row[10]).trim().toUpperCase() : ''));
+        const nrc = cleanCell(colNrc >= 0 && row[colNrc] ? String(row[colNrc]).trim() : (row[7] ? String(row[7]).trim() : ''));
 
         if (!aula && !docente && !nrc) continue;
 
@@ -376,24 +381,24 @@ export default function DashboardView() {
 
         parsedClasses.push({
           id: `asist_imp_${r}`,
-          pisoPabellon: colPisoPab >= 0 && row[colPisoPab] ? String(row[colPisoPab]).trim() : (row[0] ? String(row[0]).trim() : ''),
+          pisoPabellon: cleanCell(colPisoPab >= 0 && row[colPisoPab] ? String(row[colPisoPab]).trim() : (row[0] ? String(row[0]).trim() : '')),
           sede: colSede >= 0 && row[colSede] ? String(row[colSede]).trim() : 'Comas',
-          periodo: colPeriodo >= 0 && row[colPeriodo] ? String(row[colPeriodo]).trim() : (row[1] ? String(row[1]).trim() : '226434'),
+          periodo: cleanCell(colPeriodo >= 0 && row[colPeriodo] ? String(row[colPeriodo]).trim() : (row[1] ? String(row[1]).trim() : '226434')),
           dia: diaVal,
           horaInicioProg: horaIniVal,
           horaFinalProg: horaFinVal,
           aula,
           nrc,
-          listaCruzada: colCruzada >= 0 && row[colCruzada] ? String(row[colCruzada]).trim() : '',
-          codigoDocente: colCodDocente >= 0 && row[colCodDocente] ? String(row[colCodDocente]).trim() : '',
+          listaCruzada: cleanCell(colCruzada >= 0 && row[colCruzada] ? String(row[colCruzada]).trim() : ''),
+          codigoDocente: cleanCell(colCodDocente >= 0 && row[colCodDocente] ? String(row[colCodDocente]).trim() : ''),
           docente,
-          curso: colCurso >= 0 && row[colCurso] ? String(row[colCurso]).trim().toUpperCase() : (row[11] ? String(row[11]).trim().toUpperCase() : ''),
-          carrera: colCarrera >= 0 && row[colCarrera] ? String(row[colCarrera]).trim() : '',
+          curso: cleanCell(colCurso >= 0 && row[colCurso] ? String(row[colCurso]).trim().toUpperCase() : (row[11] ? String(row[11]).trim().toUpperCase() : '')),
+          carrera: cleanCell(colCarrera >= 0 && row[colCarrera] ? String(row[colCarrera]).trim() : ''),
           horaInicioReal: horaIniRealVal,
           horaFinalReal: horaFinRealVal,
           asistencia: colAsistencia >= 0 && row[colAsistencia] ? String(row[colAsistencia]).trim().toUpperCase() : 'PENDIENTE',
           puntualidad: colPuntualidad >= 0 && row[colPuntualidad] ? String(row[colPuntualidad]).trim().toUpperCase() : '-',
-          observacion: colObs >= 0 && row[colObs] ? String(row[colObs]).trim() : '',
+          observacion: cleanCell(colObs >= 0 && row[colObs] ? String(row[colObs]).trim() : ''),
           real: null,
           ciclo: ''
         });
