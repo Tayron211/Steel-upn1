@@ -1,8 +1,8 @@
 {
-  "version": "1.0.17",
-  "versionCode": 18,
+  "version": "1.0.18",
+  "versionCode": 19,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.17 - Navegacion de apartados exclusivamente mediante botones de la barra inferior (swipe desactivado)",
+  "notes": "v1.0.18 - Quitar clase remota al presionar falta, periodo WA y UG en tarjetas, soporte nativo de captura para WhatsApp",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

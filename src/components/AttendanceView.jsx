@@ -49,6 +49,195 @@ import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import { triggerAutoSyncLinkedExcel } from '../utils/liveExcelSync';
 import { toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { isCapacitorNative } from '../utils/statusBarHelper';
+
+// Formateador visual de Periodo para tarjetas: 226434 -> WA, 226534 -> UG (Sin alterar Excel)
+export const formatPeriodoDisplay = (val) => {
+  if (!val) return '';
+  const s = String(val).trim().toUpperCase();
+  if (s === '226434' || s.startsWith('226434') || s === 'WA') return 'WA';
+  if (s === '226534' || s.startsWith('226534') || s === 'UG') return 'UG';
+  return s;
+};
+
+// Helper universal para dibujar rectángulos redondeados en Canvas
+const drawRoundedRect = (ctx, x, y, width, height, radius) => {
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, width, height, radius);
+  } else {
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+  }
+};
+
+// Generador de tarjeta en Canvas 100% confiable y autónomo (Garantiza captura perfecta sin fallos DOM)
+export const generateCardCanvas = async (item, isDark = false) => {
+  const canvas = document.createElement('canvas');
+  const scale = 2;
+  const width = 640;
+  const height = 400;
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  const bg = isDark ? '#0c0c0f' : '#ffffff';
+  const cardBorder = isDark ? '#27272a' : '#e2e8f0';
+  const textPrimary = isDark ? '#f4f4f5' : '#0f172a';
+  const textSecondary = isDark ? '#a1a1aa' : '#64748b';
+  const headerBg = isDark ? '#18181b' : '#0f172a';
+
+  // Fondo de la tarjeta con bordes redondeados
+  const radius = 24;
+  ctx.fillStyle = bg;
+  ctx.strokeStyle = cardBorder;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  drawRoundedRect(ctx, 8, 8, width - 16, height - 16, radius);
+  ctx.fill();
+  ctx.stroke();
+
+  // Top Bar: Aula Badge & Pabellón
+  const pLabel = formatPeriodoDisplay(item.periodo);
+
+  // Aula
+  ctx.fillStyle = headerBg;
+  ctx.beginPath();
+  drawRoundedRect(ctx, 28, 28, 90, 34, 10);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 15px "Courier New", monospace, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(item.aula || 'S/A', 28 + 45, 51);
+
+  // Pabellon
+  ctx.fillStyle = isDark ? '#27272a' : '#f1f5f9';
+  ctx.beginPath();
+  drawRoundedRect(ctx, 128, 28, 120, 34, 10);
+  ctx.fill();
+  ctx.fillStyle = isDark ? '#e4e4e7' : '#475569';
+  ctx.font = 'bold 12px sans-serif';
+  ctx.fillText((item.pisoPabellon || 'Campus').toUpperCase(), 128 + 60, 50);
+
+  // Periodo WA / UG (si existe)
+  if (pLabel) {
+    const isWA = pLabel === 'WA';
+    ctx.fillStyle = isWA ? '#fae8ff' : '#e0f2fe';
+    ctx.beginPath();
+    drawRoundedRect(ctx, 258, 28, 55, 34, 10);
+    ctx.fill();
+    ctx.fillStyle = isWA ? '#86198f' : '#0369a1';
+    ctx.font = 'bold 13px "Courier New", monospace, sans-serif';
+    ctx.fillText(pLabel, 258 + 27.5, 50);
+  }
+
+  // NRC Badge (superior derecha)
+  ctx.fillStyle = isDark ? '#27272a' : '#f8fafc';
+  ctx.strokeStyle = isDark ? '#3f3f46' : '#cbd5e1';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  drawRoundedRect(ctx, width - 150, 28, 120, 34, 10);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = isDark ? '#fafafa' : '#0f172a';
+  ctx.font = 'bold 13px "Courier New", monospace, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`NRC ${item.nrc || 'S/N'}`, width - 90, 50);
+
+  // Línea divisora
+  ctx.strokeStyle = isDark ? '#27272a' : '#f1f5f9';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(28, 80);
+  ctx.lineTo(width - 28, 80);
+  ctx.stroke();
+
+  // Nombre Docente
+  ctx.textAlign = 'left';
+  ctx.fillStyle = textPrimary;
+  ctx.font = 'bold 20px sans-serif';
+  const docenteName = (item.docente || 'Docente').length > 38 ? (item.docente.slice(0, 36) + '...') : (item.docente || 'Docente');
+  ctx.fillText(docenteName, 28, 118);
+
+  // Curso
+  ctx.fillStyle = textSecondary;
+  ctx.font = '500 15px sans-serif';
+  const cursoName = (item.curso || '').length > 48 ? (item.curso.slice(0, 46) + '...') : (item.curso || 'Curso');
+  ctx.fillText(cursoName, 28, 148);
+
+  // Carrera (si existe)
+  if (item.carrera) {
+    ctx.fillStyle = isDark ? '#27272a' : '#f8fafc';
+    ctx.beginPath();
+    drawRoundedRect(ctx, 28, 168, 70, 24, 6);
+    ctx.fill();
+    ctx.fillStyle = isDark ? '#a1a1aa' : '#64748b';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('CARRERA', 63, 184);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = isDark ? '#d4d4d8' : '#334155';
+    ctx.font = '600 13px sans-serif';
+    const carrText = item.carrera.length > 50 ? (item.carrera.slice(0, 48) + '...') : item.carrera;
+    ctx.fillText(carrText, 108, 185);
+  }
+
+  // Horario Box
+  ctx.fillStyle = isDark ? '#18181b' : '#f8fafc';
+  ctx.strokeStyle = isDark ? '#27272a' : '#e2e8f0';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  drawRoundedRect(ctx, 28, 208, width - 56, 48, 14);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = textSecondary;
+  ctx.font = 'bold 12px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('HORARIO PROGRAMADO', 45, 238);
+
+  ctx.fillStyle = textPrimary;
+  ctx.font = 'bold 16px "Courier New", monospace, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${item.horaInicioProg || '--:--'} - ${item.horaFinalProg || '--:--'}`, width - 45, 238);
+
+  // Observación (si existe)
+  let footerY = 278;
+  if (item.observacion) {
+    ctx.fillStyle = isDark ? 'rgba(120, 53, 15, 0.35)' : '#fef3c7';
+    ctx.strokeStyle = isDark ? '#92400e' : '#fde68a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    drawRoundedRect(ctx, 28, footerY, width - 56, 44, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isDark ? '#fcd34d' : '#92400e';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`⚠️ ${item.observacion}`, 44, footerY + 27);
+  }
+
+  // Marca de pie
+  ctx.textAlign = 'center';
+  ctx.fillStyle = isDark ? '#52525b' : '#94a3b8';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.fillText('CONTROL DOCENTE UTP · REPORTE RÁPIDO', width / 2, height - 20);
+
+  return new Promise((resolve) => {
+    canvas.toBlob(resolve, 'image/png');
+  });
+};
 
 const TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:20', '09:00', '09:10', '10:00', '10:50',
@@ -516,29 +705,34 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     try {
       const cardEl = document.getElementById(`attendance-card-${item.id || item.nrc}`);
       let blob = null;
+      const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+      const bg = isDark ? '#0c0c0f' : '#ffffff';
 
+      // 1. Intentar capturar elemento DOM con html-to-image
       if (cardEl) {
-        const isDark = document.documentElement.classList.contains('dark');
-        const bg = isDark ? '#0c0c0f' : '#ffffff';
-
-        // Ocultar botones de acción (Puntual/Tarde/Falta, menú 3 puntos y Copiar) para capturar solo la información de la tarjeta
-        const hiddenEls = Array.from(cardEl.querySelectorAll('[data-wa-hide]'));
-        const prevDisplays = hiddenEls.map((el) => el.style.display);
-        hiddenEls.forEach((el) => { el.style.display = 'none'; });
-
         try {
           blob = await toBlob(cardEl, {
             pixelRatio: 2,
             backgroundColor: bg,
             cacheBust: true,
+            skipFonts: true,
+            filter: (node) => !node?.dataset || node?.dataset?.waHide !== 'true',
             style: {
               transform: 'none',
               transition: 'none',
             }
           });
         } catch (imgErr) {
-          console.warn('toBlob fallback to html2canvas:', imgErr);
+          console.warn('toBlob failed, trying html2canvas:', imgErr);
+        }
+
+        // Si falló toBlob, intentar html2canvas
+        if (!blob) {
           try {
+            const hiddenEls = Array.from(cardEl.querySelectorAll('[data-wa-hide]'));
+            const prevDisplays = hiddenEls.map((el) => el.style.display);
+            hiddenEls.forEach((el) => { el.style.display = 'none'; });
+
             const canvas = await html2canvas(cardEl, {
               scale: 2,
               useCORS: true,
@@ -548,34 +742,93 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
               scrollY: 0,
             });
             blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+            hiddenEls.forEach((el, idx) => { el.style.display = prevDisplays[idx]; });
           } catch (h2cErr) {
             console.warn('html2canvas failed:', h2cErr);
           }
-        } finally {
-          hiddenEls.forEach((el, idx) => { el.style.display = prevDisplays[idx]; });
         }
       }
 
-      const defaultText = "Buenas, informacion sobre este docente aun no llega, su apoyo porfavor.";
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+      // 2. Si DOM falló o no existe el elemento, usar generador Canvas 100% fiable
+      if (!blob) {
+        try {
+          blob = await generateCardCanvas(item, isDark);
+        } catch (canvasErr) {
+          console.warn('Canvas generator fallback failed:', canvasErr);
+        }
+      }
+
+      const pLabel = formatPeriodoDisplay(item.periodo);
+      const textMessage = `*CONTROL DOCENTE - ASISTENCIA*\n\n` +
+        `Buenas, información sobre este docente aún no llega, su apoyo por favor:\n\n` +
+        `👤 *Docente:* ${item.docente || 'S/D'}\n` +
+        `🏫 *Aula:* ${item.aula || 'S/A'} (${item.pisoPabellon || 'Campus'})\n` +
+        `⏰ *Horario:* ${item.horaInicioProg || ''} - ${item.horaFinalProg || ''}\n` +
+        `🔢 *NRC:* ${item.nrc || 'S/N'}${pLabel ? ` (${pLabel})` : ''}\n` +
+        `📚 *Curso:* ${item.curso || 'S/C'}\n` +
+        (item.carrera ? `🎓 *Carrera:* ${item.carrera}\n` : '') +
+        (item.observacion ? `⚠️ *Observación:* ${item.observacion}\n` : '') +
+        `\n_Enviado desde App Control Docente_`;
 
       if (blob) {
         const cleanDocente = (item.docente || 'docente').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 25);
         const fileName = `docente_${cleanDocente}_${item.aula || 'aula'}.png`;
-        const imageFile = new File([blob], fileName, { type: 'image/png' });
 
-        // 1. Mobile Share (Direct share to WhatsApp with attached image & text)
-        if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-          classOptionsFade.requestClose(() => setSelectedClassOptions(null));
-          await navigator.share({
-            files: [imageFile],
-            text: defaultText,
-            title: `Docente: ${item.docente || item.aula}`
-          });
-          return;
+        // A. Android Nativo (Capacitor) -> Envío directo con imagen adjunta en WhatsApp
+        if (isCapacitorNative()) {
+          try {
+            const reader = new FileReader();
+            const base64Data = await new Promise((resolve, reject) => {
+              reader.onloadend = () => {
+                const res = String(reader.result || '');
+                const commaIdx = res.indexOf(',');
+                resolve(commaIdx >= 0 ? res.slice(commaIdx + 1) : res);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+
+            const savedFile = await Filesystem.writeFile({
+              path: fileName,
+              data: base64Data,
+              directory: Directory.Cache
+            });
+
+            classOptionsFade.requestClose(() => setSelectedClassOptions(null));
+
+            await Share.share({
+              title: `Docente: ${item.docente || item.aula}`,
+              text: textMessage,
+              url: savedFile.uri,
+              dialogTitle: 'Compartir en WhatsApp'
+            });
+            return;
+          } catch (capShareErr) {
+            console.warn('Capacitor native share failed, falling back:', capShareErr);
+          }
         }
 
-        // 2. Desktop fallback (Clipboard copy + download + open WhatsApp)
+        // B. Web Share API para móviles en navegadores Chrome / Safari
+        const imageFile = new File([blob], fileName, { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+          classOptionsFade.requestClose(() => setSelectedClassOptions(null));
+          try {
+            await navigator.share({
+              files: [imageFile],
+              text: textMessage,
+              title: `Docente: ${item.docente || item.aula}`
+            });
+            return;
+          } catch (shareErr) {
+            if (shareErr.name !== 'AbortError') {
+              console.warn('navigator.share failed:', shareErr);
+            } else {
+              return; // Usuario canceló diálogo
+            }
+          }
+        }
+
+        // C. Desktop fallback (Copia al portapapeles para Ctrl+V + descarga + abre WhatsApp)
         let copied = false;
         try {
           if (navigator.clipboard && window.ClipboardItem) {
@@ -599,11 +852,12 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           setTimeout(() => URL.revokeObjectURL(dlUrl), 5000);
         }
 
-        setToastMessage(copied ? '📸 ¡Captura copiada! En WhatsApp presiona Ctrl + V para adjuntarla.' : '📥 Captura descargada para adjuntar en WhatsApp.');
-        setTimeout(() => setToastMessage(''), 4000);
+        setToastMessage(copied ? '📸 ¡Captura copiada! En WhatsApp presiona Ctrl + V para pegarla.' : '📥 Captura descargada para adjuntar en WhatsApp.');
+        setTimeout(() => setToastMessage(''), 4500);
       }
 
       classOptionsFade.requestClose(() => setSelectedClassOptions(null));
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMessage)}`;
       window.open(waUrl, '_blank');
     } catch (err) {
       console.error('Error sharing to WhatsApp:', err);
@@ -1099,12 +1353,13 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     let updates = {};
 
     if (isCurrentlyActive) {
-      // Toggle off -> Reset back to PENDIENTE
+      // Toggle off -> Reset back to PENDIENTE y limpiar observación (quita CLASE REMOTA / CLASE ADELANTADA)
       updates = {
         asistencia: 'PENDIENTE',
         puntualidad: '',
         horaInicioReal: '',
-        horaFinalReal: ''
+        horaFinalReal: '',
+        observacion: ''
       };
     } else if (targetStatus === 'PUNTUAL') {
       updates = {
@@ -1113,6 +1368,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         horaInicioReal: item.horaInicioProg || getCurrentTimeStr(),
         horaFinalReal: item.horaFinalProg || item.horaFinalReal || ''
       };
+      if (item.observacion === 'CLASE REMOTA' || item.observacion === 'CLASE ADELANTADA') {
+        updates.observacion = '';
+      }
     } else if (targetStatus === 'TARDE') {
       updates = {
         asistencia: 'SI',
@@ -1120,6 +1378,9 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         horaInicioReal: getCurrentTimeStr(),
         horaFinalReal: item.horaFinalProg || item.horaFinalReal || ''
       };
+      if (item.observacion === 'CLASE REMOTA' || item.observacion === 'CLASE ADELANTADA') {
+        updates.observacion = '';
+      }
     } else if (targetStatus === 'FALTA') {
       updates = {
         asistencia: 'NO',
@@ -1127,6 +1388,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         horaInicioReal: '-',
         horaFinalReal: '-'
       };
+      // Si se presiona el botón normal de Falta, no debe conservar CLASE REMOTA previa
+      if (item.observacion === 'CLASE REMOTA' || item.observacion === 'CLASE ADELANTADA') {
+        updates.observacion = '';
+      }
     }
 
     setData(prev => prev.map(c => (c.id === item.id ? { ...c, ...updates } : c)));
@@ -2024,6 +2289,23 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md">
                       {item.pisoPabellon || 'Campus'}
                     </span>
+                    {(() => {
+                      const pLabel = formatPeriodoDisplay(item.periodo);
+                      if (!pLabel) return null;
+                      const isWA = pLabel === 'WA';
+                      return (
+                        <span
+                          className={`font-mono font-black text-[10px] px-1.5 py-0.5 rounded-md border tracking-tight shrink-0 ${
+                            isWA
+                              ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
+                              : 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800'
+                          }`}
+                          title={`Programa: ${isWA ? 'Working Adult (WA)' : 'Pregrado (UG)'} (Excel: ${item.periodo || ''})`}
+                        >
+                          {pLabel}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -2225,7 +2507,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                 </span>
                 <div className="min-w-0">
                   <div className="text-xs font-black text-slate-900 dark:text-white break-words leading-tight">{activeOptions.docente}</div>
-                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {activeOptions.nrc} · {activeOptions.curso}{activeOptions.carrera ? ' · ' + activeOptions.carrera : ''}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono break-words mt-0.5">NRC {activeOptions.nrc}{activeOptions.periodo ? ` (${formatPeriodoDisplay(activeOptions.periodo)})` : ''} · {activeOptions.curso}{activeOptions.carrera ? ' · ' + activeOptions.carrera : ''}</div>
                 </div>
               </div>
               <button

@@ -42,7 +42,10 @@ function markNotifiedToday(blockId) {
 export async function requestNotificationPermission() {
   if (isCapacitorNative()) {
     try {
-      const res = await LocalNotifications.requestPermissions();
+      let res = await LocalNotifications.checkPermissions();
+      if (res.display !== 'granted') {
+        res = await LocalNotifications.requestPermissions();
+      }
       return res.display === 'granted';
     } catch (err) {
       console.warn('[Notifier] LocalNotifications permission error:', err);
@@ -70,15 +73,14 @@ async function scheduleNativeAlarms() {
   if (!isCapacitorNative()) return;
 
   try {
-    // Configurar canal de alta prioridad con sonido y vibración en Android
+    // Configurar canal de alta prioridad con sonido por defecto y vibración en Android
     await LocalNotifications.createChannel({
       id: 'upn_cambio_clases',
       name: 'Cambio de Clases UPN',
       description: 'Alertas 10 minutos antes del inicio de cada bloque horario',
       importance: 5,
       visibility: 1,
-      vibration: true,
-      sound: 'beep.wav'
+      vibration: true
     });
 
     const now = new Date();
@@ -98,8 +100,7 @@ async function scheduleNativeAlarms() {
           title: `🔔 Próximo Turno en 10 min (${block.start})`,
           body: `El bloque ${block.label} inicia en 10 minutos. Revisa las aulas asignadas y ronda docente.`,
           schedule: { at: notifDate, allowWhileIdle: true },
-          channelId: 'upn_cambio_clases',
-          smallIcon: 'ic_launcher_round'
+          channelId: 'upn_cambio_clases'
         });
       }
     }
@@ -197,10 +198,48 @@ function fireWebNotification(block) {
 }
 
 /**
- * Envía una notificación de prueba directa para verificar en Windows 10/11
+ * Envía una notificación de prueba directa para verificar en Android APK o Windows/Web
  */
 export async function sendTestDesktopNotification() {
   playNotificationChime();
+
+  // 1. Android Nativo (Capacitor)
+  if (isCapacitorNative()) {
+    try {
+      let perm = await LocalNotifications.checkPermissions();
+      if (perm.display !== 'granted') {
+        perm = await LocalNotifications.requestPermissions();
+      }
+      if (perm.display !== 'granted') {
+        return { success: false, reason: 'denied' };
+      }
+      await LocalNotifications.createChannel({
+        id: 'upn_cambio_clases',
+        name: 'Cambio de Clases UPN',
+        description: 'Alertas 10 minutos antes del inicio de cada bloque horario',
+        importance: 5,
+        visibility: 1,
+        vibration: true
+      });
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 99999,
+            title: '🔔 UPN Control Docente · Alerta Activa',
+            body: '¡Notificaciones funcionando en tu teléfono! Recibirás avisos sonoros 10 min antes de cada clase.',
+            channelId: 'upn_cambio_clases',
+            schedule: { at: new Date(Date.now() + 500) }
+          }
+        ]
+      });
+      return { success: true };
+    } catch (e) {
+      console.warn('Local notification test error:', e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  // 2. Web / Desktop (Windows 10/11)
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return { success: false, reason: 'unsupported' };
   }
@@ -217,7 +256,7 @@ export async function sendTestDesktopNotification() {
   try {
     const title = '🔔 UPN Control Docente · Alerta de Turno';
     const options = {
-      body: '¡Notificaciones activadas en Windows 10/11! Recibirás avisos sonoros y en pantalla 10 min antes de cada clase.',
+      body: '¡Notificaciones activadas! Recibirás avisos sonoros y en pantalla 10 min antes de cada clase.',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
       tag: 'upn_test_alert',
@@ -256,11 +295,33 @@ function checkScheduleTick() {
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
   for (const block of CLASS_BLOCKS) {
-    // Si estamos en la ventana de 10 a 8 minutos antes del inicio y no se ha notificado hoy
+    // Si estamos en la ventana de 10 a 0 minutos antes del inicio y no se ha notificado hoy
     const diff = block.startMins - currentMins;
     if (diff > 0 && diff <= 10 && !hasBeenNotifiedToday(block.id)) {
       markNotifiedToday(block.id);
-      fireWebNotification(block);
+
+      // Disparar en Android APK vía LocalNotifications
+      if (isCapacitorNative()) {
+        try {
+          LocalNotifications.schedule({
+            notifications: [
+              {
+                id: 2000 + block.id,
+                title: `🔔 Próximo Turno en ${diff} min (${block.start})`,
+                body: `El bloque ${block.label} inicia en ${diff} minutos. Revisa las aulas asignadas y ronda docente.`,
+                channelId: 'upn_cambio_clases',
+                schedule: { at: new Date(Date.now() + 500) }
+              }
+            ]
+          }).catch(e => console.warn('Native notification tick error:', e));
+        } catch (err) {
+          console.warn('Native schedule tick exception:', err);
+        }
+      } else {
+        fireWebNotification(block);
+      }
+
+      playNotificationChime();
 
       // Despachar evento para Toast / Banner visual en la interfaz de la app
       if (typeof window !== 'undefined') {
