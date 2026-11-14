@@ -177,6 +177,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoomPickerOpen, setIsRoomPickerOpen] = useState(false);
   const [selectedAulas, setSelectedAulas] = useState([]);
+  const [isMultiRoomMode, setIsMultiRoomMode] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerCategory, setPickerCategory] = useState('ALL'); // 'ALL' | 'AULA' | 'LABORATORIO' | 'TALLER' | 'ESPECIAL'
   const [pickerPabellon, setPickerPabellon] = useState(''); // '' | 'A' | 'B'
@@ -185,6 +186,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   const reservationModalFade = useFadeModal(isModalOpen, () => {
     setIsModalOpen(false);
+    resetForm();
     if (onConsumeTrigger) onConsumeTrigger();
   }, 200);
 
@@ -657,10 +659,18 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const isFree = freeRoomsForModalTime.some(r => r.abrv === rmAbrv);
     if (!isFree) return;
     setSelectedAulas(prev => {
-      if (prev.includes(rmAbrv)) {
-        return prev.filter(a => a !== rmAbrv);
+      if (isMultiRoomMode) {
+        if (prev.includes(rmAbrv)) {
+          return prev.filter(a => a !== rmAbrv);
+        } else {
+          return [...prev, rmAbrv];
+        }
       } else {
-        return [...prev, rmAbrv];
+        // En modo estándar de aula única: selecciona únicamente esta aula y deselecciona cualquier otra previa
+        if (prev.length === 1 && prev[0] === rmAbrv) {
+          return [];
+        }
+        return [rmAbrv];
       }
     });
   };
@@ -793,31 +803,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       ubicacion: '',
       docente: '',
       detalle: '',
+      motivo: '',
       usuario: getLoggedAssistantName(),
       prioridad: 'NORMAL'
     });
     setSelectedAulas([]);
+    setIsMultiRoomMode(false);
     setDocenteSuggestionsOpen(false);
   };
 
-  const handleOpenReserveForFreeRoom = (room) => {
-    const target = activeDayInfo || upcomingDays[0];
-    const blockObj = REAL_BLOCKS.find(b => b.start === selectedHoraBlock) || REAL_BLOCKS.find(b => b.start === getCurrentHourBlock()) || REAL_BLOCKS[0];
-    setFormData({
-      fecha: target.fecha,
-      mes: target.mesName,
-      dia: target.diaName,
-      inicio: blockObj.start,
-      final: blockObj.end,
-      aulas: [room.abrv],
-      aula: room.abrv,
-      ubicacion: room.piso ? `${room.piso} - ${room.pabellon}` : (deducePisoFromAula(room.abrv) || 'SEDE'),
-      docente: '',
-      detalle: '',
-      usuario: getLoggedAssistantName(),
-      prioridad: 'NORMAL'
-    });
-    setSelectedAulas([room.abrv]);
+  const handleOpenReserveForFreeRoom = () => {
+    resetForm();
     setIsModalOpen(true);
   };
 
@@ -1569,8 +1565,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 return (
                   <div
                     key={room.abrv}
-                    onClick={() => handleOpenReserveForFreeRoom(room)}
-                    className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-150 active:scale-98 group"
+                    className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between transition-all duration-150 group"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-1.5 mb-2">
@@ -1615,11 +1610,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenReserveForFreeRoom(room);
-                      }}
-                      className="w-full mt-2.5 h-8 bg-amber-400 hover:bg-[#FDBA30] active:bg-amber-500 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs"
+                      onClick={() => handleOpenReserveForFreeRoom()}
+                      className="w-full mt-2.5 h-8 bg-amber-400 hover:bg-[#FDBA30] active:bg-amber-500 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       <CalendarPlus className="w-3.5 h-3.5 stroke-[2.4]" />
                       <span>Reservar {activeDayInfo.offset === 0 ? 'Hoy' : activeDayInfo.diaShort}</span>
@@ -1890,6 +1882,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   onClick={() => {
                     const currentRooms = getReservationRooms(formData);
                     setSelectedAulas(currentRooms);
+                    setIsMultiRoomMode(currentRooms.length > 1);
                     setPickerSearch('');
                     setIsRoomPickerOpen(true);
                   }}
@@ -1934,6 +1927,25 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     })()}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {getReservationRooms(formData).length > 0 && (
+                      <span
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData(prev => ({
+                            ...prev,
+                            aulas: [],
+                            aula: '',
+                            ubicacion: ''
+                          }));
+                          setSelectedAulas([]);
+                        }}
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
+                        title="Quitar aula seleccionada"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </span>
+                    )}
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                       Elegir
                     </span>
@@ -2230,30 +2242,61 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
               </div>
 
-              {/* Barra de Acciones Rápidas de Selección Múltiple */}
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const allVisible = pickerFilteredRooms.map(rm => rm.abrv);
-                      setSelectedAulas(prev => Array.from(new Set([...prev, ...allVisible])));
-                    }}
-                    className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline px-1.5 py-0.5 rounded-md hover:bg-amber-500/10 transition cursor-pointer"
-                  >
-                    + Seleccionar todas ({pickerFilteredRooms.length})
-                  </button>
+              {/* Barra de Acciones Rápidas con Selector de Modo Única / Múltiple */}
+              <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Selector de Modo: Aula Única (default) vs Múltiples */}
+                  <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMultiRoomMode(false);
+                        if (selectedAulas.length > 1) {
+                          setSelectedAulas(selectedAulas.slice(0, 1));
+                        }
+                      }}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                        !isMultiRoomMode
+                          ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-2xs font-black'
+                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800'
+                      }`}
+                    >
+                      Aula Única
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsMultiRoomMode(true)}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                        isMultiRoomMode
+                          ? 'bg-amber-400 text-slate-950 shadow-2xs font-black'
+                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800'
+                      }`}
+                    >
+                      Múltiples
+                    </button>
+                  </div>
+
+                  {isMultiRoomMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allVisible = pickerFilteredRooms.map(rm => rm.abrv);
+                        setSelectedAulas(prev => Array.from(new Set([...prev, ...allVisible])));
+                      }}
+                      className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline px-1.5 py-0.5 rounded-md hover:bg-amber-500/10 transition cursor-pointer"
+                    >
+                      + Todas ({pickerFilteredRooms.length})
+                    </button>
+                  )}
+
                   {selectedAulas.length > 0 && (
-                    <>
-                      <span className="text-slate-300 dark:text-zinc-700">·</span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAulas([])}
-                        className="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-zinc-200 px-1.5 py-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
-                      >
-                        Limpiar selección
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAulas([])}
+                      className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline px-1.5 py-0.5 rounded-md hover:bg-rose-500/10 transition cursor-pointer"
+                    >
+                      Desmarcar todas
+                    </button>
                   )}
                 </div>
                 <div className="text-[10px] font-mono font-black text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md shrink-0">

@@ -9,21 +9,30 @@ import {
   RefreshCw,
   Sparkles
 } from 'lucide-react';
-import { triggerDirectApkInstall, AppInstaller } from '../utils/appUpdateChecker';
+import { triggerDirectApkInstall, AppInstaller, APP_CURRENT_VERSION, APP_CURRENT_BUILD } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
 import { useFadeModal } from '../utils/useFadeModal';
 
 export default function AppUpdateModal({ updateInfo, onClose }) {
   const isAvailable = Boolean(isCapacitorNative() && updateInfo && updateInfo.isAvailable);
-  const fade = useFadeModal(isAvailable, onClose, 220);
-  const info = fade.cachedData || updateInfo;
+  const fade = useFadeModal(isAvailable ? updateInfo : null, onClose, 220);
+  const rawInfo = (fade.cachedData && typeof fade.cachedData === 'object') ? fade.cachedData : (updateInfo && typeof updateInfo === 'object' ? updateInfo : {});
+
+  // Extraer valores con respaldo garantizado para que NUNCA salga solo "v"
+  const currentVer = rawInfo.currentVersion || APP_CURRENT_VERSION || '1.0.0';
+  const currentBld = parseInt(rawInfo.currentBuild, 10) || APP_CURRENT_BUILD || 1;
+  const latestVer = rawInfo.latestVersion || rawInfo.version || currentVer;
+  const latestBld = parseInt(rawInfo.latestBuild || rawInfo.versionCode, 10) || (currentBld + 1);
+  const infoNotes = rawInfo.notes || 'Mejoras de rendimiento y estabilidad.';
+  const isForceUpdate = Boolean(rawInfo.forceUpdate);
+  const targetApkUrl = rawInfo.apkUrl || 'https://control-doc.pages.dev/control-doc.apk';
 
   const [downloading, setDownloading] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
   const [progress, setProgress] = useState(0);
 
   // El popup de actualización SOLO se debe mostrar en la app nativa (APK Android)
-  if (!isCapacitorNative() || !fade.shouldRender || !info) return null;
+  if (!isCapacitorNative() || !fade.shouldRender) return null;
 
   const handleUpdate = async () => {
     if (progress >= 100) {
@@ -40,7 +49,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
     setDownloading(true);
     setProgress(5);
     setDownloadStarted(true);
-    const apkUrl = info.apkUrl || 'https://control-doc.pages.dev/control-doc.apk';
+    const apkUrl = targetApkUrl;
 
     try {
       await triggerDirectApkInstall(apkUrl, (data) => {
@@ -58,7 +67,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
     <div
       className={`fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none ${fade.backdropClass}`}
       onClick={() => {
-        if (!info.forceUpdate && !downloading) fade.requestClose();
+        if (!isForceUpdate && !downloading) fade.requestClose();
       }}
     >
       <div
@@ -76,12 +85,12 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
                 Actualización Disponible
               </span>
               <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
-                Control Docente v{info.latestVersion}
+                Control Docente v{latestVer}
               </h2>
             </div>
           </div>
 
-          {!info.forceUpdate && (
+          {!isForceUpdate && (
             <button
               type="button"
               onClick={() => fade.requestClose()}
@@ -104,10 +113,10 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
               </span>
             </div>
             <div className="font-mono font-bold text-slate-800 dark:text-zinc-200 text-xs truncate">
-              v{info.currentVersion || '1.0.0'}
+              v{currentVer}
             </div>
             <div className="text-[10px] font-mono text-slate-500 dark:text-zinc-400">
-              Compilación <span className="font-bold text-slate-700 dark:text-zinc-300">#{info.currentBuild || 1}</span>
+              Compilación <span className="font-bold text-slate-700 dark:text-zinc-300">#{currentBld}</span>
             </div>
           </div>
 
@@ -125,23 +134,23 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             </div>
             <div className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-xs truncate">
-              v{info.latestVersion}
+              v{latestVer}
             </div>
             <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
-              Compilación <span className="font-black text-emerald-700 dark:text-emerald-300">#{info.latestBuild}</span>
+              Compilación <span className="font-black text-emerald-700 dark:text-emerald-300">#{latestBld}</span>
             </div>
           </div>
         </div>
 
         {/* Novedades del cambio */}
-        {info.notes && (
+        {infoNotes && (
           <div className="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1">
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
               <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
               <span>Novedades del cambio</span>
             </div>
             <p className="text-[11px] text-slate-700 dark:text-zinc-300 leading-relaxed break-words">
-              {info.notes}
+              {infoNotes}
             </p>
           </div>
         )}
