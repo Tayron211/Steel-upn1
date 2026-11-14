@@ -9,7 +9,7 @@ import {
   RefreshCw,
   Sparkles
 } from 'lucide-react';
-import { triggerDirectApkInstall, AppInstaller, APP_CURRENT_VERSION, APP_CURRENT_BUILD } from '../utils/appUpdateChecker';
+import { triggerDirectApkInstall, AppInstaller, APP_CURRENT_VERSION } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
 import { useFadeModal } from '../utils/useFadeModal';
 
@@ -18,11 +18,9 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
   const fade = useFadeModal(isAvailable ? updateInfo : null, onClose, 220);
   const rawInfo = (fade.cachedData && typeof fade.cachedData === 'object') ? fade.cachedData : (updateInfo && typeof updateInfo === 'object' ? updateInfo : {});
 
-  // Extraer valores con respaldo garantizado para que NUNCA salga solo "v"
+  // Extraer versiones con respaldo garantizado
   const currentVer = rawInfo.currentVersion || APP_CURRENT_VERSION || '1.0.0';
-  const currentBld = parseInt(rawInfo.currentBuild, 10) || APP_CURRENT_BUILD || 1;
   const latestVer = rawInfo.latestVersion || rawInfo.version || currentVer;
-  const latestBld = parseInt(rawInfo.latestBuild || rawInfo.versionCode, 10) || (currentBld + 1);
   const infoNotes = rawInfo.notes || 'Mejoras de rendimiento y estabilidad.';
   const isForceUpdate = Boolean(rawInfo.forceUpdate);
   const targetApkUrl = rawInfo.apkUrl || 'https://control-doc.pages.dev/control-doc.apk';
@@ -102,21 +100,18 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           )}
         </div>
 
-        {/* Comparación Visual con Flecha Central: Anterior (Instalada) -> Siguiente (Disponible) */}
-        <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-zinc-900/90 p-3 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
-          {/* Versión y Compilación Anterior */}
+        {/* Comparación Visual de Versión: Anterior (Instalada) -> Siguiente (Disponible) */}
+        <div className="flex items-center justify-between gap-3 bg-slate-50 dark:bg-zinc-900/90 p-3.5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
+          {/* Versión Anterior */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
+            <div className="flex items-center gap-1.5 mb-1">
               <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500"></span>
-              <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                 Instalada
               </span>
             </div>
-            <div className="font-mono font-bold text-slate-800 dark:text-zinc-200 text-xs truncate">
+            <div className="font-mono font-black text-slate-800 dark:text-zinc-200 text-sm truncate">
               v{currentVer}
-            </div>
-            <div className="text-[10px] font-mono text-slate-500 dark:text-zinc-400">
-              Compilación <span className="font-bold text-slate-700 dark:text-zinc-300">#{currentBld}</span>
             </div>
           </div>
 
@@ -125,19 +120,16 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
             <ArrowRight className="w-4 h-4 stroke-[2.6]" />
           </div>
 
-          {/* Versión y Compilación Siguiente */}
+          {/* Versión Siguiente */}
           <div className="flex-1 min-w-0 text-right">
-            <div className="flex items-center justify-end gap-1.5 mb-0.5">
-              <span className="text-[9.5px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center justify-end gap-1.5 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                 Disponible
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             </div>
-            <div className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-xs truncate">
+            <div className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm truncate">
               v{latestVer}
-            </div>
-            <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
-              Compilación <span className="font-black text-emerald-700 dark:text-emerald-300">#{latestBld}</span>
             </div>
           </div>
         </div>

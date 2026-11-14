@@ -1,8 +1,8 @@
 {
-  "version": "1.0.14",
-  "versionCode": 15,
+  "version": "1.0.15",
+  "versionCode": 16,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.14 - Sin preseleccion de aulas y modo aula unica por defecto",
+  "notes": "v1.0.15 - Mostrar unicamente version sin numero de compilacion en popup de actualizacion",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
