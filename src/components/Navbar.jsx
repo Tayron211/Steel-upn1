@@ -18,6 +18,7 @@ import {
   Share,
   Sparkles,
   RotateCw,
+  CheckCircle2,
   X
 } from 'lucide-react';
 import { checkAppVersion, APP_CURRENT_VERSION, triggerDirectApkInstall } from '../utils/appUpdateChecker';
@@ -46,6 +47,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIos, setIsIos] = useState(false);
   const [showIosModal, setShowIosModal] = useState(false);
+  const [updateStatusModal, setUpdateStatusModal] = useState(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   useEffect(() => {
     const isIosDevice = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -292,20 +295,36 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       {/* Buscar Actualización (Línea Delgada) */}
                       <button
                         type="button"
+                        disabled={checkingUpdate}
                         onClick={async () => {
                           setUserMenuOpen(false);
-                          const res = await checkAppVersion(true);
-                          if (res && !res.isAvailable) {
-                            alert(`Tu aplicación está al día con la última versión oficial (v${res.currentVersion} Build ${res.currentBuild}).`);
-                          } else if (res && !res.isNative && res.isAvailable) {
-                            alert(`Hay una nueva versión disponible (v${res.latestVersion}). En la versión web los cambios se cargan automáticamente al refrescar la página.`);
+                          setCheckingUpdate(true);
+                          try {
+                            const res = await checkAppVersion(true);
+                            if (res && !res.isAvailable) {
+                              setUpdateStatusModal({
+                                type: 'up-to-date',
+                                version: res.currentVersion,
+                                build: res.currentBuild,
+                                isNative: res.isNative
+                              });
+                            } else if (res && !res.isNative && res.isAvailable) {
+                              setUpdateStatusModal({
+                                type: 'web-cloud',
+                                version: res.latestVersion,
+                                build: res.latestBuild,
+                                isNative: false
+                              });
+                            }
+                          } finally {
+                            setCheckingUpdate(false);
                           }
                         }}
-                        className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-500 dark:text-zinc-400 text-[10.5px] font-medium transition active:scale-95 cursor-pointer group"
+                        className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-500 dark:text-zinc-400 text-[10.5px] font-medium transition active:scale-95 cursor-pointer group disabled:opacity-50"
                       >
                         <div className="flex items-center gap-1.5">
-                          <RotateCw className="w-3 h-3 text-amber-500 group-hover:rotate-180 transition-transform duration-300 shrink-0" />
-                          <span>Buscar actualización</span>
+                          <RotateCw className={`w-3 h-3 text-amber-500 shrink-0 ${checkingUpdate ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`} />
+                          <span>{checkingUpdate ? 'Verificando...' : 'Buscar actualización'}</span>
                         </div>
                         <span className="font-mono text-[9.5px] text-slate-400 dark:text-zinc-500 font-semibold">v{APP_CURRENT_VERSION}</span>
                       </button>
@@ -485,6 +504,52 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
             </button>
           </div>
         </div>
+      )}
+
+      {/* Modal estilizado UPN para estado de actualización */}
+      {updateStatusModal && createPortal(
+        <div 
+          className="fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fade-in"
+          onClick={() => setUpdateStatusModal(null)}
+        >
+          <div 
+            className="bg-white dark:bg-[#0c0c10] border-2 border-emerald-500/80 dark:border-emerald-500/60 rounded-2xl p-4 sm:p-5 max-w-xs w-full shadow-[0_16px_50px_rgba(16,185,129,0.25)] space-y-3.5 animate-scale-up text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center shadow-md shadow-emerald-500/25 shrink-0">
+              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[9.5px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700/60 inline-block">
+                {updateStatusModal.type === 'web-cloud' ? 'Nube Cloudflare' : 'Sistema al Día'}
+              </span>
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
+                {updateStatusModal.type === 'web-cloud' ? 'Versión Web Actualizada' : 'Aplicación al Día'}
+              </h3>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-slate-800 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-900 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>v{updateStatusModal.version} (Build {updateStatusModal.build})</span>
+            </div>
+
+            <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed px-1">
+              {updateStatusModal.type === 'web-cloud'
+                ? 'La versión web oficial se actualiza automáticamente desde la nube con cada cambio.'
+                : 'Cuentas con la última versión oficial instalada. Todas las funciones de control y sincronización están activas.'}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setUpdateStatusModal(null)}
+              className="w-full h-9 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 font-black text-xs tracking-tight transition active:scale-95 shadow-md shadow-amber-500/20 cursor-pointer"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );
