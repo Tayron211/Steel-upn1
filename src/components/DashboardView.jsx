@@ -378,7 +378,7 @@ export default function DashboardView() {
           id: `asist_imp_${r}`,
           pisoPabellon: colPisoPab >= 0 && row[colPisoPab] ? String(row[colPisoPab]).trim() : (row[0] ? String(row[0]).trim() : ''),
           sede: colSede >= 0 && row[colSede] ? String(row[colSede]).trim() : 'Comas',
-          periodo: colPeriodo >= 0 && row[colPeriodo] ? String(row[colPeriodo]).trim() : '2026-2',
+          periodo: colPeriodo >= 0 && row[colPeriodo] ? String(row[colPeriodo]).trim() : (row[1] ? String(row[1]).trim() : '226434'),
           dia: diaVal,
           horaInicioProg: horaIniVal,
           horaFinalProg: horaFinVal,

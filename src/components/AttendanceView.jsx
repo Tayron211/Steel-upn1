@@ -232,7 +232,7 @@ export const generateCardCanvas = async (item, isDark = false) => {
   ctx.textAlign = 'center';
   ctx.fillStyle = isDark ? '#52525b' : '#94a3b8';
   ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('CONTROL DOCENTE UTP · REPORTE RÁPIDO', width / 2, height - 20);
+  ctx.fillText('CONTROL DOCENTE UPN · REPORTE RÁPIDO', width / 2, height - 20);
 
   return new Promise((resolve) => {
     canvas.toBlob(resolve, 'image/png');

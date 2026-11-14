@@ -1,8 +1,8 @@
 {
-  "version": "1.0.19",
-  "versionCode": 20,
+  "version": "1.0.20",
+  "versionCode": 21,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.19 - Notificaciones push en segundo plano garantizadas en Android",
+  "notes": "v1.0.20 - Soporte WA y UG en tarjetas, desmarcar falta limpia clase remota, captura nativa para WhatsApp y optimizaciones",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
