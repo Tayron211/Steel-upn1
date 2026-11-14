@@ -16,8 +16,10 @@ import {
   Download,
   Smartphone,
   Share,
+  Sparkles,
   X
 } from 'lucide-react';
+import { checkAppVersion, APP_CURRENT_VERSION } from '../utils/appUpdateChecker';
 import UpnLogo from './UpnLogo';
 import OneDriveSyncModal from './OneDriveSyncModal';
 import { useFadeModal } from '../utils/useFadeModal';
@@ -298,6 +300,25 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded-md bg-amber-200 dark:bg-amber-800/80 text-amber-950 dark:text-amber-100">
                           PWA
                         </span>
+                      </button>
+
+                      {/* Botón de Comprobación Manual de Actualizaciones */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setUserMenuOpen(false);
+                          const res = await checkAppVersion();
+                          if (res && !res.isAvailable) {
+                            alert(`Tu aplicación está al día con la última versión oficial (v${res.currentVersion} Build ${res.currentBuild}).`);
+                          }
+                        }}
+                        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 text-[11px] font-semibold transition active:scale-95 group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Buscar Actualización</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500">v{APP_CURRENT_VERSION}</span>
                       </button>
                     </div>
                   </div>

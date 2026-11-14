@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:apk": "vite build && npx cap copy android && cd android && gradlew.bat assembleDebug && cd .. && copy /Y android\\app\\build\\outputs\\apk\\debug\\app-debug.apk public\\control-doc.apk",
+    "release:apk": "node scripts/publish_apk.js",
     "deploy": "vite build && wrangler pages deploy dist --project-name=control-doc --branch=main",
     "sync": "vite build && git add . && git commit -m \"chore: actualizacion de sistema\" && git push origin main && wrangler pages deploy dist --project-name=control-doc --branch=main",
     "sync:data": "node scripts/sync_data.cjs",

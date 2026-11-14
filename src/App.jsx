@@ -18,6 +18,8 @@ import {
 } from './utils/liveExcelSync';
 import { applyAdaptiveStatusBar, hideSplashScreenSmoothly } from './utils/statusBarHelper';
 import { initScheduleNotifier } from './utils/scheduleNotifier';
+import { initAppUpdateChecker } from './utils/appUpdateChecker';
+import AppUpdateModal from './components/AppUpdateModal';
 
 const TABS = ['attendance', 'operations', 'tickets', 'dashboard'];
 
@@ -105,20 +107,31 @@ export default function App() {
   });
 
   const [shiftAlert, setShiftAlert] = useState(null);
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [updateModalDismissed, setUpdateModalDismissed] = useState(false);
 
-  // Inicialización de Notificaciones y adaptación inicial de Status Bar
+  // Inicialización de Notificaciones, Actualizaciones y adaptación inicial de Status Bar
   useEffect(() => {
     hideSplashScreenSmoothly();
     const cleanupNotifier = initScheduleNotifier();
+    const cleanupChecker = initAppUpdateChecker();
 
     const handleShiftAlert = (e) => {
       setShiftAlert(e.detail?.block);
     };
     window.addEventListener('upn:class-block-warning', handleShiftAlert);
 
+    const handleUpdateAvailable = (e) => {
+      setUpdateInfo(e.detail);
+      setUpdateModalDismissed(false);
+    };
+    window.addEventListener('upn:app-update-available', handleUpdateAvailable);
+
     return () => {
       cleanupNotifier();
+      cleanupChecker();
       window.removeEventListener('upn:class-block-warning', handleShiftAlert);
+      window.removeEventListener('upn:app-update-available', handleUpdateAvailable);
     };
   }, []);
 
@@ -589,6 +602,12 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Popup de Actualización de APK Nativa y WebApp */}
+      <AppUpdateModal
+        updateInfo={updateModalDismissed ? null : updateInfo}
+        onClose={() => setUpdateModalDismissed(true)}
+      />
 
       {/* Floating Action Speed Dial (FAB) visible en todas las páginas */}
       <FloatingActionMenu
