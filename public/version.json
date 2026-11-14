@@ -1,8 +1,8 @@
 {
-  "version": "1.0.2",
-  "versionCode": 3,
+  "version": "1.0.3",
+  "versionCode": 4,
   "releaseDate": "2026-11-14",
-  "notes": "Nueva versión oficial con icono institucional UPN, descarga e instalación automática directa y mejoras visuales.",
+  "notes": "Prueba de actualizacion automatica v1.0.3",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
