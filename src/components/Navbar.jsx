@@ -186,8 +186,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className={`h-9 px-3 sm:px-3.5 rounded-full flex items-center gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${userMenuOpen
-                      ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-2 ring-amber-400/30'
-                      : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-amber-200/80 dark:border-zinc-800 text-amber-950 dark:text-zinc-100'
+                    ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-2 ring-amber-400/30'
+                    : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-amber-200/80 dark:border-zinc-800 text-amber-950 dark:text-zinc-100'
                     }`}
                   title="Opciones de cuenta y sistema"
                 >
@@ -355,10 +355,10 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                     if (document.body) document.body.scrollTop = 0;
                   }}
                   className={`relative z-10 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer ${isActive
-                      ? desktopNavSlide.pillStyle.opacity === 0
-                        ? 'bg-[#FDBA30] text-slate-950 font-extrabold shadow-[0_2px_10px_rgba(253,186,48,0.35)]'
-                        : 'text-slate-950 font-extrabold'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? desktopNavSlide.pillStyle.opacity === 0
+                      ? 'bg-[#FDBA30] text-slate-950 font-extrabold shadow-[0_2px_10px_rgba(253,186,48,0.35)]'
+                      : 'text-slate-950 font-extrabold'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                 >
                   <Icon className={`w-4 h-4 stroke-[2.2] shrink-0 transition-colors ${isActive ? 'text-slate-950 stroke-[2.5]' : 'text-slate-500 dark:text-zinc-400'}`} />
@@ -418,14 +418,14 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 >
                   <Icon
                     className={`w-5 h-5 transition-transform duration-200 ${isActive
-                        ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs'
-                        : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white stroke-[2]'
+                      ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs'
+                      : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white stroke-[2]'
                       }`}
                   />
                   <span
                     className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${isActive
-                        ? 'font-black text-slate-950'
-                        : 'font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
+                      ? 'font-black text-slate-950'
+                      : 'font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                   >
                     {item.label}
@@ -434,8 +434,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   {item.badge !== undefined && item.badge > 0 && (
                     <span
                       className={`absolute top-0.5 right-2 min-w-4 h-4 px-1 flex items-center justify-center rounded-full text-[9px] font-black transition-all duration-200 shadow-xs ring-1 ring-white/70 ${isActive
-                          ? 'bg-slate-950 text-[#FDBA30]'
-                          : 'bg-rose-500 text-white animate-pulse'
+                        ? 'bg-slate-950 text-[#FDBA30]'
+                        : 'bg-rose-500 text-white animate-pulse'
                         }`}
                     >
                       {item.badge}
@@ -505,11 +505,11 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
       {/* Modal estilizado UPN para estado de actualización - SOLO EN APK NATIVA con FADE */}
       {isCapacitorNative() && updateModalFade.shouldRender && createPortal(
-        <div 
+        <div
           className={`fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none ${updateModalFade.backdropClass}`}
           onClick={() => updateModalFade.requestClose()}
         >
-          <div 
+          <div
             className={`bg-white dark:bg-[#0c0c10] border-2 border-emerald-500/80 dark:border-emerald-500/60 rounded-2xl p-4 sm:p-5 max-w-xs w-full shadow-[0_16px_50px_rgba(16,185,129,0.25)] space-y-3.5 animate-scale-up text-center ${updateModalFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >

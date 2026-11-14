@@ -53,12 +53,12 @@ import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { isCapacitorNative } from '../utils/statusBarHelper';
 
-// Formateador visual de Periodo para tarjetas: 226434 -> WA, 226534 -> UG (Sin alterar Excel)
+// Formateador visual de Periodo para tarjetas: 226434 -> UG, 226534 -> WA (Sin alterar Excel)
 export const formatPeriodoDisplay = (val) => {
   if (!val) return '';
   const s = String(val).trim().toUpperCase();
-  if (s === '226434' || s.startsWith('226434') || s === 'WA') return 'WA';
-  if (s === '226534' || s.startsWith('226534') || s === 'UG') return 'UG';
+  if (s === '226434' || s.startsWith('226434') || s === 'UG') return 'UG';
+  if (s === '226534' || s.startsWith('226534') || s === 'WA') return 'WA';
   return s;
 };
 
@@ -758,17 +758,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
         }
       }
 
-      const pLabel = formatPeriodoDisplay(item.periodo);
-      const textMessage = `*CONTROL DOCENTE - ASISTENCIA*\n\n` +
-        `Buenas, información sobre este docente aún no llega, su apoyo por favor:\n\n` +
-        `👤 *Docente:* ${item.docente || 'S/D'}\n` +
-        `🏫 *Aula:* ${item.aula || 'S/A'} (${item.pisoPabellon || 'Campus'})\n` +
-        `⏰ *Horario:* ${item.horaInicioProg || ''} - ${item.horaFinalProg || ''}\n` +
-        `🔢 *NRC:* ${item.nrc || 'S/N'}${pLabel ? ` (${pLabel})` : ''}\n` +
-        `📚 *Curso:* ${item.curso || 'S/C'}\n` +
-        (item.carrera ? `🎓 *Carrera:* ${item.carrera}\n` : '') +
-        (item.observacion ? `⚠️ *Observación:* ${item.observacion}\n` : '') +
-        `\n_Enviado desde App Control Docente_`;
+      const textMessage = 'Buenas, información sobre este docente aún no llega, su apoyo por favor.';
 
       if (blob) {
         const cleanDocente = (item.docente || 'docente').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 25);

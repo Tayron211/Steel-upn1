@@ -1,8 +1,8 @@
 {
-  "version": "1.0.20",
-  "versionCode": 21,
+  "version": "1.0.22",
+  "versionCode": 23,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.20 - Soporte WA y UG en tarjetas, desmarcar falta limpia clase remota, captura nativa para WhatsApp y optimizaciones",
+  "notes": "v1.0.21 - Asignacion 226434 UG, 226534 WA y mensaje WhatsApp simplificado",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
