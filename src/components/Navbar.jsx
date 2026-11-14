@@ -19,10 +19,12 @@ import {
   Sparkles,
   RotateCw,
   CheckCircle2,
+  BellRing,
   X
 } from 'lucide-react';
 import { checkAppVersion, APP_CURRENT_VERSION, triggerDirectApkInstall } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
+import { sendTestDesktopNotification } from '../utils/scheduleNotifier';
 import UpnLogo from './UpnLogo';
 import OneDriveSyncModal from './OneDriveSyncModal';
 import { useFadeModal } from '../utils/useFadeModal';
@@ -51,6 +53,9 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [updateStatusModal, setUpdateStatusModal] = useState(null);
   const updateModalFade = useFadeModal(Boolean(isCapacitorNative() && updateStatusModal), () => setUpdateStatusModal(null), 200);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [desktopNotifPerm, setDesktopNotifPerm] = useState(() => {
+    return typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default';
+  });
 
   useEffect(() => {
     const isIosDevice = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -324,6 +329,49 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           </div>
                           <span className="font-mono text-[9.5px] text-slate-400 dark:text-zinc-500 font-semibold">v{APP_CURRENT_VERSION}</span>
                         </button>
+                      )}
+
+                      {/* Alertas de Cambio de Turno en Escritorio (Windows 10 y 11) */}
+                      {!isCapacitorNative() && typeof window !== 'undefined' && 'Notification' in window && (
+                        <div className="pt-0.5">
+                          {desktopNotifPerm === 'granted' ? (
+                            <div className="w-full flex items-center justify-between px-2 py-1 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-[10px]">
+                              <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                                <span>Alertas Windows Activas</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await sendTestDesktopNotification();
+                                }}
+                                className="text-[9.5px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                                title="Probar sonido y aviso de Windows 10/11"
+                              >
+                                Probar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const res = await sendTestDesktopNotification();
+                                if (res?.success) {
+                                  setDesktopNotifPerm('granted');
+                                }
+                              }}
+                              className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-800/60 text-amber-950 dark:text-amber-200 text-[10.5px] font-bold transition active:scale-95 cursor-pointer group shadow-2xs"
+                              title="Habilitar avisos sonoros y en pantalla en Windows 10/11"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <BellRing className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                                <span>Activar Alertas de Windows</span>
+                              </div>
+                              <span className="text-[8.5px] uppercase px-1 py-0.2 rounded bg-amber-200/80 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200 font-mono font-black">10 min</span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

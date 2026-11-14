@@ -576,7 +576,7 @@ export default function App() {
 
       {/* Alerta Visual Flotante de Cambio de Turno (10 min antes) */}
       {shiftAlert && (
-        <div className="fixed top-18 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] animate-bounce-short shadow-2xl pointer-events-auto">
+        <div className="fixed top-[calc(env(safe-area-inset-top,0px)+4.75rem)] sm:top-20 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] animate-bounce-short shadow-2xl pointer-events-auto">
           <div className="bg-amber-400 text-slate-950 p-3.5 rounded-2xl border-2 border-amber-300 shadow-xl flex items-start justify-between gap-3 backdrop-blur-md">
             <div className="flex items-start gap-2.5">
               <div className="p-2 bg-slate-950 text-[#FDBA30] rounded-xl shrink-0 mt-0.5 shadow-xs">

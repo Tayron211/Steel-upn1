@@ -33,7 +33,7 @@ export default function ToastBanner({ message, type = 'info', onClose }) {
     <div 
       role="status"
       aria-live="polite"
-      className={`fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-[999999] w-[92%] max-w-md pointer-events-none select-none px-2 ${toastFade.modalClass}`}
+      className={`fixed top-[calc(env(safe-area-inset-top,0px)+4.75rem)] sm:top-20 left-1/2 -translate-x-1/2 z-[999999] w-[94%] max-w-md pointer-events-none select-none px-2 ${toastFade.modalClass}`}
     >
       <div className="pointer-events-auto bg-slate-950/95 dark:bg-black/95 text-white text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.55)] dark:shadow-[0_12px_40px_rgba(253,186,48,0.25)] border border-slate-700/80 dark:border-amber-400/80 backdrop-blur-md flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
