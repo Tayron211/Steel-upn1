@@ -1,8 +1,8 @@
 {
-  "version": "1.0.3",
-  "versionCode": 4,
+  "version": "1.0.5",
+  "versionCode": 6,
   "releaseDate": "2026-11-14",
-  "notes": "Prueba de actualizacion automatica v1.0.3",
+  "notes": "v1.0.4 con fade suave de apertura/cierre y popup exclusivo en APK",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

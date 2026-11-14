@@ -1,31 +1,34 @@
 import React, { useState } from 'react';
 import { 
-  Rocket, 
+  RotateCw, 
   Download, 
-  Sparkles, 
   CheckCircle2, 
   X, 
   ArrowRight, 
   ShieldCheck,
-  RefreshCw,
-  ExternalLink
+  RefreshCw
 } from 'lucide-react';
 import { triggerDirectApkInstall } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
+import { useFadeModal } from '../utils/useFadeModal';
 
 export default function AppUpdateModal({ updateInfo, onClose }) {
+  const isAvailable = Boolean(isCapacitorNative() && updateInfo && updateInfo.isAvailable);
+  const fade = useFadeModal(isAvailable, onClose, 220);
+  const info = fade.cachedData || updateInfo;
+
   const [downloading, setDownloading] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
   const [progress, setProgress] = useState(0);
 
   // El popup de actualización SOLO se debe mostrar en la app nativa (APK Android)
-  if (!isCapacitorNative() || !updateInfo || !updateInfo.isAvailable) return null;
+  if (!isCapacitorNative() || !fade.shouldRender || !info) return null;
 
   const handleUpdate = async () => {
     setDownloading(true);
     setProgress(5);
     setDownloadStarted(true);
-    const apkUrl = updateInfo.apkUrl || 'https://control-doc.pages.dev/control-doc.apk';
+    const apkUrl = info.apkUrl || 'https://control-doc.pages.dev/control-doc.apk';
 
     try {
       await triggerDirectApkInstall(apkUrl, (data) => {
@@ -40,29 +43,37 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none">
-      <div className="bg-white dark:bg-[#0c0c10] border-2 border-amber-400 dark:border-amber-500/80 rounded-2xl p-4 sm:p-5 max-w-sm w-full shadow-[0_16px_50px_rgba(253,186,48,0.3)] space-y-3.5 animate-scale-up">
+    <div 
+      className={`fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none ${fade.backdropClass}`}
+      onClick={() => {
+        if (!info.forceUpdate && !downloading) fade.requestClose();
+      }}
+    >
+      <div 
+        className={`bg-white dark:bg-[#0c0c10] border-2 border-amber-400 dark:border-amber-500/80 rounded-2xl p-4 sm:p-5 max-w-sm w-full shadow-[0_16px_50px_rgba(253,186,48,0.3)] space-y-3.5 ${fade.modalClass}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Encabezado Compacto */}
         <div className="flex items-start justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FDBA30] to-amber-300 text-slate-950 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
-              <Rocket className="w-5 h-5 stroke-[2.4]" />
+              <RotateCw className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
               <span className="text-[9.5px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md border border-amber-300/80 dark:border-amber-700/60">
                 Actualización Lista
               </span>
               <h2 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight mt-0.5">
-                Nueva Versión v{updateInfo.latestVersion}
+                Nueva Versión v{info.latestVersion}
               </h2>
             </div>
           </div>
 
-          {!updateInfo.forceUpdate && (
+          {!info.forceUpdate && (
             <button
               type="button"
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+              onClick={() => fade.requestClose()}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
               title="Cerrar"
             >
               <X className="w-4 h-4 stroke-[2.2]" />
@@ -75,21 +86,21 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           <div>
             <span className="text-[9px] text-slate-400 dark:text-zinc-500 uppercase font-bold block">Instalada</span>
             <span className="font-mono font-bold text-slate-700 dark:text-zinc-300">
-              v{updateInfo.currentVersion}
+              v{info.currentVersion}
             </span>
           </div>
           <ArrowRight className="w-3.5 h-3.5 text-amber-500 shrink-0 stroke-[2.5]" />
           <div className="text-right">
             <span className="text-[9px] text-emerald-600 dark:text-emerald-400 uppercase font-extrabold block">Disponible</span>
             <span className="font-mono font-black text-slate-950 dark:text-emerald-300">
-              v{updateInfo.latestVersion} (Build {updateInfo.latestBuild})
+              v{info.latestVersion} (Build {info.latestBuild})
             </span>
           </div>
         </div>
 
         {/* Novedades breves */}
         <div className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-[11px] text-slate-700 dark:text-zinc-300 leading-snug line-clamp-3">
-          {updateInfo.notes}
+          {info.notes}
         </div>
 
         {/* Barra de Progreso de Descarga en Vivo */}
@@ -117,7 +128,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
         )}
 
         {/* Botón Principal de Actualización Directa */}
-        <div className="space-y-1.5 pt-0.5">
+        <div className="pt-0.5">
           <button
             type="button"
             onClick={handleUpdate}
@@ -136,19 +147,6 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
               </>
             )}
           </button>
-
-          {/* Enlace alternativo si se prefiere navegador */}
-          <div className="text-center pt-1">
-            <a
-              href="https://control-doc.pages.dev/control-doc.apk"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[10.5px] text-slate-500 dark:text-zinc-400 hover:text-amber-500 underline underline-offset-2 transition"
-            >
-              <span>Descargar archivo directo desde navegador</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
         </div>
       </div>
     </div>

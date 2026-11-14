@@ -2,8 +2,8 @@ import { App } from '@capacitor/app';
 import { registerPlugin } from '@capacitor/core';
 import { isCapacitorNative } from './statusBarHelper';
 
-export const APP_CURRENT_VERSION = '1.0.3';
-export const APP_CURRENT_BUILD = 4;
+export const APP_CURRENT_VERSION = '1.0.5';
+export const APP_CURRENT_BUILD = 6;
 
 export const AppInstaller = registerPlugin('AppInstaller');
 
@@ -33,8 +33,9 @@ function isRemoteVersionNewer(localVer, localBuild, remoteVer, remoteBuild) {
 
 export async function checkAppVersion(isManual = false) {
   try {
-    // Si no es nativo y es chequeo automático en segundo plano, omitir
-    if (!isCapacitorNative() && !isManual) {
+    // Los popups y chequeos de actualización SOLO operan en la app APK nativa (Android)
+    // En navegadores web (PC o móvil) no se muestra ningún popup
+    if (!isCapacitorNative()) {
       return null;
     }
 
