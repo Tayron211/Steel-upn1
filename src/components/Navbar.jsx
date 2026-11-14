@@ -256,53 +256,37 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       </button>
                     </div>
 
-                    {/* Sección de Instalación & Descargas de la App */}
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-1.5">
-                      <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase px-1 tracking-wider">
-                        Instalación & Descargas
+                    {/* Sección de Instalación & Descargas (Ultra-Compacto) */}
+                    <div className="mt-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-1.5">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {/* Descargar APK Android */}
+                        <a
+                          href="/control-doc.apk"
+                          download="control-doc.apk"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs group"
+                          title="Descargar APK Nativo para Android"
+                        >
+                          <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                          <span className="truncate">APK Android</span>
+                        </a>
+
+                        {/* Instalar WebApp / PWA */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            handleInstallPwa();
+                          }}
+                          className="h-8 px-2 rounded-xl bg-amber-50 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200/90 dark:border-amber-800/60 text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs cursor-pointer group"
+                          title="Instalar WebApp / PWA en iOS o Escritorio PC"
+                        >
+                          <Smartphone className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                          <span className="truncate">WebApp PWA</span>
+                        </button>
                       </div>
 
-                      {/* Botón Descargar APK Nativo Android */}
-                      <a
-                        href="/control-doc.apk"
-                        download="control-doc.apk"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200 text-xs font-bold transition active:scale-95 group"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
-                          <div className="text-left">
-                            <div className="leading-tight font-extrabold text-slate-900 dark:text-white">Descargar APK</div>
-                            <div className="text-[9px] text-emerald-700 dark:text-emerald-400 font-mono">Nativo Android · Con Alertas</div>
-                          </div>
-                        </div>
-                        <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded-md bg-emerald-200 dark:bg-emerald-800/80 text-emerald-950 dark:text-emerald-100">
-                          APK
-                        </span>
-                      </a>
-
-                      {/* Botón Instalar WebApp / PWA (iOS / Escritorio) */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          handleInstallPwa();
-                        }}
-                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200/90 dark:border-amber-800/60 text-amber-950 dark:text-amber-200 text-xs font-bold transition active:scale-95 group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
-                          <div className="text-left">
-                            <div className="leading-tight font-extrabold text-slate-900 dark:text-white">Instalar WebApp</div>
-                            <div className="text-[9px] text-amber-700 dark:text-amber-400 font-mono">iOS & Escritorio PC</div>
-                          </div>
-                        </div>
-                        <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded-md bg-amber-200 dark:bg-amber-800/80 text-amber-950 dark:text-amber-100">
-                          PWA
-                        </span>
-                      </button>
-
-                      {/* Botón de Comprobación Manual de Actualizaciones */}
+                      {/* Buscar Actualización (Línea Delgada) */}
                       <button
                         type="button"
                         onClick={async () => {
@@ -312,13 +296,13 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                             alert(`Tu aplicación está al día con la última versión oficial (v${res.currentVersion} Build ${res.currentBuild}).`);
                           }
                         }}
-                        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 text-[11px] font-semibold transition active:scale-95 group cursor-pointer"
+                        className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-500 dark:text-zinc-400 text-[10.5px] font-medium transition active:scale-95 cursor-pointer"
                       >
                         <div className="flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Buscar Actualización</span>
+                          <Sparkles className="w-3 h-3 text-amber-500" />
+                          <span>Buscar actualización</span>
                         </div>
-                        <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500">v{APP_CURRENT_VERSION}</span>
+                        <span className="font-mono text-[9.5px] text-slate-400 dark:text-zinc-500 font-semibold">v{APP_CURRENT_VERSION}</span>
                       </button>
                     </div>
                   </div>

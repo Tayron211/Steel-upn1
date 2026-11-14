@@ -96,3 +96,29 @@ export function initAppUpdateChecker() {
     clearInterval(interval);
   };
 }
+
+export async function triggerDirectApkInstall(apkUrl = 'https://control-doc.pages.dev/control-doc.apk') {
+  if (isCapacitorNative() && window.Capacitor?.Plugins?.AppInstaller) {
+    try {
+      const res = await window.Capacitor.Plugins.AppInstaller.installApk({ url: apkUrl });
+      return { success: true, method: 'native', detail: res };
+    } catch (e) {
+      console.warn('[AppInstaller] Native AppInstaller error, fallback to system download:', e);
+    }
+  }
+
+  // Fallback para navegador web o descarga directa
+  try {
+    const a = document.createElement('a');
+    a.href = apkUrl;
+    a.setAttribute('download', 'control-doc.apk');
+    a.setAttribute('target', '_system');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return { success: true, method: 'browser' };
+  } catch (err) {
+    window.open(apkUrl, '_blank');
+    return { success: true, method: 'window.open' };
+  }
+}
