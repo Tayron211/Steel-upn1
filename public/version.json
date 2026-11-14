@@ -1,8 +1,8 @@
 {
-  "version": "1.0.24",
-  "versionCode": 25,
+  "version": "1.0.25",
+  "versionCode": 26,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.24 - Alertas 15 min antes y sanitizacion global #N/D",
+  "notes": "v1.0.25 - Ventana emergente con horario completo del docente al mantener presionado/clic",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

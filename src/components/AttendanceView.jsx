@@ -522,6 +522,70 @@ const copyRichTableToClipboard = async (plainText, htmlText) => {
   return false;
 };
 
+// Disparador de interacción para el nombre del docente (Soporta Click / Tap y Long-Press táctil con vibración)
+const TeacherNameTrigger = ({ docente, onOpen }) => {
+  const timerRef = useRef(null);
+  const touchStartPos = useRef(null);
+  const triggeredRef = useRef(false);
+
+  const startPress = (e) => {
+    triggeredRef.current = false;
+    if (e.touches && e.touches[0]) {
+      touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    timerRef.current = setTimeout(() => {
+      triggeredRef.current = true;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(40); } catch (_) {}
+      }
+      onOpen(docente);
+    }, 450);
+  };
+
+  const cancelPress = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartPos.current || !e.touches || !e.touches[0]) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
+    if (dx > 8 || dy > 8) {
+      cancelPress();
+    }
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    cancelPress();
+    if (!triggeredRef.current) {
+      onOpen(docente);
+    }
+  };
+
+  return (
+    <div
+      onMouseDown={startPress}
+      onMouseUp={cancelPress}
+      onMouseLeave={cancelPress}
+      onTouchStart={startPress}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={cancelPress}
+      onTouchCancel={cancelPress}
+      onClick={handleClick}
+      className="cursor-pointer group/teacher inline-flex items-center gap-1 select-none active:scale-[0.98] transition-transform max-w-full"
+      title={`Toca o mantén presionado para ver todas las clases de hoy de ${docente}`}
+    >
+      <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words leading-snug group-hover/teacher:text-[#FDBA30] dark:group-hover/teacher:text-[#FDBA30] transition-colors underline decoration-dotted decoration-slate-300 dark:decoration-zinc-700 underline-offset-2">
+        {docente}
+      </h3>
+    </div>
+  );
+};
+
 export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, initialSearch = '', onClearInitialSearch }) {
   const [data, setData] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -665,6 +729,103 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     const q = carreraSearch.toLowerCase();
     return carrerasUnicas.filter(c => c.toLowerCase().includes(q));
   }, [carrerasUnicas, carreraSearch]);
+
+  // Estado para la ventana modal de todas las clases del docente en el día (independiente de piso y pabellón)
+  const [teacherDayModalData, setTeacherDayModalData] = useState(null);
+  const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
+  const teacherModalFade = useFadeModal(isTeacherModalOpen, () => {
+    setIsTeacherModalOpen(false);
+    setTeacherDayModalData(null);
+  }, 200);
+
+  const openTeacherDayClasses = async (docenteName) => {
+    if (!docenteName || docenteName === 'Docente') return;
+    setIsTeacherModalOpen(true);
+    setTeacherDayModalData({
+      docente: docenteName,
+      dia: selectedDia || 'LUNES',
+      classes: [],
+      loading: true
+    });
+
+    try {
+      const p = new URLSearchParams();
+      if (selectedDia) p.append('dia', selectedDia);
+      p.append('docente', docenteName);
+
+      const res = await fetch(`/api/attendance?${p.toString()}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setTeacherDayModalData(prev => prev ? {
+          ...prev,
+          classes: (json.data || []).map(sanitizeAttendanceItem),
+          loading: false
+        } : null);
+      } else {
+        setTeacherDayModalData(prev => prev ? { ...prev, classes: [], loading: false } : null);
+      }
+    } catch (e) {
+      console.warn('Error fetching teacher day schedule:', e);
+      setTeacherDayModalData(prev => prev ? { ...prev, classes: [], loading: false } : null);
+    }
+  };
+
+  const handleTeacherModalStatus = async (classItem, targetStatus) => {
+    await handleQuickStatus(classItem, targetStatus);
+    setTeacherDayModalData(prev => {
+      if (!prev) return prev;
+      const isCurrentlyActive =
+        (targetStatus === 'PUNTUAL' && classItem.puntualidad === 'PUNTUAL') ||
+        (targetStatus === 'TARDE' && classItem.puntualidad === 'TARDE') ||
+        (targetStatus === 'FALTA' && classItem.asistencia === 'NO');
+
+      const updated = prev.classes.map(c => {
+        if (c.id !== classItem.id) return c;
+        if (isCurrentlyActive) {
+          return {
+            ...c,
+            asistencia: 'PENDIENTE',
+            puntualidad: '',
+            horaInicioReal: '',
+            horaFinalReal: '',
+            observacion: ''
+          };
+        }
+        if (targetStatus === 'PUNTUAL') {
+          return {
+            ...c,
+            asistencia: 'SI',
+            puntualidad: 'PUNTUAL',
+            horaInicioReal: c.horaInicioProg || getCurrentTimeStr(),
+            horaFinalReal: c.horaFinalProg || c.horaFinalReal || '',
+            observacion: (c.observacion === 'CLASE REMOTA' || c.observacion === 'CLASE ADELANTADA') ? '' : c.observacion
+          };
+        }
+        if (targetStatus === 'TARDE') {
+          return {
+            ...c,
+            asistencia: 'SI',
+            puntualidad: 'TARDE',
+            horaFinalReal: c.horaFinalProg || c.horaFinalReal || '',
+            observacion: (c.observacion === 'CLASE REMOTA' || c.observacion === 'CLASE ADELANTADA') ? '' : c.observacion
+          };
+        }
+        if (targetStatus === 'FALTA') {
+          return {
+            ...c,
+            asistencia: 'NO',
+            puntualidad: '-',
+            horaInicioReal: '-',
+            horaFinalReal: '-',
+            observacion: (c.observacion === 'CLASE REMOTA' || c.observacion === 'CLASE ADELANTADA') ? '' : c.observacion
+          };
+        }
+        return c;
+      });
+
+      return { ...prev, classes: updated };
+    });
+  };
 
   // Función para alternar selección múltiple de pisos
   const handleTogglePiso = (val) => {
@@ -2376,9 +2537,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
                       {/* Docente, Curso y Horario (Líneas legibles sin cortes) */}
                       <div className="mb-2">
-                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words leading-snug" title={cleanFormulaValue(item.docente)}>
-                          {cleanFormulaValue(item.docente) || 'Docente'}
-                        </h3>
+                        <TeacherNameTrigger
+                          docente={cleanFormulaValue(item.docente) || 'Docente'}
+                          onOpen={openTeacherDayClasses}
+                        />
                         <div className="flex items-start justify-between gap-2 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
                           <span className="break-words leading-tight" title={cleanFormulaValue(item.curso)}>
                             {cleanFormulaValue(item.curso)}
@@ -2562,6 +2724,26 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-bold text-slate-900 dark:text-white">Añadir Observación o Suplente</div>
                       <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Registrar motivo, licencia o docente de reemplazo</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const doc = activeOptions.docente;
+                      classOptionsFade.requestClose(() => {
+                        setSelectedClassOptions(null);
+                        openTeacherDayClasses(doc);
+                      });
+                    }}
+                    className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">Ver todas sus clases de hoy</div>
+                      <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Horario completo en todos los pisos y pabellones</div>
                     </div>
                   </button>
 
@@ -3467,6 +3649,223 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
           document.body
         )
       }
+
+      {/* Modal: Horario completo de todas las clases del docente en el día (independiente de piso y pabellón) */}
+      {teacherModalFade.shouldRender && typeof document !== 'undefined' && createPortal(
+        <div
+          className={`fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-[9999] p-3 sm:p-4 ${teacherModalFade.backdropClass}`}
+          onClick={() => teacherModalFade.requestClose()}
+        >
+          <div
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${teacherModalFade.modalClass} flex flex-col max-h-[88vh] overflow-hidden`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabecera del modal */}
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+              <div className="flex items-start gap-2.5 min-w-0 pr-2">
+                <div className="p-2 bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 mt-0.5 border border-amber-300 dark:border-amber-700/60 shadow-xs">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                    Todas las clases del docente hoy
+                  </div>
+                  <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight break-words mt-0.5">
+                    {teacherDayModalData?.docente}
+                  </h2>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
+                      {teacherDayModalData?.dia}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                      {teacherDayModalData?.loading
+                        ? 'Consultando...'
+                        : `${teacherDayModalData?.classes?.length || 0} clase${teacherDayModalData?.classes?.length === 1 ? '' : 's'} hoy`}
+                    </span>
+                    <span className="text-[10px] text-slate-400 dark:text-zinc-500 italic">
+                      (Todos los pisos y pabellones)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => teacherModalFade.requestClose()}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                title="Cerrar ventana"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Lista de Clases del Docente con scroll */}
+            <div className="overflow-y-auto space-y-2.5 my-3 flex-1 pr-1 custom-scrollbar">
+              {teacherDayModalData?.loading ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-zinc-500">
+                  <RotateCcw className="w-6 h-6 animate-spin text-[#FDBA30]" />
+                  <span className="text-xs font-semibold">Cargando horario completo del docente...</span>
+                </div>
+              ) : (!teacherDayModalData?.classes || teacherDayModalData.classes.length === 0) ? (
+                <div className="py-10 text-center text-slate-400 dark:text-zinc-500 space-y-2">
+                  <Calendar className="w-8 h-8 mx-auto text-slate-300 dark:text-zinc-700" />
+                  <p className="text-xs font-medium">No se encontraron otras clases para este docente el día {teacherDayModalData?.dia}.</p>
+                </div>
+              ) : (
+                teacherDayModalData.classes.map((cls) => {
+                  const isPuntual = cls.puntualidad === 'PUNTUAL';
+                  const isTarde = cls.puntualidad === 'TARDE';
+                  const isFalta = cls.asistencia === 'NO';
+                  const isReemplazo = cls.asistencia && cls.asistencia.includes('REEMPLAZO');
+                  const isPendiente = !isPuntual && !isTarde && !isFalta && !isReemplazo;
+                  const pLabel = formatPeriodoDisplay(cls.periodo);
+                  const isWA = pLabel === 'WA';
+
+                  return (
+                    <div
+                      key={cls.id}
+                      className="bg-slate-50 dark:bg-[#121217] border border-slate-200/80 dark:border-zinc-800 rounded-2xl p-3 shadow-2xs space-y-2 hover:border-slate-300 dark:hover:border-zinc-700 transition"
+                    >
+                      {/* Cabecera de clase: Aula, Pabellón, Horario y Estado */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono font-black text-xs bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg shadow-xs">
+                            {cls.aula || 'S/A'}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 px-1.5 py-0.5 rounded-md">
+                            {cls.pisoPabellon || 'Campus'}
+                          </span>
+                          {pLabel && (
+                            <span className={`font-mono font-black text-[10px] px-1.5 py-0.5 rounded-md border tracking-tight ${
+                              isWA
+                                ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
+                                : 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800'
+                            }`}>
+                              {pLabel}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-800">
+                            <Clock className="w-3 h-3 text-amber-500 shrink-0" />
+                            {cls.horaInicioProg} - {cls.horaFinalProg}
+                          </span>
+                          {isPuntual && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                              PUNTUAL
+                            </span>
+                          )}
+                          {isTarde && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                              TARDE
+                            </span>
+                          )}
+                          {isFalta && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
+                              FALTA
+                            </span>
+                          )}
+                          {isReemplazo && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                              REEMPLAZO
+                            </span>
+                          )}
+                          {isPendiente && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
+                              PENDIENTE
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Curso y NRC */}
+                      <div className="text-xs font-bold text-slate-900 dark:text-white break-words flex items-start justify-between gap-2">
+                        <span>{cls.curso}</span>
+                        {cls.nrc && (
+                          <span className="font-mono text-[10px] bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-1.5 py-0.5 rounded shrink-0 font-black">
+                            NRC {cls.nrc}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Carrera */}
+                      {isValidText(cls.carrera) && (
+                        <div className="text-[10px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
+                          <span className="font-bold uppercase text-[9px] bg-slate-200/60 dark:bg-zinc-800/80 px-1 py-0.2 rounded">Carrera</span>
+                          <span className="truncate">{cls.carrera}</span>
+                        </div>
+                      )}
+
+                      {/* Observación si existe */}
+                      {isValidText(cls.observacion) && (
+                        <div className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 rounded-md text-[10px] font-semibold flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span className="break-words">{cls.observacion}</span>
+                        </div>
+                      )}
+
+                      {/* Botones de Asistencia Rápida dentro del Modal */}
+                      <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-200/70 dark:border-zinc-800/80">
+                        <button
+                          type="button"
+                          onClick={() => handleTeacherModalStatus(cls, 'PUNTUAL')}
+                          className={`h-8 py-0.5 px-1 rounded-xl font-bold text-[11px] transition inline-flex items-center justify-center gap-1 active:scale-95 ${
+                            isPuntual
+                              ? 'bg-[#107c41] text-white shadow-xs'
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3 h-3 shrink-0" />
+                          <span>Puntual</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleTeacherModalStatus(cls, 'TARDE')}
+                          className={`h-8 py-0.5 px-1 rounded-xl font-bold text-[11px] transition inline-flex items-center justify-center gap-1 active:scale-95 ${
+                            isTarde
+                              ? 'bg-[#d83b01] text-white shadow-xs'
+                              : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/30 dark:hover:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800/50'
+                          }`}
+                        >
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>Tarde</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleTeacherModalStatus(cls, 'FALTA')}
+                          className={`h-8 py-0.5 px-1 rounded-xl font-bold text-[11px] transition inline-flex items-center justify-center gap-1 active:scale-95 ${
+                            isFalta
+                              ? 'bg-rose-600 text-white shadow-xs'
+                              : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-950/30 dark:hover:bg-rose-900/50 dark:text-rose-300 dark:border-rose-800/50'
+                          }`}
+                        >
+                          <XCircle className="w-3 h-3 shrink-0" />
+                          <span>Falta</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Pie de modal */}
+            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => teacherModalFade.requestClose()}
+                className="w-full h-9 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-95 flex items-center justify-center text-center"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

@@ -37,7 +37,7 @@ function markNotifiedToday(blockId) {
   try {
     const key = `${NOTIFIED_KEY_PREFIX}${getTodayKey()}_block_${blockId}`;
     localStorage.setItem(key, '1');
-  } catch (_) {}
+  } catch (_) { }
 }
 
 /**
@@ -99,7 +99,7 @@ async function scheduleNativeAlarms() {
       if (existing.notifications && existing.notifications.length > 0) {
         await LocalNotifications.cancel({ notifications: existing.notifications });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const now = new Date();
     const notificationsToSchedule = [];
@@ -179,7 +179,7 @@ export function playNotificationChime() {
     gain2.connect(ctx.destination);
     osc2.start(now + 0.12);
     osc2.stop(now + 0.55);
-  } catch (_) {}
+  } catch (_) { }
 }
 
 /**
@@ -382,8 +382,8 @@ export function initScheduleNotifier() {
         if (state.isActive) {
           scheduleNativeAlarms();
         }
-      }).then(handle => { appStateListener = handle; }).catch(() => {});
-    } catch (_) {}
+      }).then(handle => { appStateListener = handle; }).catch(() => { });
+    } catch (_) { }
   }
 
   const handleVisibility = () => {

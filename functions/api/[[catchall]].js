@@ -214,6 +214,18 @@ async function handleApiRequest(context) {
         query += ' AND (nrc = ? OR CAST(nrc AS TEXT) = ? OR CAST(nrc AS TEXT) LIKE ?)';
         params.push(nrc, nrc, `%${nrc}%`);
       }
+      const docenteParam = url.searchParams.get('docente');
+      const codDocParam = url.searchParams.get('codigo_docente');
+      if (codDocParam && docenteParam) {
+        query += ' AND (codigo_docente = ? OR UPPER(TRIM(docente)) = UPPER(TRIM(?)))';
+        params.push(codDocParam, docenteParam);
+      } else if (docenteParam) {
+        query += ' AND UPPER(TRIM(docente)) = UPPER(TRIM(?))';
+        params.push(docenteParam);
+      } else if (codDocParam) {
+        query += ' AND codigo_docente = ?';
+        params.push(codDocParam);
+      }
       if (search) {
         query += ' AND (LOWER(docente) LIKE ? OR LOWER(curso) LIKE ? OR LOWER(aula) LIKE ? OR LOWER(carrera) LIKE ? OR CAST(nrc AS TEXT) LIKE ?)';
         const s = `%${search.toLowerCase()}%`;
