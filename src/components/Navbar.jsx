@@ -12,7 +12,11 @@ import {
   RefreshCw,
   Check,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Download,
+  Smartphone,
+  Share,
+  X
 } from 'lucide-react';
 import UpnLogo from './UpnLogo';
 import OneDriveSyncModal from './OneDriveSyncModal';
@@ -35,6 +39,36 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuFade = useFadeModal(userMenuOpen, () => setUserMenuOpen(false), 180);
   const userMenuRef = useRef(null);
+
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isIos, setIsIos] = useState(false);
+  const [showIosModal, setShowIosModal] = useState(false);
+
+  useEffect(() => {
+    const isIosDevice = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    setIsIos(isIosDevice);
+
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice?.outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else if (isIos) {
+      setShowIosModal(true);
+    } else {
+      alert('Para instalar la WebApp / PWA:\n\n• En Chrome / Edge: Pulsa el icono "Instalar" en la barra de direcciones.\n• En Android: Selecciona "Añadir a pantalla de inicio" en las opciones del navegador.');
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -156,9 +190,9 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   <ChevronDown className={`w-3.5 h-3.5 text-amber-700 dark:text-zinc-400 transition-transform duration-200 shrink-0 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Menú Desplegable: Solo Iconos de Acciones */}
+                {/* Menú Desplegable: Acciones Rápidas + Descargas */}
                 {userMenuFade.shouldRender && (
-                  <div className={`absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
+                  <div className={`absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
                     {/* Cabecera del Usuario */}
                     <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2.5">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
@@ -169,7 +203,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       </div>
                     </div>
 
-                    {/* Fila de Solo Iconos Estilizados */}
+                    {/* Fila de Iconos de Acciones */}
                     <div className="grid grid-cols-3 gap-2">
                       {/* 1. Modo Claro / Oscuro */}
                       <button
@@ -217,6 +251,53 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         title="Cerrar Sesión"
                       >
                         <LogOut className="w-4 h-4 stroke-[2.2]" />
+                      </button>
+                    </div>
+
+                    {/* Sección de Instalación & Descargas de la App */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-1.5">
+                      <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase px-1 tracking-wider">
+                        Instalación & Descargas
+                      </div>
+
+                      {/* Botón Descargar APK Nativo Android */}
+                      <a
+                        href="/control-doc.apk"
+                        download="control-doc.apk"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200 text-xs font-bold transition active:scale-95 group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                          <div className="text-left">
+                            <div className="leading-tight font-extrabold text-slate-900 dark:text-white">Descargar APK</div>
+                            <div className="text-[9px] text-emerald-700 dark:text-emerald-400 font-mono">Nativo Android · Con Alertas</div>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded-md bg-emerald-200 dark:bg-emerald-800/80 text-emerald-950 dark:text-emerald-100">
+                          APK
+                        </span>
+                      </a>
+
+                      {/* Botón Instalar WebApp / PWA (iOS / Escritorio) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleInstallPwa();
+                        }}
+                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200/90 dark:border-amber-800/60 text-amber-950 dark:text-amber-200 text-xs font-bold transition active:scale-95 group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                          <div className="text-left">
+                            <div className="leading-tight font-extrabold text-slate-900 dark:text-white">Instalar WebApp</div>
+                            <div className="text-[9px] text-amber-700 dark:text-amber-400 font-mono">iOS & Escritorio PC</div>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded-md bg-amber-200 dark:bg-amber-800/80 text-amber-950 dark:text-amber-100">
+                          PWA
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -346,6 +427,55 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         onClose={() => setShowOneDriveModal(false)}
         liveExcel={liveExcel}
       />
+
+      {/* Modal Instructivo para Instalación en iOS Safari */}
+      {showIosModal && (
+        <div className="fixed inset-0 z-[99999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#101014] border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-scale-up">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-500">
+                  <Smartphone className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Instalar en iOS</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">iPhone & iPad (Safari)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowIosModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-600 dark:text-zinc-300">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800">
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+                <div>En Safari, pulsa el botón <strong>Compartir</strong> <Share className="w-3.5 h-3.5 inline mx-1 text-sky-500 stroke-[2.5]" /> en la barra inferior del navegador.</div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800">
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+                <div>Desplázate por el menú y selecciona <strong>"Añadir a pantalla de inicio"</strong>.</div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800">
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+                <div>Pulsa <strong>Añadir</strong> en la esquina superior derecha. ¡Listo! Se abrirá como app nativa con notificaciones activas.</div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowIosModal(false)}
+              className="w-full py-2.5 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition active:scale-95 cursor-pointer shadow-xs"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

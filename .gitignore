@@ -41,3 +41,11 @@ _worker.bundle
 *.sqlite-wal
 database.sqlite
 
+# Android Build Outputs
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/build/
+
+

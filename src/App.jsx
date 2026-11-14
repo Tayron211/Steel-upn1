@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { BellRing, X } from 'lucide-react';
 import Navbar from './components/Navbar';
 import AttendanceView from './components/AttendanceView';
 import TicketsKanban from './components/TicketsKanban';
@@ -15,6 +16,8 @@ import {
   triggerAutoSyncLinkedExcel,
   restoreLinkedExcelIfPossible
 } from './utils/liveExcelSync';
+import { applyAdaptiveStatusBar, hideSplashScreenSmoothly } from './utils/statusBarHelper';
+import { initScheduleNotifier } from './utils/scheduleNotifier';
 
 const TABS = ['attendance', 'operations', 'tickets', 'dashboard'];
 
@@ -101,7 +104,25 @@ export default function App() {
     return true;
   });
 
-  // Keep DOM class and data-mode attribute synchronized
+  const [shiftAlert, setShiftAlert] = useState(null);
+
+  // Inicialización de Notificaciones y adaptación inicial de Status Bar
+  useEffect(() => {
+    hideSplashScreenSmoothly();
+    const cleanupNotifier = initScheduleNotifier();
+
+    const handleShiftAlert = (e) => {
+      setShiftAlert(e.detail?.block);
+    };
+    window.addEventListener('upn:class-block-warning', handleShiftAlert);
+
+    return () => {
+      cleanupNotifier();
+      window.removeEventListener('upn:class-block-warning', handleShiftAlert);
+    };
+  }, []);
+
+  // Keep DOM class and data-mode attribute synchronized + Adaptive Status Bar
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -110,6 +131,7 @@ export default function App() {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-mode', 'light');
     }
+    applyAdaptiveStatusBar(darkMode);
   }, [darkMode]);
 
   // Real-time listener for mobile device system dark/light mode switches
@@ -536,6 +558,37 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Alerta Visual Flotante de Cambio de Turno (10 min antes) */}
+      {shiftAlert && (
+        <div className="fixed top-18 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] animate-bounce-short shadow-2xl pointer-events-auto">
+          <div className="bg-amber-400 text-slate-950 p-3.5 rounded-2xl border-2 border-amber-300 shadow-xl flex items-start justify-between gap-3 backdrop-blur-md">
+            <div className="flex items-start gap-2.5">
+              <div className="p-2 bg-slate-950 text-[#FDBA30] rounded-xl shrink-0 mt-0.5 shadow-xs">
+                <BellRing className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-tight text-slate-950">
+                  Próximo Cambio de Turno en 10 min
+                </div>
+                <div className="text-xs font-black mt-0.5 text-slate-950 leading-snug">
+                  Bloque <span className="underline">{shiftAlert.label}</span> (Inicia {shiftAlert.start})
+                </div>
+                <div className="text-[10px] text-slate-900 font-semibold mt-0.5">
+                  Prepara la ronda y verificación de asistencia docente.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShiftAlert(null)}
+              className="text-slate-950 hover:bg-slate-950/10 p-1 rounded-lg transition cursor-pointer"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Action Speed Dial (FAB) visible en todas las páginas */}
       <FloatingActionMenu

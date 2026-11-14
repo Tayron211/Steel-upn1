@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:apk": "vite build && npx cap copy android && cd android && gradlew.bat assembleDebug && cd .. && copy /Y android\\app\\build\\outputs\\apk\\debug\\app-debug.apk public\\control-doc.apk",
     "deploy": "vite build && wrangler pages deploy dist --project-name=control-doc --branch=main",
     "sync": "vite build && git add . && git commit -m \"chore: actualizacion de sistema\" && git push origin main && wrangler pages deploy dist --project-name=control-doc --branch=main",
     "sync:data": "node scripts/sync_data.cjs",
@@ -18,6 +19,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "cors": "^2.8.6",
     "express": "^5.3.0",
     "fflate": "^0.8.3",
