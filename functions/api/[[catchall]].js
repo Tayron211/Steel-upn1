@@ -732,19 +732,32 @@ async function handleApiRequest(context) {
       const obs = (body.obs || body.observaciones || '').trim();
       const hoja = 'RESERVAS';
 
-      // Validar si el aula ya está reservada para esa misma fecha/día y rango de horas
-      const conflict = await db.prepare(`
-        SELECT * FROM reservas
-        WHERE UPPER(TRIM(aula)) = UPPER(TRIM(?))
-        AND (fecha = ? OR UPPER(TRIM(dia)) = UPPER(TRIM(?)))
-        AND inicio < ? AND final > ?
-      `).bind(aula, fechaStr, dia, final, inicio).first();
+      // Validar si alguna de las aulas ya está reservada para esa misma fecha/día y rango de horas
+      const requestedRooms = (body.aula || '')
+        .split(',')
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
 
-      if (conflict) {
-        return json({
-          success: false,
-          error: `El aula ${aula} ya se encuentra reservada por ${conflict.docente || 'otro usuario'} de ${conflict.inicio} a ${conflict.final}.`
-        }, 400);
+      const existingReservas = await db.prepare(`
+        SELECT * FROM reservas
+        WHERE (fecha = ? OR UPPER(TRIM(dia)) = UPPER(TRIM(?)))
+        AND inicio < ? AND final > ?
+      `).bind(fechaStr, dia, final, inicio).all();
+
+      if (existingReservas && Array.isArray(existingReservas.results)) {
+        for (const existing of existingReservas.results) {
+          const existingRooms = (existing.aula || '')
+            .split(',')
+            .map(s => s.trim().toUpperCase())
+            .filter(Boolean);
+          const common = requestedRooms.find(r => existingRooms.includes(r));
+          if (common) {
+            return json({
+              success: false,
+              error: `El aula ${common} ya se encuentra reservada por ${existing.docente || 'otro usuario'} de ${existing.inicio} a ${existing.final}.`
+            }, 400);
+          }
+        }
       }
 
       await db.prepare(`

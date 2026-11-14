@@ -154,6 +154,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoomPickerOpen, setIsRoomPickerOpen] = useState(false);
+  const [selectedAulas, setSelectedAulas] = useState(['A201']);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerCategory, setPickerCategory] = useState('ALL'); // 'ALL' | 'AULA' | 'LABORATORIO' | 'TALLER' | 'ESPECIAL'
   const [pickerPabellon, setPickerPabellon] = useState(''); // '' | 'A' | 'B'
@@ -212,6 +213,19 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   const closeModal = () => {
     reservationModalFade.requestClose();
+  };
+
+  // Helper universal para extraer todas las aulas reservadas de un registro (1 o varias en simultáneo)
+  const getReservationRooms = (r) => {
+    if (!r) return [];
+    if (Array.isArray(r.aulas) && r.aulas.length > 0) {
+      return r.aulas.map(a => String(a).trim().toUpperCase()).filter(Boolean);
+    }
+    if (!r.aula) return [];
+    return String(r.aula)
+      .split(',')
+      .map(s => s.trim().toUpperCase())
+      .filter(Boolean);
   };
 
   const MONTHS_LIST = [
@@ -285,6 +299,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     dia: DAYS_OF_WEEK[new Date().getDay()],
     inicio: '14:30',
     final: '16:10',
+    aulas: ['A201'],
     aula: 'A201',
     ubicacion: '2DO PISO - A',
     docente: '',
@@ -458,7 +473,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
       // Conflicto con otras reservas en esa misma fecha
       const resConflict = reservas.some(r => {
-        if ((r.aula || '').toUpperCase().trim() !== code) return false;
+        const rRooms = getReservationRooms(r);
+        if (!rRooms.includes(code)) return false;
         if (r.fecha !== targetFecha) return false;
         const rStart = timeToMins(r.inicio || r.hora_inicio);
         const rEnd = timeToMins(r.final || r.hora_fin);
@@ -470,20 +486,27 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     });
   }, [allRooms, modalDayClasses, reservas, formData.fecha, formData.inicio, formData.final]);
 
-  // Si el aula seleccionada pasa a estar ocupada al cambiar fecha u horario, autoseleccionar la primera aula libre
+  // Si las aulas seleccionadas pasan a estar ocupadas al cambiar fecha u horario, mantener solo las que sigan libres
   useEffect(() => {
     if (!isModalOpen) return;
-    const currentCode = (formData.aula || '').toUpperCase().trim();
-    const stillFree = freeRoomsForModalTime.some(r => r.abrv === currentCode);
-    if (!stillFree && freeRoomsForModalTime.length > 0) {
+    const currentRooms = getReservationRooms(formData);
+    const validRooms = currentRooms.filter(c => freeRoomsForModalTime.some(r => r.abrv === c));
+    if (validRooms.length === 0 && freeRoomsForModalTime.length > 0) {
       const firstFree = freeRoomsForModalTime[0];
       setFormData(prev => ({
         ...prev,
+        aulas: [firstFree.abrv],
         aula: firstFree.abrv,
         ubicacion: `${firstFree.piso} - ${firstFree.pabellon}`
       }));
+    } else if (validRooms.length > 0 && validRooms.length !== currentRooms.length) {
+      setFormData(prev => ({
+        ...prev,
+        aulas: validRooms,
+        aula: validRooms.join(', ')
+      }));
     }
-  }, [isModalOpen, freeRoomsForModalTime, formData.aula]);
+  }, [isModalOpen, freeRoomsForModalTime]);
 
   // Lista filtrada para el menú selector de Aula / Laboratorio dentro del modal (SOLO AULAS LIBRES)
   const pickerFilteredRooms = useMemo(() => {
@@ -504,19 +527,49 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     });
   }, [freeRoomsForModalTime, pickerCategory, pickerPabellon, pickerPiso, pickerSearch]);
 
+  const handleToggleRoomInPicker = (rmAbrv) => {
+    setSelectedAulas(prev => {
+      if (prev.includes(rmAbrv)) {
+        return prev.filter(a => a !== rmAbrv);
+      } else {
+        return [...prev, rmAbrv];
+      }
+    });
+  };
+
+  const handleConfirmRoomPicker = () => {
+    if (selectedAulas.length === 0) return;
+    const cleanList = [...selectedAulas];
+    const primaryRm = roomMap[cleanList[0]];
+    const userUbicacion = cleanList.map(a => {
+      const rm = roomMap[a];
+      return rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || 'SEDE');
+    }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
+
+    setFormData(prev => ({
+      ...prev,
+      aulas: cleanList,
+      aula: cleanList.join(', '),
+      ubicacion: userUbicacion || (primaryRm ? `${primaryRm.piso} - ${primaryRm.pabellon}` : prev.ubicacion)
+    }));
+    roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const cleanAula = (formData.aula || '').toUpperCase().trim();
-      const rm = roomMap[cleanAula];
+      const cleanAulas = getReservationRooms(formData);
+      const cleanAula = cleanAulas.length > 0 ? cleanAulas.join(', ') : (formData.aula || '').toUpperCase().trim();
+      const firstRm = roomMap[cleanAulas[0]];
       const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
       const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
       const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes || 'OCTUBRE';
       const userUbicacion = (formData.ubicacion || '').trim();
-      const fallbackUbicacion = rm
-        ? `${rm.piso} - ${rm.pabellon}`
-        : `${deducePisoFromAula(cleanAula) || 'SEDE'} - ${cleanAula.startsWith('B') ? 'B' : 'A'}`;
-      const finalUbicacion = (userUbicacion || fallbackUbicacion).toUpperCase();
+      const fallbackUbicacion = cleanAulas.map(a => {
+        const rm = roomMap[a];
+        return rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || 'SEDE');
+      }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
+      const finalUbicacion = (userUbicacion || fallbackUbicacion || (firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : 'SEDE')).toUpperCase();
       const finalDetalle = (formData.detalle || formData.motivo || 'USO DE LABORATORIO').toUpperCase().trim();
       const finalDocente = (formData.docente || '').toUpperCase().trim();
       const finalUsuario = (isAdmin() ? (formData.usuario || getLoggedAssistantName()) : getLoggedAssistantName()).toUpperCase().trim();
@@ -528,6 +581,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         dia: computedDia,
         inicio: formData.inicio,
         final: formData.final,
+        aulas: cleanAulas,
         aula: cleanAula,
         ubicacion: finalUbicacion,
         docente: finalDocente,
@@ -546,7 +600,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       const json = await res.json();
       if (json.success) {
         setReservas(prev => [json.data, ...prev.filter(r => r.id !== json.data.id)]);
-        setToastMessage(`✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${cleanAula})`);
+        const toastDesc = cleanAulas.length > 1
+          ? `✅ Guardado en Excel: Hoja "RESERVAS" (${cleanAulas.length} Aulas: ${cleanAula})`
+          : `✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${cleanAula})`;
+        setToastMessage(toastDesc);
         setTimeout(() => setToastMessage(''), 3500);
         closeModal();
         resetForm();
@@ -569,6 +626,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       dia: target.diaName,
       inicio: blockObj.start,
       final: blockObj.end,
+      aulas: ['A201'],
       aula: 'A201',
       ubicacion: '2DO PISO - A',
       docente: '',
@@ -587,6 +645,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       dia: target.diaName,
       inicio: blockObj.start,
       final: blockObj.end,
+      aulas: [room.abrv],
       aula: room.abrv,
       ubicacion: room.piso ? `${room.piso} - ${room.pabellon}` : (deducePisoFromAula(room.abrv) || 'SEDE'),
       docente: '',
@@ -621,15 +680,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     return s;
   };
 
-  // Copia la fila exacta de la reserva con el modelo solicitado:
+  // Copia la fila o tabla exacta de la reserva con el modelo solicitado:
   // FECHA | DIA | INICIO | FINAL | AULA | UBICACIÓN | DOCENTE | DETALLE
+  // Si la tarjeta cuenta con múltiples aulas reservadas en simultáneo, genera todas las filas correspondientes en la tabla
   const handleCopyReservation = async (r, onlyData = false) => {
-    const aula = (r.aula || '').trim().toUpperCase();
-    const rm = roomMap[aula];
-    let ubicacion = (r.ubicacion || (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(aula) || 'SEDE'))).trim().toUpperCase();
-    if (rm && !ubicacion.includes('-') && rm.pabellon) {
-      ubicacion = `${rm.piso} - ${rm.pabellon}`;
-    }
     const formattedFecha = formatExcelDate(r.fecha);
 
     let dia = (r.dia || '').trim().toUpperCase();
@@ -652,12 +706,27 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
     // Modelo exacto: FECHA | DIA | INICIO | FINAL | AULA | UBICACIÓN | DOCENTE | DETALLE
     const headers = ['FECHA', 'DIA', 'INICIO', 'FINAL', 'AULA', 'UBICACIÓN', 'DOCENTE', 'DETALLE'];
-    const values = [formattedFecha, dia, inicio, final, aula, ubicacion, docente, detalle];
+
+    // Extraer todas las aulas reservadas en esta tarjeta
+    const cardAulas = getReservationRooms(r);
+    const finalAulas = cardAulas.length > 0 ? cardAulas : [(r.aula || 'S/A').trim().toUpperCase()];
+
+    // Generar fila para cada aula en simultáneo
+    const rows = finalAulas.map(a => {
+      const rm = roomMap[a];
+      let ubicacion = (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || r.ubicacion || 'SEDE')).trim().toUpperCase();
+      if (rm && !ubicacion.includes('-') && rm.pabellon) {
+        ubicacion = `${rm.piso} - ${rm.pabellon}`;
+      }
+      return [formattedFecha, dia, inicio, final, a, ubicacion, docente, detalle];
+    });
 
     // Formato delimitado por tabulaciones (TSV) - estándar universal para pegar en celdas de Excel
-    const tsvText = onlyData ? values.join('\t') : `${headers.join('\t')}\n${values.join('\t')}`;
+    const tsvText = onlyData
+      ? rows.map(row => row.join('\t')).join('\n')
+      : `${headers.join('\t')}\n${rows.map(row => row.join('\t')).join('\n')}`;
 
-    // Tabla HTML formateada para pegar directamente en correos y Excel
+    // Tabla HTML formateada para pegar directamente en correos y Excel con encabezados gold oficiales
     const htmlTable = `
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <!--StartFragment-->
@@ -668,13 +737,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     </tr>
   </thead>` : ''}
   <tbody>
+    ${rows.map(values => `
     <tr style="background-color:#ffffff;color:#000000;">
       ${values.map((v, idx) => {
         const isLeft = idx === 6 || idx === 7;
         const isBold = idx === 0 || idx === 2 || idx === 3 || idx === 4;
         return `<td style="padding:6px 8px;border:1px solid #000000;background-color:#FFFFFF;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:${isLeft ? 'left' : 'center'};${isBold ? 'font-weight:bold;' : ''};white-space:nowrap;">${v || ''}</td>`;
       }).join('')}
-    </tr>
+    </tr>`).join('')}
   </tbody>
 </table>
 <!--EndFragment-->`.trim();
@@ -693,7 +763,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         await navigator.clipboard.writeText(tsvText);
       }
       setCopiedId(r.id);
-      setToastMessage(onlyData ? `📋 Copiada fila de reserva: ${aula}` : `📋 Fila copiada con encabezados: ${aula} (${formattedFecha})`);
+      const copyMsg = finalAulas.length > 1
+        ? `📋 Copiada tabla de ${finalAulas.length} aulas: ${finalAulas.join(', ')} (${formattedFecha})`
+        : (onlyData ? `📋 Copiada fila de reserva: ${finalAulas[0]}` : `📋 Fila copiada con encabezados: ${finalAulas[0]} (${formattedFecha})`);
+      setToastMessage(copyMsg);
       setTimeout(() => setCopiedId(null), 2500);
       setTimeout(() => setToastMessage(''), 3500);
     } catch (err) {
@@ -701,7 +774,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       try {
         await navigator.clipboard.writeText(tsvText);
         setCopiedId(r.id);
-        setToastMessage(`📋 Fila copiada: ${aula}`);
+        setToastMessage(`📋 Tabla copiada: ${finalAulas.join(', ')}`);
         setTimeout(() => setCopiedId(null), 2500);
         setTimeout(() => setToastMessage(''), 3500);
       } catch (e2) {
@@ -713,7 +786,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   // Filtrado de Reservas Registradas (por Mes, Día/Fecha, Pabellón, Piso, Hora y Texto)
   const filtered = useMemo(() => {
     return reservas.filter(r => {
-      const code = (r.aula || '').toUpperCase().trim();
+      const codeList = getReservationRooms(r);
+      const code = codeList[0] || (r.aula || '').toUpperCase().trim();
       const rm = roomMap[code];
       const pab = rm?.pabellon || (code.startsWith('B') ? 'B' : (code.startsWith('A') ? 'A' : ''));
       const pisoStr = rm?.piso || r.ubicacion || deducePisoFromAula(code);
@@ -732,10 +806,21 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         }
       }
 
-      if (selectedPabellon && pab !== selectedPabellon) return false;
+      if (selectedPabellon) {
+        const matchPab = codeList.some(c => {
+          const roomObj = roomMap[c];
+          const p = roomObj?.pabellon || (c.startsWith('B') ? 'B' : (c.startsWith('A') ? 'A' : ''));
+          return p === selectedPabellon;
+        });
+        if (!matchPab) return false;
+      }
       if (selectedPisos.length > 0) {
-        const matchesAny = selectedPisos.some(p => matchesPiso(pisoStr, p));
-        if (!matchesAny) return false;
+        const matchPiso = codeList.some(c => {
+          const roomObj = roomMap[c];
+          const pStr = roomObj?.piso || r.ubicacion || deducePisoFromAula(c);
+          return selectedPisos.some(p => matchesPiso(pStr, p));
+        });
+        if (!matchPiso) return false;
       }
 
       if (selectedDayOffset !== null) {
@@ -795,7 +880,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // Reservas registradas en esta aula para esa fecha
         const reservasInRoom = reservas.filter(
-          r => (r.aula || '').toUpperCase().trim() === code && r.fecha === target.fecha
+          r => getReservationRooms(r).includes(code) && r.fecha === target.fecha
         );
 
         // Verificar si está ocupada en el bloque horario seleccionado
@@ -1406,8 +1491,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           <div key={`reservas-${selectedDayOffset}-${selectedPabellon}`} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4 ${contentAnimClass}`}>
             {filtered.map(r => {
               const isImportante = r.prioridad === 'IMPORTANTE';
-              const rm = roomMap[(r.aula || '').toUpperCase().trim()];
-              const displayUbicacion = r.ubicacion || (rm ? `${rm.piso} - ${rm.pabellon}` : 'UPN Comas');
+              const cardAulas = getReservationRooms(r);
+              const firstRm = roomMap[cardAulas[0]];
+              const displayUbicacion = r.ubicacion || (firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : 'UPN Comas');
 
               return (
                 <div
@@ -1421,9 +1507,19 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                        <span className="text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0">
-                          {r.aula}
-                        </span>
+                        {cardAulas.map(a => (
+                          <span
+                            key={a}
+                            className="text-sm sm:text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0 shadow-2xs"
+                          >
+                            {a}
+                          </span>
+                        ))}
+                        {cardAulas.length > 1 && (
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                            {cardAulas.length} Aulas
+                          </span>
+                        )}
                         <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
                           {displayUbicacion}
                         </span>
@@ -1472,12 +1568,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <span className="truncate">Por: <strong className="text-slate-700 dark:text-zinc-300 font-semibold">{r.usuario}</strong></span>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {/* Botón de Copiar Fila de Reserva con Encabezados Oficiales */}
+                      {/* Botón de Copiar Fila o Tabla de Reserva con Encabezados Oficiales */}
                       <button
                         type="button"
                         onClick={() => handleCopyReservation(r, false)}
                         className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 hover:text-slate-950 dark:text-zinc-300 dark:hover:text-white transition active:scale-95 border border-slate-200/80 dark:border-zinc-700 cursor-pointer"
-                        title="Copiar fila con encabezados (formato oficial Excel / correo)"
+                        title={cardAulas.length > 1 ? `Copiar tabla de ${cardAulas.length} aulas simultáneas con encabezados oficiales (formato Excel / correo)` : "Copiar fila con encabezados (formato oficial Excel / correo)"}
                       >
                         {copiedId === r.id ? (
                           <>
@@ -1487,7 +1583,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         ) : (
                           <>
                             <Copy className="w-3.5 h-3.5 text-amber-500 stroke-[2.2]" />
-                            <span>Copiar</span>
+                            <span>{cardAulas.length > 1 ? `Copiar Tabla (${cardAulas.length})` : 'Copiar'}</span>
                           </>
                         )}
                       </button>
@@ -1599,7 +1695,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               {/* Fila 3: AULA Y UBICACIÓN INTEGRADA (Columnas AULA y UBICACIÓN) */}
               <div>
                 <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  <span>Ambiente / Aula</span>
+                  <span>Ambiente / Aulas a Reservar *</span>
                   <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
                     {freeRoomsForModalTime.length} libres en este horario
                   </span>
@@ -1607,27 +1703,55 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 <button
                   type="button"
                   onClick={() => {
+                    const currentRooms = getReservationRooms(formData);
+                    setSelectedAulas(currentRooms.length > 0 ? currentRooms : (freeRoomsForModalTime[0] ? [freeRoomsForModalTime[0].abrv] : []));
                     setPickerSearch('');
                     setIsRoomPickerOpen(true);
                   }}
-                  className="w-full h-11 text-xs px-3 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition flex items-center justify-between gap-2 overflow-hidden cursor-pointer"
+                  className="w-full min-h-11 py-2 px-3 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition flex items-center justify-between gap-2 cursor-pointer"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0">
-                      {formData.aula || 'ELEGIR'}
-                    </span>
-                    <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 truncate">
-                      {roomMap[(formData.aula || '').toUpperCase().trim()]?.tipo ||
-                        roomMap[(formData.aula || '').toUpperCase().trim()]?.nombre ||
-                        'Seleccionar aula o laboratorio'}
-                    </span>
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
+                    {(() => {
+                      const rooms = getReservationRooms(formData);
+                      if (rooms.length === 0) {
+                        return (
+                          <span className="text-xs font-bold text-slate-400 dark:text-zinc-500">
+                            Seleccionar aulas o laboratorios...
+                          </span>
+                        );
+                      }
+                      if (rooms.length === 1) {
+                        const code = rooms[0];
+                        const rm = roomMap[code];
+                        return (
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0">
+                              {code}
+                            </span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 truncate">
+                              {rm?.tipo || rm?.nombre || 'Aula seleccionada'}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {rooms.map(a => (
+                            <span key={a} className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shadow-2xs shrink-0">
+                              {a}
+                            </span>
+                          ))}
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80 shrink-0">
+                            {rooms.length} aulas simultáneas
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {formData.ubicacion && (
-                      <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hidden sm:inline-block">
-                        {formData.ubicacion}
-                      </span>
-                    )}
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      Elegir
+                    </span>
                     <ChevronDown className="w-4 h-4 text-slate-400 dark:text-zinc-500 shrink-0 stroke-[2.5]" />
                   </div>
                 </button>
@@ -1742,14 +1866,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     Aulas y Laboratorios Libres ({formData.inicio} - {formData.final})
                   </h3>
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5 truncate">
-                    ✓ Solo se muestran ambientes libres el {formData.fecha} ({pickerFilteredRooms.length} disponibles)
+                    ✓ Selecciona una o varias aulas en simultáneo ({pickerFilteredRooms.length} disponibles)
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => roomPickerModalFade.requestClose()}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0 cursor-pointer"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
               </button>
@@ -1879,10 +2003,41 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   ))}
                 </div>
               </div>
+
+              {/* Barra de Acciones Rápidas de Selección Múltiple */}
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allVisible = pickerFilteredRooms.map(rm => rm.abrv);
+                      setSelectedAulas(prev => Array.from(new Set([...prev, ...allVisible])));
+                    }}
+                    className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline px-1.5 py-0.5 rounded-md hover:bg-amber-500/10 transition cursor-pointer"
+                  >
+                    + Seleccionar todas ({pickerFilteredRooms.length})
+                  </button>
+                  {selectedAulas.length > 0 && (
+                    <>
+                      <span className="text-slate-300 dark:text-zinc-700">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAulas([])}
+                        className="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-zinc-200 px-1.5 py-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                      >
+                        Limpiar selección
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div className="text-[10px] font-mono font-black text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md shrink-0">
+                  {selectedAulas.length} seleccionada{selectedAulas.length === 1 ? '' : 's'}
+                </div>
+              </div>
             </div>
 
-            {/* Grilla de Aulas y Laboratorios */}
-            <div className="overflow-y-auto py-3 pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[52vh]">
+            {/* Grilla de Aulas y Laboratorios con Selección Múltiple */}
+            <div className="overflow-y-auto py-3 pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-h-[46vh]">
               {pickerFilteredRooms.length === 0 ? (
                 <div className="col-span-full py-10 text-center">
                   <p className="text-xs font-bold text-slate-500 dark:text-zinc-400">
@@ -1891,7 +2046,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
               ) : (
                 pickerFilteredRooms.map(rm => {
-                  const isSelected = (formData.aula || '').toUpperCase().trim() === rm.abrv;
+                  const isSelected = selectedAulas.includes(rm.abrv);
                   const catBadge =
                     rm.categoria === 'LABORATORIO'
                       ? 'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'
@@ -1905,17 +2060,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <button
                       key={rm.abrv}
                       type="button"
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          aula: rm.abrv,
-                          ubicacion: `${rm.piso} - ${rm.pabellon}`
-                        }));
-                        roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false));
-                      }}
-                      className={`p-3 rounded-2xl border text-left transition flex items-start justify-between gap-2.5 active:scale-[0.98] ${
+                      onClick={() => handleToggleRoomInPicker(rm.abrv)}
+                      className={`p-3 rounded-2xl border text-left transition flex items-start justify-between gap-2.5 active:scale-[0.98] cursor-pointer ${
                         isSelected
-                          ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-500/80 ring-1 ring-amber-400/40'
+                          ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-500/80 ring-2 ring-amber-400/40'
                           : 'bg-slate-50/70 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-800'
                       }`}
                     >
@@ -1953,10 +2101,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           )}
                         </div>
                       </div>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all ${
                         isSelected
-                          ? 'bg-[#FDBA30] text-slate-950'
-                          : 'bg-slate-200/70 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500'
+                          ? 'bg-[#FDBA30] text-slate-950 shadow-xs ring-2 ring-amber-400/40'
+                          : 'bg-slate-200/70 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600'
                       }`}>
                         <Check className="w-3.5 h-3.5 stroke-[2.8]" />
                       </div>
@@ -1964,6 +2112,46 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   );
                 })
               )}
+            </div>
+
+            {/* Footer Fijo de Selección Múltiple */}
+            <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 bg-slate-50/80 dark:bg-zinc-900/80 backdrop-blur-xs shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex flex-col">
+                  <span className="text-xs font-black text-slate-900 dark:text-white">
+                    {selectedAulas.length} {selectedAulas.length === 1 ? 'aula' : 'aulas'} seleccionada{selectedAulas.length === 1 ? '' : 's'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">
+                    {selectedAulas.length > 1 ? 'Se reservarán en simultáneo' : 'Selecciona una o más aulas'}
+                  </span>
+                </div>
+                <div className="hidden sm:flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[200px] pl-2 border-l border-slate-200 dark:border-zinc-700">
+                  {selectedAulas.map(a => (
+                    <span key={a} className="px-2 py-0.5 rounded-md font-mono text-[10px] font-black bg-[#FDBA30] text-slate-950 shrink-0 shadow-2xs">
+                      {a}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false))}
+                  className="h-10 px-3.5 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedAulas.length === 0}
+                  onClick={handleConfirmRoomPicker}
+                  className="h-10 px-4 sm:px-5 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition active:scale-95 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4 stroke-[2.8]" />
+                  <span>Confirmar ({selectedAulas.length})</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>,
