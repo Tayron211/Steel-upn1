@@ -14,6 +14,60 @@
 
 html {
   scrollbar-gutter: stable;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  /* 120Hz / 60Hz Smooth Compositor Momentum */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================================================
+   FULL HD / RETINA / 4K GRAPHICS ENGINE & 120Hz/60Hz PIPELINE
+   GPU Hardware Layering, Vector Sharpness & Zero Frame Drops
+   ========================================================= */
+
+/* Geometría vectorial ultra-nítida en íconos SVG y tipografías */
+svg {
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Renderizado nítido de imágenes y canvas a resolución nativa HiDPI */
+img, canvas {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Aceleración por GPU en elementos interactivos, modales y tarjetas (120 FPS fluidos) */
+.apple-liquid-glass,
+.apple-liquid-glass-27,
+.apple-liquid-slider,
+[data-slide-active="true"],
+button,
+input,
+select,
+textarea,
+dialog {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Desplazamiento fluido a 120Hz / 60Hz en todos los contenedores con scroll */
+.overflow-y-auto, 
+.overflow-x-auto, 
+[class*="overflow-"] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
 }
 
 html, body {
