@@ -1,8 +1,8 @@
 {
-  "version": "1.0.23",
-  "versionCode": 24,
+  "version": "1.0.24",
+  "versionCode": 25,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.23 - Sanitizacion de errores #N/D de formulas Excel en tarjetas",
+  "notes": "v1.0.24 - Alertas 15 min antes y sanitizacion global #N/D",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

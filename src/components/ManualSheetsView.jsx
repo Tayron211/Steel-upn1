@@ -29,6 +29,24 @@ import { toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
 
 // Copiar tabla HTML rica + TSV al portapapeles para pegar directo en Excel
+const cleanFormula = (val) => {
+  if (val === null || val === undefined) return '';
+  const s = String(val).trim();
+  const up = s.toUpperCase();
+  if (
+    up.includes('#N/D') ||
+    up.includes('#N/A') ||
+    up.includes('#VALOR') ||
+    up.includes('#REF!') ||
+    up === '#' ||
+    up === 'NULL' ||
+    up === 'UNDEFINED'
+  ) {
+    return '';
+  }
+  return s;
+};
+
 const copyRichTableToClipboard = async (plainText, htmlText) => {
   if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.ClipboardItem) {
     try {
@@ -843,12 +861,14 @@ ${htmlRows.join('\n')}
                       </div>
                     </div>
                   )}
-                  <p className="text-xs text-slate-800 dark:text-zinc-200 font-bold leading-snug break-words">
-                    {item.curso}
-                  </p>
-                  {item.carrera && !item.carrera.includes('#N/D') && !item.carrera.includes('#N/A') && (
+                  {cleanFormula(item.curso) && (
+                    <p className="text-xs text-slate-800 dark:text-zinc-200 font-bold leading-snug break-words">
+                      {cleanFormula(item.curso)}
+                    </p>
+                  )}
+                  {cleanFormula(item.carrera) && (
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5 break-words">
-                      {item.carrera}
+                      {cleanFormula(item.carrera)}
                     </p>
                   )}
                 </div>
@@ -947,12 +967,14 @@ ${htmlRows.join('\n')}
 
                       {/* CURSO / CARRERA */}
                       <td className="py-3.5 px-3 align-top">
-                        <div className="font-bold text-slate-900 dark:text-white text-xs leading-snug break-words">
-                          {item.curso}
-                        </div>
-                        {item.carrera && !item.carrera.includes('#N/D') && !item.carrera.includes('#N/A') && (
+                        {cleanFormula(item.curso) && (
+                          <div className="font-bold text-slate-900 dark:text-white text-xs leading-snug break-words">
+                            {cleanFormula(item.curso)}
+                          </div>
+                        )}
+                        {cleanFormula(item.carrera) && (
                           <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium leading-tight mt-0.5 break-words">
-                            {item.carrera}
+                            {cleanFormula(item.carrera)}
                           </div>
                         )}
                       </td>

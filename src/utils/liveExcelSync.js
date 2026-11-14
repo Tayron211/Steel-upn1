@@ -22,6 +22,24 @@ const LOCAL_SYNC_MIN_MS = 1200;
 const listeners = new Set();
 const dbChanged = createDbChangeGate({ fireOnFirst: false });
 
+function cleanFormula(val) {
+  if (val === null || val === undefined) return '';
+  const s = String(val).trim();
+  const up = s.toUpperCase();
+  if (
+    up.includes('#N/D') ||
+    up.includes('#N/A') ||
+    up.includes('#VALOR') ||
+    up.includes('#REF!') ||
+    up === '#' ||
+    up === 'NULL' ||
+    up === 'UNDEFINED'
+  ) {
+    return '';
+  }
+  return s;
+}
+
 function formatExcelTime(val) {
   if (val === undefined || val === null || val === '') return '';
   if (typeof val === 'string') return val.trim();
@@ -214,24 +232,24 @@ async function pullFromLinkedExcelToWeb(buffer) {
 
       asistencia.push({
         id: `asist_imp_${r}`,
-        pisoPabellon: iPisoPab >= 0 && row[iPisoPab] ? String(row[iPisoPab]).trim() : (row[0] ? String(row[0]).trim() : ''),
-        sede: iSede >= 0 && row[iSede] ? String(row[iSede]).trim() : 'Comas',
-        periodo: iPeriodo >= 0 && row[iPeriodo] ? String(row[iPeriodo]).trim() : '2026-2',
+        pisoPabellon: cleanFormula(iPisoPab >= 0 && row[iPisoPab] ? String(row[iPisoPab]).trim() : (row[0] ? String(row[0]).trim() : '')),
+        sede: cleanFormula(iSede >= 0 && row[iSede] ? String(row[iSede]).trim() : 'Comas'),
+        periodo: cleanFormula(iPeriodo >= 0 && row[iPeriodo] ? String(row[iPeriodo]).trim() : '2026-2'),
         dia: iDia >= 0 && row[iDia] ? String(row[iDia]).trim().toUpperCase() : (row[3] ? String(row[3]).trim().toUpperCase() : ''),
         horaInicioProg: iHoraIni >= 0 ? formatExcelTime(row[iHoraIni]) : formatExcelTime(row[4]),
         horaFinalProg: iHoraFin >= 0 ? formatExcelTime(row[iHoraFin]) : formatExcelTime(row[5]),
-        aula,
-        nrc,
-        listaCruzada: iCruzada >= 0 && row[iCruzada] ? String(row[iCruzada]).trim() : '',
-        codigoDocente: iCodDoc >= 0 && row[iCodDoc] ? String(row[iCodDoc]).trim() : '',
-        docente,
-        curso: iCur >= 0 && row[iCur] ? String(row[iCur]).trim().toUpperCase() : '',
-        carrera: iCar >= 0 && row[iCar] ? String(row[iCar]).trim() : '',
+        aula: cleanFormula(aula),
+        nrc: cleanFormula(nrc),
+        listaCruzada: cleanFormula(iCruzada >= 0 && row[iCruzada] ? String(row[iCruzada]).trim() : ''),
+        codigoDocente: cleanFormula(iCodDoc >= 0 && row[iCodDoc] ? String(row[iCodDoc]).trim() : ''),
+        docente: cleanFormula(docente),
+        curso: cleanFormula(iCur >= 0 && row[iCur] ? String(row[iCur]).trim().toUpperCase() : ''),
+        carrera: cleanFormula(iCar >= 0 && row[iCar] ? String(row[iCar]).trim() : ''),
         horaInicioReal: iniReal,
         horaFinalReal: finReal,
         asistencia: rawAsis || 'PENDIENTE',
         puntualidad: rawPunt || '-',
-        observacion: iObs >= 0 && row[iObs] ? String(row[iObs]).trim() : ''
+        observacion: cleanFormula(iObs >= 0 && row[iObs] ? String(row[iObs]).trim() : '')
       });
     }
   }
@@ -334,15 +352,15 @@ async function pullFromLinkedExcelToWeb(buffer) {
         id: `manual_2_${r}`,
         n_hoja: nHoja.replace(/^LNI-/i, 'LN1-'),
         fecha: iFec >= 0 ? formatExcelDate(row[iFec]) : '',
-        aula: iAula >= 0 && row[iAula] ? String(row[iAula]).trim().toUpperCase() : '',
-        nrc,
-        codigo_docente: iCodDoc >= 0 && row[iCodDoc] ? String(row[iCodDoc]).trim() : '',
-        docente,
-        curso,
-        carrera: iCar >= 0 && row[iCar] ? String(row[iCar]).trim() : '',
-        observacion: iAsis >= 0 && row[iAsis] ? String(row[iAsis]).trim() : '',
-        docente_reemplazo: docReemp,
-        motivo: iMot >= 0 && row[iMot] ? String(row[iMot]).trim() : (docReemp ? 'REEMPLAZO DOCENTE' : 'CLASE REGULAR'),
+        aula: cleanFormula(iAula >= 0 && row[iAula] ? String(row[iAula]).trim().toUpperCase() : ''),
+        nrc: cleanFormula(nrc),
+        codigo_docente: cleanFormula(iCodDoc >= 0 && row[iCodDoc] ? String(row[iCodDoc]).trim() : ''),
+        docente: cleanFormula(docente),
+        curso: cleanFormula(curso),
+        carrera: cleanFormula(iCar >= 0 && row[iCar] ? String(row[iCar]).trim() : ''),
+        observacion: cleanFormula(iAsis >= 0 && row[iAsis] ? String(row[iAsis]).trim() : ''),
+        docente_reemplazo: cleanFormula(docReemp),
+        motivo: cleanFormula(iMot >= 0 && row[iMot] ? String(row[iMot]).trim() : (docReemp ? 'REEMPLAZO DOCENTE' : 'CLASE REGULAR')),
         estado_hoja: 'REGISTRADO'
       });
     }

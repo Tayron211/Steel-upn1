@@ -749,10 +749,12 @@ export default function DashboardView() {
       else if (a.includes('REEMPLAZO')) suplente++;
       else pendientes++;
 
-      const c = (item.carrera || 'Otras').trim();
-      if (!carreraMap[c]) carreraMap[c] = { total: 0, puntual: 0 };
-      carreraMap[c].total++;
-      if (p === 'PUNTUAL') carreraMap[c].puntual++;
+      const rawCar = cleanCell(item.carrera);
+      if (rawCar) {
+        if (!carreraMap[rawCar]) carreraMap[rawCar] = { total: 0, puntual: 0 };
+        carreraMap[rawCar].total++;
+        if (p === 'PUNTUAL') carreraMap[rawCar].puntual++;
+      }
     }
 
     const totalAsist = puntual + tarde + suplente;
@@ -1383,10 +1385,10 @@ export default function DashboardView() {
                       </span>
                       <div className="min-w-0">
                         <div className="font-bold text-slate-900 dark:text-white truncate">
-                          {item.docente}
+                          {cleanCell(item.docente)}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
-                          {item.curso} · {item.carrera}
+                          {[cleanCell(item.curso), cleanCell(item.carrera)].filter(Boolean).join(' · ')}
                         </div>
                       </div>
                     </div>

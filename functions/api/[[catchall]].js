@@ -36,6 +36,24 @@ function normalizeDay(day) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function cleanFormula(val) {
+  if (val === null || val === undefined) return '';
+  const s = String(val).trim();
+  const up = s.toUpperCase();
+  if (
+    up.includes('#N/D') ||
+    up.includes('#N/A') ||
+    up.includes('#VALOR') ||
+    up.includes('#REF!') ||
+    up === '#' ||
+    up === 'NULL' ||
+    up === 'UNDEFINED'
+  ) {
+    return '';
+  }
+  return s;
+}
+
 function mapTicket(t) {
   return {
     id: t.id,
@@ -209,24 +227,24 @@ async function handleApiRequest(context) {
 
       const mapped = results.map(r => ({
         id: r.id,
-        pisoPabellon: r.piso_pabellon,
-        sede: r.sede,
-        periodo: r.periodo,
+        pisoPabellon: cleanFormula(r.piso_pabellon),
+        sede: cleanFormula(r.sede),
+        periodo: cleanFormula(r.periodo),
         dia: r.dia,
         horaInicioProg: r.hora_inicio_prog,
         horaFinalProg: r.hora_final_prog,
-        aula: r.aula,
-        nrc: r.nrc,
-        listaCruzada: r.lista_cruzada,
-        codigoDocente: r.codigo_docente,
-        docente: r.docente,
-        curso: r.curso,
-        carrera: r.carrera,
+        aula: cleanFormula(r.aula),
+        nrc: cleanFormula(r.nrc),
+        listaCruzada: cleanFormula(r.lista_cruzada),
+        codigoDocente: cleanFormula(r.codigo_docente),
+        docente: cleanFormula(r.docente),
+        curso: cleanFormula(r.curso),
+        carrera: cleanFormula(r.carrera),
         horaInicioReal: r.hora_inicio_real,
         horaFinalReal: r.hora_final_real,
         asistencia: r.asistencia,
         puntualidad: r.puntualidad,
-        observacion: r.observacion,
+        observacion: cleanFormula(r.observacion),
         real: r.real_horas,
         ciclo: r.ciclo
       }));
@@ -541,7 +559,20 @@ async function handleApiRequest(context) {
            OR (fecha IS NOT NULL AND TRIM(fecha) != '')
         ORDER BY codigo DESC, fecha DESC, id DESC
       `).all();
-      return json({ success: true, count: results.length, data: results });
+
+      const cleanedResults = results.map(r => ({
+        ...r,
+        docente: cleanFormula(r.docente),
+        curso: cleanFormula(r.curso),
+        carrera: cleanFormula(r.carrera),
+        motivo: cleanFormula(r.motivo),
+        asistente: cleanFormula(r.asistente),
+        aula: cleanFormula(r.aula),
+        nrc: cleanFormula(r.nrc),
+        docente_reemplazo: cleanFormula(r.docente_reemplazo)
+      }));
+
+      return json({ success: true, count: cleanedResults.length, data: cleanedResults });
     }
 
     if (path === '/api/manual-sheets' && method === 'POST') {
@@ -873,26 +904,26 @@ async function handleApiRequest(context) {
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
             `).bind(
               id,
-              a.pisoPabellon || a.piso_pabellon || '',
-              a.sede || 'Comas',
-              a.periodo || '2026-2',
+              cleanFormula(a.pisoPabellon || a.piso_pabellon || ''),
+              cleanFormula(a.sede || 'Comas'),
+              cleanFormula(a.periodo || '2026-2'),
               normalizeDay(a.dia || ''),
               a.horaInicioProg || a.hora_inicio_prog || '',
               a.horaFinalProg || a.hora_final_prog || '',
-              (a.aula || '').trim().toUpperCase(),
-              a.nrc ? String(a.nrc).trim() : '',
-              a.listaCruzada || a.lista_cruzada || '',
-              a.codigoDocente || a.codigo_docente || '',
-              (a.docente || '').trim().toUpperCase(),
-              (a.curso || '').trim().toUpperCase(),
-              a.carrera || '',
+              cleanFormula((a.aula || '').trim().toUpperCase()),
+              cleanFormula(a.nrc ? String(a.nrc).trim() : ''),
+              cleanFormula(a.listaCruzada || a.lista_cruzada || ''),
+              cleanFormula(a.codigoDocente || a.codigo_docente || ''),
+              cleanFormula((a.docente || '').trim().toUpperCase()),
+              cleanFormula((a.curso || '').trim().toUpperCase()),
+              cleanFormula(a.carrera || ''),
               a.horaInicioReal || a.hora_inicio_real || '',
               a.horaFinalReal || a.hora_final_real || '',
               (a.asistencia || 'PENDIENTE').trim().toUpperCase(),
               a.puntualidad || '-',
-              a.observacion || '',
+              cleanFormula(a.observacion || ''),
               a.real !== undefined && a.real !== null ? Number(a.real) : null,
-              a.ciclo || ''
+              cleanFormula(a.ciclo || '')
             );
           });
           await db.batch(stmts);

@@ -117,7 +117,7 @@ export default function App() {
     const cleanupChecker = initAppUpdateChecker();
 
     const handleShiftAlert = (e) => {
-      setShiftAlert(e.detail?.block);
+      setShiftAlert(e.detail ? { ...e.detail.block, diff: e.detail.diff || 15 } : null);
     };
     window.addEventListener('upn:class-block-warning', handleShiftAlert);
 
@@ -496,7 +496,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Alerta Visual Flotante de Cambio de Turno (10 min antes) */}
+      {/* Alerta Visual Flotante de Cambio de Turno (15 min antes) */}
       {shiftAlert && (
         <div className="fixed top-[calc(env(safe-area-inset-top,0px)+4.75rem)] sm:top-20 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] animate-bounce-short shadow-2xl pointer-events-auto">
           <div className="bg-amber-400 text-slate-950 p-3.5 rounded-2xl border-2 border-amber-300 shadow-xl flex items-start justify-between gap-3 backdrop-blur-md">
@@ -506,7 +506,7 @@ export default function App() {
               </div>
               <div>
                 <div className="text-[11px] font-black uppercase tracking-tight text-slate-950">
-                  Próximo Cambio de Turno en 10 min
+                  Próximo Cambio de Turno en {shiftAlert.diff || 15} min
                 </div>
                 <div className="text-xs font-black mt-0.5 text-slate-950 leading-snug">
                   Bloque <span className="underline">{shiftAlert.label}</span> (Inicia {shiftAlert.start})

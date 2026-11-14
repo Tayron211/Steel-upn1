@@ -3,16 +3,19 @@ import { App } from '@capacitor/app';
 import { isCapacitorNative } from './statusBarHelper';
 
 export const CLASS_BLOCKS = [
-  { id: 1, start: '07:30', end: '09:10', startMins: 7 * 60 + 30, notifyMins: 7 * 60 + 20, label: '07:30 - 09:10' },
-  { id: 2, start: '09:10', end: '10:50', startMins: 9 * 60 + 10, notifyMins: 9 * 60 + 0,  label: '09:10 - 10:50' },
-  { id: 3, start: '10:50', end: '12:30', startMins: 10 * 60 + 50, notifyMins: 10 * 60 + 40, label: '10:50 - 12:30' },
-  { id: 4, start: '12:30', end: '14:30', startMins: 12 * 60 + 30, notifyMins: 12 * 60 + 20, label: '12:30 - 14:30' },
-  { id: 5, start: '14:30', end: '16:10', startMins: 14 * 60 + 30, notifyMins: 14 * 60 + 20, label: '14:30 - 16:10' },
-  { id: 6, start: '16:10', end: '17:50', startMins: 16 * 60 + 10, notifyMins: 16 * 60 + 0,  label: '16:10 - 17:50' },
-  { id: 7, start: '17:50', end: '19:30', startMins: 17 * 60 + 50, notifyMins: 17 * 60 + 40, label: '17:50 - 19:30' },
-  { id: 8, start: '19:30', end: '21:10', startMins: 19 * 60 + 30, notifyMins: 19 * 60 + 20, label: '19:30 - 21:10' },
-  { id: 9, start: '21:10', end: '22:50', startMins: 21 * 60 + 10, notifyMins: 21 * 60 + 0,  label: '21:10 - 22:50' }
-];
+  { id: 1, start: '07:30', end: '09:10', startMins: 7 * 60 + 30, label: '07:30 - 09:10' },
+  { id: 2, start: '09:10', end: '10:50', startMins: 9 * 60 + 10, label: '09:10 - 10:50' },
+  { id: 3, start: '10:50', end: '12:30', startMins: 10 * 60 + 50, label: '10:50 - 12:30' },
+  { id: 4, start: '12:30', end: '14:30', startMins: 12 * 60 + 30, label: '12:30 - 14:30' },
+  { id: 5, start: '14:30', end: '16:10', startMins: 14 * 60 + 30, label: '14:30 - 16:10' },
+  { id: 6, start: '16:10', end: '17:50', startMins: 16 * 60 + 10, label: '16:10 - 17:50' },
+  { id: 7, start: '17:50', end: '19:30', startMins: 17 * 60 + 50, label: '17:50 - 19:30' },
+  { id: 8, start: '19:30', end: '21:10', startMins: 19 * 60 + 30, label: '19:30 - 21:10' },
+  { id: 9, start: '21:10', end: '22:50', startMins: 21 * 60 + 10, label: '21:10 - 22:50' }
+].map(b => ({
+  ...b,
+  notifyMins: b.startMins - 15
+}));
 
 const NOTIFIED_KEY_PREFIX = 'upn_notified_';
 
@@ -82,7 +85,7 @@ async function scheduleNativeAlarms() {
     await LocalNotifications.createChannel({
       id: 'upn_cambio_clases',
       name: 'Cambio de Clases UPN',
-      description: 'Alertas prioritarias 10 minutos antes del inicio de cada bloque horario',
+      description: 'Alertas prioritarias 15 minutos antes del inicio de cada bloque horario',
       importance: 5,
       visibility: 1,
       vibration: true,
@@ -115,8 +118,8 @@ async function scheduleNativeAlarms() {
         if (notifDate.getTime() > now.getTime()) {
           notificationsToSchedule.push({
             id: (dayOffset + 1) * 1000 + block.id,
-            title: `🔔 Próximo Turno en 10 min (${block.start})`,
-            body: `El bloque ${block.label} inicia en 10 minutos. Revisa las aulas asignadas y ronda docente.`,
+            title: `🔔 Próximo Turno en 15 min (${block.start})`,
+            body: `El bloque ${block.label} inicia en 15 minutos. Revisa las aulas asignadas y ronda docente.`,
             schedule: {
               at: notifDate,
               allowWhileIdle: true
@@ -189,9 +192,9 @@ function fireWebNotification(block) {
   try {
     playNotificationChime();
 
-    const title = `🔔 Próximo Turno en 10 min (${block.start})`;
+    const title = `🔔 Próximo Turno en 15 min (${block.start})`;
     const options = {
-      body: `El bloque ${block.label} inicia en 10 minutos. Revisa las aulas asignadas y ronda docente.`,
+      body: `El bloque ${block.label} inicia en 15 minutos. Revisa las aulas asignadas y ronda docente.`,
       icon: '/icon-192.png',
       badge: '/icon-192.png',
       tag: `upn_shift_${block.id}`,
@@ -241,7 +244,7 @@ export async function sendTestDesktopNotification() {
       await LocalNotifications.createChannel({
         id: 'upn_cambio_clases',
         name: 'Cambio de Clases UPN',
-        description: 'Alertas 10 minutos antes del inicio de cada bloque horario',
+        description: 'Alertas 15 minutos antes del inicio de cada bloque horario',
         importance: 5,
         visibility: 1,
         vibration: true
@@ -251,7 +254,7 @@ export async function sendTestDesktopNotification() {
           {
             id: 99999,
             title: '🔔 UPN Control Docente · Alerta Activa',
-            body: '¡Notificaciones funcionando en tu teléfono! Recibirás avisos sonoros 10 min antes de cada clase.',
+            body: '¡Notificaciones funcionando en tu teléfono! Recibirás avisos sonoros 15 min antes de cada clase.',
             channelId: 'upn_cambio_clases',
             smallIcon: 'ic_stat_notify',
             iconColor: '#FDBA30',
@@ -283,7 +286,7 @@ export async function sendTestDesktopNotification() {
   try {
     const title = '🔔 UPN Control Docente · Alerta de Turno';
     const options = {
-      body: '¡Notificaciones activadas! Recibirás avisos sonoros y en pantalla 10 min antes de cada clase.',
+      body: '¡Notificaciones activadas! Recibirás avisos sonoros y en pantalla 15 min antes de cada clase.',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
       tag: 'upn_test_alert',
@@ -315,16 +318,16 @@ export async function sendTestDesktopNotification() {
 }
 
 /**
- * Revisa el reloj cada 20 segundos para verificar si estamos a 10 minutos del próximo bloque
+ * Revisa el reloj cada 20 segundos para verificar si estamos a 15 minutos del próximo bloque
  */
 function checkScheduleTick() {
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
   for (const block of CLASS_BLOCKS) {
-    // Si estamos en la ventana de 10 a 0 minutos antes del inicio y no se ha notificado hoy
+    // Si estamos en la ventana de 15 a 0 minutos antes del inicio y no se ha notificado hoy
     const diff = block.startMins - currentMins;
-    if (diff > 0 && diff <= 10 && !hasBeenNotifiedToday(block.id)) {
+    if (diff > 0 && diff <= 15 && !hasBeenNotifiedToday(block.id)) {
       markNotifiedToday(block.id);
 
       // Disparar en Android APK vía LocalNotifications
