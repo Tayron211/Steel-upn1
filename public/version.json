@@ -1,8 +1,8 @@
 {
-  "version": "1.0.9",
-  "versionCode": 10,
+  "version": "1.0.10",
+  "versionCode": 11,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.9 con comparativa clara de versiones antes y despues",
+  "notes": "v1.0.10 - Correccion de seleccion automatica de aulas en modal de reservas",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

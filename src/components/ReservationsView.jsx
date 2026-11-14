@@ -176,7 +176,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoomPickerOpen, setIsRoomPickerOpen] = useState(false);
-  const [selectedAulas, setSelectedAulas] = useState(['A201']);
+  const [selectedAulas, setSelectedAulas] = useState([]);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerCategory, setPickerCategory] = useState('ALL'); // 'ALL' | 'AULA' | 'LABORATORIO' | 'TALLER' | 'ESPECIAL'
   const [pickerPabellon, setPickerPabellon] = useState(''); // '' | 'A' | 'B'
@@ -321,9 +321,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     dia: DAYS_OF_WEEK[new Date().getDay()],
     inicio: '14:30',
     final: '16:10',
-    aulas: ['A201'],
-    aula: 'A201',
-    ubicacion: '2DO PISO - A',
+    aulas: [],
+    aula: '',
+    ubicacion: '',
     docente: '',
     motivo: '',
     detalle: '',
@@ -614,25 +614,21 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     });
   }, [allRooms, modalDayClasses, reservas, formData.fecha, formData.dia, formData.inicio, formData.final]);
 
-  // Si las aulas seleccionadas pasan a estar ocupadas al cambiar fecha u horario, mantener solo las que sigan libres
+  // Si las aulas previamente seleccionadas por el usuario pasan a estar ocupadas al cambiar horario/fecha, mantener solo las que sigan libres
   useEffect(() => {
     if (!isModalOpen) return;
     const currentRooms = getReservationRooms(formData);
+    if (currentRooms.length === 0) return;
     const validRooms = currentRooms.filter(c => freeRoomsForModalTime.some(r => r.abrv === c));
-    if (validRooms.length === 0 && freeRoomsForModalTime.length > 0) {
-      const firstFree = freeRoomsForModalTime[0];
-      setFormData(prev => ({
-        ...prev,
-        aulas: [firstFree.abrv],
-        aula: firstFree.abrv,
-        ubicacion: firstFree.piso ? `${firstFree.piso} - ${firstFree.pabellon}` : (deducePisoFromAula(firstFree.abrv) || 'SEDE')
-      }));
-      setSelectedAulas([firstFree.abrv]);
-    } else if (validRooms.length > 0 && validRooms.length !== currentRooms.length) {
+    if (validRooms.length !== currentRooms.length) {
       setFormData(prev => ({
         ...prev,
         aulas: validRooms,
-        aula: validRooms.join(', ')
+        aula: validRooms.join(', '),
+        ubicacion: validRooms.map(a => {
+          const rm = roomMap[a];
+          return rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || 'SEDE');
+        }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ')
       }));
       setSelectedAulas(validRooms);
     }
@@ -670,8 +666,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   };
 
   const handleConfirmRoomPicker = () => {
-    if (selectedAulas.length === 0) return;
     const cleanList = [...selectedAulas];
+    if (cleanList.length === 0) {
+      setFormData(prev => ({
+        ...prev,
+        aulas: [],
+        aula: '',
+        ubicacion: ''
+      }));
+      roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false));
+      return;
+    }
     const primaryRm = roomMap[cleanList[0]];
     const userUbicacion = cleanList.map(a => {
       const rm = roomMap[a];
@@ -797,6 +802,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       usuario: getLoggedAssistantName(),
       prioridad: 'NORMAL'
     });
+    setSelectedAulas([room.abrv]);
     setIsModalOpen(true);
   };
 
@@ -1868,7 +1874,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   type="button"
                   onClick={() => {
                     const currentRooms = getReservationRooms(formData);
-                    setSelectedAulas(currentRooms.length > 0 ? currentRooms : (freeRoomsForModalTime[0] ? [freeRoomsForModalTime[0].abrv] : []));
+                    setSelectedAulas(currentRooms);
                     setPickerSearch('');
                     setIsRoomPickerOpen(true);
                   }}
@@ -2349,12 +2355,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </button>
                 <button
                   type="button"
-                  disabled={selectedAulas.length === 0}
                   onClick={handleConfirmRoomPicker}
-                  className="h-10 px-4 sm:px-5 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition active:scale-95 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+                  className="h-10 px-4 sm:px-5 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition active:scale-95 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Check className="w-4 h-4 stroke-[2.8]" />
-                  <span>Confirmar ({selectedAulas.length})</span>
+                  <span>{selectedAulas.length === 0 ? 'Listo (sin aula)' : `Confirmar (${selectedAulas.length})`}</span>
                 </button>
               </div>
             </div>
