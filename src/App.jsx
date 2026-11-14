@@ -122,6 +122,8 @@ export default function App() {
     window.addEventListener('upn:class-block-warning', handleShiftAlert);
 
     const handleUpdateAvailable = (e) => {
+      // El popup SOLO debe mostrarse en la app nativa (APK), NUNCA en navegador web
+      if (!isCapacitorNative()) return;
       setUpdateInfo(e.detail);
       setUpdateModalDismissed(false);
     };

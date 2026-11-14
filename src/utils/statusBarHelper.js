@@ -1,8 +1,9 @@
+import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 
 export function isCapacitorNative() {
-  return typeof window !== 'undefined' && Boolean(window.Capacitor?.isNativePlatform?.());
+  return typeof window !== 'undefined' && Boolean(Capacitor.isNativePlatform());
 }
 
 export async function applyAdaptiveStatusBar(isDark) {
