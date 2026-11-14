@@ -3,7 +3,12 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 
 export function isCapacitorNative() {
-  return typeof window !== 'undefined' && Boolean(Capacitor.isNativePlatform());
+  if (typeof window === 'undefined') return false;
+  return Boolean(
+    Capacitor.isNativePlatform() || 
+    window.Capacitor?.isNativePlatform?.() || 
+    window.Capacitor?.getPlatform?.() === 'android'
+  );
 }
 
 export async function applyAdaptiveStatusBar(isDark) {

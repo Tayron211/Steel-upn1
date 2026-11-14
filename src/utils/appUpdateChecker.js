@@ -2,8 +2,8 @@ import { App } from '@capacitor/app';
 import { registerPlugin } from '@capacitor/core';
 import { isCapacitorNative } from './statusBarHelper';
 
-export const APP_CURRENT_VERSION = '1.0.1';
-export const APP_CURRENT_BUILD = 2;
+export const APP_CURRENT_VERSION = '1.0.2';
+export const APP_CURRENT_BUILD = 3;
 
 export const AppInstaller = registerPlugin('AppInstaller');
 
@@ -53,8 +53,8 @@ export async function checkAppVersion(isManual = false) {
       }
     }
 
-    // Always fetch fresh version metadata from server
-    const endpoint = `/version.json?_t=${Date.now()}`;
+    // Always fetch fresh version metadata from server (absolute URL to avoid localhost in native APK)
+    const endpoint = `https://control-doc.pages.dev/version.json?_t=${Date.now()}`;
     const res = await fetch(endpoint, { cache: 'no-store' });
     if (!res.ok) return null;
 

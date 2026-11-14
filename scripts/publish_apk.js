@@ -34,17 +34,33 @@ try {
   fs.writeFileSync(versionJsonPath, JSON.stringify(versionData, null, 2) + '\n');
   console.log(`[1/5] Actualizado version.json -> v${nextVersion} (Build ${nextBuild})`);
 
-  // 2. Actualizar versionCode en android/app/build.gradle
+  // 2. Actualizar versionCode en android/app/build.gradle y src/utils/appUpdateChecker.js
   let gradleContent = fs.readFileSync(gradlePath, 'utf8');
   gradleContent = gradleContent.replace(/versionCode\s+\d+/, `versionCode ${nextBuild}`);
   gradleContent = gradleContent.replace(/versionName\s+"[^"]+"/, `versionName "${nextVersion}"`);
   fs.writeFileSync(gradlePath, gradleContent);
   console.log(`[2/5] Actualizado build.gradle -> versionCode ${nextBuild}, versionName "${nextVersion}"`);
 
+  const checkerPath = path.join(rootDir, 'src', 'utils', 'appUpdateChecker.js');
+  if (fs.existsSync(checkerPath)) {
+    let checkerContent = fs.readFileSync(checkerPath, 'utf8');
+    checkerContent = checkerContent.replace(/export const APP_CURRENT_VERSION = '[^']+';/, `export const APP_CURRENT_VERSION = '${nextVersion}';`);
+    checkerContent = checkerContent.replace(/export const APP_CURRENT_BUILD = \d+;/, `export const APP_CURRENT_BUILD = ${nextBuild};`);
+    fs.writeFileSync(checkerPath, checkerContent);
+    console.log(`[2b/5] Actualizado appUpdateChecker.js -> v${nextVersion} (Build ${nextBuild})`);
+  }
+
   // 3. Compilar frontend y sincronizar assets con Android
   console.log('[3/5] Compilando web assets con Vite...');
   run('npm run build');
   run('npx cap copy android');
+
+  // Eliminar APK recursiva de los assets de Android para evitar duplicación de tamaño
+  const recursiveApk = path.join(rootDir, 'android', 'app', 'src', 'main', 'assets', 'public', 'control-doc.apk');
+  if (fs.existsSync(recursiveApk)) {
+    fs.unlinkSync(recursiveApk);
+    console.log('-> Eliminada APK recursiva de android/app/src/main/assets/public');
+  }
 
   // 4. Compilar APK Nativa con Gradle
   console.log('[4/5] Compilando APK Nativa con Gradle...');
