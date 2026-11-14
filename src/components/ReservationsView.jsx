@@ -423,22 +423,85 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       .catch(() => {});
   }, []);
 
+  // Limpieza y normalización de nombres de docentes (elimina slashes, puntuación, saltos y espacios duplicados)
+  const cleanDocenteName = (name) => {
+    if (!name) return '';
+    return String(name)
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/\u00a0/g, ' ')
+      .replace(/[\/,.\-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  };
+
+  const getDocenteSignature = (name) => {
+    const clean = cleanDocenteName(name)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const words = clean.split(' ').filter(w => w.length > 1);
+    words.sort();
+    return words.join(' ');
+  };
+
   const allKnownDocentes = useMemo(() => {
-    const set = new Set(docentesList);
-    reservas.forEach(r => {
-      const d = (r.docente || '').trim().toUpperCase();
-      if (d && !d.includes('#N/D') && !d.includes('#N/A') && d.length > 3) {
-        set.add(d);
+    const rawList = [];
+    docentesList.forEach(d => { if (d) rawList.push(d); });
+    reservas.forEach(r => { if (r.docente) rawList.push(r.docente); });
+
+    // Agrupar por firma de palabras para que variaciones (con slash, sin slash, orden o comas) no se repitan
+    const groups = new Map();
+    for (const raw of rawList) {
+      const cleaned = cleanDocenteName(raw);
+      if (!cleaned || cleaned.includes('#N/D') || cleaned.includes('#N/A') || cleaned.length < 4) continue;
+      if (cleaned.startsWith('PRUEBA') || cleaned.startsWith('DOCENTE PRUEBA') || cleaned === 'TEST') continue;
+
+      const sig = getDocenteSignature(cleaned);
+      if (!groups.has(sig)) {
+        groups.set(sig, new Set());
       }
-    });
-    return Array.from(set).sort();
+      groups.get(sig).add(cleaned);
+    }
+
+    const uniqueList = [];
+    for (const [sig, variantsSet] of groups.entries()) {
+      const variants = Array.from(variantsSet);
+      // Seleccionar la variante más limpia y descriptiva
+      variants.sort((a, b) => b.length - a.length);
+      uniqueList.push(variants[0]);
+    }
+
+    return uniqueList.sort((a, b) => a.localeCompare(b, 'es'));
   }, [docentesList, reservas]);
 
   const docenteSuggestions = useMemo(() => {
-    const q = (formData.docente || '').trim().toUpperCase();
-    if (!q || q.length < 2) return [];
+    const rawQ = (formData.docente || '').trim();
+    if (!rawQ || rawQ.length < 2) return [];
+
+    const cleanQ = rawQ
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[\/,.\-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const queryWords = cleanQ.split(' ').filter(Boolean);
+    if (queryWords.length === 0) return [];
+
     return allKnownDocentes
-      .filter(d => d.includes(q) && d !== q)
+      .filter(doc => {
+        const normDoc = doc
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toUpperCase()
+          .replace(/[\/,.\-_]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        // Si ya escribió el nombre exacto completo, no hace falta sugerirlo
+        if (normDoc === cleanQ) return false;
+
+        // Cada término buscado por el usuario debe coincidir en cualquier parte del nombre
+        return queryWords.every(word => normDoc.includes(word));
+      })
       .slice(0, 8);
   }, [allKnownDocentes, formData.docente]);
 
@@ -1877,6 +1940,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     setDocenteSuggestionsOpen(true);
                   }}
                   onFocus={() => setDocenteSuggestionsOpen(true)}
+                  onBlur={() => setTimeout(() => setDocenteSuggestionsOpen(false), 200)}
                   placeholder="Apellidos y Nombres completos del docente"
                   className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
                 />
