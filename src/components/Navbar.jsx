@@ -17,9 +17,10 @@ import {
   Smartphone,
   Share,
   Sparkles,
+  RotateCw,
   X
 } from 'lucide-react';
-import { checkAppVersion, APP_CURRENT_VERSION } from '../utils/appUpdateChecker';
+import { checkAppVersion, APP_CURRENT_VERSION, triggerDirectApkInstall } from '../utils/appUpdateChecker';
 import UpnLogo from './UpnLogo';
 import OneDriveSyncModal from './OneDriveSyncModal';
 import { useFadeModal } from '../utils/useFadeModal';
@@ -259,17 +260,19 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                     {/* Sección de Instalación & Descargas (Ultra-Compacto) */}
                     <div className="mt-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-1.5">
                       <div className="grid grid-cols-2 gap-1.5">
-                        {/* Descargar APK Android */}
-                        <a
-                          href="/control-doc.apk"
-                          download="control-doc.apk"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs group"
-                          title="Descargar APK Nativo para Android"
+                        {/* Descargar e Instalar APK Android */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            triggerDirectApkInstall();
+                          }}
+                          className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs group cursor-pointer"
+                          title="Descargar e Instalar APK Nativo para Android"
                         >
                           <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
                           <span className="truncate">APK Android</span>
-                        </a>
+                        </button>
 
                         {/* Instalar WebApp / PWA */}
                         <button
@@ -291,15 +294,17 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         type="button"
                         onClick={async () => {
                           setUserMenuOpen(false);
-                          const res = await checkAppVersion();
+                          const res = await checkAppVersion(true);
                           if (res && !res.isAvailable) {
                             alert(`Tu aplicación está al día con la última versión oficial (v${res.currentVersion} Build ${res.currentBuild}).`);
+                          } else if (res && !res.isNative && res.isAvailable) {
+                            alert(`Hay una nueva versión disponible (v${res.latestVersion}). En la versión web los cambios se cargan automáticamente al refrescar la página.`);
                           }
                         }}
-                        className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-500 dark:text-zinc-400 text-[10.5px] font-medium transition active:scale-95 cursor-pointer"
+                        className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-500 dark:text-zinc-400 text-[10.5px] font-medium transition active:scale-95 cursor-pointer group"
                       >
                         <div className="flex items-center gap-1.5">
-                          <Sparkles className="w-3 h-3 text-amber-500" />
+                          <RotateCw className="w-3 h-3 text-amber-500 group-hover:rotate-180 transition-transform duration-300 shrink-0" />
                           <span>Buscar actualización</span>
                         </div>
                         <span className="font-mono text-[9.5px] text-slate-400 dark:text-zinc-500 font-semibold">v{APP_CURRENT_VERSION}</span>

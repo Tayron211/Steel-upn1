@@ -16,7 +16,7 @@ import {
   triggerAutoSyncLinkedExcel,
   restoreLinkedExcelIfPossible
 } from './utils/liveExcelSync';
-import { applyAdaptiveStatusBar, hideSplashScreenSmoothly } from './utils/statusBarHelper';
+import { applyAdaptiveStatusBar, hideSplashScreenSmoothly, isCapacitorNative } from './utils/statusBarHelper';
 import { initScheduleNotifier } from './utils/scheduleNotifier';
 import { initAppUpdateChecker } from './utils/appUpdateChecker';
 import AppUpdateModal from './components/AppUpdateModal';
@@ -603,11 +603,13 @@ export default function App() {
         </div>
       )}
 
-      {/* Popup de Actualización de APK Nativa y WebApp */}
-      <AppUpdateModal
-        updateInfo={updateModalDismissed ? null : updateInfo}
-        onClose={() => setUpdateModalDismissed(true)}
-      />
+      {/* Popup de Actualización de APK Nativa - SOLO en la App Nativa (APK Android) */}
+      {isCapacitorNative() && (
+        <AppUpdateModal
+          updateInfo={updateModalDismissed ? null : updateInfo}
+          onClose={() => setUpdateModalDismissed(true)}
+        />
+      )}
 
       {/* Floating Action Speed Dial (FAB) visible en todas las páginas */}
       <FloatingActionMenu

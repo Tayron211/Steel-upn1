@@ -5,9 +5,10 @@ import {
   Sparkles, 
   CheckCircle2, 
   X, 
-  ArrowRight,
+  ArrowRight, 
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { triggerDirectApkInstall } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
@@ -15,22 +16,26 @@ import { isCapacitorNative } from '../utils/statusBarHelper';
 export default function AppUpdateModal({ updateInfo, onClose }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  if (!updateInfo || !updateInfo.isAvailable) return null;
+  // El popup de actualización SOLO se debe mostrar en la app nativa (APK Android)
+  if (!isCapacitorNative() || !updateInfo || !updateInfo.isAvailable) return null;
 
   const handleUpdate = async () => {
     setDownloading(true);
+    setProgress(5);
+    setDownloadStarted(true);
     const apkUrl = updateInfo.apkUrl || 'https://control-doc.pages.dev/control-doc.apk';
 
     try {
-      await triggerDirectApkInstall(apkUrl);
-      setDownloadStarted(true);
+      await triggerDirectApkInstall(apkUrl, (data) => {
+        if (data && typeof data.percent === 'number') {
+          setProgress(Math.max(5, Math.min(100, data.percent)));
+        }
+      });
     } catch (err) {
       console.error('Error starting update installation:', err);
-    } finally {
-      setTimeout(() => {
-        setDownloading(false);
-      }, 1500);
+      setDownloading(false);
     }
   };
 
@@ -87,11 +92,27 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           {updateInfo.notes}
         </div>
 
-        {/* Estado Informativo */}
+        {/* Barra de Progreso de Descarga en Vivo */}
         {downloadStarted && (
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[10.5px] text-emerald-800 dark:text-emerald-300 font-semibold">
-            <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span>Descarga en curso. Se abrirá el instalador en tu pantalla.</span>
+          <div className="space-y-1.5 p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60">
+            <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900 dark:text-emerald-200">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                {progress >= 100 ? 'Abriendo instalador...' : 'Descargando paquete APK...'}
+              </span>
+              <span className="font-mono font-black">{progress}%</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-emerald-200/60 dark:bg-emerald-900/60 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all duration-300 rounded-full"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-emerald-700 dark:text-emerald-400 leading-tight">
+              {progress >= 100 
+                ? 'Listo. Confirma la instalación en la ventana del sistema.' 
+                : 'La descarga se realiza en segundo plano y abrirá el paquete automáticamente.'}
+            </p>
           </div>
         )}
 
@@ -100,36 +121,34 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           <button
             type="button"
             onClick={handleUpdate}
-            disabled={downloading}
+            disabled={downloading && progress < 100}
             className="w-full h-10 px-4 rounded-xl bg-[#FDBA30] hover:bg-amber-400 text-slate-950 font-black text-xs tracking-tight transition active:scale-95 shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
           >
             {downloading ? (
               <>
                 <RefreshCw className="w-4 h-4 text-slate-950 animate-spin" />
-                <span>Descargando nueva versión...</span>
-              </>
-            ) : downloadStarted ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-                <span>Reintentar Instalación</span>
+                <span>{progress >= 100 ? 'Iniciando Instalador...' : `Descargando (${progress}%)...`}</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                <Download className="w-4 h-4 stroke-[2.4]" />
                 <span>Aceptar e Instalar Ahora</span>
               </>
             )}
           </button>
 
-          {!updateInfo.forceUpdate && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-1 text-center text-[11px] font-bold text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-300 transition cursor-pointer"
+          {/* Enlace alternativo si se prefiere navegador */}
+          <div className="text-center pt-1">
+            <a
+              href="https://control-doc.pages.dev/control-doc.apk"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[10.5px] text-slate-500 dark:text-zinc-400 hover:text-amber-500 underline underline-offset-2 transition"
             >
-              Recordar más tarde
-            </button>
-          )}
+              <span>Descargar archivo directo desde navegador</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
