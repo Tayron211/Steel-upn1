@@ -1,8 +1,8 @@
 {
-  "version": "1.0.8",
-  "versionCode": 9,
+  "version": "1.0.9",
+  "versionCode": 10,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.8 con alertas Windows 10/11, notificaciones desplazadas y splash centrado",
+  "notes": "v1.0.9 con comparativa clara de versiones antes y despues",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

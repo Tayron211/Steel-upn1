@@ -72,10 +72,10 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
             </div>
             <div>
               <span className="text-[9.5px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md border border-amber-300/80 dark:border-amber-700/60">
-                Actualización Lista
+                Actualización Lista • Build #{info.latestBuild}
               </span>
               <h2 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight mt-0.5">
-                Nueva Versión v{info.latestVersion}
+                Nueva Versión v{info.latestVersion} (Compilación #{info.latestBuild})
               </h2>
             </div>
           </div>
@@ -92,20 +92,32 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           )}
         </div>
 
-        {/* Comparación Compacta de Versiones */}
-        <div className="flex items-center justify-between text-[11px] bg-slate-50 dark:bg-zinc-900/80 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800">
-          <div>
-            <span className="text-[9px] text-slate-400 dark:text-zinc-500 uppercase font-bold block">Instalada</span>
-            <span className="font-mono font-bold text-slate-700 dark:text-zinc-300">
-              v{info.currentVersion}
+        {/* Comparación de Versiones y Compilaciones (Antes y Después) */}
+        <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-zinc-900/90 p-2.5 sm:p-3 rounded-xl border border-slate-200/90 dark:border-zinc-800 relative">
+          {/* Antes: Versión Instalada */}
+          <div className="space-y-0.5 pr-2 border-r border-slate-200/80 dark:border-zinc-800">
+            <span className="text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
+              Instalada (Antes)
             </span>
+            <div className="font-mono font-bold text-slate-800 dark:text-zinc-200 text-xs">
+              v{info.currentVersion || '1.0.0'}
+            </div>
+            <div className="text-[10px] font-mono text-slate-500 dark:text-zinc-400">
+              Compilación <span className="font-bold text-slate-700 dark:text-zinc-300">#{info.currentBuild || 1}</span>
+            </div>
           </div>
-          <ArrowRight className="w-3.5 h-3.5 text-amber-500 shrink-0 stroke-[2.5]" />
-          <div className="text-right">
-            <span className="text-[9px] text-emerald-600 dark:text-emerald-400 uppercase font-extrabold block">Disponible</span>
-            <span className="font-mono font-black text-slate-950 dark:text-emerald-300">
-              v{info.latestVersion} (Build {info.latestBuild})
+
+          {/* Después: Nueva Versión Disponible */}
+          <div className="space-y-0.5 pl-2 text-right">
+            <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+              Disponible (Después)
             </span>
+            <div className="font-mono font-black text-emerald-700 dark:text-emerald-300 text-xs">
+              v{info.latestVersion}
+            </div>
+            <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+              Compilación <span className="font-black text-emerald-700 dark:text-emerald-300">#{info.latestBuild}</span>
+            </div>
           </div>
         </div>
 
