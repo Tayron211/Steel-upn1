@@ -188,14 +188,6 @@ export default function App() {
   const [openReservationModalTrigger, setOpenReservationModalTrigger] = useState(null);
   const [attendanceSearchPrefill, setAttendanceSearchPrefill] = useState('');
 
-  // Touch Swipe Gesture State
-  const touchRef = useRef({
-    startX: 0,
-    startY: 0,
-    startTime: 0,
-    isIgnored: false
-  });
-
   const scrollToTopGlobal = () => {
     const doScroll = (behavior) => {
       try {
@@ -373,76 +365,6 @@ export default function App() {
       return res;
     };
   }, []);
-
-  // Mobile Touch Swipe Gesture Controller (Avance y Retroceso táctil fluido en toda la pantalla)
-  useEffect(() => {
-    if (!authUser || mobileSignTicketId) return;
-
-    const onTouchStart = (e) => {
-      if (!e.touches || e.touches.length !== 1) return;
-      const touch = e.touches[0];
-
-      // Ignorar únicamente si el toque inicia sobre canvas de firma, inputs de texto o selectores
-      let target = e.target;
-      while (target && target !== document.body) {
-        if (
-          target.tagName === 'CANVAS' ||
-          target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.getAttribute('role') === 'dialog'
-        ) {
-          touchRef.current.active = false;
-          return;
-        }
-        target = target.parentElement;
-      }
-
-      touchRef.current = {
-        startX: touch.clientX,
-        startY: touch.clientY,
-        startTime: Date.now(),
-        active: true
-      };
-    };
-
-    const onTouchEnd = (e) => {
-      if (!touchRef.current.active) return;
-      touchRef.current.active = false;
-
-      const touch = e.changedTouches ? e.changedTouches[0] : null;
-      if (!touch) return;
-
-      const deltaX = touch.clientX - touchRef.current.startX;
-      const deltaY = touch.clientY - touchRef.current.startY;
-      const elapsed = Date.now() - touchRef.current.startTime;
-
-      // Criterios de swipe móvil natural:
-      // - Gesto de pulgar fluido (< 750ms)
-      // - Desplazamiento horizontal claro (>= 45px)
-      // - Claramente horizontal sobre vertical: |deltaX| > |deltaY| * 1.2
-      if (elapsed < 750 && Math.abs(deltaX) >= 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
-        const currentIndex = TABS.indexOf(activeTab);
-        if (deltaX < -45 && currentIndex < TABS.length - 1) {
-          // Deslizar izquierda (←) -> Avanzar a la siguiente pestaña
-          navigateTab(TABS[currentIndex + 1], true);
-        } else if (deltaX > 45 && currentIndex > 0) {
-          // Deslizar derecha (→) -> Retroceder a la pestaña anterior
-          navigateTab(TABS[currentIndex - 1], true);
-        }
-      }
-    };
-
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', onTouchEnd, { passive: true });
-
-    return () => {
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchend', onTouchEnd);
-      window.removeEventListener('touchcancel', onTouchEnd);
-    };
-  }, [activeTab, authUser, mobileSignTicketId]);
 
   const handleOpenTicketFromClass = (ticketData) => {
     setNewTicketPrefill(ticketData);
