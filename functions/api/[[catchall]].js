@@ -739,11 +739,16 @@ async function handleApiRequest(context) {
         .filter(Boolean);
 
       const targetIso = (fechaStr || '').slice(0, 10);
+      let targetAlt = targetIso;
+      const ymdMatch = targetIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (ymdMatch) {
+        targetAlt = `${ymdMatch[3]}/${ymdMatch[2]}/${ymdMatch[1]}`;
+      }
       const existingReservas = await db.prepare(`
         SELECT * FROM reservas
-        WHERE (fecha = ? OR (fecha IS NULL AND UPPER(TRIM(dia)) = UPPER(TRIM(?))))
+        WHERE (fecha = ? OR fecha = ? OR (fecha IS NULL AND UPPER(TRIM(dia)) = UPPER(TRIM(?))))
         AND inicio < ? AND final > ?
-      `).bind(targetIso, dia, final, inicio).all();
+      `).bind(targetIso, targetAlt, dia, final, inicio).all();
 
       if (existingReservas && Array.isArray(existingReservas.results)) {
         for (const existing of existingReservas.results) {
@@ -784,10 +789,19 @@ async function handleApiRequest(context) {
 
       const created = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
 
-      // Guardar inmediatamente en la hoja y columna respectiva de RESERVAS 2026 - TAY.xlsx
+      // Guardar inmediatamente en la hoja y columna respectiva de RESERVAS 2026 - TAY.xlsx en segundo plano sin bloquear respuesta
       let excelSync = null;
       try {
-        excelSync = await appendReservationToExcel(db, created);
+        if (context && typeof context.waitUntil === 'function') {
+          context.waitUntil(
+            appendReservationToExcel(db, created).catch(errSync => {
+              console.error('Error escribiendo en Excel de OneDrive en segundo plano:', errSync);
+            })
+          );
+          excelSync = { status: 'queued_background' };
+        } else {
+          excelSync = await appendReservationToExcel(db, created);
+        }
       } catch (errSync) {
         console.error('Error escribiendo en Excel de OneDrive:', errSync);
       }
@@ -802,7 +816,15 @@ async function handleApiRequest(context) {
       await db.prepare('DELETE FROM reservas WHERE id = ?').bind(id).run();
       if (existing) {
         try {
-          await deleteReservationFromExcel(db, existing);
+          if (context && typeof context.waitUntil === 'function') {
+            context.waitUntil(
+              deleteReservationFromExcel(db, existing).catch(errDel => {
+                console.error('Error eliminando fila en Excel en segundo plano:', errDel);
+              })
+            );
+          } else {
+            await deleteReservationFromExcel(db, existing);
+          }
         } catch (errDel) {
           console.error('Error eliminando fila en Excel:', errDel);
         }

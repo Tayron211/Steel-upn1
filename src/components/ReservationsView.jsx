@@ -702,6 +702,23 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       return;
     }
 
+    const finalDocente = (formData.docente || '').toUpperCase().trim();
+    if (!finalDocente) {
+      alert('Por favor ingresa o selecciona el nombre del Docente Solicitante.');
+      return;
+    }
+
+    const finalDetalle = (formData.detalle || formData.motivo || 'USO DE LABORATORIO').toUpperCase().trim();
+    if (!finalDetalle) {
+      alert('Por favor especifica la Actividad o Motivo de la reserva.');
+      return;
+    }
+
+    if (formData.inicio && formData.final && formData.inicio >= formData.final) {
+      alert('La hora de inicio debe ser anterior a la hora de fin.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const cleanAula = cleanAulas.join(', ');
@@ -715,8 +732,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         return rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || 'SEDE');
       }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
       const finalUbicacion = (userUbicacion || fallbackUbicacion || (firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : 'SEDE')).toUpperCase();
-      const finalDetalle = (formData.detalle || formData.motivo || 'USO DE LABORATORIO').toUpperCase().trim();
-      const finalDocente = (formData.docente || '').toUpperCase().trim();
       const finalUsuario = (isAdmin() ? (formData.usuario || getLoggedAssistantName()) : getLoggedAssistantName()).toUpperCase().trim();
       const finalPrioridad = (formData.prioridad || 'NORMAL').toUpperCase().trim();
 
