@@ -1,8 +1,8 @@
 {
-  "version": "1.0.15",
-  "versionCode": 16,
+  "version": "1.0.16",
+  "versionCode": 17,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.15 - Mostrar unicamente version sin numero de compilacion en popup de actualizacion",
+  "notes": "v1.0.16 - Compilacion de prueba para validar popup de actualizacion",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
