@@ -407,19 +407,19 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         </div>
       </header>
 
-      {/* Clean 2D Frosted Glass Floating Bottom App Dock (Exclusivo para móvil / APK, oculto en modo escritorio PC) */}
+      {/* Floating Bottom App Dock con efecto Blur de Cristal Esmerilado idéntico a la barra superior (Móvil/APK) */}
       <div className="md:hidden fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
-        <div className="relative pointer-events-auto rounded-[28px] shadow-[0_12px_36px_rgba(0,0,0,0.35)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.85)]">
-          {/* Capa 1: Superficie de Cristal Esmerilado Real de Alta Densidad (95-96% opacidad para evitar que el texto de fondo se trasluzca) */}
-          <div
-            className="absolute inset-0 rounded-[28px] bg-white/95 dark:bg-[#0d0d12]/96 border border-white/70 dark:border-white/10 pointer-events-none"
-            style={{
-              backdropFilter: 'blur(40px) saturate(200%)',
-              WebkitBackdropFilter: 'blur(40px) saturate(200%)'
-            }}
-          />
+        <div
+          className="relative pointer-events-auto rounded-[28px] bg-white/70 dark:bg-black/70 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/65 backdrop-blur-2xl backdrop-saturate-180 border border-slate-200/80 dark:border-zinc-800/80 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
+          style={{
+            backdropFilter: 'blur(28px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(180%)'
+          }}
+        >
+          {/* Sutil resplandor de borde interior tipo cristal */}
+          <div className="absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/40 dark:ring-white/10 pointer-events-none" />
 
-          {/* Capa 2: Contenedor interactivo con pestañas y slider (con overflow-hidden para recorte perfecto) */}
+          {/* Contenedor interactivo con pestañas y slider (con overflow-hidden para recorte perfecto) */}
           <nav className="relative z-10 rounded-[28px] p-1.5 grid grid-cols-4 overflow-hidden select-none">
             {/* Botón deslizante activo con efecto Gota Ámbar Líquida */}
             <div
@@ -450,13 +450,13 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   <Icon
                     className={`w-5 h-5 transition-transform duration-200 ${isActive
                       ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs'
-                      : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white stroke-[2]'
+                      : 'text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-white stroke-[2]'
                       }`}
                   />
                   <span
                     className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${isActive
                       ? 'font-black text-slate-950'
-                      : 'font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
+                      : 'font-bold text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-white'
                       }`}
                   >
                     {item.label}
