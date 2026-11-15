@@ -1506,7 +1506,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     loadRooms();
     loadReservations();
     const handlePulled = () => {
-      loadAttendanceSilent();
+      silentRefreshAttendance();
       loadReservations();
     };
     window.addEventListener('upn:excel-pulled', handlePulled);
@@ -1763,7 +1763,15 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   // Filter items by statusFilter when user clicks on counter pills
   const displayedItems = useMemo(() => {
     return data.filter(c => {
-      // Filtro por pabellón seleccionado
+      // 1. Filtro por Hora / Bloque (Por defecto 'CURRENT' = Ahora)
+      if (blockMode === 'CURRENT') {
+        const curBlock = getCurrentHourBlock();
+        if ((c.horaInicioProg || '').trim() !== curBlock) return false;
+      } else if (blockMode === 'CUSTOM' && selectedHora) {
+        if ((c.horaInicioProg || '').trim() !== selectedHora) return false;
+      }
+
+      // 2. Filtro por pabellón seleccionado
       if (selectedPabellon) {
         const itemPab = String(c.pisoPabellon || '').toUpperCase();
         const itemAula = String(c.aula || '').toUpperCase();
@@ -1775,16 +1783,31 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         if (!matchesPab) return false;
       }
 
-      // Filtro por pisos seleccionados
+      // 3. Filtro por pisos seleccionados
       if (selectedPisos.length > 0) {
         const itemUbi = String(c.pisoPabellon || '').toUpperCase();
+        const itemAula = String(c.aula || '').toUpperCase();
         const matchesPiso = selectedPisos.some(p => {
           const pUpper = p.toUpperCase();
-          if (pUpper.includes('1') || pUpper.includes('PRIMER')) return itemUbi.includes('1ER') || itemUbi.includes('PRIMER');
-          if (pUpper.includes('2') || pUpper.includes('SEGUNDO')) return itemUbi.includes('2DO') || itemUbi.includes('SEGUNDO');
-          if (pUpper.includes('3') || pUpper.includes('TERCER')) return itemUbi.includes('3ER') || itemUbi.includes('TERCER');
-          if (pUpper.includes('4') || pUpper.includes('CUARTO')) return itemUbi.includes('4TO') || itemUbi.includes('CUARTO');
-          if (pUpper.includes('5') || pUpper.includes('QUINTO')) return itemUbi.includes('5TO') || itemUbi.includes('QUINTO');
+          const targetDigit = pUpper.includes('1') || pUpper.includes('PRIMER') ? '1' :
+                              pUpper.includes('2') || pUpper.includes('SEGUNDO') ? '2' :
+                              pUpper.includes('3') || pUpper.includes('TERCER') ? '3' :
+                              pUpper.includes('4') || pUpper.includes('CUARTO') ? '4' :
+                              pUpper.includes('5') || pUpper.includes('QUINTO') ? '5' : '';
+
+          if (targetDigit === '1' && (itemUbi.includes('1ER') || itemUbi.includes('PRIMER') || itemUbi.includes('PISO 1') || itemUbi.includes('1°'))) return true;
+          if (targetDigit === '2' && (itemUbi.includes('2DO') || itemUbi.includes('SEGUNDO') || itemUbi.includes('PISO 2') || itemUbi.includes('2°'))) return true;
+          if (targetDigit === '3' && (itemUbi.includes('3ER') || itemUbi.includes('TERCER') || itemUbi.includes('PISO 3') || itemUbi.includes('3°'))) return true;
+          if (targetDigit === '4' && (itemUbi.includes('4TO') || itemUbi.includes('CUARTO') || itemUbi.includes('PISO 4') || itemUbi.includes('4°'))) return true;
+          if (targetDigit === '5' && (itemUbi.includes('5TO') || itemUbi.includes('QUINTO') || itemUbi.includes('PISO 5') || itemUbi.includes('5°'))) return true;
+          if (pUpper.includes('SOT') && (itemUbi.includes('SOT') || itemUbi.includes('SÓT'))) return true;
+
+          // Si el piso_pabellon no tiene el número explícito, extraer del aula (ej: A102 -> Piso 1, B305 -> Piso 3)
+          if (targetDigit && /^[A-Z]\d{2,4}/.test(itemAula)) {
+            const digitMatch = itemAula.match(/^[A-Z](\d)/);
+            if (digitMatch && digitMatch[1] === targetDigit) return true;
+          }
+
           return itemUbi.includes(pUpper);
         });
         if (!matchesPiso) return false;
@@ -1800,7 +1823,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       if (statusFilter === 'FALTA') return c.asistencia === 'NO';
       return true;
     });
-  }, [data, selectedPabellon, selectedPisos, statusFilter, selectedCarrera]);
+  }, [data, selectedPabellon, selectedPisos, statusFilter, selectedCarrera, blockMode, selectedHora]);
 
   // Compute Free Classrooms (Aulas Libres en este momento o bloque seleccionado)
   // Excluye automáticamente tanto clases regulares como aulas con reserva activa en Excel/BD
@@ -2229,11 +2252,11 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
             type="button"
             data-slide-active={blockMode === 'CURRENT' ? 'true' : undefined}
             onClick={() => {
-              setBlockMode(blockMode === 'CURRENT' ? 'ALL' : 'CURRENT');
+              setBlockMode('CURRENT');
               setSelectedHora('');
             }}
-            className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 ${blockMode === 'CURRENT'
-                ? 'text-slate-950 font-black'
+            className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 ${blockMode === 'CURRENT'
+                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
                 : 'text-slate-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/70'
               }`}
             title={`Filtrar al bloque en curso (${getCurrentHourBlock()})`}
@@ -2250,8 +2273,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               setBlockMode('ALL');
               setSelectedHora('');
             }}
-            className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 whitespace-nowrap active:scale-95 shrink-0 ${blockMode === 'ALL' && !selectedHora
-                ? 'text-slate-950 font-black'
+            className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap active:scale-95 shrink-0 ${blockMode === 'ALL' && !selectedHora
+                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800/70'
               }`}
           >

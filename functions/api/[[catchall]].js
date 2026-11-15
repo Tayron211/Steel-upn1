@@ -312,28 +312,28 @@ async function handleApiRequest(context) {
       }
       if (piso) {
         const pisoItems = piso.split(',').map(p => p.trim()).filter(Boolean);
-        if (pisoItems.length === 1) {
-          const pUpper = pisoItems[0].toUpperCase();
+        const orClauses = [];
+        for (const item of pisoItems) {
+          const pUpper = item.toUpperCase();
           if (pUpper.includes('SOT')) {
-            query += " AND (UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')";
+            orClauses.push("(UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')");
           } else {
-            query += ' AND UPPER(piso_pabellon) LIKE ?';
-            params.push(`%${pUpper}%`);
-          }
-        } else if (pisoItems.length > 1) {
-          const orClauses = [];
-          for (const item of pisoItems) {
-            const pUpper = item.toUpperCase();
-            if (pUpper.includes('SOT')) {
-              orClauses.push("(UPPER(piso_pabellon) LIKE '%SOTANO%' OR UPPER(piso_pabellon) LIKE '%SÓTANO%')");
+            const digit = pUpper.includes('1') || pUpper.includes('PRIMER') ? '1' :
+                          pUpper.includes('2') || pUpper.includes('SEGUNDO') ? '2' :
+                          pUpper.includes('3') || pUpper.includes('TERCER') ? '3' :
+                          pUpper.includes('4') || pUpper.includes('CUARTO') ? '4' :
+                          pUpper.includes('5') || pUpper.includes('QUINTO') ? '5' : '';
+            if (digit) {
+              orClauses.push(`(UPPER(piso_pabellon) LIKE ? OR UPPER(piso_pabellon) LIKE ? OR UPPER(piso_pabellon) LIKE ? OR UPPER(aula) LIKE ? OR UPPER(aula) LIKE ?)`);
+              params.push(`%${digit}ER%`, `%${digit}DO%`, `%${digit}TO%`, `_${digit}__%`, `_${digit}_%`);
             } else {
               orClauses.push('UPPER(piso_pabellon) LIKE ?');
               params.push(`%${pUpper}%`);
             }
           }
-          if (orClauses.length > 0) {
-            query += ` AND (${orClauses.join(' OR ')})`;
-          }
+        }
+        if (orClauses.length > 0) {
+          query += ` AND (${orClauses.join(' OR ')})`;
         }
       }
       if (hora) {

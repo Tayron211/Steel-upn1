@@ -216,23 +216,13 @@ export async function syncUsersWithServer() {
       const serverUsers = json.data;
       const customList = [];
       const assignments = getUserAssignments();
-      const serverUsernames = new Set(serverUsers.map(su => su.username.toLowerCase()));
-
-      // Actualizar deleted list: Si un usuario base ya no está en el servidor, considerarlo eliminado
       const deleted = getDeletedUsers();
-      USERS_REGISTRY.forEach(bu => {
-        const k = bu.username.toLowerCase();
-        if (!serverUsernames.has(k) && !['tsalinas', 'apascual', 'admin'].includes(k)) {
-          if (!deleted.includes(k)) deleted.push(k);
-        } else if (serverUsernames.has(k)) {
-          const idx = deleted.indexOf(k);
-          if (idx >= 0) deleted.splice(idx, 1);
-        }
-      });
-      localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(deleted));
 
       serverUsers.forEach(su => {
         const key = su.username.toLowerCase();
+        // Si el usuario fue eliminado por el administrador, ignorarlo completamente
+        if (deleted.includes(key)) return;
+
         // Guardar asignación
         if (su.pabellon !== undefined || su.pisos !== undefined) {
           assignments[key] = {
@@ -379,15 +369,16 @@ export async function deleteUser(username) {
   delete assignments[cleanUser];
   localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(assignments));
 
-  window.dispatchEvent(new Event('steel:users-updated'));
-
   // 4. Enviar a la API para eliminar de Cloudflare D1
   try {
     await fetch(`/api/users/${encodeURIComponent(cleanUser)}`, {
       method: 'DELETE'
     });
-  } catch (_) {}
+  } catch (err) {
+    console.warn('DELETE /api/users cloud warning:', err);
+  }
 
+  window.dispatchEvent(new Event('steel:users-updated'));
   return true;
 }
 

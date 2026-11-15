@@ -1,8 +1,8 @@
 {
-  "version": "1.0.34",
-  "versionCode": 35,
+  "version": "1.0.35",
+  "versionCode": 36,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.34 - Forzar notificaciones nativas en segundo plano y pantalla bloqueada con AlarmManager exacto y sin optimizacion de bateria",
+  "notes": "v1.0.35 - Prioridad Ahora por defecto, asignacion de pisos y eliminacion limpia de usuarios",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
