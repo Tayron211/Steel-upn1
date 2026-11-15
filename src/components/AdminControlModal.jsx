@@ -61,7 +61,7 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
   const [userToDelete, setUserToDelete] = useState(null);
 
   // Indicador deslizante suave para pestañas (Sliding Pill)
-  const tabSlide = useSlidingIndicator(activeTab, [users.length]);
+  const tabSlide = useSlidingIndicator(activeTab, [users.length, isOpen, fadeModal.shouldRender]);
 
   // Cerrar dropdown de rol al hacer click fuera
   useEffect(() => {
@@ -249,7 +249,7 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
             <span
               aria-hidden="true"
               style={tabSlide.pillStyle}
-              className="pointer-events-none absolute z-0 rounded-xl bg-[#FDBA30] shadow-md shadow-[#FDBA30]/25"
+              className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-[#FDBA30] shadow-md shadow-[#FDBA30]/25"
             />
 
             <button

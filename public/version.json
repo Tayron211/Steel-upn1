@@ -1,8 +1,8 @@
 {
-  "version": "1.0.39",
-  "versionCode": 40,
+  "version": "1.0.40",
+  "versionCode": 41,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.39 - Panel admin compacto, animacion fade, tabs deslizantes y selector de rol personalizado",
+  "notes": "v1.0.40 - Correccion de encuadre en indicador deslizante de pestanas admin",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
