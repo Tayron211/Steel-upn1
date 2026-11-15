@@ -1,8 +1,8 @@
 {
-  "version": "1.0.35",
-  "versionCode": 36,
+  "version": "1.0.36",
+  "versionCode": 37,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.35 - Prioridad Ahora por defecto, asignacion de pisos y eliminacion limpia de usuarios",
+  "notes": "v1.0.36 - Cierre de sesion automatico para asistentes tras 8 horas de inactividad",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

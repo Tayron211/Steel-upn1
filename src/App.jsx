@@ -10,12 +10,13 @@ import MobileSignView from './components/MobileSignView';
 import SplashScreen from './components/SplashScreen';
 import LoginScreen from './components/LoginScreen';
 import ErrorBoundary from './components/ErrorBoundary';
-import { getAuthUser, logout, syncUsersWithServer } from './utils/auth';
+import { getAuthUser, logout, syncUsersWithServer, recordUserActivity } from './utils/auth';
 import { createDbChangeGate } from './utils/webSignGate';
 import {
   triggerAutoSyncLinkedExcel,
   restoreLinkedExcelIfPossible
 } from './utils/liveExcelSync';
+import { App as CapApp } from '@capacitor/app';
 import { applyAdaptiveStatusBar, hideSplashScreenSmoothly, isCapacitorNative } from './utils/statusBarHelper';
 import { initScheduleNotifier } from './utils/scheduleNotifier';
 import { initAppUpdateChecker } from './utils/appUpdateChecker';
@@ -96,6 +97,64 @@ export default function App() {
     logout();
     setAuthUser(null);
   };
+
+  // Control de inactividad: Sesión de asistentes se cierra tras 8 horas de la última interacción
+  useEffect(() => {
+    if (!authUser || authUser.role === 'admin') return;
+
+    // Registrar interacción inicial al cargar
+    recordUserActivity();
+
+    const onUserInteraction = () => {
+      recordUserActivity();
+    };
+
+    const interactionEvents = ['click', 'touchstart', 'keydown', 'scroll', 'pointerdown'];
+    interactionEvents.forEach(evt => {
+      window.addEventListener(evt, onUserInteraction, { passive: true });
+    });
+
+    // Verificación periódica cada 30 segundos
+    const checkInterval = setInterval(() => {
+      const u = getAuthUser();
+      if (!u) setAuthUser(null);
+    }, 30000);
+
+    // Verificación inmediata al volver de segundo plano o desbloquear pantalla
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        const u = getAuthUser();
+        if (!u) setAuthUser(null);
+        else recordUserActivity();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onVisibilityChange);
+
+    // Listener para Capacitor en Android nativo (despertar de Doze o volver a la app)
+    let appStateListener = null;
+    if (isCapacitorNative()) {
+      CapApp.addListener('appStateChange', (state) => {
+        if (state.isActive) {
+          const u = getAuthUser();
+          if (!u) setAuthUser(null);
+          else recordUserActivity();
+        }
+      }).then(l => { appStateListener = l; }).catch(() => {});
+    }
+
+    return () => {
+      interactionEvents.forEach(evt => {
+        window.removeEventListener(evt, onUserInteraction);
+      });
+      clearInterval(checkInterval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onVisibilityChange);
+      if (appStateListener && appStateListener.remove) {
+        appStateListener.remove();
+      }
+    };
+  }, [authUser]);
 
   // AMOLED Dark Mode State with Automatic Mobile System Detection
   const [darkMode, setDarkMode] = useState(() => {
@@ -357,6 +416,7 @@ export default function App() {
     window.__upnFetchIntercepted = true;
     const origFetch = window.fetch.bind(window);
     window.fetch = async (...args) => {
+      recordUserActivity();
       const res = await origFetch(...args);
       try {
         const urlStr = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');

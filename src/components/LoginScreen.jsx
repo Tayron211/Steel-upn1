@@ -8,7 +8,14 @@ import {
   ArrowRight, 
   AlertCircle
 } from 'lucide-react';
-import { authenticate, getAllUsers, USERS_REGISTRY, syncUsersWithServer } from '../utils/auth';
+import { 
+  authenticate, 
+  getAllUsers, 
+  USERS_REGISTRY, 
+  syncUsersWithServer,
+  getSessionExpiredNotice,
+  LAST_USER_KEY
+} from '../utils/auth';
 
 /**
  * Logotipo oficial vectorial UPN (Escudo Norte UPN)
@@ -28,10 +35,16 @@ export const UpnBrandLogo = ({ size = 22, color = '#FFB800' }) => (
 );
 
 export default function LoginScreen({ onLogin }) {
-  const [usernameInput, setUsernameInput] = useState('tsalinas');
+  const [usernameInput, setUsernameInput] = useState(() => {
+    try {
+      const last = localStorage.getItem(LAST_USER_KEY);
+      if (last) return last;
+    } catch (_) {}
+    return 'tsalinas';
+  });
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(() => getSessionExpiredNotice());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {

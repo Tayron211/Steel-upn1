@@ -99,6 +99,59 @@ const CUSTOM_USERS_KEY = 'steel_custom_users';
 const ASSIGNMENTS_STORAGE_KEY = 'steel_user_assignments';
 const DELETED_USERS_KEY = 'steel_deleted_users';
 
+// Configuración de expiración de sesión por inactividad (8 horas para asistentes)
+export const ASSISTANT_MAX_INACTIVITY_MS = 8 * 60 * 60 * 1000; // 8 horas en milisegundos (28,800,000 ms)
+export const LAST_ACTIVITY_KEY = 'steel_last_activity_at';
+export const SESSION_EXPIRED_KEY = 'steel_session_expired_notice';
+export const LAST_USER_KEY = 'steel_last_user';
+
+let lastActivityWriteTime = 0;
+
+/**
+ * Registra la última interacción del usuario (touch, click, scroll, teclado o fetch)
+ * Con throttle para evitar escrituras masivas en localStorage (máx 1 cada 15s).
+ */
+export function recordUserActivity() {
+  if (typeof window === 'undefined') return;
+  const now = Date.now();
+  if (now - lastActivityWriteTime < 15000) return;
+  lastActivityWriteTime = now;
+  try {
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
+  } catch (_) {}
+}
+
+/**
+ * Comprueba si la sesión de un asistente ha superado las 8 horas desde su última interacción
+ */
+export function isSessionExpired(user) {
+  if (!user || user.role === 'admin') return false;
+  if (typeof window === 'undefined') return false;
+  try {
+    const rawLast = localStorage.getItem(LAST_ACTIVITY_KEY);
+    const lastActivity = Number(rawLast) || (user.loginAt ? new Date(user.loginAt).getTime() : 0);
+    if (!lastActivity) return false;
+    return (Date.now() - lastActivity) > ASSISTANT_MAX_INACTIVITY_MS;
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Recupera el aviso de expiración si la sesión fue cerrada automáticamente por inactividad
+ */
+export function getSessionExpiredNotice() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const notice = localStorage.getItem(SESSION_EXPIRED_KEY);
+    if (notice) {
+      localStorage.removeItem(SESSION_EXPIRED_KEY);
+      return notice;
+    }
+  } catch (_) {}
+  return null;
+}
+
 export function getDeletedUsers() {
   if (typeof window === 'undefined') return [];
   try {
@@ -124,13 +177,22 @@ export function unmarkUserDeleted(username) {
   localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(list));
 }
 
-// Obtener usuario autenticado actual
+// Obtener usuario autenticado actual (verifica expiración por inactividad para asistentes)
 export function getAuthUser() {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const user = JSON.parse(raw);
+    if (!user) return null;
+
+    // Control de expiración de sesión para asistentes tras 8 horas de inactividad
+    if (user.role !== 'admin' && isSessionExpired(user)) {
+      logout(true); // true = cierre de sesión por inactividad
+      return null;
+    }
+
+    return user;
   } catch (_) {
     return null;
   }
@@ -441,15 +503,30 @@ export function authenticate(username, password) {
 
 export function saveSession(user) {
   try {
+    const now = Date.now();
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
     localStorage.setItem('asistente_activo', user.name);
+    if (user.username) {
+      localStorage.setItem(LAST_USER_KEY, user.username);
+    }
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
+    localStorage.removeItem(SESSION_EXPIRED_KEY);
+    lastActivityWriteTime = now;
     window.dispatchEvent(new Event('steel:auth-changed'));
   } catch (_) {}
 }
 
-export function logout() {
+export function logout(dueToInactivity = false) {
   try {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    if (dueToInactivity) {
+      localStorage.setItem(
+        SESSION_EXPIRED_KEY,
+        'Tu sesión ha expirado tras 8 horas de inactividad. Por favor, ingresa tus credenciales nuevamente.'
+      );
+    } else {
+      localStorage.removeItem(SESSION_EXPIRED_KEY);
+    }
     window.dispatchEvent(new Event('steel:auth-changed'));
   } catch (_) {}
 }
