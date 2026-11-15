@@ -99,8 +99,9 @@ const CUSTOM_USERS_KEY = 'steel_custom_users';
 const ASSIGNMENTS_STORAGE_KEY = 'steel_user_assignments';
 const DELETED_USERS_KEY = 'steel_deleted_users';
 
-// Configuración de expiración de sesión por inactividad (8 horas para asistentes)
-export const ASSISTANT_MAX_INACTIVITY_MS = 8 * 60 * 60 * 1000; // 8 horas en milisegundos (28,800,000 ms)
+// Configuración de expiración de sesión por inactividad (7 horas para todas las sesiones: asistentes y administradores)
+export const MAX_INACTIVITY_MS = 7 * 60 * 60 * 1000; // 7 horas en milisegundos (25,200,000 ms)
+export const ASSISTANT_MAX_INACTIVITY_MS = MAX_INACTIVITY_MS; // Compatibilidad con referencias previas
 export const LAST_ACTIVITY_KEY = 'steel_last_activity_at';
 export const SESSION_EXPIRED_KEY = 'steel_session_expired_notice';
 export const LAST_USER_KEY = 'steel_last_user';
@@ -122,16 +123,16 @@ export function recordUserActivity() {
 }
 
 /**
- * Comprueba si la sesión de un asistente ha superado las 8 horas desde su última interacción
+ * Comprueba si cualquier sesión (asistente o administrador) ha superado las 7 horas desde su última interacción
  */
 export function isSessionExpired(user) {
-  if (!user || user.role === 'admin') return false;
+  if (!user) return false;
   if (typeof window === 'undefined') return false;
   try {
     const rawLast = localStorage.getItem(LAST_ACTIVITY_KEY);
     const lastActivity = Number(rawLast) || (user.loginAt ? new Date(user.loginAt).getTime() : 0);
     if (!lastActivity) return false;
-    return (Date.now() - lastActivity) > ASSISTANT_MAX_INACTIVITY_MS;
+    return (Date.now() - lastActivity) > MAX_INACTIVITY_MS;
   } catch (_) {
     return false;
   }
@@ -177,7 +178,7 @@ export function unmarkUserDeleted(username) {
   localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(list));
 }
 
-// Obtener usuario autenticado actual (verifica expiración por inactividad para asistentes)
+// Obtener usuario autenticado actual (verifica expiración por inactividad tras 7 horas)
 export function getAuthUser() {
   if (typeof window === 'undefined') return null;
   try {
@@ -186,8 +187,8 @@ export function getAuthUser() {
     const user = JSON.parse(raw);
     if (!user) return null;
 
-    // Control de expiración de sesión para asistentes tras 8 horas de inactividad
-    if (user.role !== 'admin' && isSessionExpired(user)) {
+    // Control de expiración de sesión tras 7 horas de inactividad para cualquier rol
+    if (isSessionExpired(user)) {
       logout(true); // true = cierre de sesión por inactividad
       return null;
     }
@@ -522,7 +523,7 @@ export function logout(dueToInactivity = false) {
     if (dueToInactivity) {
       localStorage.setItem(
         SESSION_EXPIRED_KEY,
-        'Tu sesión ha expirado tras 8 horas de inactividad. Por favor, ingresa tus credenciales nuevamente.'
+        'Tu sesión ha expirado tras 7 horas de inactividad. Por favor, ingresa tus credenciales nuevamente.'
       );
     } else {
       localStorage.removeItem(SESSION_EXPIRED_KEY);

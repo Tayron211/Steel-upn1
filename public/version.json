@@ -1,8 +1,8 @@
 {
-  "version": "1.0.44",
-  "versionCode": 45,
+  "version": "1.0.45",
+  "versionCode": 46,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.44 - Mayor translucidez y desenfoque blur ultra en dock de navegacion inferior",
+  "notes": "v1.0.45 - Mas traslucidez en dock, botones de asignacion ampliados y sesion expira a las 7 horas",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

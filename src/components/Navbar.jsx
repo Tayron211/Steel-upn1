@@ -407,13 +407,13 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         </div>
       </header>
 
-      {/* Floating Bottom App Dock con efecto Blur de Cristal Esmerilado idéntico a la barra superior (Móvil/APK) */}
+      {/* Floating Bottom App Dock con efecto Blur de Cristal Esmerilado Ultra Traslúcido (Móvil/APK) */}
       <div className="md:hidden fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
         <div
-          className="relative pointer-events-auto rounded-[28px] bg-white/55 dark:bg-black/55 supports-[backdrop-filter]:bg-white/45 dark:supports-[backdrop-filter]:bg-black/50 backdrop-blur-3xl backdrop-saturate-190 border border-white/60 dark:border-white/15 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
+          className="relative pointer-events-auto rounded-[28px] bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:bg-white/30 dark:supports-[backdrop-filter]:bg-black/35 backdrop-blur-3xl backdrop-saturate-200 border border-white/50 dark:border-white/15 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
           style={{
-            backdropFilter: 'blur(32px) saturate(190%)',
-            WebkitBackdropFilter: 'blur(32px) saturate(190%)'
+            backdropFilter: 'blur(34px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(34px) saturate(200%)'
           }}
         >
           {/* Sutil resplandor de borde interior tipo cristal */}

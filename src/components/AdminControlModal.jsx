@@ -1,28 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  ShieldCheck, 
-  Users, 
-  MapPin, 
-  UserPlus, 
-  Trash2, 
-  Check, 
-  X, 
-  Search, 
-  Lock, 
-  User, 
-  Building2, 
-  Layers, 
+import {
+  ShieldCheck,
+  Users,
+  MapPin,
+  UserPlus,
+  Trash2,
+  Check,
+  X,
+  Search,
+  Lock,
+  User,
+  Building2,
+  Layers,
   RefreshCw,
   AlertTriangle,
   ChevronDown
 } from 'lucide-react';
-import { 
-  getAllUsers, 
-  saveUser, 
-  deleteUser, 
-  saveUserAssignment, 
-  syncUsersWithServer 
+import {
+  getAllUsers,
+  saveUser,
+  deleteUser,
+  saveUserAssignment,
+  syncUsersWithServer
 } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
@@ -199,16 +199,16 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
   });
 
   return createPortal(
-    <div 
+    <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md ${fadeModal.backdropClass}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) fadeModal.requestClose();
       }}
     >
-      <div 
+      <div
         className={`w-full max-w-xl max-h-[85vh] flex flex-col rounded-3xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-[#FDBA30]/30 shadow-2xl text-slate-900 dark:text-white overflow-hidden font-sans ${fadeModal.modalClass}`}
       >
-        
+
         {/* Cabecera del Panel con Branding UPN */}
         <div className="px-4 sm:px-5 py-3 border-b border-slate-200 dark:border-zinc-800/80 bg-slate-50/90 dark:bg-zinc-950/80 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -241,7 +241,7 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
 
         {/* Barra de Pestañas con Indicador Deslizante (Sliding Pill) */}
         <div className="px-3.5 sm:px-4 py-2 border-b border-slate-200 dark:border-zinc-800/80 bg-slate-100/90 dark:bg-[#111115] flex items-center justify-between gap-2 shrink-0">
-          <div 
+          <div
             ref={tabSlide.containerRef}
             className="relative flex items-center gap-1 p-1 rounded-2xl bg-slate-200/70 dark:bg-zinc-900/90 border border-slate-200/90 dark:border-zinc-800"
           >
@@ -256,19 +256,17 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
               type="button"
               onClick={() => setActiveTab('assignments')}
               data-slide-active={activeTab === 'assignments' ? 'true' : undefined}
-              className={`relative z-10 px-3 py-1.5 rounded-xl text-xs transition-colors duration-200 flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'assignments'
-                  ? 'text-black font-black'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white font-bold'
-              }`}
+              className={`relative z-10 px-3 py-1.5 rounded-xl text-xs transition-colors duration-200 flex items-center gap-1.5 cursor-pointer ${activeTab === 'assignments'
+                ? 'text-black font-black'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white font-bold'
+                }`}
             >
               <MapPin className="w-3.5 h-3.5 stroke-[2.4]" />
               <span className="font-upn">Asignación</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors ${
-                activeTab === 'assignments' 
-                  ? 'bg-black/20 text-black font-black' 
-                  : 'bg-slate-300/80 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 font-bold'
-              }`}>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors ${activeTab === 'assignments'
+                ? 'bg-black/20 text-black font-black'
+                : 'bg-slate-300/80 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 font-bold'
+                }`}>
                 {users.length}
               </span>
             </button>
@@ -277,11 +275,10 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
               type="button"
               onClick={() => setActiveTab('users')}
               data-slide-active={activeTab === 'users' ? 'true' : undefined}
-              className={`relative z-10 px-3 py-1.5 rounded-xl text-xs transition-colors duration-200 flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'users'
-                  ? 'text-black font-black'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white font-bold'
-              }`}
+              className={`relative z-10 px-3 py-1.5 rounded-xl text-xs transition-colors duration-200 flex items-center gap-1.5 cursor-pointer ${activeTab === 'users'
+                ? 'text-black font-black'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white font-bold'
+                }`}
             >
               <Users className="w-3.5 h-3.5 stroke-[2.4]" />
               <span className="font-upn">Crear & Eliminar</span>
@@ -451,11 +448,10 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
                               setNewRole('asistente');
                               setRoleDropdownOpen(false);
                             }}
-                            className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${
-                              newRole === 'asistente'
-                                ? 'bg-sky-500/10 dark:bg-sky-950/40 border border-sky-300/60 dark:border-sky-800/60'
-                                : 'hover:bg-slate-100 dark:hover:bg-zinc-800/60 border border-transparent'
-                            }`}
+                            className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${newRole === 'asistente'
+                              ? 'bg-sky-500/10 dark:bg-sky-950/40 border border-sky-300/60 dark:border-sky-800/60'
+                              : 'hover:bg-slate-100 dark:hover:bg-zinc-800/60 border border-transparent'
+                              }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <div className="w-6.5 h-6.5 rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
@@ -481,11 +477,10 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
                               setNewRole('admin');
                               setRoleDropdownOpen(false);
                             }}
-                            className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${
-                              newRole === 'admin'
-                                ? 'bg-[#FDBA30]/15 border border-[#FDBA30]/40'
-                                : 'hover:bg-slate-100 dark:hover:bg-zinc-800/60 border border-transparent'
-                            }`}
+                            className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${newRole === 'admin'
+                              ? 'bg-[#FDBA30]/15 border border-[#FDBA30]/40'
+                              : 'hover:bg-slate-100 dark:hover:bg-zinc-800/60 border border-transparent'
+                              }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <div className="w-6.5 h-6.5 rounded-lg bg-[#FDBA30]/25 text-[#9e6700] dark:text-[#FDBA30] flex items-center justify-center shrink-0">
@@ -553,11 +548,10 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
                         className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/80 flex items-center justify-between gap-2 shadow-2xs"
                       >
                         <div className="min-w-0 flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                            u.role === 'admin' 
-                              ? 'bg-[#FDBA30]/20 text-[#b37700] dark:text-[#FDBA30] border border-[#FDBA30]/40' 
-                              : 'bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
-                          }`}>
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${u.role === 'admin'
+                            ? 'bg-[#FDBA30]/20 text-[#b37700] dark:text-[#FDBA30] border border-[#FDBA30]/40'
+                            : 'bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+                            }`}>
                             {u.role === 'admin' ? <ShieldCheck className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
                           </div>
                           <div className="min-w-0">
@@ -685,19 +679,17 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
   };
 
   return (
-    <div className={`p-3 sm:p-3.5 rounded-2xl border transition-all ${
-      isDirty 
-        ? 'bg-amber-50/60 dark:bg-zinc-900/90 border-[#FDBA30] shadow-md shadow-[#FDBA30]/5' 
-        : 'bg-white dark:bg-zinc-900/60 border-slate-200 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700'
-    }`}>
+    <div className={`p-3 sm:p-3.5 rounded-2xl border transition-all ${isDirty
+      ? 'bg-amber-50/60 dark:bg-zinc-900/90 border-[#FDBA30] shadow-md shadow-[#FDBA30]/5'
+      : 'bg-white dark:bg-zinc-900/60 border-slate-200 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700'
+      }`}>
       {/* Cabecera del Usuario */}
       <div className="flex items-center justify-between gap-2.5 mb-2.5">
         <div className="flex items-center gap-2 min-w-0">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-            user.role === 'admin' 
-              ? 'bg-[#FDBA30]/20 text-[#b37700] dark:text-[#FDBA30] border border-[#FDBA30]/40' 
-              : 'bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
-          }`}>
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${user.role === 'admin'
+            ? 'bg-[#FDBA30]/20 text-[#b37700] dark:text-[#FDBA30] border border-[#FDBA30]/40'
+            : 'bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+            }`}>
             {user.role === 'admin' ? <ShieldCheck className="w-4 h-4" /> : <User className="w-4 h-4" />}
           </div>
           <div className="min-w-0">
@@ -710,11 +702,10 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
                   Tú
                 </span>
               )}
-              <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-black uppercase ${
-                user.role === 'admin' 
-                  ? 'bg-[#FDBA30] text-black shadow-2xs' 
-                  : 'bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:text-zinc-400'
-              }`}>
+              <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-black uppercase ${user.role === 'admin'
+                ? 'bg-[#FDBA30] text-black shadow-2xs'
+                : 'bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:text-zinc-400'
+                }`}>
                 {user.role === 'admin' ? 'ADMIN' : 'ASISTENTE'}
               </span>
             </div>
@@ -736,11 +727,10 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
             type="button"
             onClick={handleSave}
             disabled={!isDirty}
-            className={`h-7 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-              isDirty
-                ? 'bg-[#FDBA30] hover:bg-[#e29b12] text-black font-black shadow-md shadow-[#FDBA30]/20'
-                : 'bg-slate-100 text-slate-400 dark:bg-zinc-800 dark:text-zinc-600 opacity-60 cursor-not-allowed'
-            }`}
+            className={`h-7 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 ${isDirty
+              ? 'bg-[#FDBA30] hover:bg-[#e29b12] text-black font-black shadow-md shadow-[#FDBA30]/20'
+              : 'bg-slate-100 text-slate-400 dark:bg-zinc-800 dark:text-zinc-600 opacity-60 cursor-not-allowed'
+              }`}
           >
             <Check className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Guardar</span>
@@ -748,24 +738,28 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
         </div>
       </div>
 
-      {/* Selectores de Pabellón y Pisos */}
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-2 border-t border-slate-200 dark:border-zinc-800/60">
-        
+      {/* Selectores de Pabellón y Pisos con botones amplios y disposición ordenada */}
+      <div className="space-y-3 pt-2.5 border-t border-slate-200 dark:border-zinc-800/80">
+
         {/* Pabellón Prioritario */}
-        <div className="sm:col-span-5 space-y-1">
-          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
-            <Building2 className="w-3 h-3 text-[#d99000] dark:text-[#FDBA30]" />
-            <span>Pabellón</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+            <div className="flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-[#d99000] dark:text-[#FDBA30]" />
+              <span>Pabellón</span>
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-normal">
+              {selectedPab ? `Pabellón ${selectedPab}` : 'Todos los pabellones'}
+            </span>
           </div>
-          <div className="flex items-center gap-1 flex-wrap">
+          <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={() => handleSelectPab('')}
-              className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                selectedPab === '' 
-                  ? 'bg-[#FDBA30] text-black font-black shadow-2xs' 
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-white dark:border-zinc-800'
-              }`}
+              className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer active:scale-95 ${selectedPab === ''
+                ? 'bg-[#FDBA30] text-black font-black shadow-xs ring-1 ring-[#FDBA30]/50'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 border border-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-700/60'
+                }`}
             >
               Todos
             </button>
@@ -774,41 +768,39 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
                 key={pab}
                 type="button"
                 onClick={() => handleSelectPab(pab)}
-                className={`h-6 px-2.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                  selectedPab === pab 
-                    ? 'bg-[#FDBA30] text-black font-black shadow-2xs' 
-                    : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-white dark:border-zinc-800'
-                }`}
+                className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer active:scale-95 ${selectedPab === pab
+                  ? 'bg-[#FDBA30] text-black font-black shadow-xs ring-1 ring-[#FDBA30]/50'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 border border-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-700/60'
+                  }`}
               >
-                Pab. {pab}
+                Pabellón {pab}
               </button>
             ))}
           </div>
         </div>
 
         {/* Pisos Prioritarios */}
-        <div className="sm:col-span-7 space-y-1">
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
-            <div className="flex items-center gap-1">
-              <Layers className="w-3 h-3 text-[#d99000] dark:text-[#FDBA30]" />
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+            <div className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[#d99000] dark:text-[#FDBA30]" />
               <span>Pisos Asignados</span>
             </div>
-            <span className="text-[9.5px] text-slate-400 dark:text-zinc-500 font-normal">
-              {selectedPisos.length === 0 ? 'Todos' : `${selectedPisos.length} selec.`}
+            <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-normal">
+              {selectedPisos.length === 0 ? 'Todos los pisos' : `${selectedPisos.length} selec.`}
             </span>
           </div>
-          <div className="flex items-center gap-1 flex-wrap">
+          <div className="grid grid-cols-6 gap-1.5">
             <button
               type="button"
               onClick={() => {
                 setIsDirty(true);
                 setSelectedPisos([]);
               }}
-              className={`h-6 px-2 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                selectedPisos.length === 0 
-                  ? 'bg-[#FDBA30] text-black font-black shadow-2xs' 
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-white dark:border-zinc-800'
-              }`}
+              className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer active:scale-95 ${selectedPisos.length === 0
+                ? 'bg-[#FDBA30] text-black font-black shadow-xs ring-1 ring-[#FDBA30]/50'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 border border-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-700/60'
+                }`}
             >
               Todos
             </button>
@@ -819,11 +811,10 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
                   key={p.val}
                   type="button"
                   onClick={() => handleTogglePiso(p.val)}
-                  className={`h-6 px-2 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                    isSelected 
-                      ? 'bg-[#FDBA30] text-black font-black shadow-2xs' 
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-white dark:border-zinc-800'
-                  }`}
+                  className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer active:scale-95 ${isSelected
+                    ? 'bg-[#FDBA30] text-black font-black shadow-xs ring-1 ring-[#FDBA30]/50'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 border border-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-700/60'
+                    }`}
                   title={p.label}
                 >
                   {p.short}

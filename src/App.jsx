@@ -98,9 +98,9 @@ export default function App() {
     setAuthUser(null);
   };
 
-  // Control de inactividad: Sesión de asistentes se cierra tras 8 horas de la última interacción
+  // Control de inactividad: Todas las sesiones se cierran tras 7 horas de su última interacción
   useEffect(() => {
-    if (!authUser || authUser.role === 'admin') return;
+    if (!authUser) return;
 
     // Registrar interacción inicial al cargar
     recordUserActivity();
