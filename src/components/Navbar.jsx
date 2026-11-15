@@ -74,10 +74,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
       if (choice?.outcome === 'accepted') {
         setDeferredPrompt(null);
       }
-    } else if (isIos) {
-      setShowIosModal(true);
     } else {
-      alert('Para instalar la WebApp / PWA:\n\n• En Chrome / Edge: Pulsa el icono "Instalar" en la barra de direcciones.\n• En Android: Selecciona "Añadir a pantalla de inicio" en las opciones del navegador.');
+      setShowIosModal(true);
     }
   };
 
@@ -214,7 +212,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
                 {/* Menú Desplegable: Acciones Rápidas + Descargas */}
                 {userMenuFade.shouldRender && (
-                  <div className={`absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
+                  <div className={`absolute right-0 mt-2 w-68 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
                     {/* Cabecera del Usuario */}
                     <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate uppercase">
@@ -308,22 +306,22 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs group cursor-pointer"
                           title="Descargar e Instalar APK Nativo para Android"
                         >
-                          <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                          <AndroidIcon className="w-3.5 h-3.5 text-[#3DDC84] shrink-0 group-hover:scale-110 transition-transform" />
                           <span className="truncate">APK Android</span>
                         </button>
 
-                        {/* Instalar WebApp / PWA */}
+                        {/* Instalar WebApp / PWA (Apple) */}
                         <button
                           type="button"
                           onClick={() => {
                             setUserMenuOpen(false);
                             handleInstallPwa();
                           }}
-                          className="h-8 px-2 rounded-xl bg-amber-50 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200/90 dark:border-amber-800/60 text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs cursor-pointer group"
-                          title="Instalar WebApp / PWA en iOS o Escritorio PC"
+                          className="h-8 px-2 rounded-xl bg-slate-100 hover:bg-slate-200/90 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 border border-slate-200/90 dark:border-zinc-800 text-slate-900 dark:text-white flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs cursor-pointer group"
+                          title="Instalar WebApp en Apple iOS (iPhone / iPad) o Safari"
                         >
-                          <Smartphone className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
-                          <span className="truncate">WebApp PWA</span>
+                          <AppleIcon className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0 group-hover:scale-110 transition-transform" />
+                          <span className="truncate">WebApp Apple</span>
                         </button>
                       </div>
 
@@ -499,8 +497,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
           <div className="bg-white dark:bg-[#101014] border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-scale-up">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-500">
-                  <Smartphone className="w-5 h-5 stroke-[2.2]" />
+                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-slate-900 dark:text-white">
+                  <AppleIcon className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Instalar en iOS</h3>
@@ -586,5 +584,33 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         document.body
       )}
     </>
+  );
+}
+
+// Ícono Oficial Vectorial de Android (Google / Simple Icons)
+function AndroidIcon({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="currentColor" 
+      className={className} 
+      aria-hidden="true"
+    >
+      <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.996-3.4572c.1065-.1846.043-.4207-.1416-.5272-.1846-.1066-.4207-.0431-.5272.1415l-2.0238 3.5054C15.5866 8.3582 13.8569 8 12 8s-3.5866.3582-5.1849.9839L4.7913 5.4785c-.1065-.1846-.3426-.2481-.5272-.1415-.1846.1065-.2481.3426-.1416.5272l1.996 3.4572C2.6883 11.1867.3433 14.6589 0 18.7778h24c-.3433-4.1189-2.6883-7.5911-6.1185-9.4564" />
+    </svg>
+  );
+}
+
+// Ícono Oficial Vectorial de Apple (Simple Icons)
+function AppleIcon({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="currentColor" 
+      className={className} 
+      aria-hidden="true"
+    >
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.77 1.06-1.85.94-2.93-1 .04-2.16.67-2.84 1.46-.59.68-1.12 1.77-.98 2.83 1.12.09 2.25-.59 2.88-1.36" />
+    </svg>
   );
 }

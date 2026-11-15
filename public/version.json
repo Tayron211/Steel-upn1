@@ -1,8 +1,8 @@
 {
-  "version": "1.0.40",
-  "versionCode": 41,
+  "version": "1.0.42",
+  "versionCode": 43,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.40 - Correccion de encuadre en indicador deslizante de pestanas admin",
+  "notes": "v1.0.42 - Barra de progreso amarilla oficial UPN y logos Android y Apple",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

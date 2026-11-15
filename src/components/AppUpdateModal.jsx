@@ -147,23 +147,23 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           </div>
         )}
 
-        {/* Barra de Progreso de Descarga en Vivo */}
+        {/* Barra de Progreso de Descarga en Vivo (100% Amarillo UPN de la App) */}
         {downloadStarted && (
-          <div className="space-y-2 p-3 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60">
-            <div className="flex items-center justify-between text-xs font-bold text-emerald-950 dark:text-emerald-200">
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div className="space-y-2 p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-[#FDBA30]/40 dark:border-[#FDBA30]/30 shadow-2xs">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-950 dark:text-amber-200">
+              <span className="inline-flex items-center gap-1.5 font-bold">
+                <ShieldCheck className="w-4 h-4 text-[#d99000] dark:text-[#FDBA30] shrink-0 stroke-[2.2]" />
                 {progress >= 100 ? 'Iniciando instalador...' : 'Descargando paquete...'}
               </span>
-              <span className="font-mono font-black">{progress}%</span>
+              <span className="font-mono font-black text-[#b37700] dark:text-[#FDBA30]">{progress}%</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-emerald-200/70 dark:bg-emerald-900/60 overflow-hidden">
+            <div className="w-full h-2.5 rounded-full bg-amber-200/60 dark:bg-zinc-800 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 via-amber-400 to-[#FDBA30] transition-all duration-200 rounded-full"
+                className="h-full bg-[#FDBA30] transition-all duration-200 rounded-full shadow-sm shadow-[#FDBA30]/40"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-[10.5px] text-emerald-800 dark:text-emerald-300 leading-tight font-medium">
+            <p className="text-[10.5px] text-amber-900/80 dark:text-amber-300/80 leading-tight font-medium">
               {progress >= 100
                 ? 'Listo. Confirma la instalación en la ventana de Android.'
                 : 'Descarga en curso. El instalador se abrirá automáticamente.'}
