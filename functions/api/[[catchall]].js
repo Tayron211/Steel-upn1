@@ -106,31 +106,38 @@ async function ensureUsersTable(db) {
       )
     `).run();
 
-    const baseUsers = [
-      ['tsalinas', 'TAYRON SALINAS', 'admin', '1234', '', '[]'],
-      ['apascual', 'ALESSANDRO PASCUAL ROMERO', 'admin', '1234', '', '[]'],
-      ['admin', 'TAYRON SALINAS', 'admin', '210391', '', '[]'],
-      ['apalomino', 'ANTHONY PALOMINO', 'asistente', '1234', '', '[]'],
-      ['jmiranda', 'JOSÉ CARLOS MIRANDA ROSALES', 'asistente', '1234', '', '[]'],
-      ['fvillafan', 'FRANCISCO ALONSO VILLAFAN COLONIA', 'asistente', '1234', '', '[]'],
-      ['jbenites', 'JAVIER ALEXANDER BENITES ALBAN', 'asistente', '1234', '', '[]'],
-      ['jgallardo', 'JAEL ZULEMA GALLARDO CARRANZA', 'asistente', '1234', '', '[]'],
-      ['evelasquez', 'EDUARDO ANTONIO VELASQUEZ CARRION', 'asistente', '1234', '', '[]'],
-      ['jflores', 'JUNIOR MARINO FLORES PUMACAYO', 'asistente', '1234', '', '[]'],
-      ['dhusarez', 'DAVID SAMUEL HUSAREZ CABRERA', 'asistente', '1234', '', '[]'],
-      ['jvivar', 'JANETH VIVAR PEREZ', 'asistente', '1234', '', '[]']
-    ];
-
-    // Asegurar que todos los asistentes y admins base existan siempre
-    for (const u of baseUsers) {
+    const count = await db.prepare("SELECT COUNT(*) as c FROM app_users").first();
+    if (!count || count.c === 0) {
+      const baseUsers = [
+        ['tsalinas', 'TAYRON SALINAS', 'admin', '1234', '', '[]'],
+        ['apascual', 'ALESSANDRO PASCUAL ROMERO', 'admin', '1234', '', '[]'],
+        ['admin', 'TAYRON SALINAS', 'admin', '210391', '', '[]'],
+        ['apalomino', 'ANTHONY PALOMINO', 'asistente', '1234', '', '[]'],
+        ['jmiranda', 'JOSÉ CARLOS MIRANDA ROSALES', 'asistente', '1234', '', '[]'],
+        ['fvillafan', 'FRANCISCO ALONSO VILLAFAN COLONIA', 'asistente', '1234', '', '[]'],
+        ['jbenites', 'JAVIER ALEXANDER BENITES ALBAN', 'asistente', '1234', '', '[]'],
+        ['jgallardo', 'JAEL ZULEMA GALLARDO CARRANZA', 'asistente', '1234', '', '[]'],
+        ['evelasquez', 'EDUARDO ANTONIO VELASQUEZ CARRION', 'asistente', '1234', '', '[]'],
+        ['jflores', 'JUNIOR MARINO FLORES PUMACAYO', 'asistente', '1234', '', '[]'],
+        ['dhusarez', 'DAVID SAMUEL HUSAREZ CABRERA', 'asistente', '1234', '', '[]'],
+        ['jvivar', 'JANETH VIVAR PEREZ', 'asistente', '1234', '', '[]']
+      ];
+      for (const u of baseUsers) {
+        await db.prepare(`
+          INSERT OR IGNORE INTO app_users (username, name, role, password, pabellon, pisos)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(u[0], u[1], u[2], u[3], u[4], u[5]).run();
+      }
+    } else {
+      // Garantizar que los administradores clave sigan existiendo y tengan rol admin
       await db.prepare(`
         INSERT OR IGNORE INTO app_users (username, name, role, password, pabellon, pisos)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).bind(u[0], u[1], u[2], u[3], u[4], u[5]).run();
+        VALUES ('tsalinas', 'TAYRON SALINAS', 'admin', '1234', '', '[]'),
+               ('apascual', 'ALESSANDRO PASCUAL ROMERO', 'admin', '1234', '', '[]'),
+               ('admin', 'TAYRON SALINAS', 'admin', '210391', '', '[]')
+      `).run();
+      await db.prepare("UPDATE app_users SET role = 'admin' WHERE username IN ('tsalinas', 'apascual', 'admin')").run();
     }
-
-    // Garantizar que apascual y tsalinas se mantengan como admin
-    await db.prepare("UPDATE app_users SET role = 'admin' WHERE username IN ('tsalinas', 'apascual', 'admin')").run();
   } catch (e) {
     console.error('ensureUsersTable error:', e);
   }
@@ -265,7 +272,7 @@ async function handleApiRequest(context) {
       if (['tsalinas', 'apascual', 'admin'].includes(username)) {
         return json({ success: false, message: 'No se puede eliminar un administrador raíz' }, 400);
       }
-      await db.prepare("DELETE FROM app_users WHERE username = ?").bind(username).run();
+      await db.prepare("DELETE FROM app_users WHERE LOWER(username) = ?").bind(username).run();
       return json({ success: true, deleted: username });
     }
 

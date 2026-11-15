@@ -639,9 +639,18 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
       const pab = ass?.pabellon !== undefined ? ass.pabellon : (u?.assignedPabellon || '');
       const pis = (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || []);
-      setSelectedPabellon(pab);
-      setSelectedPisos(pis);
-      setUserAssignment({ pabellon: pab, pisos: pis });
+      
+      setSelectedPabellon(prev => prev === pab ? prev : pab);
+      setSelectedPisos(prev => {
+        const prevKey = prev.slice().sort().join(',');
+        const newKey = pis.slice().sort().join(',');
+        return prevKey === newKey ? prev : pis;
+      });
+      setUserAssignment(prev => {
+        const prevPisKey = prev.pisos.slice().sort().join(',');
+        const newPisKey = pis.slice().sort().join(',');
+        return (prev.pabellon === pab && prevPisKey === newPisKey) ? prev : { pabellon: pab, pisos: pis };
+      });
     };
 
     const handleFilterPendingRooms = () => {
@@ -1403,8 +1412,11 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
   const dbChanged = useMemo(() => createDbChangeGate(), []);
 
-  const loadAttendance = async () => {
-    setLoading(true);
+  const loadAttendance = async (forceSpinner = false) => {
+    // Solo mostrar el spinner si la pantalla no tiene datos o si se fuerza explícitamente (evita parpadeos)
+    if (forceSpinner || data.length === 0) {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (selectedDia) params.append('dia', selectedDia);
@@ -1513,11 +1525,13 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [quickAttentionItem, activeModalItem, selectedClassOptions]);
 
+  const selectedPisosKey = useMemo(() => selectedPisos.slice().sort().join(','), [selectedPisos]);
+
   useEffect(() => {
     loadAttendance();
     const interval = setInterval(silentRefreshAttendance, 20000);
     return () => clearInterval(interval);
-  }, [selectedDia, selectedPabellon, selectedPisos, selectedHora, blockMode, search]);
+  }, [selectedDia, selectedPabellon, selectedPisosKey, selectedHora, blockMode, search]);
 
   const getCurrentTimeStr = () => {
     const d = new Date();

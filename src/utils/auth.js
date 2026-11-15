@@ -97,6 +97,32 @@ export const USERS_REGISTRY = [
 const AUTH_STORAGE_KEY = 'steel_auth_user';
 const CUSTOM_USERS_KEY = 'steel_custom_users';
 const ASSIGNMENTS_STORAGE_KEY = 'steel_user_assignments';
+const DELETED_USERS_KEY = 'steel_deleted_users';
+
+export function getDeletedUsers() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(DELETED_USERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+export function markUserDeleted(username) {
+  const clean = String(username || '').trim().toLowerCase();
+  const list = getDeletedUsers();
+  if (!list.includes(clean)) {
+    list.push(clean);
+    localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(list));
+  }
+}
+
+export function unmarkUserDeleted(username) {
+  const clean = String(username || '').trim().toLowerCase();
+  const list = getDeletedUsers().filter(u => u !== clean);
+  localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(list));
+}
 
 // Obtener usuario autenticado actual
 export function getAuthUser() {
@@ -148,21 +174,25 @@ export function getCustomUsers() {
 export function getAllUsers() {
   const custom = getCustomUsers();
   const assignments = getUserAssignments();
+  const deleted = getDeletedUsers();
 
   // Mapear base
   const baseMap = new Map();
   USERS_REGISTRY.forEach(u => {
-    baseMap.set(u.username.toLowerCase(), {
+    const key = u.username.toLowerCase();
+    if (deleted.includes(key)) return;
+    baseMap.set(key, {
       ...u,
       isRoot: true,
-      pabellon: assignments[u.username.toLowerCase()]?.pabellon || '',
-      pisos: assignments[u.username.toLowerCase()]?.pisos || []
+      pabellon: assignments[key]?.pabellon || '',
+      pisos: assignments[key]?.pisos || []
     });
   });
 
   // Agregar / sobreescribir con custom
   custom.forEach(cu => {
     const key = cu.username.toLowerCase();
+    if (deleted.includes(key)) return;
     const existing = baseMap.get(key);
     baseMap.set(key, {
       ...existing,
@@ -186,6 +216,20 @@ export async function syncUsersWithServer() {
       const serverUsers = json.data;
       const customList = [];
       const assignments = getUserAssignments();
+      const serverUsernames = new Set(serverUsers.map(su => su.username.toLowerCase()));
+
+      // Actualizar deleted list: Si un usuario base ya no está en el servidor, considerarlo eliminado
+      const deleted = getDeletedUsers();
+      USERS_REGISTRY.forEach(bu => {
+        const k = bu.username.toLowerCase();
+        if (!serverUsernames.has(k) && !['tsalinas', 'apascual', 'admin'].includes(k)) {
+          if (!deleted.includes(k)) deleted.push(k);
+        } else if (serverUsernames.has(k)) {
+          const idx = deleted.indexOf(k);
+          if (idx >= 0) deleted.splice(idx, 1);
+        }
+      });
+      localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(deleted));
 
       serverUsers.forEach(su => {
         const key = su.username.toLowerCase();
@@ -197,18 +241,14 @@ export async function syncUsersWithServer() {
           };
         }
 
-        // Si no está en base o tiene cambios de rol/contraseña
-        const inBase = USERS_REGISTRY.some(b => b.username.toLowerCase() === key);
-        if (!inBase || su.role) {
-          customList.push({
-            username: su.username,
-            name: su.name,
-            role: su.role || 'asistente',
-            passwords: su.passwords || (su.password ? [su.password, '1234', 'upn2026'] : ['1234', 'upn2026']),
-            pabellon: su.pabellon || '',
-            pisos: Array.isArray(su.pisos) ? su.pisos : []
-          });
-        }
+        customList.push({
+          username: su.username,
+          name: su.name,
+          role: su.role || 'asistente',
+          passwords: su.passwords || (su.password ? [su.password, '1234', 'upn2026'] : ['1234', 'upn2026']),
+          pabellon: su.pabellon || '',
+          pisos: Array.isArray(su.pisos) ? su.pisos : []
+        });
       });
 
       localStorage.setItem(CUSTOM_USERS_KEY, JSON.stringify(customList));
@@ -224,7 +264,6 @@ export async function syncUsersWithServer() {
       }
 
       window.dispatchEvent(new Event('steel:users-updated'));
-      window.dispatchEvent(new Event('steel:assignments-updated'));
       return getAllUsers();
     }
   } catch (err) {
@@ -276,6 +315,9 @@ export async function saveUser({ username, name, role = 'asistente', password = 
     throw new Error('El nombre y el nombre de usuario son obligatorios');
   }
 
+  // Desmarcar de eliminados si previamente fue borrado
+  unmarkUserDeleted(cleanUser);
+
   const custom = getCustomUsers();
   const existingIdx = custom.findIndex(u => u.username.toLowerCase() === cleanUser);
 
@@ -324,17 +366,22 @@ export async function deleteUser(username) {
     throw new Error('No es posible eliminar administradores del sistema.');
   }
 
+  // 1. Marcar como eliminado en lista negra local
+  markUserDeleted(cleanUser);
+
+  // 2. Limpiar de custom users
   const custom = getCustomUsers();
   const filtered = custom.filter(u => u.username.toLowerCase() !== cleanUser);
   localStorage.setItem(CUSTOM_USERS_KEY, JSON.stringify(filtered));
 
+  // 3. Limpiar asignaciones
   const assignments = getUserAssignments();
   delete assignments[cleanUser];
   localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(assignments));
 
   window.dispatchEvent(new Event('steel:users-updated'));
 
-  // Enviar a la API
+  // 4. Enviar a la API para eliminar de Cloudflare D1
   try {
     await fetch(`/api/users/${encodeURIComponent(cleanUser)}`, {
       method: 'DELETE'

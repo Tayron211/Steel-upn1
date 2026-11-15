@@ -1,8 +1,8 @@
 {
-  "version": "1.0.31",
-  "versionCode": 32,
+  "version": "1.0.33",
+  "versionCode": 34,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.31 - Asignacion funcional de pisos/pabellon por asistente y distintivo azul suave para asistentes",
+  "notes": "v1.0.33 - Diseno visual adaptativo de alertas en modo claro y oscuro con tipografia oficial UPN",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

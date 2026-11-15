@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { BellRing, X, AlertTriangle } from 'lucide-react';
+import { BellRing, X, AlertTriangle, ArrowRight } from 'lucide-react';
 import Navbar from './components/Navbar';
 import AttendanceView from './components/AttendanceView';
 import TicketsKanban from './components/TicketsKanban';
@@ -509,20 +509,22 @@ export default function App() {
 
       {/* Alerta Visual Flotante de Cambio de Turno (15 min antes) */}
       {shiftAlert && (
-        <div className="fixed top-[calc(env(safe-area-inset-top,0px)+4.75rem)] sm:top-20 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] animate-bounce-short shadow-2xl pointer-events-auto">
-          <div className="bg-amber-400 text-slate-950 p-3.5 rounded-2xl border-2 border-amber-300 shadow-xl flex items-start justify-between gap-3 backdrop-blur-md">
-            <div className="flex items-start gap-2.5">
-              <div className="p-2 bg-slate-950 text-[#FDBA30] rounded-xl shrink-0 mt-0.5 shadow-xs">
+        <div className="fixed top-[calc(env(safe-area-inset-top,0px)+4.75rem)] sm:top-20 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] pointer-events-auto transition-all duration-300">
+          <div className="bg-white/95 dark:bg-black/95 text-slate-900 dark:text-zinc-100 p-3.5 rounded-2xl border border-amber-300/80 dark:border-amber-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(253,186,48,0.20)] flex items-start justify-between gap-3 backdrop-blur-xl">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-400/15 text-amber-600 dark:text-[#FDBA30] border border-amber-500/20 dark:border-amber-400/30 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                 <BellRing className="w-5 h-5 animate-pulse" />
               </div>
-              <div>
-                <div className="text-[11px] font-black uppercase tracking-tight text-slate-950">
-                  Próximo Cambio de Turno en {shiftAlert.diff || 15} min
+              <div className="min-w-0">
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-upn font-black uppercase tracking-wider bg-amber-500/10 dark:bg-amber-400/15 text-amber-800 dark:text-[#FDBA30] border border-amber-500/20 dark:border-amber-400/30 mb-1">
+                  <span>Próximo Turno</span>
+                  <span>•</span>
+                  <span>En {shiftAlert.diff || 15} min</span>
                 </div>
-                <div className="text-xs font-black mt-0.5 text-slate-950 leading-snug">
-                  Bloque <span className="underline">{shiftAlert.label}</span> (Inicia {shiftAlert.start})
+                <div className="font-upn font-bold text-xs sm:text-sm text-slate-900 dark:text-zinc-100 tracking-tight leading-snug">
+                  Bloque <span className="text-amber-700 dark:text-[#FDBA30] font-black underline underline-offset-2 decoration-amber-400/50">{shiftAlert.label}</span> (Inicia {shiftAlert.start})
                 </div>
-                <div className="text-[10px] text-slate-900 font-semibold mt-0.5">
+                <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5 leading-normal">
                   Prepara la ronda y verificación de asistencia docente.
                 </div>
               </div>
@@ -530,7 +532,8 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShiftAlert(null)}
-              className="text-slate-950 hover:bg-slate-950/10 p-1 rounded-lg transition cursor-pointer"
+              className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/80 p-1.5 rounded-xl transition cursor-pointer shrink-0"
+              title="Cerrar notificación"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
             </button>
@@ -540,20 +543,25 @@ export default function App() {
 
       {/* Alerta Visual Flotante de Mitad de Ronda: Aulas Pendientes */}
       {pendingRoundAlert && (
-        <div className="fixed top-[calc(env(safe-area-inset-top,0px)+5.25rem)] sm:top-24 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] animate-bounce-short shadow-2xl pointer-events-auto">
-          <div className="bg-amber-500 text-slate-950 p-3.5 rounded-2xl border-2 border-amber-400 shadow-xl flex items-start justify-between gap-3 backdrop-blur-md">
-            <div className="flex items-start gap-2.5 min-w-0">
-              <div className="p-2 bg-slate-950 text-amber-400 rounded-xl shrink-0 mt-0.5 shadow-xs">
+        <div className="fixed top-[calc(env(safe-area-inset-top,0px)+5.25rem)] sm:top-24 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] pointer-events-auto transition-all duration-300">
+          <div className="bg-white/95 dark:bg-black/95 text-slate-900 dark:text-zinc-100 p-3.5 sm:p-4 rounded-2xl border border-amber-300/80 dark:border-amber-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(253,186,48,0.22)] flex items-start justify-between gap-3 backdrop-blur-xl">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-400/15 text-amber-600 dark:text-[#FDBA30] border border-amber-500/20 dark:border-amber-400/30 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                 <AlertTriangle className="w-5 h-5 animate-pulse" />
               </div>
-              <div className="min-w-0">
-                <div className="text-[11px] font-black uppercase tracking-tight text-slate-950">
-                  Mitad de Ronda • Aulas Pendientes ({pendingRoundAlert.block})
+              <div className="min-w-0 flex-1">
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-upn font-black uppercase tracking-wider bg-amber-500/10 dark:bg-amber-400/15 text-amber-800 dark:text-[#FDBA30] border border-amber-500/20 dark:border-amber-400/30 mb-1">
+                  <span>Mitad de Ronda</span>
+                  <span>•</span>
+                  <span>{pendingRoundAlert.block}</span>
                 </div>
-                <div className="text-xs font-black mt-0.5 text-slate-950 leading-snug">
-                  {pendingRoundAlert.pendingCount} aula(s) pendientes: <span className="underline">{pendingRoundAlert.aulas}</span>
+                <div className="font-upn font-bold text-xs sm:text-sm text-slate-900 dark:text-zinc-100 tracking-tight leading-snug">
+                  {pendingRoundAlert.pendingCount} aula(s) pendientes:{' '}
+                  <span className="text-amber-700 dark:text-[#FDBA30] font-black underline underline-offset-2 decoration-amber-400/50">
+                    {pendingRoundAlert.aulas}
+                  </span>
                 </div>
-                <div className="text-[10px] text-slate-900 font-bold mt-0.5">
+                <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5 leading-normal">
                   Recuerda registrar: Puntual, Tarde o Falta
                 </div>
                 <button
@@ -563,16 +571,17 @@ export default function App() {
                     navigateTab('attendance', true);
                     window.dispatchEvent(new CustomEvent('upn:filter-pending-rooms'));
                   }}
-                  className="mt-2 h-7 px-3 rounded-lg bg-slate-950 hover:bg-slate-900 text-amber-400 text-xs font-black transition active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-md"
+                  className="mt-2.5 h-8 px-3.5 rounded-xl bg-[#FDBA30] hover:bg-[#e29b12] dark:bg-[#FDBA30] dark:hover:bg-[#ffc654] text-black font-upn font-bold text-xs shadow-xs hover:shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Ver Aulas Pendientes</span>
+                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
                 </button>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setPendingRoundAlert(null)}
-              className="text-slate-950 hover:bg-slate-950/10 p-1 rounded-lg transition cursor-pointer shrink-0"
+              className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/80 p-1.5 rounded-xl transition cursor-pointer shrink-0"
               title="Cerrar recordatorio"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
