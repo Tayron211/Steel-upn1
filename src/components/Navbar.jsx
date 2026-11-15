@@ -19,8 +19,10 @@ import {
   Sparkles,
   RotateCw,
   CheckCircle2,
+  ShieldCheck,
   X
 } from 'lucide-react';
+import AdminControlModal from './AdminControlModal';
 import { checkAppVersion, APP_CURRENT_VERSION, triggerDirectApkInstall } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
 import UpnLogo from './UpnLogo';
@@ -51,6 +53,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [updateStatusModal, setUpdateStatusModal] = useState(null);
   const updateModalFade = useFadeModal(Boolean(isCapacitorNative() && updateStatusModal), () => setUpdateStatusModal(null), 200);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [isAdminControlOpen, setIsAdminControlOpen] = useState(false);
 
   useEffect(() => {
     const isIosDevice = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -179,6 +182,19 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
               </span>
             </div>
 
+            {/* Botón Acceso Rápido Admin Panel si el usuario es Administrador */}
+            {authUser?.role === 'admin' && (
+              <button
+                type="button"
+                onClick={() => setIsAdminControlOpen(true)}
+                className="h-9 px-2.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-900 dark:text-amber-300 flex items-center gap-1.5 transition active:scale-95 text-xs font-black cursor-pointer shadow-2xs shrink-0"
+                title="Abrir Panel de Control Administrativo (Asignación de Pisos y Gestión de Usuarios)"
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-500 stroke-[2.4]" />
+                <span className="hidden sm:inline">Panel Admin</span>
+              </button>
+            )}
+
             {/* Botón de Nombre con Menú Desplegable (Modo Claro/Oscuro + Sincronización OneDrive + Cerrar Sesión) */}
             {authUser && (
               <div className="relative" ref={userMenuRef}>
@@ -202,7 +218,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 {userMenuFade.shouldRender && (
                   <div className={`absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
                     {/* Cabecera del Usuario */}
-                    <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2.5">
+                    <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {authUser?.name || authUser?.displayName}
                       </div>
@@ -210,6 +226,21 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         {authUser?.role === 'admin' ? 'Modo Administrador' : 'Modo Asistente'} • Comas
                       </div>
                     </div>
+
+                    {/* Botón Destacado Panel Admin si es Administrador */}
+                    {authUser?.role === 'admin' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          setIsAdminControlOpen(true);
+                        }}
+                        className="w-full mb-2 h-9 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-950 dark:text-amber-300 flex items-center justify-center gap-2 text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-amber-500 stroke-[2.4]" />
+                        <span>Panel de Control Admin</span>
+                      </button>
+                    )}
 
                     {/* Fila de Iconos de Acciones */}
                     <div className="grid grid-cols-3 gap-2">
@@ -447,6 +478,12 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
           </nav>
         </div>
       </div>
+
+      <AdminControlModal
+        isOpen={isAdminControlOpen}
+        onClose={() => setIsAdminControlOpen(false)}
+        authUser={authUser}
+      />
 
       <OneDriveSyncModal
         isOpen={showOneDriveModal}

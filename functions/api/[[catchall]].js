@@ -90,6 +90,48 @@ function ensureTicketColumns(db) {
   return Promise.resolve();
 }
 
+async function ensureUsersTable(db) {
+  if (!db) return;
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS app_users (
+        username TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'asistente',
+        password TEXT,
+        pabellon TEXT DEFAULT '',
+        pisos TEXT DEFAULT '[]',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )
+    `).run();
+
+    const count = await db.prepare("SELECT COUNT(*) as c FROM app_users").first();
+    if (!count || count.c === 0) {
+      const baseUsers = [
+        ['tsalinas', 'TAYRON SALINAS', 'admin', '1234', '', '[]'],
+        ['apascual', 'ALESSANDRO PASCUAL', 'admin', '1234', '', '[]'],
+        ['admin', 'TAYRON SALINAS', 'admin', '210391', '', '[]'],
+        ['apalomino', 'ANTHONY PALOMINO', 'asistente', '1234', '', '[]'],
+        ['fvillafan', 'FRANCISCO VILLAFAN', 'asistente', '1234', '', '[]'],
+        ['jmiranda', 'JOSE MIRANDA', 'asistente', '1234', '', '[]'],
+        ['jgallardo', 'JAEL GALLARDO', 'asistente', '1234', '', '[]']
+      ];
+      for (const u of baseUsers) {
+        await db.prepare(`
+          INSERT OR IGNORE INTO app_users (username, name, role, password, pabellon, pisos)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(u[0], u[1], u[2], u[3], u[4], u[5]).run();
+      }
+    } else {
+      // Garantizar que apascual y tsalinas se mantengan como admin
+      await db.prepare("UPDATE app_users SET role = 'admin' WHERE username IN ('tsalinas', 'apascual', 'admin')").run();
+    }
+  } catch (e) {
+    console.error('ensureUsersTable error:', e);
+  }
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const response = await handleApiRequest(context);
@@ -153,6 +195,77 @@ async function handleApiRequest(context) {
   const method = request.method;
 
   try {
+    // -------------------------------------------------------------
+    // 0. USERS & ASSISTANTS: /api/users & /api/assistants
+    // -------------------------------------------------------------
+    if (path === '/api/users' && method === 'GET') {
+      await ensureUsersTable(db);
+      const rows = await db.prepare("SELECT username, name, role, pabellon, pisos, updated_at FROM app_users ORDER BY CASE WHEN role = 'admin' THEN 0 ELSE 1 END, name ASC").all();
+      const mapped = (rows?.results || []).map(r => ({
+        ...r,
+        pisos: (() => { try { return JSON.parse(r.pisos || '[]'); } catch (_) { return []; } })()
+      }));
+      return json({ success: true, count: mapped.length, data: mapped });
+    }
+
+    if (path === '/api/users' && method === 'POST') {
+      await ensureUsersTable(db);
+      const body = await request.json();
+      const username = String(body.username || '').trim().toLowerCase();
+      const name = String(body.name || '').trim().toUpperCase();
+      const role = body.role === 'admin' ? 'admin' : 'asistente';
+      const password = String(body.password || '1234').trim();
+      const pabellon = String(body.pabellon || '').trim();
+      const pisos = JSON.stringify(Array.isArray(body.pisos) ? body.pisos : []);
+      if (!username || !name) {
+        return json({ success: false, message: 'Usuario y Nombre son requeridos' }, 400);
+      }
+      await db.prepare(`
+        INSERT INTO app_users (username, name, role, password, pabellon, pisos, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(username) DO UPDATE SET
+          name = excluded.name,
+          role = excluded.role,
+          password = CASE WHEN excluded.password != '' THEN excluded.password ELSE app_users.password END,
+          pabellon = excluded.pabellon,
+          pisos = excluded.pisos,
+          updated_at = datetime('now')
+      `).bind(username, name, role, password, pabellon, pisos).run();
+      return json({ success: true, data: { username, name, role, pabellon, pisos: JSON.parse(pisos) } });
+    }
+
+    const userAssignMatch = path.match(/^\/api\/users\/([^/]+)\/assignment$/);
+    if (userAssignMatch && (method === 'PUT' || method === 'POST')) {
+      await ensureUsersTable(db);
+      const username = decodeURIComponent(userAssignMatch[1]).trim().toLowerCase();
+      const body = await request.json();
+      const pabellon = String(body.pabellon || '').trim();
+      const pisos = JSON.stringify(Array.isArray(body.pisos) ? body.pisos : []);
+      await db.prepare("UPDATE app_users SET pabellon = ?, pisos = ?, updated_at = datetime('now') WHERE username = ?").bind(pabellon, pisos, username).run();
+      return json({ success: true, username, pabellon, pisos: JSON.parse(pisos) });
+    }
+
+    const userDeleteMatch = path.match(/^\/api\/users\/([^/]+)$/);
+    if (userDeleteMatch && method === 'DELETE') {
+      await ensureUsersTable(db);
+      const username = decodeURIComponent(userDeleteMatch[1]).trim().toLowerCase();
+      if (['tsalinas', 'apascual', 'admin'].includes(username)) {
+        return json({ success: false, message: 'No se puede eliminar un administrador raíz' }, 400);
+      }
+      await db.prepare("DELETE FROM app_users WHERE username = ?").bind(username).run();
+      return json({ success: true, deleted: username });
+    }
+
+    if (path === '/api/assistants' && method === 'GET') {
+      await ensureUsersTable(db);
+      const rows = await db.prepare("SELECT name FROM app_users ORDER BY name ASC").all();
+      let names = (rows?.results || []).map(r => r.name).filter(Boolean);
+      if (names.length === 0) {
+        names = ['ANTHONY PALOMINO', 'TAYRON SALINAS', 'ALESSANDRO PASCUAL', 'FRANCISCO VILLAFAN', 'JOSE MIRANDA', 'JAEL GALLARDO'];
+      }
+      return json({ success: true, count: names.length, data: names });
+    }
+
     // -------------------------------------------------------------
     // 1. ATTENDANCE: /api/attendance
     // -------------------------------------------------------------

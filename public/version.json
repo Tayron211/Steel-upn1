@@ -1,8 +1,8 @@
 {
-  "version": "1.0.25",
-  "versionCode": 26,
+  "version": "1.0.27",
+  "versionCode": 28,
   "releaseDate": "2026-11-14",
-  "notes": "v1.0.25 - Ventana emergente con horario completo del docente al mantener presionado/clic",
+  "notes": "v1.0.26 - Admin Alessandro Pascual, Panel Admin Asignacion Pisos y Alerta Aulas Pendientes Mitad Ronda",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

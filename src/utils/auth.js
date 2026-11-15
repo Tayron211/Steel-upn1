@@ -1,12 +1,12 @@
 /**
  * Sistema de Autenticación de Asistentes UPN - Campus Comas
- * Creado en base a los 6 asistentes oficiales del sistema.
+ * Creado en base a los asistentes y administradores oficiales del sistema.
  * 
  * Regla de Usuario: Inicial del primer nombre + Primer apellido (en minúsculas)
  * Ejemplos:
  *  - Anthony Palomino  -> apalomino
  *  - Tayron Salinas    -> tsalinas  (Admin)
- *  - Alessandro Pascual-> apascual
+ *  - Alessandro Pascual-> apascual  (Admin)
  *  - Francisco Villafan-> fvillafan
  *  - Jose Miranda      -> jmiranda
  *  - Jael Gallardo     -> jgallardo
@@ -35,8 +35,8 @@ export const USERS_REGISTRY = [
   {
     username: 'apascual',
     name: 'ALESSANDRO PASCUAL',
-    role: 'asistente',
-    passwords: ['1234', 'pascual', 'pascual2026', 'upn2026']
+    role: 'admin',
+    passwords: ['1234', '210391', 'pascual', 'pascual2026', 'admin', 'upn2026']
   },
   {
     username: 'fvillafan',
@@ -65,7 +65,10 @@ export const USERS_REGISTRY = [
 ];
 
 const AUTH_STORAGE_KEY = 'steel_auth_user';
+const CUSTOM_USERS_KEY = 'steel_custom_users';
+const ASSIGNMENTS_STORAGE_KEY = 'steel_user_assignments';
 
+// Obtener usuario autenticado actual
 export function getAuthUser() {
   if (typeof window === 'undefined') return null;
   try {
@@ -89,11 +92,235 @@ export function isAdmin() {
   return user?.role === 'admin';
 }
 
+// Obtener asignaciones locales (pabellón y pisos)
+export function getUserAssignments() {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(ASSIGNMENTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+// Obtener usuarios adicionales creados dinámicamente
+export function getCustomUsers() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_USERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+// Obtener lista completa unificada de usuarios con sus asignaciones
+export function getAllUsers() {
+  const custom = getCustomUsers();
+  const assignments = getUserAssignments();
+
+  // Mapear base
+  const baseMap = new Map();
+  USERS_REGISTRY.forEach(u => {
+    baseMap.set(u.username.toLowerCase(), {
+      ...u,
+      isRoot: true,
+      pabellon: assignments[u.username.toLowerCase()]?.pabellon || '',
+      pisos: assignments[u.username.toLowerCase()]?.pisos || []
+    });
+  });
+
+  // Agregar / sobreescribir con custom
+  custom.forEach(cu => {
+    const key = cu.username.toLowerCase();
+    const existing = baseMap.get(key);
+    baseMap.set(key, {
+      ...existing,
+      ...cu,
+      isRoot: existing?.isRoot || false,
+      pabellon: assignments[key]?.pabellon || cu.pabellon || '',
+      pisos: assignments[key]?.pisos || cu.pisos || []
+    });
+  });
+
+  return Array.from(baseMap.values());
+}
+
+// Sincronizar usuarios y asignaciones desde el servidor (Cloudflare D1)
+export async function syncUsersWithServer() {
+  try {
+    const res = await fetch('/api/users');
+    if (!res.ok) return getAllUsers();
+    const json = await res.json();
+    if (json && json.success && Array.isArray(json.data)) {
+      const serverUsers = json.data;
+      const customList = [];
+      const assignments = getUserAssignments();
+
+      serverUsers.forEach(su => {
+        const key = su.username.toLowerCase();
+        // Guardar asignación
+        if (su.pabellon !== undefined || su.pisos !== undefined) {
+          assignments[key] = {
+            pabellon: su.pabellon || '',
+            pisos: Array.isArray(su.pisos) ? su.pisos : []
+          };
+        }
+
+        // Si no está en base o tiene cambios de rol/contraseña
+        const inBase = USERS_REGISTRY.some(b => b.username.toLowerCase() === key);
+        if (!inBase || su.role) {
+          customList.push({
+            username: su.username,
+            name: su.name,
+            role: su.role || 'asistente',
+            passwords: su.passwords || (su.password ? [su.password, '1234', 'upn2026'] : ['1234', 'upn2026']),
+            pabellon: su.pabellon || '',
+            pisos: Array.isArray(su.pisos) ? su.pisos : []
+          });
+        }
+      });
+
+      localStorage.setItem(CUSTOM_USERS_KEY, JSON.stringify(customList));
+      localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(assignments));
+
+      // Actualizar sesión si el usuario activo cambió de asignación o rol
+      const active = getAuthUser();
+      if (active && assignments[active.username.toLowerCase()]) {
+        const myAssign = assignments[active.username.toLowerCase()];
+        active.assignedPabellon = myAssign.pabellon;
+        active.assignedPisos = myAssign.pisos;
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(active));
+      }
+
+      window.dispatchEvent(new Event('steel:users-updated'));
+      window.dispatchEvent(new Event('steel:assignments-updated'));
+      return getAllUsers();
+    }
+  } catch (err) {
+    console.warn('No se pudo sincronizar usuarios desde backend:', err);
+  }
+  return getAllUsers();
+}
+
+// Guardar asignación de pabellón y pisos para un usuario
+export async function saveUserAssignment(username, pabellon, pisos) {
+  const cleanUser = String(username || '').trim().toLowerCase();
+  const assignments = getUserAssignments();
+  assignments[cleanUser] = {
+    pabellon: pabellon || '',
+    pisos: Array.isArray(pisos) ? pisos : []
+  };
+  localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(assignments));
+
+  // Si es el usuario activo, actualizar su sesión
+  const active = getAuthUser();
+  if (active && active.username.toLowerCase() === cleanUser) {
+    active.assignedPabellon = pabellon || '';
+    active.assignedPisos = Array.isArray(pisos) ? pisos : [];
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(active));
+    window.dispatchEvent(new Event('steel:auth-changed'));
+  }
+
+  window.dispatchEvent(new Event('steel:assignments-updated'));
+
+  // Enviar a la API
+  try {
+    await fetch(`/api/users/${encodeURIComponent(cleanUser)}/assignment`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pabellon, pisos })
+    });
+  } catch (_) {}
+
+  return true;
+}
+
+// Crear o actualizar un usuario
+export async function saveUser({ username, name, role = 'asistente', password = '1234', pabellon = '', pisos = [] }) {
+  const cleanUser = String(username || '').trim().toLowerCase();
+  const cleanName = String(name || '').trim().toUpperCase();
+  const cleanPass = String(password || '1234').trim();
+
+  if (!cleanUser || !cleanName) {
+    throw new Error('El nombre y el nombre de usuario son obligatorios');
+  }
+
+  const custom = getCustomUsers();
+  const existingIdx = custom.findIndex(u => u.username.toLowerCase() === cleanUser);
+
+  const userObj = {
+    username: cleanUser,
+    name: cleanName,
+    role: role === 'admin' ? 'admin' : 'asistente',
+    passwords: [cleanPass, '1234', 'upn2026', cleanUser],
+    pabellon: pabellon || '',
+    pisos: Array.isArray(pisos) ? pisos : []
+  };
+
+  if (existingIdx >= 0) {
+    custom[existingIdx] = { ...custom[existingIdx], ...userObj };
+  } else {
+    custom.push(userObj);
+  }
+
+  localStorage.setItem(CUSTOM_USERS_KEY, JSON.stringify(custom));
+
+  // Guardar asignación
+  if (pabellon !== undefined || pisos !== undefined) {
+    const assignments = getUserAssignments();
+    assignments[cleanUser] = { pabellon: pabellon || '', pisos: Array.isArray(pisos) ? pisos : [] };
+    localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(assignments));
+  }
+
+  window.dispatchEvent(new Event('steel:users-updated'));
+
+  // Enviar a la API
+  try {
+    await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userObj)
+    });
+  } catch (_) {}
+
+  return userObj;
+}
+
+// Eliminar un usuario
+export async function deleteUser(username) {
+  const cleanUser = String(username || '').trim().toLowerCase();
+  if (['tsalinas', 'apascual', 'admin'].includes(cleanUser)) {
+    throw new Error('No es posible eliminar administradores del sistema.');
+  }
+
+  const custom = getCustomUsers();
+  const filtered = custom.filter(u => u.username.toLowerCase() !== cleanUser);
+  localStorage.setItem(CUSTOM_USERS_KEY, JSON.stringify(filtered));
+
+  const assignments = getUserAssignments();
+  delete assignments[cleanUser];
+  localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(assignments));
+
+  window.dispatchEvent(new Event('steel:users-updated'));
+
+  // Enviar a la API
+  try {
+    await fetch(`/api/users/${encodeURIComponent(cleanUser)}`, {
+      method: 'DELETE'
+    });
+  } catch (_) {}
+
+  return true;
+}
+
+// Autenticar usuario con soporte para usuarios oficiales y personalizados
 export function authenticate(username, password) {
   const cleanUser = String(username || '').trim().toLowerCase();
   const cleanPass = String(password || '').trim().toLowerCase();
 
-  const found = USERS_REGISTRY.find(u => 
+  const allUsers = getAllUsers();
+  const found = allUsers.find(u => 
     u.username.toLowerCase() === cleanUser || 
     u.name.toLowerCase() === cleanUser
   );
@@ -106,16 +333,19 @@ export function authenticate(username, password) {
         name: cleanUser ? cleanUser.toUpperCase() : 'TAYRON SALINAS',
         role: 'admin',
         displayName: cleanUser ? cleanUser.toUpperCase() : 'TAYRON SALINAS',
+        assignedPabellon: '',
+        assignedPisos: [],
         loginAt: new Date().toISOString()
       };
       saveSession(fallbackAdmin);
       return { success: true, user: fallbackAdmin };
     }
-    return { success: false, message: 'Usuario no registrado. Usa tu inicial + apellido (ej: tsalinas, apalomino).' };
+    return { success: false, message: 'Usuario no registrado. Usa tu inicial + apellido (ej: tsalinas, apascual, apalomino).' };
   }
 
   // Verificar contraseña
-  const isValidPass = found.passwords.some(p => p.toLowerCase() === cleanPass) || cleanPass === '210391';
+  const userPasswords = Array.isArray(found.passwords) ? found.passwords : [found.password || '1234'];
+  const isValidPass = userPasswords.some(p => String(p || '').toLowerCase() === cleanPass) || cleanPass === '210391';
 
   if (!isValidPass) {
     return { 
@@ -124,11 +354,16 @@ export function authenticate(username, password) {
     };
   }
 
+  const assignments = getUserAssignments();
+  const myAssign = assignments[found.username.toLowerCase()] || {};
+
   const sessionUser = {
     username: found.username,
     name: found.name,
     role: found.role,
     displayName: found.name,
+    assignedPabellon: myAssign.pabellon || found.pabellon || '',
+    assignedPisos: myAssign.pisos || found.pisos || [],
     loginAt: new Date().toISOString()
   };
 
@@ -150,4 +385,3 @@ export function logout() {
     window.dispatchEvent(new Event('steel:auth-changed'));
   } catch (_) {}
 }
-

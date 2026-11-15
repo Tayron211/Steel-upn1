@@ -8,7 +8,7 @@ import {
   ArrowRight, 
   AlertCircle
 } from 'lucide-react';
-import { authenticate, USERS_REGISTRY } from '../utils/auth';
+import { authenticate, getAllUsers, USERS_REGISTRY } from '../utils/auth';
 
 /**
  * Logotipo oficial vectorial UPN (Escudo Norte UPN)
@@ -36,7 +36,8 @@ export default function LoginScreen({ onLogin }) {
 
   // Detección inteligente del rol y nombre según lo que escribe el usuario
   const trimmedUser = usernameInput.trim().toLowerCase();
-  const matchedUser = USERS_REGISTRY.find(u => 
+  const allKnownUsers = getAllUsers();
+  const matchedUser = allKnownUsers.find(u => 
     u.username.toLowerCase() === trimmedUser || 
     u.name.toLowerCase() === trimmedUser
   );
@@ -46,7 +47,9 @@ export default function LoginScreen({ onLogin }) {
     trimmedUser.includes('admin') || 
     trimmedUser === 'root' || 
     trimmedUser === 'tsalinas' ||
-    trimmedUser === 'tayron'
+    trimmedUser === 'tayron' ||
+    trimmedUser === 'apascual' ||
+    trimmedUser === 'alessandro'
   ) ? 'admin' : 'asistente';
 
   const detectedDisplayName = matchedUser 

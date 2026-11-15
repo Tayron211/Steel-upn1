@@ -42,7 +42,7 @@ import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
 import { useAssistants } from '../utils/assistants';
-import { getLoggedAssistantName, isAdmin } from '../utils/auth';
+import { getLoggedAssistantName, isAdmin, getAuthUser, getUserAssignments } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
 import { FadeCollapse } from './FadeCollapse';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
@@ -602,10 +602,28 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const daysOfWeek = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
   const todayDefault = daysOfWeek[new Date().getDay()];
 
-  // Filter states
+  // Asignación de pisos y pabellón del usuario (prioridad por defecto configurada por el administrador)
+  const [userAssignment, setUserAssignment] = useState(() => {
+    const u = getAuthUser();
+    const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
+    return {
+      pabellon: ass?.pabellon || u?.assignedPabellon || '',
+      pisos: (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || [])
+    };
+  });
+
+  // Filter states - Por prioridad carga la asignación del administrador
   const [selectedDia, setSelectedDia] = useState(todayDefault);
-  const [selectedPabellon, setSelectedPabellon] = useState('');
-  const [selectedPisos, setSelectedPisos] = useState([]); // Array para selección múltiple de pisos (ej: ['1ER PISO', '2DO PISO'])
+  const [selectedPabellon, setSelectedPabellon] = useState(() => {
+    const u = getAuthUser();
+    const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
+    return ass?.pabellon || u?.assignedPabellon || '';
+  });
+  const [selectedPisos, setSelectedPisos] = useState(() => {
+    const u = getAuthUser();
+    const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
+    return (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || []);
+  });
   const [selectedHora, setSelectedHora] = useState('');
   const [blockMode, setBlockMode] = useState('ALL'); // 'ALL' | 'CURRENT' | 'NEXT'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'PUNTUAL' | 'TARDE' | 'FALTA'
@@ -613,6 +631,33 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   const [search, setSearch] = useState(initialSearch || '');
   const [selectedCarrera, setSelectedCarrera] = useState('');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  // Escuchar cambios de asignación en tiempo real si un administrador la modifica
+  useEffect(() => {
+    const handleAssignmentUpdate = () => {
+      const u = getAuthUser();
+      const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
+      const updated = {
+        pabellon: ass?.pabellon || u?.assignedPabellon || '',
+        pisos: (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || [])
+      };
+      setUserAssignment(updated);
+    };
+
+    const handleFilterPendingRooms = () => {
+      setStatusFilter('PENDING');
+      setViewMode('CLASSES');
+    };
+
+    window.addEventListener('steel:auth-changed', handleAssignmentUpdate);
+    window.addEventListener('steel:assignments-updated', handleAssignmentUpdate);
+    window.addEventListener('upn:filter-pending-rooms', handleFilterPendingRooms);
+    return () => {
+      window.removeEventListener('steel:auth-changed', handleAssignmentUpdate);
+      window.removeEventListener('steel:assignments-updated', handleAssignmentUpdate);
+      window.removeEventListener('upn:filter-pending-rooms', handleFilterPendingRooms);
+    };
+  }, []);
 
   const activeFiltersCount = (selectedPabellon ? 1 : 0) + (selectedPisos.length > 0 ? 1 : 0) + (selectedCarrera ? 1 : 0);
 
@@ -768,63 +813,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       console.warn('Error fetching teacher day schedule:', e);
       setTeacherDayModalData(prev => prev ? { ...prev, classes: [], loading: false } : null);
     }
-  };
-
-  const handleTeacherModalStatus = async (classItem, targetStatus) => {
-    await handleQuickStatus(classItem, targetStatus);
-    setTeacherDayModalData(prev => {
-      if (!prev) return prev;
-      const isCurrentlyActive =
-        (targetStatus === 'PUNTUAL' && classItem.puntualidad === 'PUNTUAL') ||
-        (targetStatus === 'TARDE' && classItem.puntualidad === 'TARDE') ||
-        (targetStatus === 'FALTA' && classItem.asistencia === 'NO');
-
-      const updated = prev.classes.map(c => {
-        if (c.id !== classItem.id) return c;
-        if (isCurrentlyActive) {
-          return {
-            ...c,
-            asistencia: 'PENDIENTE',
-            puntualidad: '',
-            horaInicioReal: '',
-            horaFinalReal: '',
-            observacion: ''
-          };
-        }
-        if (targetStatus === 'PUNTUAL') {
-          return {
-            ...c,
-            asistencia: 'SI',
-            puntualidad: 'PUNTUAL',
-            horaInicioReal: c.horaInicioProg || getCurrentTimeStr(),
-            horaFinalReal: c.horaFinalProg || c.horaFinalReal || '',
-            observacion: (c.observacion === 'CLASE REMOTA' || c.observacion === 'CLASE ADELANTADA') ? '' : c.observacion
-          };
-        }
-        if (targetStatus === 'TARDE') {
-          return {
-            ...c,
-            asistencia: 'SI',
-            puntualidad: 'TARDE',
-            horaFinalReal: c.horaFinalProg || c.horaFinalReal || '',
-            observacion: (c.observacion === 'CLASE REMOTA' || c.observacion === 'CLASE ADELANTADA') ? '' : c.observacion
-          };
-        }
-        if (targetStatus === 'FALTA') {
-          return {
-            ...c,
-            asistencia: 'NO',
-            puntualidad: '-',
-            horaInicioReal: '-',
-            horaFinalReal: '-',
-            observacion: (c.observacion === 'CLASE REMOTA' || c.observacion === 'CLASE ADELANTADA') ? '' : c.observacion
-          };
-        }
-        return c;
-      });
-
-      return { ...prev, classes: updated };
-    });
   };
 
   // Función para alternar selección múltiple de pisos
@@ -3804,48 +3792,6 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
                           <span className="break-words">{cls.observacion}</span>
                         </div>
                       )}
-
-                      {/* Botones de Asistencia Rápida dentro del Modal */}
-                      <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-200/70 dark:border-zinc-800/80">
-                        <button
-                          type="button"
-                          onClick={() => handleTeacherModalStatus(cls, 'PUNTUAL')}
-                          className={`h-8 py-0.5 px-1 rounded-xl font-bold text-[11px] transition inline-flex items-center justify-center gap-1 active:scale-95 ${
-                            isPuntual
-                              ? 'bg-[#107c41] text-white shadow-xs'
-                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50'
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3 h-3 shrink-0" />
-                          <span>Puntual</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleTeacherModalStatus(cls, 'TARDE')}
-                          className={`h-8 py-0.5 px-1 rounded-xl font-bold text-[11px] transition inline-flex items-center justify-center gap-1 active:scale-95 ${
-                            isTarde
-                              ? 'bg-[#d83b01] text-white shadow-xs'
-                              : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/30 dark:hover:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800/50'
-                          }`}
-                        >
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>Tarde</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleTeacherModalStatus(cls, 'FALTA')}
-                          className={`h-8 py-0.5 px-1 rounded-xl font-bold text-[11px] transition inline-flex items-center justify-center gap-1 active:scale-95 ${
-                            isFalta
-                              ? 'bg-rose-600 text-white shadow-xs'
-                              : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-950/30 dark:hover:bg-rose-900/50 dark:text-rose-300 dark:border-rose-800/50'
-                          }`}
-                        >
-                          <XCircle className="w-3 h-3 shrink-0" />
-                          <span>Falta</span>
-                        </button>
-                      </div>
                     </div>
                   );
                 })

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { BellRing, X } from 'lucide-react';
+import { BellRing, X, AlertTriangle } from 'lucide-react';
 import Navbar from './components/Navbar';
 import AttendanceView from './components/AttendanceView';
 import TicketsKanban from './components/TicketsKanban';
@@ -107,6 +107,7 @@ export default function App() {
   });
 
   const [shiftAlert, setShiftAlert] = useState(null);
+  const [pendingRoundAlert, setPendingRoundAlert] = useState(null);
   const [updateInfo, setUpdateInfo] = useState(null);
   const [updateModalDismissed, setUpdateModalDismissed] = useState(false);
 
@@ -121,6 +122,11 @@ export default function App() {
     };
     window.addEventListener('upn:class-block-warning', handleShiftAlert);
 
+    const handlePendingRoundAlert = (e) => {
+      setPendingRoundAlert(e.detail || null);
+    };
+    window.addEventListener('upn:pending-attendance-alert', handlePendingRoundAlert);
+
     const handleUpdateAvailable = (e) => {
       // El popup SOLO debe mostrarse en la app nativa (APK), NUNCA en navegador web
       if (!isCapacitorNative()) return;
@@ -133,6 +139,7 @@ export default function App() {
       cleanupNotifier();
       cleanupChecker();
       window.removeEventListener('upn:class-block-warning', handleShiftAlert);
+      window.removeEventListener('upn:pending-attendance-alert', handlePendingRoundAlert);
       window.removeEventListener('upn:app-update-available', handleUpdateAvailable);
     };
   }, []);
@@ -520,6 +527,49 @@ export default function App() {
               type="button"
               onClick={() => setShiftAlert(null)}
               className="text-slate-950 hover:bg-slate-950/10 p-1 rounded-lg transition cursor-pointer"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Alerta Visual Flotante de Mitad de Ronda: Aulas Pendientes */}
+      {pendingRoundAlert && (
+        <div className="fixed top-[calc(env(safe-area-inset-top,0px)+5.25rem)] sm:top-24 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] animate-bounce-short shadow-2xl pointer-events-auto">
+          <div className="bg-amber-500 text-slate-950 p-3.5 rounded-2xl border-2 border-amber-400 shadow-xl flex items-start justify-between gap-3 backdrop-blur-md">
+            <div className="flex items-start gap-2.5 min-w-0">
+              <div className="p-2 bg-slate-950 text-amber-400 rounded-xl shrink-0 mt-0.5 shadow-xs">
+                <AlertTriangle className="w-5 h-5 animate-pulse" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black uppercase tracking-tight text-slate-950">
+                  Mitad de Ronda • Aulas Pendientes ({pendingRoundAlert.block})
+                </div>
+                <div className="text-xs font-black mt-0.5 text-slate-950 leading-snug">
+                  {pendingRoundAlert.pendingCount} aula(s) pendientes: <span className="underline">{pendingRoundAlert.aulas}</span>
+                </div>
+                <div className="text-[10px] text-slate-900 font-bold mt-0.5">
+                  Recuerda registrar: Puntual, Tarde o Falta
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingRoundAlert(null);
+                    navigateTab('attendance', true);
+                    window.dispatchEvent(new CustomEvent('upn:filter-pending-rooms'));
+                  }}
+                  className="mt-2 h-7 px-3 rounded-lg bg-slate-950 hover:bg-slate-900 text-amber-400 text-xs font-black transition active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <span>Ver Aulas Pendientes</span>
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPendingRoundAlert(null)}
+              className="text-slate-950 hover:bg-slate-950/10 p-1 rounded-lg transition cursor-pointer shrink-0"
+              title="Cerrar recordatorio"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
             </button>
