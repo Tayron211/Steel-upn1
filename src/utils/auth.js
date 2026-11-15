@@ -392,8 +392,8 @@ export function authenticate(username, password) {
     name: found.name,
     role: found.role,
     displayName: found.name,
-    assignedPabellon: myAssign.pabellon || found.pabellon || '',
-    assignedPisos: myAssign.pisos || found.pisos || [],
+    assignedPabellon: myAssign.pabellon !== undefined ? myAssign.pabellon : (found.pabellon || ''),
+    assignedPisos: (Array.isArray(myAssign.pisos) && myAssign.pisos.length > 0) ? myAssign.pisos : (found.pisos || []),
     loginAt: new Date().toISOString()
   };
 

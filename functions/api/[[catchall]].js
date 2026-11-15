@@ -106,27 +106,31 @@ async function ensureUsersTable(db) {
       )
     `).run();
 
-    const count = await db.prepare("SELECT COUNT(*) as c FROM app_users").first();
-    if (!count || count.c === 0) {
-      const baseUsers = [
-        ['tsalinas', 'TAYRON SALINAS', 'admin', '1234', '', '[]'],
-        ['apascual', 'ALESSANDRO PASCUAL', 'admin', '1234', '', '[]'],
-        ['admin', 'TAYRON SALINAS', 'admin', '210391', '', '[]'],
-        ['apalomino', 'ANTHONY PALOMINO', 'asistente', '1234', '', '[]'],
-        ['fvillafan', 'FRANCISCO VILLAFAN', 'asistente', '1234', '', '[]'],
-        ['jmiranda', 'JOSE MIRANDA', 'asistente', '1234', '', '[]'],
-        ['jgallardo', 'JAEL GALLARDO', 'asistente', '1234', '', '[]']
-      ];
-      for (const u of baseUsers) {
-        await db.prepare(`
-          INSERT OR IGNORE INTO app_users (username, name, role, password, pabellon, pisos)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).bind(u[0], u[1], u[2], u[3], u[4], u[5]).run();
-      }
-    } else {
-      // Garantizar que apascual y tsalinas se mantengan como admin
-      await db.prepare("UPDATE app_users SET role = 'admin' WHERE username IN ('tsalinas', 'apascual', 'admin')").run();
+    const baseUsers = [
+      ['tsalinas', 'TAYRON SALINAS', 'admin', '1234', '', '[]'],
+      ['apascual', 'ALESSANDRO PASCUAL ROMERO', 'admin', '1234', '', '[]'],
+      ['admin', 'TAYRON SALINAS', 'admin', '210391', '', '[]'],
+      ['apalomino', 'ANTHONY PALOMINO', 'asistente', '1234', '', '[]'],
+      ['jmiranda', 'JOSÉ CARLOS MIRANDA ROSALES', 'asistente', '1234', '', '[]'],
+      ['fvillafan', 'FRANCISCO ALONSO VILLAFAN COLONIA', 'asistente', '1234', '', '[]'],
+      ['jbenites', 'JAVIER ALEXANDER BENITES ALBAN', 'asistente', '1234', '', '[]'],
+      ['jgallardo', 'JAEL ZULEMA GALLARDO CARRANZA', 'asistente', '1234', '', '[]'],
+      ['evelasquez', 'EDUARDO ANTONIO VELASQUEZ CARRION', 'asistente', '1234', '', '[]'],
+      ['jflores', 'JUNIOR MARINO FLORES PUMACAYO', 'asistente', '1234', '', '[]'],
+      ['dhusarez', 'DAVID SAMUEL HUSAREZ CABRERA', 'asistente', '1234', '', '[]'],
+      ['jvivar', 'JANETH VIVAR PEREZ', 'asistente', '1234', '', '[]']
+    ];
+
+    // Asegurar que todos los asistentes y admins base existan siempre
+    for (const u of baseUsers) {
+      await db.prepare(`
+        INSERT OR IGNORE INTO app_users (username, name, role, password, pabellon, pisos)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(u[0], u[1], u[2], u[3], u[4], u[5]).run();
     }
+
+    // Garantizar que apascual y tsalinas se mantengan como admin
+    await db.prepare("UPDATE app_users SET role = 'admin' WHERE username IN ('tsalinas', 'apascual', 'admin')").run();
   } catch (e) {
     console.error('ensureUsersTable error:', e);
   }
@@ -241,7 +245,16 @@ async function handleApiRequest(context) {
       const body = await request.json();
       const pabellon = String(body.pabellon || '').trim();
       const pisos = JSON.stringify(Array.isArray(body.pisos) ? body.pisos : []);
-      await db.prepare("UPDATE app_users SET pabellon = ?, pisos = ?, updated_at = datetime('now') WHERE username = ?").bind(pabellon, pisos, username).run();
+      
+      await db.prepare(`
+        INSERT INTO app_users (username, name, role, password, pabellon, pisos, updated_at)
+        VALUES (?, ?, 'asistente', '1234', ?, ?, datetime('now'))
+        ON CONFLICT(username) DO UPDATE SET
+          pabellon = excluded.pabellon,
+          pisos = excluded.pisos,
+          updated_at = datetime('now')
+      `).bind(username, username.toUpperCase(), pabellon, pisos).run();
+
       return json({ success: true, username, pabellon, pisos: JSON.parse(pisos) });
     }
 

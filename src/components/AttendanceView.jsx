@@ -586,7 +586,7 @@ const TeacherNameTrigger = ({ docente, onOpen }) => {
   );
 };
 
-export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, initialSearch = '', onClearInitialSearch }) {
+export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManualSheet, initialSearch = '', onClearInitialSearch }) {
   const [data, setData] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [reservations, setReservations] = useState([]);
@@ -604,10 +604,10 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
 
   // Asignación de pisos y pabellón del usuario (prioridad por defecto configurada por el administrador)
   const [userAssignment, setUserAssignment] = useState(() => {
-    const u = getAuthUser();
+    const u = authUser || getAuthUser();
     const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
     return {
-      pabellon: ass?.pabellon || u?.assignedPabellon || '',
+      pabellon: ass?.pabellon !== undefined ? ass.pabellon : (u?.assignedPabellon || ''),
       pisos: (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || [])
     };
   });
@@ -615,12 +615,12 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   // Filter states - Por prioridad carga la asignación del administrador
   const [selectedDia, setSelectedDia] = useState(todayDefault);
   const [selectedPabellon, setSelectedPabellon] = useState(() => {
-    const u = getAuthUser();
+    const u = authUser || getAuthUser();
     const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
-    return ass?.pabellon || u?.assignedPabellon || '';
+    return ass?.pabellon !== undefined ? ass.pabellon : (u?.assignedPabellon || '');
   });
   const [selectedPisos, setSelectedPisos] = useState(() => {
-    const u = getAuthUser();
+    const u = authUser || getAuthUser();
     const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
     return (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || []);
   });
@@ -637,11 +637,11 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
     const handleAssignmentUpdate = () => {
       const u = getAuthUser();
       const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
-      const updated = {
-        pabellon: ass?.pabellon || u?.assignedPabellon || '',
-        pisos: (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || [])
-      };
-      setUserAssignment(updated);
+      const pab = ass?.pabellon !== undefined ? ass.pabellon : (u?.assignedPabellon || '');
+      const pis = (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || []);
+      setSelectedPabellon(pab);
+      setSelectedPisos(pis);
+      setUserAssignment({ pabellon: pab, pisos: pis });
     };
 
     const handleFilterPendingRooms = () => {
@@ -1749,6 +1749,33 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
   // Filter items by statusFilter when user clicks on counter pills
   const displayedItems = useMemo(() => {
     return data.filter(c => {
+      // Filtro por pabellón seleccionado
+      if (selectedPabellon) {
+        const itemPab = String(c.pisoPabellon || '').toUpperCase();
+        const itemAula = String(c.aula || '').toUpperCase();
+        const targetPab = selectedPabellon.toUpperCase();
+        const matchesPab = itemPab.includes(`- ${targetPab}`) || 
+                           itemPab.includes(`PABELLÓN ${targetPab}`) ||
+                           itemPab.includes(`PAB. ${targetPab}`) ||
+                           itemAula.startsWith(targetPab);
+        if (!matchesPab) return false;
+      }
+
+      // Filtro por pisos seleccionados
+      if (selectedPisos.length > 0) {
+        const itemUbi = String(c.pisoPabellon || '').toUpperCase();
+        const matchesPiso = selectedPisos.some(p => {
+          const pUpper = p.toUpperCase();
+          if (pUpper.includes('1') || pUpper.includes('PRIMER')) return itemUbi.includes('1ER') || itemUbi.includes('PRIMER');
+          if (pUpper.includes('2') || pUpper.includes('SEGUNDO')) return itemUbi.includes('2DO') || itemUbi.includes('SEGUNDO');
+          if (pUpper.includes('3') || pUpper.includes('TERCER')) return itemUbi.includes('3ER') || itemUbi.includes('TERCER');
+          if (pUpper.includes('4') || pUpper.includes('CUARTO')) return itemUbi.includes('4TO') || itemUbi.includes('CUARTO');
+          if (pUpper.includes('5') || pUpper.includes('QUINTO')) return itemUbi.includes('5TO') || itemUbi.includes('QUINTO');
+          return itemUbi.includes(pUpper);
+        });
+        if (!matchesPiso) return false;
+      }
+
       if (selectedCarrera && String(c.carrera || '').trim() !== selectedCarrera) return false;
       if (statusFilter === 'ALL') return true;
       if (statusFilter === 'PENDING' || statusFilter === 'PENDIENTE') {
@@ -1759,7 +1786,7 @@ export default function AttendanceView({ onOpenNewTicket, onEmitManualSheet, ini
       if (statusFilter === 'FALTA') return c.asistencia === 'NO';
       return true;
     });
-  }, [data, statusFilter, selectedCarrera]);
+  }, [data, selectedPabellon, selectedPisos, statusFilter, selectedCarrera]);
 
   // Compute Free Classrooms (Aulas Libres en este momento o bloque seleccionado)
   // Excluye automáticamente tanto clases regulares como aulas con reserva activa en Excel/BD

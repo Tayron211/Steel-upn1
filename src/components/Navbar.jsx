@@ -188,17 +188,28 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className={`h-9 px-3 sm:px-3.5 rounded-full flex items-center gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${userMenuOpen
-                    ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-2 ring-amber-400/30'
-                    : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-amber-200/80 dark:border-zinc-800 text-amber-950 dark:text-zinc-100'
-                    }`}
+                  className={`h-9 px-3 sm:px-3.5 rounded-full flex items-center gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${
+                    authUser?.role === 'admin'
+                      ? userMenuOpen
+                        ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-2 ring-amber-400/30'
+                        : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-amber-200/80 dark:border-zinc-800 text-amber-950 dark:text-zinc-100'
+                      : userMenuOpen
+                        ? 'bg-sky-100 dark:bg-sky-950/80 border-sky-300 dark:border-sky-700 text-sky-950 dark:text-sky-200 ring-2 ring-sky-400/30'
+                        : 'bg-sky-50 hover:bg-sky-100/80 dark:bg-sky-950/30 dark:hover:bg-sky-900/50 border-sky-200/80 dark:border-sky-800/60 text-sky-950 dark:text-sky-200'
+                  }`}
                   title="Opciones de cuenta y sistema"
                 >
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  <span className={`w-2 h-2 rounded-full animate-pulse shrink-0 ${
+                    authUser?.role === 'admin' ? 'bg-amber-500' : 'bg-sky-500'
+                  }`} />
                   <span className="text-xs font-bold font-mono tracking-tight max-w-[100px] sm:max-w-[150px] truncate uppercase">
                     {authUser?.name || authUser?.displayName || 'Asistente'}
                   </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-amber-700 dark:text-zinc-400 transition-transform duration-200 shrink-0 ${userMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
+                    authUser?.role === 'admin'
+                      ? 'text-amber-700 dark:text-zinc-400'
+                      : 'text-sky-700 dark:text-sky-300'
+                  } ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Menú Desplegable: Acciones Rápidas + Descargas */}
@@ -206,10 +217,14 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   <div className={`absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
                     {/* Cabecera del Usuario */}
                     <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2">
-                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate uppercase">
                         {authUser?.name || authUser?.displayName}
                       </div>
-                      <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold uppercase mt-0.5">
+                      <div className={`text-[10px] font-mono font-semibold uppercase mt-0.5 ${
+                        authUser?.role === 'admin'
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-sky-600 dark:text-sky-400'
+                      }`}>
                         {authUser?.role === 'admin' ? 'Modo Administrador' : 'Modo Asistente'} • Comas
                       </div>
                     </div>

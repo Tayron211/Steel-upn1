@@ -960,4 +960,30 @@ input.login-input:-webkit-autofill:focus {
   }
 }
 
+/* Ocultar botón flotante FAB en celulares, pantallas pequeñas o baja resolución / bajo DPI */
+@media screen and (max-width: 639px) {
+  .fab-floating-container {
+    display: none !important;
+  }
+}
+
+@media screen and (max-height: 660px) and (max-width: 768px) {
+  .fab-floating-container {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 768px) and (-webkit-max-device-pixel-ratio: 2.2) {
+  .fab-floating-container {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 768px) and (max-resolution: 210dpi) {
+  .fab-floating-container {
+    display: none !important;
+  }
+}
+
+
 

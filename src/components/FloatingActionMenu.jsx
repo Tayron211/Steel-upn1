@@ -33,7 +33,49 @@ function scrollToTopGlobal() {
 
 export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket, onOpenReservation }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSupportedDevice, setIsSupportedDevice] = useState(true);
   const fabFade = useFadeModal(isOpen, () => setIsOpen(false), 200);
+
+  // Ocultar en celulares con pantalla pequeña, baja resolución o DPI bajo para no tapar las tarjetas
+  useEffect(() => {
+    const checkDevice = () => {
+      if (typeof window === 'undefined') return;
+
+      const width = window.innerWidth || document.documentElement.clientWidth || 0;
+      const height = window.innerHeight || document.documentElement.clientHeight || 0;
+      const screenW = window.screen?.width || width;
+      const screenH = window.screen?.height || height;
+      const dpr = window.devicePixelRatio || 1;
+
+      // Detección de celular / táctil móvil
+      const isMobileDevice = 
+        /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        ('ontouchstart' in window && width < 768);
+
+      // Pantalla pequeña en móvil (ancho menor a 640px o alto menor a 660px)
+      const isSmallScreen = width < 640 || height < 660 || screenW < 640;
+
+      // Celular de baja resolución física (ej. pantallas de baja gama < 720p de ancho)
+      const isLowPhysicalRes = isMobileDevice && (screenW * dpr < 750 || screenH * dpr < 1100);
+
+      // DPI / densidad de píxeles baja en móvil (DPR <= 2.2)
+      const isLowDpiMobile = isMobileDevice && (dpr <= 2.2 && width < 768);
+
+      if (isSmallScreen || isLowPhysicalRes || isLowDpiMobile) {
+        setIsSupportedDevice(false);
+      } else {
+        setIsSupportedDevice(true);
+      }
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    window.addEventListener('orientationchange', checkDevice);
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      window.removeEventListener('orientationchange', checkDevice);
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -52,6 +94,8 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
     scrollToTopGlobal();
   };
 
+  if (!isSupportedDevice) return null;
+
   return (
     <>
       {/* Backdrop rendered at root body to prevent any coordinate or clipping trap */}
@@ -63,7 +107,7 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
         document.body
       )}
 
-      <div className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-[9995]">
+      <div className="fab-floating-container hidden sm:block fixed bottom-20 md:bottom-8 right-4 md:right-8 z-[9995]">
         {/* Apple-Style Speed Dial Options */}
         {fabFade.shouldRender && (
           <div className="absolute bottom-16 right-0 z-[9996] flex flex-col items-end gap-2.5 mb-2 pointer-events-auto">

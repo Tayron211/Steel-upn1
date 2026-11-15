@@ -1,8 +1,8 @@
 {
-  "version": "1.0.29",
-  "versionCode": 30,
+  "version": "1.0.31",
+  "versionCode": 32,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.29 - Branding UPN, transicion fade y pisos/pabellones exactos de Excel",
+  "notes": "v1.0.31 - Asignacion funcional de pisos/pabellon por asistente y distintivo azul suave para asistentes",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

@@ -10,7 +10,7 @@ import MobileSignView from './components/MobileSignView';
 import SplashScreen from './components/SplashScreen';
 import LoginScreen from './components/LoginScreen';
 import ErrorBoundary from './components/ErrorBoundary';
-import { getAuthUser, logout } from './utils/auth';
+import { getAuthUser, logout, syncUsersWithServer } from './utils/auth';
 import { createDbChangeGate } from './utils/webSignGate';
 import {
   triggerAutoSyncLinkedExcel,
@@ -87,6 +87,8 @@ export default function App() {
   useEffect(() => {
     const handleAuthChanged = () => setAuthUser(getAuthUser());
     window.addEventListener('steel:auth-changed', handleAuthChanged);
+    // Sincronizar asignaciones y usuarios actualizados desde el servidor
+    syncUsersWithServer().catch(() => {});
     return () => window.removeEventListener('steel:auth-changed', handleAuthChanged);
   }, []);
 
@@ -454,6 +456,8 @@ export default function App() {
           <div key="attendance" className={tabAnimClass}>
             <ErrorBoundary>
               <AttendanceView
+                key={authUser?.username || 'user'}
+                authUser={authUser}
                 initialSearch={attendanceSearchPrefill}
                 onClearInitialSearch={() => setAttendanceSearchPrefill('')}
                 onOpenNewTicket={handleOpenTicketFromClass}

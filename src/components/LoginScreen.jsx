@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   User, 
@@ -8,7 +8,7 @@ import {
   ArrowRight, 
   AlertCircle
 } from 'lucide-react';
-import { authenticate, getAllUsers, USERS_REGISTRY } from '../utils/auth';
+import { authenticate, getAllUsers, USERS_REGISTRY, syncUsersWithServer } from '../utils/auth';
 
 /**
  * Logotipo oficial vectorial UPN (Escudo Norte UPN)
@@ -34,6 +34,10 @@ export default function LoginScreen({ onLogin }) {
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    syncUsersWithServer().catch(() => {});
+  }, []);
+
   // Detección inteligente del rol y nombre según lo que escribe el usuario
   const trimmedUser = usernameInput.trim().toLowerCase();
   const allKnownUsers = getAllUsers();
@@ -56,10 +60,14 @@ export default function LoginScreen({ onLogin }) {
     ? matchedUser.name 
     : (trimmedUser ? trimmedUser.toUpperCase() : 'USUARIO');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg(null);
     setIsSubmitting(true);
+
+    try {
+      await syncUsersWithServer();
+    } catch (_) {}
 
     const result = authenticate(usernameInput, password);
 
