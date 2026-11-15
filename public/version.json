@@ -1,8 +1,8 @@
 {
-  "version": "1.0.28",
-  "versionCode": 29,
+  "version": "1.0.29",
+  "versionCode": 30,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.28 - Correccion redundancia panel admin y soporte completo modo claro/oscuro",
+  "notes": "v1.0.29 - Branding UPN, transicion fade y pisos/pabellones exactos de Excel",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
