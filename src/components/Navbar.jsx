@@ -410,14 +410,14 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
       {/* Floating Bottom App Dock con efecto Blur de Cristal Esmerilado idéntico a la barra superior (Móvil/APK) */}
       <div className="md:hidden fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
         <div
-          className="relative pointer-events-auto rounded-[28px] bg-white/70 dark:bg-black/70 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/65 backdrop-blur-2xl backdrop-saturate-180 border border-slate-200/80 dark:border-zinc-800/80 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
+          className="relative pointer-events-auto rounded-[28px] bg-white/55 dark:bg-black/55 supports-[backdrop-filter]:bg-white/45 dark:supports-[backdrop-filter]:bg-black/50 backdrop-blur-3xl backdrop-saturate-190 border border-white/60 dark:border-white/15 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
           style={{
-            backdropFilter: 'blur(28px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(28px) saturate(180%)'
+            backdropFilter: 'blur(32px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(32px) saturate(190%)'
           }}
         >
           {/* Sutil resplandor de borde interior tipo cristal */}
-          <div className="absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/40 dark:ring-white/10 pointer-events-none" />
+          <div className="absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/30 dark:ring-white/10 pointer-events-none" />
 
           {/* Contenedor interactivo con pestañas y slider (con overflow-hidden para recorte perfecto) */}
           <nav className="relative z-10 rounded-[28px] p-1.5 grid grid-cols-4 overflow-hidden select-none">
@@ -450,13 +450,13 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   <Icon
                     className={`w-5 h-5 transition-transform duration-200 ${isActive
                       ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs'
-                      : 'text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-white stroke-[2]'
+                      : 'text-slate-800 dark:text-zinc-100 hover:text-slate-950 dark:hover:text-white stroke-[2.2]'
                       }`}
                   />
                   <span
                     className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${isActive
                       ? 'font-black text-slate-950'
-                      : 'font-bold text-slate-700 dark:text-zinc-200 hover:text-slate-950 dark:hover:text-white'
+                      : 'font-bold text-slate-800 dark:text-zinc-100 hover:text-slate-950 dark:hover:text-white'
                       }`}
                   >
                     {item.label}
