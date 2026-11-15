@@ -1,8 +1,8 @@
 {
-  "version": "1.0.45",
-  "versionCode": 46,
+  "version": "1.0.46",
+  "versionCode": 47,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.45 - Mas traslucidez en dock, botones de asignacion ampliados y sesion expira a las 7 horas",
+  "notes": "v1.0.46 - Eliminado boton redundante Ver todas sus clases de hoy de modal de opciones",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

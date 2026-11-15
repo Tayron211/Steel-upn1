@@ -2782,26 +2782,6 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                   <button
                     type="button"
                     onClick={() => {
-                      const doc = activeOptions.docente;
-                      classOptionsFade.requestClose(() => {
-                        setSelectedClassOptions(null);
-                        openTeacherDayClasses(doc);
-                      });
-                    }}
-                    className="w-full p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 border border-amber-200/90 dark:border-amber-800/80 text-left flex items-center gap-3 transition active:scale-98"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
-                      <GraduationCap className="w-4 h-4 stroke-[2.2]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">Ver todas sus clases de hoy</div>
-                      <div className="text-[10px] text-slate-500 dark:text-zinc-400 break-words leading-tight mt-0.5">Horario completo en todos los pisos y pabellones</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
                       const item = activeOptions;
                       classOptionsFade.requestClose(() => {
                         setSelectedClassOptions(null);
