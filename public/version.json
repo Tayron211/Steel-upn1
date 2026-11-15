@@ -1,8 +1,8 @@
 {
-  "version": "1.0.37",
-  "versionCode": 38,
+  "version": "1.0.38",
+  "versionCode": 39,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.37 - Correccion de error cleanCell en apartado Metricas",
+  "notes": "v1.0.38 - Eliminacion de redundancia en formulario de usuarios de panel admin",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

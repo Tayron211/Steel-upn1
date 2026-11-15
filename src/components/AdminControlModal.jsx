@@ -50,8 +50,6 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('1234');
   const [newRole, setNewRole] = useState('asistente');
-  const [newPabellon, setNewPabellon] = useState('');
-  const [newPisos, setNewPisos] = useState([]);
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
 
@@ -135,17 +133,15 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
         name: newName.trim().toUpperCase(),
         role: newRole,
         password: newPassword.trim() || '1234',
-        pabellon: newPabellon,
-        pisos: newPisos
+        pabellon: '',
+        pisos: []
       });
 
-      setCreateSuccess(`Usuario ${newName.toUpperCase()} creado y sincronizado con éxito`);
+      setCreateSuccess(`Usuario ${newName.toUpperCase()} creado y sincronizado con éxito. Puedes asignarle pisos en la pestaña "Asignación de Pisos y Pabellones".`);
       setNewName('');
       setNewUsername('');
       setNewPassword('1234');
       setNewRole('asistente');
-      setNewPabellon('');
-      setNewPisos([]);
       await loadUsers();
     } catch (err) {
       setCreateError(err.message || 'Error al crear usuario');
@@ -415,72 +411,7 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
                     </div>
                   </div>
 
-                  {/* Asignación Inicial */}
-                  <div className="p-3 rounded-xl bg-white dark:bg-zinc-950/80 border border-slate-200 dark:border-zinc-800/80 space-y-2">
-                    <div className="text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
-                      Asignación Inicial de Pabellón y Pisos
-                    </div>
-                    
-                    {/* Pabellón */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold uppercase w-16">Pabellón:</span>
-                      <button
-                        type="button"
-                        onClick={() => setNewPabellon('')}
-                        className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                          newPabellon === '' 
-                            ? 'bg-[#FDBA30] text-black font-black shadow-2xs' 
-                            : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-white dark:border-transparent'
-                        }`}
-                      >
-                        Todos
-                      </button>
-                      {AVAILABLE_PABELLONES.map(pab => (
-                        <button
-                          key={pab}
-                          type="button"
-                          onClick={() => setNewPabellon(pab)}
-                          className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                            newPabellon === pab 
-                              ? 'bg-[#FDBA30] text-black font-black shadow-2xs' 
-                              : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-white dark:border-transparent'
-                          }`}
-                        >
-                          Pab. {pab}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Pisos */}
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold uppercase w-16">Pisos:</span>
-                      {AVAILABLE_PISOS.map(p => {
-                        const isSelected = newPisos.includes(p.val);
-                        return (
-                          <button
-                            key={p.val}
-                            type="button"
-                            onClick={() => {
-                              if (isSelected) {
-                                setNewPisos(prev => prev.filter(x => x !== p.val));
-                              } else {
-                                setNewPisos(prev => [...prev, p.val]);
-                              }
-                            }}
-                            className={`h-7 px-3 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                              isSelected 
-                                ? 'bg-[#FDBA30] text-black font-black shadow-2xs' 
-                                : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-white dark:border-transparent'
-                            }`}
-                          >
-                            {p.short}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-1">
+                  <div className="flex justify-end pt-2">
                     <button
                       type="submit"
                       className="h-10 px-5 rounded-xl bg-[#FDBA30] hover:bg-[#e29b12] text-black font-black text-xs transition active:scale-95 flex items-center gap-2 cursor-pointer shadow-lg shadow-[#FDBA30]/20 font-upn uppercase"
