@@ -625,7 +625,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     return (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || []);
   });
   const [selectedHora, setSelectedHora] = useState('');
-  const [blockMode, setBlockMode] = useState('ALL'); // 'ALL' | 'CURRENT' | 'NEXT'
+  const [blockMode, setBlockMode] = useState('CURRENT'); // 'ALL' | 'CURRENT' | 'NEXT'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'PUNTUAL' | 'TARDE' | 'FALTA'
   const [viewMode, setViewMode] = useState('CLASSES'); // 'CLASSES' | 'FREE_ROOMS'
   const [search, setSearch] = useState(initialSearch || '');

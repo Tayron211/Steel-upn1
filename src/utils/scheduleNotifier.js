@@ -1,6 +1,7 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { App } from '@capacitor/app';
 import { isCapacitorNative } from './statusBarHelper';
+import { AppInstaller } from './appUpdateChecker';
 
 export const CLASS_BLOCKS = [
   { id: 1, start: '07:30', end: '09:10', startMins: 7 * 60 + 30, label: '07:30 - 09:10' },
@@ -19,18 +20,22 @@ export const CLASS_BLOCKS = [
 
 // Horas intermedias de ronda para alarmas nativas en segundo plano (Android)
 export const MIDPOINT_REMINDERS = [
-  { id: 101, time: '08:35', mins: 8 * 60 + 35, label: '07:30 - 09:10' },
+  { id: 101, time: '08:20', mins: 8 * 60 + 20, label: '07:30 - 09:10' },
   { id: 102, time: '09:05', mins: 9 * 60 + 5, label: '07:30 - 10:40' },
   { id: 103, time: '10:00', mins: 10 * 60, label: '09:10 - 10:50' },
   { id: 104, time: '11:40', mins: 11 * 60 + 40, label: '10:50 - 12:30' },
   { id: 105, time: '13:30', mins: 13 * 60 + 30, label: '12:30 - 14:30' },
-  { id: 106, time: '15:20', mins: 15 * 60 + 20, label: '14:30 - 16:10' },
-  { id: 107, time: '17:00', mins: 17 * 60, label: '16:10 - 17:50' },
-  { id: 108, time: '18:40', mins: 18 * 60 + 40, label: '17:50 - 19:30' },
-  { id: 109, time: '20:20', mins: 20 * 60 + 20, label: '19:30 - 21:10' },
-  { id: 110, time: '22:00', mins: 22 * 60, label: '21:10 - 22:50' }
+  { id: 106, time: '15:05', mins: 15 * 60 + 5, label: '13:30 - 16:40' },
+  { id: 107, time: '15:20', mins: 15 * 60 + 20, label: '14:30 - 16:10' },
+  { id: 108, time: '17:00', mins: 17 * 60, label: '16:10 - 17:50' },
+  { id: 109, time: '18:40', mins: 18 * 60 + 40, label: '17:50 - 19:30' },
+  { id: 110, time: '20:15', mins: 20 * 60 + 15, label: '19:30 - 21:00' },
+  { id: 111, time: '20:20', mins: 20 * 60 + 20, label: '19:30 - 21:10' },
+  { id: 112, time: '21:05', mins: 21 * 60 + 5, label: '19:30 - 22:40' },
+  { id: 113, time: '22:00', mins: 22 * 60, label: '21:10 - 22:50' }
 ];
 
+export const UPN_NOTIF_CHANNEL_ID = 'upn_rondas_urgente';
 const NOTIFIED_KEY_PREFIX = 'upn_notified_';
 
 function getTodayKey() {
@@ -55,7 +60,8 @@ function markNotifiedToday(blockId) {
 }
 
 /**
- * Solicita permisos de notificación tanto en Android Nativo (Capacitor) como en Web/iOS PWA.
+ * Solicita y fuerza permisos de notificación en Android Nativo (Capacitor),
+ * configurando permisos de Alarmas Exactas y Exclusión de Ahorro de Batería.
  */
 export async function requestNotificationPermission() {
   if (isCapacitorNative()) {
@@ -64,6 +70,26 @@ export async function requestNotificationPermission() {
       if (res.display !== 'granted') {
         res = await LocalNotifications.requestPermissions();
       }
+
+      // 1. Forzar verificación de permisos para Alarmas Exactas (Android 12+ / API 31+)
+      try {
+        if (typeof LocalNotifications.checkExactNotificationSetting === 'function') {
+          const exactSetting = await LocalNotifications.checkExactNotificationSetting();
+          if (exactSetting && exactSetting.exact_alarm !== 'granted' && typeof LocalNotifications.changeExactNotificationSetting === 'function') {
+            await LocalNotifications.changeExactNotificationSetting();
+          }
+        }
+      } catch (errExact) {
+        console.warn('[Notifier] Exact alarm setting check:', errExact);
+      }
+
+      // 2. Solicitar ignorar optimización de batería para que el sistema operativo no congele las alarmas
+      try {
+        if (AppInstaller?.requestIgnoreBatteryOptimizations) {
+          await AppInstaller.requestIgnoreBatteryOptimizations();
+        }
+      } catch (_) {}
+
       return res.display === 'granted';
     } catch (err) {
       console.warn('[Notifier] LocalNotifications permission error:', err);
@@ -86,87 +112,169 @@ export async function requestNotificationPermission() {
 
 /**
  * Programa las notificaciones locales en Android para los próximos cambios de horario
- * y recordatorios en la mitad de cada ronda docente.
+ * y recordatorios en la mitad de cada ronda docente de manera directa en el AlarmManager del sistema.
+ * ESTO GARANTIZA QUE LLEGUEN CON LA APP CERRADA O MINIMIZADA.
  */
-async function scheduleNativeAlarms() {
+export async function scheduleNativeAlarms() {
   if (!isCapacitorNative()) return;
 
   try {
-    // 1. Configurar canal de máxima prioridad
+    // 1. Eliminar canal antiguo si existe para asegurar que se aplique el sonido
+    try {
+      await LocalNotifications.deleteChannel({ id: 'upn_cambio_clases' });
+    } catch (_) {}
+
+    // 2. Crear canal de máxima prioridad con sonido nativo y vibración
     await LocalNotifications.createChannel({
-      id: 'upn_cambio_clases',
-      name: 'Control y Rondas UPN',
-      description: 'Alertas prioritarias 15 min antes de inicio y a mitad de cada ronda docente',
+      id: UPN_NOTIF_CHANNEL_ID,
+      name: 'Alarmas de Rondas y Cambio de Turno UPN',
+      description: 'Avisos prioritarios a mitad de ronda y 15 min antes de inicio de clases',
       importance: 5,
       visibility: 1,
+      sound: 'default',
       vibration: true,
       lights: true,
       lightColor: '#FDBA30'
     });
 
-    // 2. Limpiar alarmas pendientes anteriores para evitar duplicados
+    // 3. Limpiar alarmas pendientes anteriores para evitar acumulaciones o duplicados
     try {
       const existing = await LocalNotifications.getPending();
       if (existing.notifications && existing.notifications.length > 0) {
         await LocalNotifications.cancel({ notifications: existing.notifications });
       }
-    } catch (_) { }
+    } catch (_) {}
 
     const now = new Date();
     const notificationsToSchedule = [];
 
-    // 3. Programación explícita para los próximos 7 días completos
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-      // 3.1. Alertas 15 minutos antes de cada bloque
+    // 4. Obtener clases reales de hoy para programar las alertas exactas de los bloques activos
+    let todayBlocks = [];
+    try {
+      const data = await getTodayAttendanceData();
+      if (data && data.length > 0) {
+        const blockMap = new Map();
+        data.forEach(item => {
+          const ini = item.horaInicioProg;
+          const fin = item.horaFinalProg;
+          if (!ini || !fin) return;
+          const [hI, mI] = ini.split(':').map(Number);
+          const [hF, mF] = fin.split(':').map(Number);
+          if (isNaN(hI) || isNaN(mI) || isNaN(hF) || isNaN(mF)) return;
+          const iniMins = hI * 60 + mI;
+          const finMins = hF * 60 + mF;
+          const key = `${ini}-${fin}`;
+          if (!blockMap.has(key)) {
+            blockMap.set(key, { ini, fin, iniMins, finMins });
+          }
+        });
+        todayBlocks = Array.from(blockMap.values());
+      }
+    } catch (_) {}
+
+    // Si no hay datos de hoy todavía, usar los bloques estándar
+    if (todayBlocks.length === 0) {
+      todayBlocks = CLASS_BLOCKS.map(b => ({
+        ini: b.start,
+        fin: b.end,
+        iniMins: b.startMins,
+        finMins: b.startMins + 100
+      }));
+    }
+
+    // 4.1 Programar alertas de HOY con horarios exactos
+    todayBlocks.forEach((b, idx) => {
+      // Alerta 15 min antes de iniciar
+      const shiftMins = b.iniMins - 15;
+      const shiftDate = new Date();
+      shiftDate.setHours(Math.floor(shiftMins / 60), shiftMins % 60, 0, 0);
+
+      if (shiftDate.getTime() > now.getTime()) {
+        notificationsToSchedule.push({
+          id: 1000 + idx,
+          title: `🔔 Próximo Turno en 15 min (${b.ini})`,
+          body: `El bloque ${b.ini} - ${b.fin} inicia en 15 minutos. Revisa las aulas asignadas y prepara la ronda.`,
+          schedule: {
+            at: shiftDate,
+            allowWhileIdle: true
+          },
+          channelId: UPN_NOTIF_CHANNEL_ID,
+          sound: 'default',
+          smallIcon: 'ic_stat_notify',
+          iconColor: '#FDBA30',
+          autoCancel: true,
+          isExactNotification: true
+        });
+      }
+
+      // Alerta a MITAD DE RONDA exacta (ej: 07:30 - 10:40 -> 09:05, 19:30 - 21:00 -> 20:15)
+      const midMins = Math.floor((b.iniMins + b.finMins) / 2);
+      const midDate = new Date();
+      midDate.setHours(Math.floor(midMins / 60), midMins % 60, 0, 0);
+
+      if (midDate.getTime() > now.getTime()) {
+        notificationsToSchedule.push({
+          id: 5000 + idx,
+          title: `⚠️ Mitad de Ronda • Aulas Pendientes (${b.ini} - ${b.fin})`,
+          body: `Mitad de turno (${b.ini} - ${b.fin}). Ingresa a registrar la asistencia (Puntual, Tarde o Falta) de tus aulas asignadas.`,
+          schedule: {
+            at: midDate,
+            allowWhileIdle: true
+          },
+          channelId: UPN_NOTIF_CHANNEL_ID,
+          sound: 'default',
+          smallIcon: 'ic_stat_notify',
+          iconColor: '#FDBA30',
+          autoCancel: true,
+          isExactNotification: true
+        });
+      }
+    });
+
+    // 4.2 Programar días siguientes (días 1 al 6) con los bloques oficiales
+    for (let dayOffset = 1; dayOffset <= 6; dayOffset++) {
       for (const block of CLASS_BLOCKS) {
         const notifDate = new Date();
         notifDate.setDate(now.getDate() + dayOffset);
-        notifDate.setHours(Math.floor(block.notifyMins / 60));
-        notifDate.setMinutes(block.notifyMins % 60);
-        notifDate.setSeconds(0);
-        notifDate.setMilliseconds(0);
+        notifDate.setHours(Math.floor(block.notifyMins / 60), block.notifyMins % 60, 0, 0);
 
-        if (notifDate.getTime() > now.getTime()) {
-          notificationsToSchedule.push({
-            id: (dayOffset + 1) * 1000 + block.id,
-            title: `🔔 Próximo Turno en 15 min (${block.start})`,
-            body: `El bloque ${block.label} inicia en 15 minutos. Revisa las aulas asignadas y ronda docente.`,
-            schedule: {
-              at: notifDate,
-              allowWhileIdle: true
-            },
-            channelId: 'upn_cambio_clases',
-            smallIcon: 'ic_stat_notify',
-            iconColor: '#FDBA30',
-            autoCancel: true
-          });
-        }
+        notificationsToSchedule.push({
+          id: (dayOffset * 1000) + block.id,
+          title: `🔔 Próximo Turno en 15 min (${block.start})`,
+          body: `El bloque ${block.label} inicia en 15 minutos. Revisa las aulas asignadas y ronda docente.`,
+          schedule: {
+            at: notifDate,
+            allowWhileIdle: true
+          },
+          channelId: UPN_NOTIF_CHANNEL_ID,
+          sound: 'default',
+          smallIcon: 'ic_stat_notify',
+          iconColor: '#FDBA30',
+          autoCancel: true,
+          isExactNotification: true
+        });
       }
 
-      // 3.2. Recordatorios a mitad de ronda (para verificar aulas pendientes)
       for (const mid of MIDPOINT_REMINDERS) {
         const midDate = new Date();
         midDate.setDate(now.getDate() + dayOffset);
-        midDate.setHours(Math.floor(mid.mins / 60));
-        midDate.setMinutes(mid.mins % 60);
-        midDate.setSeconds(0);
-        midDate.setMilliseconds(0);
+        midDate.setHours(Math.floor(mid.mins / 60), mid.mins % 60, 0, 0);
 
-        if (midDate.getTime() > now.getTime()) {
-          notificationsToSchedule.push({
-            id: (dayOffset + 1) * 10000 + mid.id,
-            title: `⚠️ Recordatorio: Mitad de Ronda (${mid.time})`,
-            body: `Mitad del turno ${mid.label}. Ingresa a la app para revisar si tienes aulas pendientes de marcar Puntual, Tarde o Falta.`,
-            schedule: {
-              at: midDate,
-              allowWhileIdle: true
-            },
-            channelId: 'upn_cambio_clases',
-            smallIcon: 'ic_stat_notify',
-            iconColor: '#FDBA30',
-            autoCancel: true
-          });
-        }
+        notificationsToSchedule.push({
+          id: (dayOffset * 10000) + mid.id,
+          title: `⚠️ Recordatorio: Mitad de Ronda (${mid.time})`,
+          body: `Mitad del turno ${mid.label}. Recuerda registrar las aulas pendientes (Puntual, Tarde o Falta).`,
+          schedule: {
+            at: midDate,
+            allowWhileIdle: true
+          },
+          channelId: UPN_NOTIF_CHANNEL_ID,
+          sound: 'default',
+          smallIcon: 'ic_stat_notify',
+          iconColor: '#FDBA30',
+          autoCancel: true,
+          isExactNotification: true
+        });
       }
     }
 
@@ -279,23 +387,29 @@ export async function sendTestDesktopNotification() {
         return { success: false, reason: 'denied' };
       }
       await LocalNotifications.createChannel({
-        id: 'upn_cambio_clases',
-        name: 'Control y Rondas UPN',
+        id: UPN_NOTIF_CHANNEL_ID,
+        name: 'Alarmas de Rondas y Cambio de Turno UPN',
         description: 'Alertas prioritarias 15 min antes y a mitad de cada ronda',
         importance: 5,
         visibility: 1,
-        vibration: true
+        sound: 'default',
+        vibration: true,
+        lights: true,
+        lightColor: '#FDBA30'
       });
       await LocalNotifications.schedule({
         notifications: [
           {
             id: 99999,
             title: '🔔 UPN Control Docente · Alerta Activa',
-            body: '¡Notificaciones funcionando en tu teléfono! Recibirás avisos 15 min antes y a mitad de ronda si hay aulas pendientes.',
-            channelId: 'upn_cambio_clases',
+            body: '¡Notificaciones funcionando en tu teléfono! Recibirás avisos 15 min antes y a mitad de ronda así la app esté cerrada o minimizada.',
+            channelId: UPN_NOTIF_CHANNEL_ID,
+            sound: 'default',
             smallIcon: 'ic_stat_notify',
             iconColor: '#FDBA30',
-            schedule: { at: new Date(Date.now() + 500) }
+            schedule: { at: new Date(Date.now() + 500) },
+            autoCancel: true,
+            isExactNotification: true
           }
         ]
       });
@@ -376,8 +490,13 @@ function checkScheduleTick() {
                 id: 2000 + block.id,
                 title: `🔔 Próximo Turno en ${diff} min (${block.start})`,
                 body: `El bloque ${block.label} inicia en ${diff} minutos. Revisa las aulas asignadas y ronda docente.`,
-                channelId: 'upn_cambio_clases',
-                schedule: { at: new Date(Date.now() + 500) }
+                channelId: UPN_NOTIF_CHANNEL_ID,
+                sound: 'default',
+                smallIcon: 'ic_stat_notify',
+                iconColor: '#FDBA30',
+                schedule: { at: new Date(Date.now() + 500) },
+                autoCancel: true,
+                isExactNotification: true
               }
             ]
           }).catch(e => console.warn('Native notification tick error:', e));
@@ -525,10 +644,13 @@ async function checkMidpointPendingAttendance() {
                   id: 3000 + Math.floor(Math.random() * 800),
                   title,
                   body,
-                  channelId: 'upn_cambio_clases',
+                  channelId: UPN_NOTIF_CHANNEL_ID,
+                  sound: 'default',
                   smallIcon: 'ic_stat_notify',
                   iconColor: '#FDBA30',
-                  schedule: { at: new Date(Date.now() + 500) }
+                  schedule: { at: new Date(Date.now() + 500) },
+                  autoCancel: true,
+                  isExactNotification: true
                 }
               ]
             }).catch(() => {});
@@ -569,12 +691,26 @@ async function checkMidpointPendingAttendance() {
  * Inicializa el sistema de notificaciones en el ciclo de vida de la aplicación
  */
 export function initScheduleNotifier() {
+  // Registrar Service Worker para PWA / Web si no es nativo
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator && !isCapacitorNative()) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
   // 1. Pedir permisos si aún no se han concedido y programar alarmas nativas
   requestNotificationPermission().then((granted) => {
     if (granted && isCapacitorNative()) {
       scheduleNativeAlarms();
     }
   });
+
+  // Escuchar cuando el usuario inicia sesión o cambian datos para reprogramar inmediatamente
+  const handleAuthOrDataChange = () => {
+    if (isCapacitorNative()) {
+      scheduleNativeAlarms();
+    }
+  };
+  window.addEventListener('steel:auth-changed', handleAuthOrDataChange);
+  window.addEventListener('steel:assignments-updated', handleAuthOrDataChange);
 
   // 2. Re-verificar y re-programar automáticamente cada vez que el usuario regresa a la app
   let appStateListener = null;
@@ -612,6 +748,8 @@ export function initScheduleNotifier() {
 
   return () => {
     clearInterval(interval);
+    window.removeEventListener('steel:auth-changed', handleAuthOrDataChange);
+    window.removeEventListener('steel:assignments-updated', handleAuthOrDataChange);
     if (appStateListener?.remove) appStateListener.remove();
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibility);

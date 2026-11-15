@@ -1,8 +1,8 @@
 {
-  "version": "1.0.33",
-  "versionCode": 34,
+  "version": "1.0.34",
+  "versionCode": 35,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.33 - Diseno visual adaptativo de alertas en modo claro y oscuro con tipografia oficial UPN",
+  "notes": "v1.0.34 - Forzar notificaciones nativas en segundo plano y pantalla bloqueada con AlarmManager exacto y sin optimizacion de bateria",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
