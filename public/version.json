@@ -1,8 +1,8 @@
 {
-  "version": "1.0.38",
-  "versionCode": 39,
+  "version": "1.0.39",
+  "versionCode": 40,
   "releaseDate": "2026-11-15",
-  "notes": "v1.0.38 - Eliminacion de redundancia en formulario de usuarios de panel admin",
+  "notes": "v1.0.39 - Panel admin compacto, animacion fade, tabs deslizantes y selector de rol personalizado",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
