@@ -1180,7 +1180,8 @@ async function handleApiRequest(context) {
       const diaParam = url.searchParams.get('dia');
       const dia = diaParam ? normalizeDay(diaParam) : todayName;
 
-      const { results: classes } = await db.prepare('SELECT puntualidad, asistencia FROM asistencia WHERE dia = ?').bind(dia).all();
+      const classesRes = await db.prepare('SELECT puntualidad, asistencia FROM asistencia WHERE dia = ? OR dia LIKE ?').bind(dia, `${dia}%`).all();
+      const classes = classesRes?.results || [];
 
       const totalClasses = classes.length;
       let puntual = 0, tarde = 0, falta = 0, reemplazo = 0, pendientes = 0;
@@ -1199,7 +1200,8 @@ async function handleApiRequest(context) {
       const totalAsistieron = puntual + tarde + reemplazo;
       const pctAsistencia = totalClasses > 0 ? Math.round((totalAsistieron / totalClasses) * 100) : 0;
 
-      const { results: tickets } = await db.prepare('SELECT estado, tipo_solicitud FROM tickets').all();
+      const ticketsRes = await db.prepare('SELECT estado, tipo_solicitud FROM tickets').all();
+      const tickets = ticketsRes?.results || [];
       let ticketsPendientes = 0, ticketsEnProceso = 0, ticketsAtendidos = 0;
       const categoryCounts = {};
 

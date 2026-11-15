@@ -105,6 +105,12 @@ function colOf(cells, names) {
   return -1;
 }
 
+function cleanCell(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v).trim();
+  return (s.includes('#N/D') || s.includes('#N/A') || s.includes('#VALOR') || s.includes('#REF!')) ? '' : s;
+}
+
 export default function DashboardView() {
   const daysOfWeek = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
   const todayDefault = daysOfWeek[new Date().getDay()];
@@ -218,11 +224,40 @@ export default function DashboardView() {
         fetch(`/api/dashboard?dia=${selectedDia}`).then(r => r.json()).catch(() => null),
         loadModuleCollections()
       ]);
-      if (dashRes?.success) {
+      if (dashRes?.success && dashRes.data) {
         setStats(dashRes.data);
+      } else {
+        setStats(prev => prev || {
+          dia: selectedDia,
+          totalClasses: 0,
+          puntual: 0,
+          tarde: 0,
+          falta: 0,
+          reemplazo: 0,
+          pendientes: 0,
+          pctAsistencia: 0,
+          ticketsPendientes: 0,
+          ticketsEnProceso: 0,
+          ticketsAtendidos: 0,
+          categoryCounts: {}
+        });
       }
     } catch (err) {
       console.error(err);
+      setStats(prev => prev || {
+        dia: selectedDia,
+        totalClasses: 0,
+        puntual: 0,
+        tarde: 0,
+        falta: 0,
+        reemplazo: 0,
+        pendientes: 0,
+        pctAsistencia: 0,
+        ticketsPendientes: 0,
+        ticketsEnProceso: 0,
+        ticketsAtendidos: 0,
+        categoryCounts: {}
+      });
     } finally {
       setLoading(false);
     }
@@ -909,7 +944,20 @@ export default function DashboardView() {
     );
   }
 
-  if (!stats) return null;
+  const currentStats = stats || {
+    dia: selectedDia,
+    totalClasses: 0,
+    puntual: 0,
+    tarde: 0,
+    falta: 0,
+    reemplazo: 0,
+    pendientes: 0,
+    pctAsistencia: 0,
+    ticketsPendientes: 0,
+    ticketsEnProceso: 0,
+    ticketsAtendidos: 0,
+    categoryCounts: {}
+  };
 
   const {
     totalClasses = 0,
@@ -923,7 +971,7 @@ export default function DashboardView() {
     ticketsEnProceso = 0,
     ticketsAtendidos = 0,
     categoryCounts = {}
-  } = stats || {};
+  } = currentStats;
 
   const totalAsistieron = puntual + tarde + reemplazo;
 
