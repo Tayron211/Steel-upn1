@@ -1,8 +1,8 @@
 {
-  "version": "1.0.27",
-  "versionCode": 28,
-  "releaseDate": "2026-11-14",
-  "notes": "v1.0.26 - Admin Alessandro Pascual, Panel Admin Asignacion Pisos y Alerta Aulas Pendientes Mitad Ronda",
+  "version": "1.0.28",
+  "versionCode": 29,
+  "releaseDate": "2026-11-15",
+  "notes": "v1.0.28 - Correccion redundancia panel admin y soporte completo modo claro/oscuro",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

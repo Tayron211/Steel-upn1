@@ -182,19 +182,6 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
               </span>
             </div>
 
-            {/* Botón Acceso Rápido Admin Panel si el usuario es Administrador */}
-            {authUser?.role === 'admin' && (
-              <button
-                type="button"
-                onClick={() => setIsAdminControlOpen(true)}
-                className="h-9 px-2.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-900 dark:text-amber-300 flex items-center gap-1.5 transition active:scale-95 text-xs font-black cursor-pointer shadow-2xs shrink-0"
-                title="Abrir Panel de Control Administrativo (Asignación de Pisos y Gestión de Usuarios)"
-              >
-                <ShieldCheck className="w-4 h-4 text-amber-500 stroke-[2.4]" />
-                <span className="hidden sm:inline">Panel Admin</span>
-              </button>
-            )}
-
             {/* Botón de Nombre con Menú Desplegable (Modo Claro/Oscuro + Sincronización OneDrive + Cerrar Sesión) */}
             {authUser && (
               <div className="relative" ref={userMenuRef}>
