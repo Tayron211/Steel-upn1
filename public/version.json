@@ -1,12 +1,20 @@
 {
-  "version": "1.0.66",
-  "versionCode": 67,
+  "version": "1.0.67",
+  "versionCode": 68,
   "releaseDate": "2026-11-16",
-  "notes": "Ícono Lucide Sparkles vectorizado en estado libre de aulas, acorde al estilo visual de la app",
+  "notes": "Detección automática de modo claro y oscuro de Android en la APK, SplashScreen adaptativo y transición fade suave de la interfaz",
   "features": [
     {
-      "title": "Iconografía Vectorial Homogénea",
-      "desc": "Reemplazo de emojis antiguos por íconos SVG vectorizados de Lucide en 'Sin más clases hoy' y calendarios de reservas."
+      "title": "Detección Automática de Modo Claro / Oscuro en Android",
+      "desc": "La APK y el SplashScreen adoptan automáticamente el tema del sistema Android y se sincronizan en tiempo real al cambiar entre claro y oscuro."
+    },
+    {
+      "title": "Transición Fade Suave de la Interfaz",
+      "desc": "Aparición cinematográfica fluida de la pantalla de inicio y login tras el SplashScreen, sin cortes bruscos."
+    },
+    {
+      "title": "Colores Corporativos UPN Duales en Login",
+      "desc": "Diseño refinado con el oro oficial #FDBA30 adaptado con elegancia tanto para modo claro como modo oscuro."
     },
     {
       "title": "Aforo Discreto en Todas las Aulas",
@@ -19,14 +27,6 @@
     {
       "title": "Barras Traslúcidas de Cristal Esmerilado",
       "desc": "Header superior y dock móvil con mayor transparencia y efecto glassmorphism nítido."
-    },
-    {
-      "title": "Navegación al Encabezado Superior",
-      "desc": "Al cambiar entre pestañas la nueva vista aparece siempre desde el encabezado sin scroll hacia abajo."
-    },
-    {
-      "title": "Sonido de Notificación Más Fuerte",
-      "desc": "Chime de alerta amplificado con compresor dinámico, doble armónico y vibración háptica."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",

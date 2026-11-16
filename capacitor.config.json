@@ -13,16 +13,15 @@
       "sound": "default"
     },
     "SplashScreen": {
-      "launchShowDuration": 1200,
+      "launchShowDuration": 1000,
       "launchAutoHide": true,
-      "backgroundColor": "#000000",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false
     },
     "StatusBar": {
       "overlaysWebView": true,
-      "style": "DARK",
+      "style": "DEFAULT",
       "backgroundColor": "#00000000"
     }
   }

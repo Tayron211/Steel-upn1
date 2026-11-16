@@ -168,10 +168,15 @@ export default function App() {
   // AMOLED Dark Mode State with Automatic Mobile System Detection
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
+      const systemDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isCapacitorNative()) {
+        const saved = localStorage.getItem('upn_theme');
+        return saved ? saved === 'dark' : systemDark;
+      }
       const saved = localStorage.getItem('upn_theme');
       if (saved === 'dark') return true;
       if (saved === 'light') return false;
-      return Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      return systemDark;
     }
     return true;
   });
@@ -234,10 +239,17 @@ export default function App() {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
     const handleSystemThemeChange = (e) => {
-      const saved = localStorage.getItem('upn_theme');
-      // If user hasn't explicitly chosen a theme via button, auto-adapt to mobile system
-      if (!saved) {
+      // En la app nativa (APK), sincronizar de inmediato cuando el usuario cambie el modo en Android
+      if (isCapacitorNative()) {
         setDarkMode(e.matches);
+        try {
+          localStorage.setItem('upn_theme', e.matches ? 'dark' : 'light');
+        } catch (_) {}
+      } else {
+        const saved = localStorage.getItem('upn_theme');
+        if (!saved) {
+          setDarkMode(e.matches);
+        }
       }
     };
 
@@ -554,7 +566,7 @@ export default function App() {
   if (mobileSignTicketId) {
     return (
       <>
-        <SplashScreen minDuration={2000} />
+        <SplashScreen minDuration={1800} />
         <MobileSignView
           ticketId={mobileSignTicketId}
           onBack={() => {
@@ -570,7 +582,7 @@ export default function App() {
   if (!authUser) {
     return (
       <>
-        <SplashScreen minDuration={2200} />
+        <SplashScreen minDuration={1800} />
         <LoginScreen onLogin={setAuthUser} />
       </>
     );
@@ -578,7 +590,7 @@ export default function App() {
 
   return (
     <>
-      <SplashScreen minDuration={2200} />
+      <SplashScreen minDuration={1800} />
       <div
         className="min-h-screen bg-[#edf0f5] dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
       >

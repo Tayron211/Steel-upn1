@@ -20,7 +20,7 @@ import {
 /**
  * Logotipo oficial vectorial UPN (Escudo Norte UPN)
  */
-export const UpnBrandLogo = ({ size = 22, color = '#FFB800' }) => (
+export const UpnBrandLogo = ({ size = 22, color = '#FDBA30' }) => (
   <svg 
     width={size} 
     height={size} 
@@ -113,17 +113,17 @@ export default function LoginScreen({ onLogin }) {
               xmlns="http://www.w3.org/2000/svg" 
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.14, pointerEvents: 'none' }}
             >
-              <circle cx="200" cy="220" r="160" stroke="#FFB800" strokeWidth="1" strokeDasharray="4 8" />
-              <circle cx="200" cy="220" r="110" stroke="#FFB800" strokeWidth="1.5" strokeOpacity="0.4" />
-              <circle cx="200" cy="220" r="60" stroke="#FFB800" strokeWidth="1" strokeDasharray="3 6" />
-              <path d="M40 220 H360 M200 60 V380" stroke="rgba(255,184,0,0.18)" strokeWidth="1" />
+              <circle cx="200" cy="220" r="160" stroke="#FDBA30" strokeWidth="1" strokeDasharray="4 8" />
+              <circle cx="200" cy="220" r="110" stroke="#FDBA30" strokeWidth="1.5" strokeOpacity="0.4" />
+              <circle cx="200" cy="220" r="60" stroke="#FDBA30" strokeWidth="1" strokeDasharray="3 6" />
+              <path d="M40 220 H360 M200 60 V380" stroke="rgba(253,186,48,0.22)" strokeWidth="1" />
             </svg>
           </div>
 
           <div className="login-visual-content">
             {/* Tag superior de branding */}
             <div className="login-badge-tag">
-              <UpnBrandLogo size={15} color="#FFB800" />
+              <UpnBrandLogo size={15} color="#FDBA30" />
               <span>UNIVERSIDAD PRIVADA DEL NORTE</span>
             </div>
 
@@ -131,7 +131,7 @@ export default function LoginScreen({ onLogin }) {
             <div className="login-brand-monogram-box">
               <div className="login-brand-halo" />
               <div className="login-brand-icon-wrapper">
-                <UpnBrandLogo size={78} color="#FFB800" />
+                <UpnBrandLogo size={78} color="#FDBA30" />
               </div>
             </div>
 
@@ -153,7 +153,7 @@ export default function LoginScreen({ onLogin }) {
           {/* Encabezado con Logotipo UPN */}
           <div className="login-form-header">
             <div className="login-brand-emblem">
-              <UpnBrandLogo size={32} color="#FFB800" />
+              <UpnBrandLogo size={32} color="#FDBA30" />
             </div>
             <h2 className="login-form-title">Iniciar Sesión</h2>
             <p className="login-form-subtitle">
