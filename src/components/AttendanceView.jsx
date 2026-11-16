@@ -1552,7 +1552,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
           setDocentesList(docs);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const allKnownDocentes = useMemo(() => {
@@ -2695,12 +2695,11 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                       </span>
                     </div>
 
-                    <h4 className="text-xs font-bold text-slate-800 dark:text-white break-words mb-1 group-hover:text-amber-500 transition-colors">
-                      {room.nombre}
-                    </h4>
-                    <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md mb-2.5 border border-blue-200/60 dark:border-blue-800/60">
-                      {room.tipo} · Pab. {room.pabellon} ({room.piso})
-                    </span>
+                    <div className="mb-2">
+                      <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/60">
+                        {room.tipo} · Pab. {room.pabellon} ({room.piso})
+                      </span>
+                    </div>
 
                     {/* Horario y Tiempo Disponible */}
                     <div className="mb-2 p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/70 space-y-1.5 shadow-2xs">
@@ -4134,8 +4133,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           </span>
                           {pLabel && (
                             <span className={`font-mono font-black text-[10px] px-1.5 py-0.5 rounded-md border tracking-tight ${isWA
-                                ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
-                                : 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800'
+                              ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
+                              : 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800'
                               }`}>
                               {pLabel}
                             </span>
