@@ -1,8 +1,8 @@
 {
-  "version": "1.0.60",
-  "versionCode": 61,
+  "version": "1.0.62",
+  "versionCode": 63,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.60 - Nitidez Full HD subpixel ClearType, detalle interactivo de proxima clase, modales confirm acordes y sotano en pisos",
+  "notes": "v1.0.62 - Reseteo instantaneo al encabezado al cambiar de pestana, sin redundancias y contraste refinado",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

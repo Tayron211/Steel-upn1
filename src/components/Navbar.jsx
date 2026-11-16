@@ -161,7 +161,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
             className="flex items-center min-w-0 cursor-pointer active:scale-98 transition-transform"
             onClick={() => {
               setActiveTab('attendance');
-              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               if (document.documentElement) document.documentElement.scrollTop = 0;
               if (document.body) document.body.scrollTop = 0;
             }}
@@ -381,7 +381,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   data-slide-active={isActive ? 'true' : undefined}
                   onClick={() => {
                     setActiveTab(item.id);
-                    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                     if (document.documentElement) document.documentElement.scrollTop = 0;
                     if (document.body) document.body.scrollTop = 0;
                   }}
@@ -441,7 +441,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   key={item.id}
                   onClick={() => {
                     setActiveTab(item.id);
-                    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                     if (document.documentElement) document.documentElement.scrollTop = 0;
                     if (document.body) document.body.scrollTop = 0;
                   }}

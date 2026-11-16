@@ -1143,7 +1143,7 @@ export default function TicketsKanban({
             <button
               onClick={() => {
                 setActiveViewTab('ACTIVOS');
-                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 if (document.documentElement) document.documentElement.scrollTop = 0;
                 if (document.body) document.body.scrollTop = 0;
               }}
@@ -1162,7 +1162,7 @@ export default function TicketsKanban({
             <button
               onClick={() => {
                 setActiveViewTab('CONCLUIDOS');
-                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 if (document.documentElement) document.documentElement.scrollTop = 0;
                 if (document.body) document.body.scrollTop = 0;
               }}

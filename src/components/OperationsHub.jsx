@@ -93,7 +93,7 @@ export default function OperationsHub({
     if (window.location.hash.toLowerCase() !== subHash) {
       window.history.pushState({ tab: 'operations', subTab: target }, '', subHash);
     }
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;
   };

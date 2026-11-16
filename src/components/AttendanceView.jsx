@@ -2481,7 +2481,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               data-slide-active={viewMode === 'CLASSES' ? 'true' : undefined}
               onClick={() => {
                 setViewMode('CLASSES');
-                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               }}
               className={`relative z-10 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 flex items-center gap-1.5 ${viewMode === 'CLASSES'
                 ? 'text-slate-900 dark:text-white font-black'
@@ -2499,7 +2499,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               data-slide-active={viewMode === 'FREE_ROOMS' ? 'true' : undefined}
               onClick={() => {
                 setViewMode('FREE_ROOMS');
-                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               }}
               className={`relative z-10 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 flex items-center gap-1.5 ${viewMode === 'FREE_ROOMS'
                 ? 'text-white font-black'
@@ -2749,7 +2749,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               <button
                 onClick={() => {
                   setViewMode('CLASSES');
-                  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 }}
                 className="text-xs font-bold bg-white dark:bg-zinc-800 text-emerald-900 dark:text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/80 shadow-2xs whitespace-nowrap shrink-0 self-start sm:self-auto"
               >

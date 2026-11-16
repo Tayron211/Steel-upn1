@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { BellRing, X, AlertTriangle, ArrowRight } from 'lucide-react';
 import Navbar from './components/Navbar';
 import AttendanceView from './components/AttendanceView';
@@ -280,9 +280,9 @@ export default function App() {
   const [attendanceSearchPrefill, setAttendanceSearchPrefill] = useState('');
 
   const scrollToTopGlobal = () => {
-    const doScroll = (behavior) => {
+    const doScroll = () => {
       try {
-        window.scrollTo({ top: 0, left: 0, behavior });
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       } catch (_) {
         window.scrollTo(0, 0);
       }
@@ -294,12 +294,26 @@ export default function App() {
       scrollContainers.forEach(el => { el.scrollTop = 0; });
     };
 
-    doScroll('instant');
-    requestAnimationFrame(() => doScroll('smooth'));
-    setTimeout(() => doScroll('smooth'), 60);
-    setTimeout(() => doScroll('instant'), 180);
-    setTimeout(() => doScroll('instant'), 350);
+    doScroll();
+    requestAnimationFrame(doScroll);
+    setTimeout(doScroll, 20);
+    setTimeout(doScroll, 80);
+    setTimeout(doScroll, 160);
   };
+
+  // Al cambiar de pestaña, resetear scroll síncronamente antes del repintado para mostrar siempre el encabezado
+  useLayoutEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    } catch (_) {
+      window.scrollTo(0, 0);
+    }
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    const main = document.querySelector('main');
+    if (main) main.scrollTop = 0;
+    scrollToTopGlobal();
+  }, [activeTab, operationsSubTab]);
 
   // History & Multi-Page Hash Routing Controller
   const navigateTab = (targetTab, pushState = true) => {
@@ -330,11 +344,6 @@ export default function App() {
     }
     scrollToTopGlobal();
   };
-
-  // Cada cambio de pestaña manda inmediatamente al encabezado
-  useEffect(() => {
-    scrollToTopGlobal();
-  }, [activeTab, operationsSubTab]);
 
   // Sync initial hash and handle Browser Back / Forward buttons (True Multi-Page Experience)
   useEffect(() => {
