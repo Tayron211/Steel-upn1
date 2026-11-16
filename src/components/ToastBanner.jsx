@@ -44,7 +44,14 @@ export default function ToastBanner({ message, type = 'info', onClose, duration 
       aria-live="polite"
       className={`fixed top-[calc(env(safe-area-inset-top,0px)+4.75rem)] sm:top-20 inset-x-0 mx-auto z-[999999] w-[calc(100%-1.5rem)] max-w-md pointer-events-none select-none px-2 transition-all ${toastFade.slideDownClass}`}
     >
-      <div className="pointer-events-auto bg-slate-900/95 dark:bg-[#121216]/95 backdrop-blur-md text-white text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.55)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)] border border-slate-700/80 dark:border-amber-400/80 flex items-center justify-between gap-3 subpixel-antialiased">
+      <div 
+        className="pointer-events-auto text-white text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl border border-white/25 dark:border-amber-400/40 shadow-[0_12px_40px_rgba(0,0,0,0.35)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)] flex items-center justify-between gap-3 subpixel-antialiased"
+        style={{
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(32px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(200%)'
+        }}
+      >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {renderIcon()}
           <span className="break-words leading-tight text-slate-100 dark:text-zinc-100 tracking-tight">

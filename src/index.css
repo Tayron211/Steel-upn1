@@ -272,26 +272,31 @@ html:not(.dark) {
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-/* Apple-style modals and bottom sheets */
+/* Apple-style modals and bottom sheets con Frosted Glass y Desenfoque 36px */
 .apple-liquid-modal {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(36px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
   box-shadow:
-    0 32px 72px -16px rgba(15, 23, 42, 0.22),
-    0 12px 28px -6px rgba(15, 23, 42, 0.1),
-    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 1);
+    0 24px 75px -12px rgba(15, 23, 42, 0.20),
+    0 8px 24px -4px rgba(15, 23, 42, 0.08),
+    0 0 35px rgba(253, 186, 48, 0.12),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
 }
 
-.dark .apple-liquid-modal {
-  background: rgba(12, 12, 16, 0.92);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
+.dark .apple-liquid-modal,
+html.dark .apple-liquid-modal {
+  background: rgba(12, 14, 20, 0.75) !important;
+  backdrop-filter: blur(36px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
   box-shadow:
-    0 32px 72px -16px rgba(0, 0, 0, 0.9),
-    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.15);
+    0 32px 90px -10px rgba(0, 0, 0, 0.90),
+    0 0 45px rgba(253, 186, 48, 0.14),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(253, 186, 48, 0.18) !important;
 }
 
 /* Fluid Keyframe Animations with Apple Easing (Suave y gradual efecto Fade en apertura y cierre de ventana/modal) */
@@ -673,7 +678,7 @@ button:active {
 html.dark .login-screen-wrapper {
   background-color: #000000;
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.55) 0%, rgba(9, 9, 11, 0.88) 100%),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.35) 0%, rgba(9, 9, 11, 0.85) 100%),
     url('/login-bg-3d.jpg');
   background-position: center center;
   background-size: cover;
@@ -683,7 +688,7 @@ html.dark .login-screen-wrapper {
 html:not(.dark) .login-screen-wrapper {
   background-color: #edf0f5;
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.65) 0%, rgba(237, 240, 245, 0.90) 100%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.25) 0%, rgba(226, 232, 240, 0.75) 100%),
     url('/login-bg-3d.jpg');
   background-position: center center;
   background-size: cover;
@@ -699,6 +704,7 @@ html:not(.dark) .login-screen-wrapper {
   position: relative;
   box-sizing: border-box;
   z-index: 10;
+  overflow: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -908,14 +914,14 @@ html:not(.dark) .login-visual-subtitle {
 }
 
 html.dark .login-form-panel {
-  background-color: rgba(13, 16, 24, 0.60) !important;
+  background-color: rgba(13, 16, 24, 0.50) !important;
   backdrop-filter: blur(36px) saturate(200%) !important;
   -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
   border-left: 1px solid rgba(253, 186, 48, 0.25);
 }
 
 html:not(.dark) .login-form-panel {
-  background-color: rgba(255, 255, 255, 0.45) !important;
+  background-color: rgba(255, 255, 255, 0.38) !important;
   backdrop-filter: blur(36px) saturate(200%) !important;
   -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.7);
@@ -1270,4 +1276,112 @@ html:not(.dark) .apple-liquid-glass,
 html:not(.dark) .apple-liquid-pill {
   border-color: rgba(226, 232, 240, 0.9) !important;
   box-shadow: 0 2px 8px 0 rgba(15, 23, 42, 0.04) !important;
+}
+
+/* =========================================================
+   UNIVERSAL FROSTED GLASS FOR ALL APP MODALS / WINDOWS / DIALOGS
+   Mismo efecto Blur y cristal esmerilado que la Navbar en todas las ventanas
+   ========================================================= */
+
+/* 1. Backdrop Overlay Traslúcido con Desenfoque Cinemático */
+.fixed.inset-0[class*="z-"],
+.fixed.inset-0[class*="backdrop-blur-"] {
+  backdrop-filter: blur(14px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+}
+
+html:not(.dark) .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
+html:not(.dark) .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
+  background-color: rgba(15, 23, 42, 0.38) !important;
+}
+
+html.dark .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
+html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* 2. Todas las Ventanas Modales Flotantes en la App (Cristal Pulido / Frosted Glass) */
+.apple-liquid-modal,
+.app-modal-window,
+.fixed.inset-0 > div[class*="rounded-"],
+.fixed.inset-0 > div > div[class*="rounded-"],
+.fixed.inset-0 > div[class*="max-w-"],
+[role="dialog"],
+[role="dialog"] > div[class*="rounded-"] {
+  backdrop-filter: blur(36px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Modo Claro en Todas las Ventanas de la App */
+html:not(.dark) .apple-liquid-modal,
+html:not(.dark) .app-modal-window,
+html:not(.dark) .fixed.inset-0 > div[class*="rounded-"],
+html:not(.dark) .fixed.inset-0 > div > div[class*="rounded-"],
+html:not(.dark) .fixed.inset-0 > div[class*="max-w-"],
+html:not(.dark) [role="dialog"],
+html:not(.dark) [role="dialog"] > div[class*="rounded-"] {
+  background-color: rgba(255, 255, 255, 0.52) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow:
+    0 24px 75px -12px rgba(15, 23, 42, 0.20),
+    0 8px 24px -4px rgba(15, 23, 42, 0.08),
+    0 0 35px rgba(253, 186, 48, 0.12),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Modo Oscuro en Todas las Ventanas de la App */
+html.dark .apple-liquid-modal,
+html.dark .app-modal-window,
+html.dark .fixed.inset-0 > div[class*="rounded-"],
+html.dark .fixed.inset-0 > div > div[class*="rounded-"],
+html.dark .fixed.inset-0 > div[class*="max-w-"],
+html.dark [role="dialog"],
+html.dark [role="dialog"] > div[class*="rounded-"] {
+  background-color: rgba(12, 14, 20, 0.58) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow:
+    0 32px 90px -10px rgba(0, 0, 0, 0.90),
+    0 0 45px rgba(253, 186, 48, 0.14),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(253, 186, 48, 0.18) !important;
+}
+
+/* 3. Encabezados y Secciones Interiores de las Ventanas Modales */
+html:not(.dark) .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-b"],
+html:not(.dark) .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-t"],
+html:not(.dark) [role="dialog"] div[class*="border-b"],
+html:not(.dark) [role="dialog"] div[class*="border-t"] {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(226, 232, 240, 0.8) !important;
+}
+
+html.dark .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-b"],
+html.dark .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-t"],
+html.dark [role="dialog"] div[class*="border-b"],
+html.dark [role="dialog"] div[class*="border-t"] {
+  background-color: rgba(18, 22, 32, 0.40) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* 4. Menús desplegables y Popovers flotantes */
+div[class*="w-68"][class*="rounded-2xl"],
+.fab-floating-container button[class*="rounded-full"] {
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+}
+
+html:not(.dark) div[class*="w-68"][class*="rounded-2xl"],
+html:not(.dark) .fab-floating-container button[class*="rounded-full"] {
+  background-color: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.18), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+html.dark div[class*="w-68"][class*="rounded-2xl"],
+html.dark .fab-floating-container button[class*="rounded-full"] {
+  background-color: rgba(14, 16, 24, 0.80) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14) !important;
 }

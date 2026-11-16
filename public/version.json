@@ -1,8 +1,8 @@
 {
-  "version": "1.0.72",
-  "versionCode": 73,
+  "version": "1.0.74",
+  "versionCode": 75,
   "releaseDate": "2026-11-16",
-  "notes": "Efecto blur y desenfoque traslucido en panel derecho de login con resolucion de capas GPU",
+  "notes": "Efecto blur y cristal esmerilado universal para todas las ventanas, modales y dialogos de la app",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",
