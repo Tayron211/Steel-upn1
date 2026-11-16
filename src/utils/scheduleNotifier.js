@@ -287,12 +287,21 @@ export async function scheduleNativeAlarms() {
 }
 
 /**
- * Reproduce un tono de campana / chime institucional suave vía Web Audio API.
- * Funciona completamente offline y sin archivos externos en Windows 10/11, Mac y móvil.
+ * Reproduce un tono de campana / chime institucional de alta potencia y nitidez vía Web Audio API.
+ * Optimizado con compresor de dinámica y armónicos brillantes para sonar potente y claro
+ * en altavoces de teléfonos móviles y computadoras.
  */
 export function playNotificationChime() {
   try {
     if (typeof window === 'undefined') return;
+
+    // Vibración háptica instantánea en dispositivos móviles compatibles
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate([120, 60, 180]);
+      } catch (_) {}
+    }
+
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
@@ -301,29 +310,53 @@ export function playNotificationChime() {
     }
     const now = ctx.currentTime;
 
-    // Tono 1 (880 Hz - Nota La5)
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(880, now);
-    gain1.gain.setValueAtTime(0.12, now);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.start(now);
-    osc1.stop(now + 0.35);
+    // Compresor de dinámica maestro: maximiza el volumen percibido sin saturar ni distorsionar
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.setValueAtTime(-10, now);
+    compressor.knee.setValueAtTime(24, now);
+    compressor.ratio.setValueAtTime(14, now);
+    compressor.attack.setValueAtTime(0.002, now);
+    compressor.release.setValueAtTime(0.2, now);
+    compressor.connect(ctx.destination);
 
-    // Tono 2 armónico superior (1174.66 Hz - Nota Re6)
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(1174.66, now + 0.12);
-    gain2.gain.setValueAtTime(0.15, now + 0.12);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(now + 0.12);
-    osc2.stop(now + 0.55);
+    // Ganancia maestra con volumen potente (0.85)
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0.85, now);
+    masterGain.connect(compressor);
+
+    // Función interna para crear notas cristalinas con armónicos audibles
+    const playTone = (freq, startTime, duration, peakGain) => {
+      // Oscilador principal (onda senoidal pura)
+      const oscSine = ctx.createOscillator();
+      const gainSine = ctx.createGain();
+      oscSine.type = 'sine';
+      oscSine.frequency.setValueAtTime(freq, startTime);
+      gainSine.gain.setValueAtTime(0.001, startTime);
+      gainSine.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.015);
+      gainSine.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      oscSine.connect(gainSine);
+      gainSine.connect(masterGain);
+      oscSine.start(startTime);
+      oscSine.stop(startTime + duration);
+
+      // Oscilador armónico secundario (onda triangular: aporta presencia y brillo en altavoces pequeños)
+      const oscTri = ctx.createOscillator();
+      const gainTri = ctx.createGain();
+      oscTri.type = 'triangle';
+      oscTri.frequency.setValueAtTime(freq * 2, startTime); // Octava superior
+      gainTri.gain.setValueAtTime(0.001, startTime);
+      gainTri.gain.exponentialRampToValueAtTime(peakGain * 0.45, startTime + 0.015);
+      gainTri.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.7);
+      oscTri.connect(gainTri);
+      gainTri.connect(masterGain);
+      oscTri.start(startTime);
+      oscTri.stop(startTime + duration);
+    };
+
+    // Secuencia de alerta institucional nítida y ascendente (Do6 -> Mi6 -> Sol6 resonante)
+    playTone(1046.50, now, 0.22, 0.70);          // C6 (~1046 Hz)
+    playTone(1318.51, now + 0.11, 0.26, 0.82);   // E6 (~1318 Hz)
+    playTone(1567.98, now + 0.24, 0.65, 0.95);   // G6 (~1567 Hz - Nota final brillante y expansiva)
   } catch (_) { }
 }
 

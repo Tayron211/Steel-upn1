@@ -1,8 +1,30 @@
 {
-  "version": "1.0.62",
-  "versionCode": 63,
+  "version": "1.0.63",
+  "versionCode": 64,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.62 - Reseteo instantaneo al encabezado al cambiar de pestana, sin redundancias y contraste refinado",
+  "notes": "Navegacion instantanea a cabecera, sonido de notificacion potente y ventana de actualizacion con novedades detalladas",
+  "features": [
+    {
+      "title": "Navegación al Encabezado Superior",
+      "desc": "Al cambiar entre pestañas la nueva vista aparece siempre desde el encabezado, sin arrastrar el scroll hacia abajo."
+    },
+    {
+      "title": "Sonido de Notificación Más Fuerte",
+      "desc": "Chime de alerta institucional amplificado con compresor dinámico y vibración háptica en teléfonos."
+    },
+    {
+      "title": "Centro de Operaciones Optimizado",
+      "desc": "Se removió la subpestaña redundante de Ambientes, dejando acceso directo a Hojas Manuales y Reservas."
+    },
+    {
+      "title": "Detalle de Aforo y Taller Especializado",
+      "desc": "Identificación limpia de laboratorios y capacidad exacta de personas sin duplicar códigos de aula."
+    },
+    {
+      "title": "Modo Claro con Contraste Refinado",
+      "desc": "Tarjetas con sombra ambiental natural y bordes delimitados sin líneas negras toscas para mayor claridad."
+    }
+  ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

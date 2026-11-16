@@ -382,8 +382,17 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   onClick={() => {
                     setActiveTab(item.id);
                     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
                     if (document.documentElement) document.documentElement.scrollTop = 0;
                     if (document.body) document.body.scrollTop = 0;
+                    const root = document.getElementById('root');
+                    if (root) root.scrollTop = 0;
+                    const main = document.querySelector('main');
+                    if (main) main.scrollTop = 0;
+                    const anchor = document.getElementById('app-top-anchor');
+                    if (anchor) {
+                      try { anchor.scrollIntoView({ block: 'start', behavior: 'instant' }); } catch (_) {}
+                    }
                   }}
                   className={`relative z-10 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer ${isActive
                     ? desktopNavSlide.pillStyle.opacity === 0
@@ -442,8 +451,17 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   onClick={() => {
                     setActiveTab(item.id);
                     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
                     if (document.documentElement) document.documentElement.scrollTop = 0;
                     if (document.body) document.body.scrollTop = 0;
+                    const root = document.getElementById('root');
+                    if (root) root.scrollTop = 0;
+                    const main = document.querySelector('main');
+                    if (main) main.scrollTop = 0;
+                    const anchor = document.getElementById('app-top-anchor');
+                    if (anchor) {
+                      try { anchor.scrollIntoView({ block: 'start', behavior: 'instant' }); } catch (_) {}
+                    }
                   }}
                   className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
                 >

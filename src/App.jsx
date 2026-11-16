@@ -277,7 +277,17 @@ export default function App() {
   });
   const [openManualModalTrigger, setOpenManualModalTrigger] = useState(null);
   const [openReservationModalTrigger, setOpenReservationModalTrigger] = useState(null);
+  // Desactivar restauración automática de scroll del navegador para garantizar que las páginas carguen arriba
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      try {
+        window.history.scrollRestoration = 'manual';
+      } catch (_) {}
+    }
+  }, []);
+
   const [attendanceSearchPrefill, setAttendanceSearchPrefill] = useState('');
+  const pageTopAnchorRef = useRef(null);
 
   const scrollToTopGlobal = () => {
     const doScroll = () => {
@@ -286,32 +296,36 @@ export default function App() {
       } catch (_) {
         window.scrollTo(0, 0);
       }
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
       if (document.documentElement) document.documentElement.scrollTop = 0;
       if (document.body) document.body.scrollTop = 0;
+      const root = document.getElementById('root');
+      if (root) root.scrollTop = 0;
       const main = document.querySelector('main');
       if (main) main.scrollTop = 0;
+      if (pageTopAnchorRef.current) {
+        try {
+          pageTopAnchorRef.current.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'instant' });
+        } catch (_) {}
+      }
       const scrollContainers = document.querySelectorAll('.overflow-y-auto, .overflow-auto');
       scrollContainers.forEach(el => { el.scrollTop = 0; });
     };
 
     doScroll();
     requestAnimationFrame(doScroll);
-    setTimeout(doScroll, 20);
-    setTimeout(doScroll, 80);
-    setTimeout(doScroll, 160);
+    setTimeout(doScroll, 10);
+    setTimeout(doScroll, 40);
+    setTimeout(doScroll, 100);
+    setTimeout(doScroll, 200);
   };
 
   // Al cambiar de pestaña, resetear scroll síncronamente antes del repintado para mostrar siempre el encabezado
   useLayoutEffect(() => {
-    try {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    } catch (_) {
-      window.scrollTo(0, 0);
-    }
-    if (document.documentElement) document.documentElement.scrollTop = 0;
-    if (document.body) document.body.scrollTop = 0;
-    const main = document.querySelector('main');
-    if (main) main.scrollTop = 0;
+    scrollToTopGlobal();
+  }, [activeTab, operationsSubTab]);
+
+  useEffect(() => {
     scrollToTopGlobal();
   }, [activeTab, operationsSubTab]);
 
@@ -587,6 +601,7 @@ export default function App() {
 
       {/* Main Fluid App Container - Amplio en escritorio para máxima visibilidad */}
       <main className="flex-1 max-w-[1880px] w-full mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-5 pb-32 md:pb-24 overflow-x-hidden">
+        <div ref={pageTopAnchorRef} id="app-top-anchor" className="h-0 w-0 pointer-events-none -mt-4 scroll-mt-28" />
         {activeTab === 'attendance' && (
           <div key="attendance" className={tabAnimClass}>
             <ErrorBoundary>

@@ -24,12 +24,15 @@ try {
   parts[2] = (parts[2] || 0) + 1;
   const nextVersion = parts.join('.');
 
-  const notesArg = process.argv[2] || 'Mejoras de rendimiento, estabilidad y nuevas funciones.';
+  const notesArg = process.argv[2] || versionData.notes || 'Mejoras de rendimiento, estabilidad y nuevas funciones.';
 
   versionData.version = nextVersion;
   versionData.versionCode = nextBuild;
   versionData.releaseDate = new Date().toISOString().split('T')[0];
   versionData.notes = notesArg;
+  if (!versionData.features) {
+    versionData.features = [];
+  }
 
   fs.writeFileSync(versionJsonPath, JSON.stringify(versionData, null, 2) + '\n');
   console.log(`[1/5] Actualizado version.json -> v${nextVersion} (Build ${nextBuild})`);

@@ -2,8 +2,8 @@ import { App } from '@capacitor/app';
 import { registerPlugin } from '@capacitor/core';
 import { isCapacitorNative } from './statusBarHelper';
 
-export const APP_CURRENT_VERSION = '1.0.62';
-export const APP_CURRENT_BUILD = 63;
+export const APP_CURRENT_VERSION = '1.0.63';
+export const APP_CURRENT_BUILD = 64;
 
 export const AppInstaller = registerPlugin('AppInstaller');
 
@@ -73,6 +73,7 @@ export async function checkAppVersion(isManual = false) {
       latestBuild: data.versionCode || 1,
       releaseDate: data.releaseDate || '',
       notes: data.notes || 'Mejoras de rendimiento y estabilidad.',
+      features: Array.isArray(data.features) ? data.features : [],
       apkUrl: data.apkUrl || 'https://control-doc.pages.dev/control-doc.apk',
       forceUpdate: Boolean(data.forceUpdate)
     };

@@ -7,7 +7,10 @@ import {
   ArrowRight,
   ShieldCheck,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Layers,
+  Zap,
+  Check
 } from 'lucide-react';
 import { triggerDirectApkInstall, AppInstaller, APP_CURRENT_VERSION } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
@@ -24,6 +27,15 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
   const infoNotes = rawInfo.notes || 'Mejoras de rendimiento y estabilidad.';
   const isForceUpdate = Boolean(rawInfo.forceUpdate);
   const targetApkUrl = rawInfo.apkUrl || 'https://control-doc.pages.dev/control-doc.apk';
+
+  // Extraer lista detallada de novedades
+  const detailedFeatures = Array.isArray(rawInfo.features) && rawInfo.features.length > 0
+    ? rawInfo.features
+    : Array.isArray(rawInfo.changes) && rawInfo.changes.length > 0
+      ? rawInfo.changes
+      : typeof rawInfo.notes === 'string' && (rawInfo.notes.includes('\n') || rawInfo.notes.includes('•') || rawInfo.notes.includes(';'))
+        ? rawInfo.notes.split(/\n|•|;/).map(s => s.trim()).filter(Boolean).map(text => ({ title: '', desc: text }))
+        : null;
 
   const [downloading, setDownloading] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
@@ -63,17 +75,17 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
 
   return (
     <div
-      className={`fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none ${fade.backdropClass}`}
+      className={`fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 select-none ${fade.backdropClass}`}
       onClick={() => {
         if (!isForceUpdate && !downloading) fade.requestClose();
       }}
     >
       <div
-        className={`bg-white dark:bg-[#0c0c10] border-2 border-amber-400 dark:border-amber-500/80 rounded-3xl p-4 sm:p-5 max-w-sm w-full shadow-[0_16px_50px_rgba(253,186,48,0.3)] space-y-3.5 ${fade.modalClass}`}
+        className={`bg-white dark:bg-[#0c0c10] border-2 border-amber-400 dark:border-amber-500/80 rounded-3xl p-4 sm:p-5 max-w-md w-full shadow-[0_16px_50px_rgba(253,186,48,0.3)] space-y-3.5 max-h-[92vh] flex flex-col ${fade.modalClass}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Encabezado Compacto */}
-        <div className="flex items-start justify-between gap-2.5">
+        <div className="flex items-start justify-between gap-2.5 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#FDBA30] to-amber-300 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0">
               <RotateCw className="w-5 h-5 stroke-[2.4]" />
@@ -92,7 +104,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
             <button
               type="button"
               onClick={() => fade.requestClose()}
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer shrink-0"
               title="Cerrar"
             >
               <X className="w-4 h-4 stroke-[2.2]" />
@@ -101,10 +113,10 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
         </div>
 
         {/* Comparación Visual de Versión: Anterior (Instalada) -> Siguiente (Disponible) */}
-        <div className="flex items-center justify-between gap-3 bg-slate-50 dark:bg-zinc-900/90 p-3.5 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
+        <div className="flex items-center justify-between gap-3 bg-slate-50 dark:bg-zinc-900/90 p-3 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs shrink-0">
           {/* Versión Anterior */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500"></span>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                 Instalada
@@ -122,7 +134,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
 
           {/* Versión Siguiente */}
           <div className="flex-1 min-w-0 text-right">
-            <div className="flex items-center justify-end gap-1.5 mb-1">
+            <div className="flex items-center justify-end gap-1.5 mb-0.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                 Disponible
               </span>
@@ -134,22 +146,53 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           </div>
         </div>
 
-        {/* Novedades del cambio */}
-        {infoNotes && (
-          <div className="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1">
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
-              <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
-              <span>Novedades del cambio</span>
+        {/* Novedades Detalladas del Cambio (Scrollable Elegante) */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 text-[10.5px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>Novedades & Mejoras de esta versión</span>
             </div>
-            <p className="text-[11px] text-slate-700 dark:text-zinc-300 leading-relaxed break-words">
-              {infoNotes}
-            </p>
+            {detailedFeatures && (
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-amber-200/60 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">
+                {detailedFeatures.length} cambios
+              </span>
+            )}
           </div>
-        )}
+
+          <div className="overflow-y-auto space-y-2 pr-1.5 max-h-52 custom-scrollbar">
+            {detailedFeatures && detailedFeatures.length > 0 ? (
+              detailedFeatures.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-2.5 p-2 rounded-xl bg-white/80 dark:bg-zinc-900/70 border border-amber-200/50 dark:border-zinc-800/80 shadow-2xs"
+                >
+                  <div className="w-5 h-5 rounded-lg bg-amber-500/15 dark:bg-amber-400/15 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/25">
+                    <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.4]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {item.title && (
+                      <h4 className="text-[11.5px] font-bold text-slate-900 dark:text-zinc-100 leading-snug">
+                        {item.title}
+                      </h4>
+                    )}
+                    <p className="text-[11px] text-slate-600 dark:text-zinc-300 leading-relaxed break-words">
+                      {item.desc || item}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-[11px] text-slate-700 dark:text-zinc-300 leading-relaxed break-words">
+                {infoNotes}
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Barra de Progreso de Descarga en Vivo (100% Amarillo UPN de la App) */}
         {downloadStarted && (
-          <div className="space-y-2 p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-[#FDBA30]/40 dark:border-[#FDBA30]/30 shadow-2xs">
+          <div className="space-y-2 p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-[#FDBA30]/40 dark:border-[#FDBA30]/30 shadow-2xs shrink-0">
             <div className="flex items-center justify-between text-xs font-bold text-amber-950 dark:text-amber-200">
               <span className="inline-flex items-center gap-1.5 font-bold">
                 <ShieldCheck className="w-4 h-4 text-[#d99000] dark:text-[#FDBA30] shrink-0 stroke-[2.2]" />
@@ -172,7 +215,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
         )}
 
         {/* Botón Principal de Actualización Directa */}
-        <div className="pt-0.5">
+        <div className="pt-0.5 shrink-0">
           <button
             type="button"
             onClick={handleUpdate}
