@@ -1,8 +1,8 @@
 {
-  "version": "1.0.55",
-  "versionCode": 56,
+  "version": "1.0.56",
+  "versionCode": 57,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.55 - Disponibilidad horaria y deteccion de reservas en aulas libres",
+  "notes": "v1.0.56 - Autocompletado inteligente de docentes al reservar aula libre",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

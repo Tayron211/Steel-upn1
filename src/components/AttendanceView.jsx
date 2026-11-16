@@ -1077,6 +1077,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     actividades: ''
   });
   const [savingReservation, setSavingReservation] = useState(false);
+  const [docentesList, setDocentesList] = useState([]);
+  const [docenteSuggestionsOpen, setDocenteSuggestionsOpen] = useState(false);
 
   const classOptionsFade = useFadeModal(selectedClassOptions, () => setSelectedClassOptions(null), 200);
   const quickAttentionFade = useFadeModal(quickAttentionItem, () => setQuickAttentionItem(null), 200);
@@ -1534,6 +1536,95 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       console.warn('Error fetching day schedule:', err);
     }
   };
+
+  useEffect(() => {
+    fetch('/api/attendance')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && Array.isArray(json.data)) {
+          const docs = Array.from(
+            new Set(
+              json.data
+                .map(c => (c.docente || '').trim().toUpperCase())
+                .filter(d => d && !d.includes('#N/D') && !d.includes('#N/A') && d.length > 3)
+            )
+          ).sort();
+          setDocentesList(docs);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const allKnownDocentes = useMemo(() => {
+    const rawList = [];
+    docentesList.forEach(d => { if (d) rawList.push(d); });
+    (data || []).forEach(c => { if (c.docente) rawList.push(c.docente); });
+    (dayAllClasses || []).forEach(c => { if (c.docente) rawList.push(c.docente); });
+    (reservations || []).forEach(r => { if (r.docente) rawList.push(r.docente); });
+
+    const cleanName = (str) => {
+      if (!str) return '';
+      return String(str)
+        .replace(/\[(?:DOCENTE|ALUMNO)\]/gi, '')
+        .replace(/^(?:LIC\.|MG\.|DR\.|DRA\.|ING\.|PROF\.|DOCENTE)\s+/i, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+    };
+
+    const getSig = (name) => {
+      const clean = cleanName(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const words = clean.split(' ').filter(w => w.length > 1);
+      words.sort();
+      return words.join(' ');
+    };
+
+    const groups = new Map();
+    for (const raw of rawList) {
+      const cleaned = cleanName(raw);
+      if (!cleaned || cleaned.includes('#N/D') || cleaned.includes('#N/A') || cleaned.length < 4) continue;
+      if (cleaned.startsWith('PRUEBA') || cleaned === 'TEST') continue;
+
+      const sig = getSig(cleaned);
+      if (!groups.has(sig)) {
+        groups.set(sig, new Set());
+      }
+      groups.get(sig).add(cleaned);
+    }
+
+    const uniqueList = [];
+    for (const [, variantsSet] of groups.entries()) {
+      const variants = Array.from(variantsSet);
+      variants.sort((a, b) => b.length - a.length);
+      uniqueList.push(variants[0]);
+    }
+    return uniqueList.sort((a, b) => a.localeCompare(b, 'es'));
+  }, [docentesList, data, dayAllClasses, reservations]);
+
+  const docenteSuggestions = useMemo(() => {
+    if (reservationForm.tipo !== 'DOCENTE') return [];
+    const rawQ = (reservationForm.nombre || '').trim();
+    if (!rawQ || rawQ.length < 2) return [];
+
+    const cleanQ = rawQ
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[\/,.\-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const queryTokens = cleanQ.split(' ').filter(Boolean);
+
+    return allKnownDocentes.filter(doc => {
+      const docNorm = doc
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/[\/,.\-_]+/g, ' ')
+        .replace(/\s+/g, ' ');
+
+      return queryTokens.every(tok => docNorm.includes(tok));
+    }).slice(0, 10);
+  }, [reservationForm.nombre, reservationForm.tipo, allKnownDocentes]);
 
   useEffect(() => {
     loadDayAllClasses(selectedDia);
@@ -3405,19 +3496,62 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     </div>
                   </div>
 
-                  {/* Nombre Solicitante */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                      Nombre del {reservationForm.tipo === 'DOCENTE' ? 'Docente' : 'Alumno'} *
+                  {/* Nombre Solicitante con Autocompletado Inteligente */}
+                  <div className="relative">
+                    <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      <span>Nombre del {reservationForm.tipo === 'DOCENTE' ? 'Docente' : 'Alumno'} *</span>
+                      {reservationForm.tipo === 'DOCENTE' && allKnownDocentes.length > 0 && (
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">
+                          {allKnownDocentes.length} docentes disponibles
+                        </span>
+                      )}
                     </label>
                     <input
                       type="text"
                       required
                       value={reservationForm.nombre}
-                      onChange={(e) => setReservationForm(f => ({ ...f, nombre: e.target.value }))}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setReservationForm(f => ({ ...f, nombre: val }));
+                        setDocenteSuggestionsOpen(true);
+                      }}
+                      onFocus={() => setDocenteSuggestionsOpen(true)}
+                      onBlur={() => setTimeout(() => setDocenteSuggestionsOpen(false), 200)}
                       placeholder={reservationForm.tipo === 'DOCENTE' ? 'Ej: ING. CARLOS MENDOZA' : 'Ej: JUAN PEREZ (Delegado)'}
-                      className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition"
+                      className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition uppercase"
                     />
+
+                    {/* Menú de Autocompletado de Docentes */}
+                    {reservationForm.tipo === 'DOCENTE' && docenteSuggestionsOpen && docenteSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-52 overflow-y-auto">
+                        <div className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-900/90 border-b border-slate-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center justify-between">
+                          <span>Docentes Sugeridos ({docenteSuggestions.length})</span>
+                          <button
+                            type="button"
+                            onClick={() => setDocenteSuggestionsOpen(false)}
+                            className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {docenteSuggestions.map((doc, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onMouseDown={() => {
+                              setReservationForm(f => ({ ...f, nombre: doc }));
+                              setDocenteSuggestionsOpen(false);
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 transition flex items-center justify-between group border-b border-slate-100 dark:border-zinc-800/50 last:border-b-0 cursor-pointer"
+                          >
+                            <span className="truncate">{doc}</span>
+                            <span className="text-[10px] text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shrink-0 font-black ml-2 uppercase">
+                              Elegir
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Fecha y Horario */}
