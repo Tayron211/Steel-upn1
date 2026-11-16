@@ -1155,8 +1155,33 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     setDocenteSuggestionsOpen(false);
   };
 
-  const handleOpenReserveForFreeRoom = () => {
+  const handleOpenReserveForFreeRoom = (room = null) => {
     resetForm();
+    if (room) {
+      const code = (room.abrv || '').toUpperCase().trim();
+      const targetDate = activeDayInfo?.fecha || new Date().toISOString().split('T')[0];
+      const dt = new Date(targetDate + 'T12:00:00');
+      const computedDia = DAYS_OF_WEEK[dt.getDay()] || activeDayInfo?.diaName || 'LUNES';
+      const computedMes = MONTHS_UPPER[dt.getMonth()] || 'NOVIEMBRE';
+      const initStart = room.freeFrom || selectedHoraBlock || '10:50';
+      const initEnd = (room.freeUntil && room.freeUntil !== '22:50') ? room.freeUntil : (
+        REAL_BLOCKS.find(b => b.start === initStart)?.end || '12:30'
+      );
+
+      setFormData(prev => ({
+        ...prev,
+        fecha: targetDate,
+        dia: computedDia,
+        mes: computedMes,
+        inicio: initStart,
+        final: initEnd,
+        aulas: [code],
+        aula: code,
+        ubicacion: `${room.piso || ''} - ${room.pabellon || ''}`.replace(/^ - | - $/g, '')
+      }));
+      setSelectedAulas([code]);
+      setIsMultiRoomMode(false);
+    }
     setIsModalOpen(true);
   };
 
@@ -1660,13 +1685,84 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           return !cConflict && !rConflict;
         });
 
+        const currentBlockDef = blockObj || {
+          start: selectedHoraBlock || '10:50',
+          end: '12:30',
+          startM: timeToMins(selectedHoraBlock || '10:50'),
+          endM: timeToMins(selectedHoraBlock || '10:50') + 100
+        };
+
+        // Eventos futuros en esta aula hoy
+        const upcomingEvents = [];
+
+        for (const c of classesInRoom) {
+          const cStartM = timeToMins(c.horaInicioProg);
+          if (cStartM >= currentBlockDef.endM) {
+            upcomingEvents.push({
+              startM: cStartM,
+              start: c.horaInicioProg,
+              end: c.horaFinalProg,
+              isReserva: false,
+              title: c.curso || c.docente || 'Clase regular',
+              docente: c.docente
+            });
+          }
+        }
+
+        for (const res of reservasInRoom) {
+          const rStartM = timeToMins(res.inicio || res.hora_inicio);
+          if (rStartM >= currentBlockDef.endM) {
+            upcomingEvents.push({
+              startM: rStartM,
+              start: res.inicio || res.hora_inicio,
+              end: res.final || res.hora_fin,
+              isReserva: true,
+              title: res.motivo || res.detalle || 'Reserva de aula',
+              docente: res.docente
+            });
+          }
+        }
+
+        upcomingEvents.sort((a, b) => a.startM - b.startM);
+        const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+
+        let freeUntil = '22:50';
+        let isRestOfDay = true;
+
+        if (nextEvent) {
+          freeUntil = nextEvent.start;
+          isRestOfDay = false;
+        }
+
+        const freeStartM = currentBlockDef.startM;
+        const freeEndM = timeToMins(freeUntil);
+        const freeDiffM = Math.max(0, freeEndM - freeStartM);
+        const freeHours = Math.floor(freeDiffM / 60);
+        const freeMins = freeDiffM % 60;
+
+        let freeDurationStr = '';
+        if (isRestOfDay) {
+          freeDurationStr = `Resto del día (${freeHours}h libres)`;
+        } else {
+          freeDurationStr = `${freeHours > 0 ? `${freeHours}h ` : ''}${freeMins > 0 ? `${freeMins}m` : ''} libres`.trim();
+        }
+
+        const freeTimeRange = `${currentBlockDef.start} - ${freeUntil}`;
+
         return {
           ...room,
           isBusyInSelectedBlock,
           freeBlocksCount: freeBlocksList.length,
           freeBlocksList,
           classesCount: classesInRoom.length,
-          reservasCount: reservasInRoom.length
+          reservasCount: reservasInRoom.length,
+          freeFrom: currentBlockDef.start,
+          freeUntil,
+          freeTimeRange,
+          freeDurationStr,
+          isRestOfDay,
+          nextEvent,
+          dayReservations: reservasInRoom
         };
       })
       .filter(room => {
@@ -2121,13 +2217,15 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           ) : (
             <div key={`free-${selectedDayOffset}-${selectedHoraBlock}`} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-3.5 ${contentAnimClass}`}>
               {freeRooms.map((room) => {
-                const blockObj = REAL_BLOCKS.find(b => b.start === selectedHoraBlock);
                 return (
                   <div
                     key={room.abrv}
-                    className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between transition-all duration-150 group"
+                    onClick={() => handleOpenReserveForFreeRoom(room)}
+                    className="bg-white dark:bg-[#0c0c0f] border border-slate-200/90 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 rounded-2xl p-3.5 shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-150 active:scale-98 group"
+                    title="Haz clic para registrar la reserva de esta aula"
                   >
                     <div>
+                      {/* Header Tarjeta */}
                       <div className="flex items-start justify-between gap-1.5 mb-2">
                         <span className="font-mono font-black text-sm bg-slate-900 dark:bg-zinc-800 group-hover:bg-[#FDBA30] group-hover:text-slate-950 text-white px-2.5 py-0.5 rounded-xl transition-colors">
                           {room.abrv}
@@ -2138,43 +2236,89 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         </span>
                       </div>
 
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-white break-words mb-1 group-hover:text-amber-500 transition-colors">
-                        {room.nombre}
-                      </h4>
-
-                      <div className="flex flex-wrap items-center gap-1 mb-2.5">
+                      {/* Pastilla Azul de Ubicación */}
+                      <div className="mb-2">
                         <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/60">
                           {room.tipo} · Pab. {room.pabellon} ({room.piso})
                         </span>
                       </div>
 
-                      <div className="space-y-1.5 text-xs bg-slate-50 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-slate-100 dark:border-zinc-800">
-                        <div className="flex items-center justify-between text-slate-600 dark:text-zinc-400">
-                          <span className="inline-flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Aforo: <strong className="text-slate-900 dark:text-white">{room.aforo} pers.</strong></span>
+                      {/* Horario y Tiempo Disponible */}
+                      <div className="mb-2 p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/70 space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-xs font-black text-emerald-950 dark:text-emerald-200">
+                          <span className="inline-flex items-center gap-1.5 font-mono">
+                            <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.4]" />
+                            <span>{room.freeTimeRange}</span>
                           </span>
-                          <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                            {room.freeBlocksCount}/9 bloques libres
+                          <span className="text-[10px] uppercase tracking-tight px-2 py-0.5 rounded-md bg-emerald-200/80 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-100 font-extrabold shadow-2xs">
+                            {room.freeDurationStr}
                           </span>
                         </div>
+                        {room.nextEvent ? (
+                          <div className="text-[10.5px] text-slate-600 dark:text-zinc-400 flex items-center justify-between pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40">
+                            <span className="font-semibold text-slate-500 dark:text-zinc-400">
+                              Próx. {room.nextEvent.isReserva ? 'reserva' : 'clase'}:
+                            </span>
+                            <strong className="text-slate-800 dark:text-zinc-200 font-mono text-[11px]">
+                              {room.nextEvent.start} hrs
+                            </strong>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 flex items-center gap-1">
+                            <span>✨ Sin más clases hoy (todo el resto del día)</span>
+                          </div>
+                        )}
+                      </div>
 
-                        <div className="text-[10px] font-mono font-semibold text-slate-500 dark:text-zinc-400 pt-1 border-t border-slate-200/60 dark:border-zinc-800 flex items-center justify-between">
-                          <span>{activeDayInfo.diaShort} {activeDayInfo.shortDate}</span>
-                          <span className="text-slate-800 dark:text-zinc-200 font-bold">
-                            {blockObj ? `${blockObj.start} - ${blockObj.end}` : 'Varios horarios'}
-                          </span>
+                      {/* Reservas programadas para este día */}
+                      {room.dayReservations && room.dayReservations.length > 0 ? (
+                        <div className="mb-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-[11px] space-y-1">
+                          <div className="flex items-center justify-between font-bold text-amber-900 dark:text-amber-300">
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                              <span>{room.dayReservations.length === 1 ? '1 reserva hoy' : `${room.dayReservations.length} reservas hoy`}</span>
+                            </span>
+                            <span className="font-mono text-[10px] font-black text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-1.5 py-0.5 rounded">
+                              {room.dayReservations[0].inicio || room.dayReservations[0].hora_inicio} - {room.dayReservations[0].final || room.dayReservations[0].hora_fin}
+                            </span>
+                          </div>
+                          <p className="text-[10.5px] text-amber-800 dark:text-amber-300 font-medium truncate" title={room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}>
+                            👤 {room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}
+                          </p>
                         </div>
+                      ) : (
+                        <div className="mb-2 px-2 py-1 rounded-lg bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60 text-[10px] text-slate-500 dark:text-zinc-400 flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400 dark:text-zinc-500" />
+                            <span>Sin reservas hoy</span>
+                          </span>
+                          <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold">100% disponible</span>
+                        </div>
+                      )}
+
+                      {/* Capacidad y código de aula */}
+                      <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 p-2 rounded-xl border border-slate-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400">
+                          <Users className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Capacidad: <strong className="text-slate-900 dark:text-white">{room.aforo} pers.</strong></span>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">
+                          {room.abrv}
+                        </span>
                       </div>
                     </div>
 
+                    {/* Botón Reservar Aula */}
                     <button
                       type="button"
-                      onClick={() => handleOpenReserveForFreeRoom()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenReserveForFreeRoom(room);
+                      }}
                       className="w-full mt-2.5 h-8 bg-amber-400 hover:bg-[#FDBA30] active:bg-amber-500 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       <CalendarPlus className="w-3.5 h-3.5 stroke-[2.4]" />
-                      <span>Reservar {activeDayInfo.offset === 0 ? 'Hoy' : activeDayInfo.diaShort}</span>
+                      <span>Reservar Aula</span>
                     </button>
                   </div>
                 );
