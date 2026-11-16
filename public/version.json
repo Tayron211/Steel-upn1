@@ -1,8 +1,8 @@
 {
-  "version": "1.0.69",
-  "versionCode": 70,
+  "version": "1.0.70",
+  "versionCode": 71,
   "releaseDate": "2026-11-16",
-  "notes": "Efecto traslucido frosted glass estilo navbar en el Login y transicion suave fade post splashscreen",
+  "notes": "Efecto blur de cristal pulido en Login con biselado refractivo, brillo especular e inputs de cristal liquido",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",
