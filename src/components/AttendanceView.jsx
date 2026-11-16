@@ -2857,8 +2857,9 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           )}
                         </div>
                       ) : (
-                        <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 flex items-center gap-1">
-                          <span>✨ Sin más clases hoy (todo el resto del día)</span>
+                        <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.2] shrink-0" />
+                          <span>Sin más clases hoy (todo el resto del día)</span>
                         </div>
                       )}
                     </div>

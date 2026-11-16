@@ -1,9 +1,13 @@
 {
-  "version": "1.0.65",
-  "versionCode": 66,
+  "version": "1.0.66",
+  "versionCode": 67,
   "releaseDate": "2026-11-16",
-  "notes": "Aforo discreto en aulas, transiciones fade en anuncios toast y barras traslúcidas.",
+  "notes": "Ícono Lucide Sparkles vectorizado en estado libre de aulas, acorde al estilo visual de la app",
   "features": [
+    {
+      "title": "Iconografía Vectorial Homogénea",
+      "desc": "Reemplazo de emojis antiguos por íconos SVG vectorizados de Lucide en 'Sin más clases hoy' y calendarios de reservas."
+    },
     {
       "title": "Aforo Discreto en Todas las Aulas",
       "desc": "Visualización sutil y minimalista de la capacidad (ej. 40p) en todas las tarjetas de aula estándar sin sobrecargar el diseño."
@@ -23,10 +27,6 @@
     {
       "title": "Sonido de Notificación Más Fuerte",
       "desc": "Chime de alerta amplificado con compresor dinámico, doble armónico y vibración háptica."
-    },
-    {
-      "title": "Diseño de Tarjetas sin Superposiciones",
-      "desc": "Laboratorios y talleres especializados en fila dedicada sin colisionar con la etiqueta Pendiente ni los 3 puntos."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",

@@ -23,7 +23,8 @@ import {
   Filter,
   GraduationCap,
   UserCheck,
-  BookOpen
+  BookOpen,
+  Sparkles
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -2342,8 +2343,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                             )}
                           </div>
                         ) : (
-                          <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 flex items-center gap-1">
-                            <span>✨ Sin más clases hoy (todo el resto del día)</span>
+                          <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.2] shrink-0" />
+                            <span>Sin más clases hoy (todo el resto del día)</span>
                           </div>
                         )}
                       </div>
@@ -2497,8 +2499,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 truncate">
                           {displayUbicacion}
                         </span>
-                        <span className="text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 px-2 py-0.5 rounded-lg shrink-0">
-                          🗓️ {r.mes || (r.fecha ? MONTHS_UPPER[new Date(r.fecha + 'T12:00:00').getMonth()] : 'RESERVA')}
+                        <span className="text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 px-2 py-0.5 rounded-lg shrink-0 inline-flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0 stroke-[2.2]" />
+                          <span>{r.mes || (r.fecha ? MONTHS_UPPER[new Date(r.fecha + 'T12:00:00').getMonth()] : 'RESERVA')}</span>
                         </span>
                       </div>
 
