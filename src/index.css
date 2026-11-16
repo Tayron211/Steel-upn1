@@ -1083,14 +1083,14 @@ input.login-input:-webkit-autofill:focus {
 
 /* ========================================================
    Light Mode Card Contrast, Definition & Elevation
-   Proporciona separación limpia entre el fondo y las tarjetas
+   Separación elegante y natural mediante sombra suave y borde sutil
    ======================================================== */
 html:not(.dark) {
-  background-color: #e6eaf0;
+  background-color: #edf0f5;
 }
 
 html:not(.dark) body {
-  background-color: #e6eaf0;
+  background-color: #edf0f5;
 }
 
 html:not(.dark) .bg-white.rounded-2xl,
@@ -1098,20 +1098,20 @@ html:not(.dark) .bg-white.rounded-3xl,
 html:not(.dark) [class*="bg-white"][class*="rounded-2xl"],
 html:not(.dark) [class*="bg-white"][class*="rounded-3xl"],
 html:not(.dark) [id^="attendance-card-"] {
-  border-color: #94a3b8 !important;
-  box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.08), 0 1px 3px -1px rgba(15, 23, 42, 0.06) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important; /* Borde suave y delicado sin líneas oscuras */
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 1px 3px 0 rgba(15, 23, 42, 0.04) !important;
 }
 
 html:not(.dark) .bg-white.rounded-2xl:hover,
 html:not(.dark) [class*="bg-white"][class*="rounded-2xl"]:hover,
 html:not(.dark) [id^="attendance-card-"]:hover {
-  border-color: #64748b !important;
-  box-shadow: 0 6px 18px -2px rgba(15, 23, 42, 0.12), 0 3px 6px -2px rgba(15, 23, 42, 0.08) !important;
+  border-color: rgba(203, 213, 225, 0.95) !important;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.09), 0 2px 6px -1px rgba(15, 23, 42, 0.05) !important;
 }
 
 /* Contenedores y paneles en modo claro */
 html:not(.dark) .apple-liquid-glass,
 html:not(.dark) .apple-liquid-pill {
-  border-color: #94a3b8 !important;
-  box-shadow: 0 2px 6px 0 rgba(15, 23, 42, 0.06) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 2px 8px 0 rgba(15, 23, 42, 0.04) !important;
 }
