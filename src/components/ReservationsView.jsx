@@ -2343,11 +2343,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
                   <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-zinc-500">
                     <span className="truncate">
-                      Por: <PressableNameTrigger
-                        name={r.usuario || 'Operaciones'}
-                        type="usuario"
-                        onOpen={openHistoryModal}
-                      />
+                      Por: <span className="font-semibold text-slate-600 dark:text-zinc-300">{r.usuario || 'Operaciones'}</span>
                     </span>
 
                     <div className="flex items-center gap-1.5 shrink-0">

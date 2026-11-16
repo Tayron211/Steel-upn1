@@ -1,8 +1,8 @@
 {
-  "version": "1.0.52",
-  "versionCode": 53,
+  "version": "1.0.53",
+  "versionCode": 54,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.52 - Persistencia de vista en recarga F5 y consolidacion de reservas",
+  "notes": "v1.0.53 - Long-press exclusivo para el solicitante de la reserva",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
