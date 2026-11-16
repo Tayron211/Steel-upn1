@@ -1,8 +1,8 @@
 {
-  "version": "1.0.50",
-  "versionCode": 51,
+  "version": "1.0.52",
+  "versionCode": 53,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.50 - Consolidacion automatica en una sola tarjeta y ventana de historial de reservas del ultimo ano por pulsacion prolongada",
+  "notes": "v1.0.52 - Persistencia de vista en recarga F5 y consolidacion de reservas",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

@@ -17,7 +17,19 @@ export default function OperationsHub({
   onConsumeManualModalTrigger = null,
   onConsumeReservationModalTrigger = null
 }) {
-  const [subTab, setSubTab] = useState(defaultSubTab);
+  const [subTab, setSubTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#reservas' || hash === '#operaciones/reservas') return 'reservations';
+      if (hash === '#ambientes' || hash === '#operaciones/ambientes') return 'rooms';
+      if (hash === '#operaciones' || hash === '#fichas') return 'manual';
+      try {
+        const saved = localStorage.getItem('steel:operations-subtab');
+        if (saved) return saved;
+      } catch (_) {}
+    }
+    return defaultSubTab || 'manual';
+  });
   const [subTransition, setSubTransition] = useState(() => ({ tab: subTab, dir: 'initial' }));
   if (subTransition.tab !== subTab) {
     const prevIdx = SUB_TABS.indexOf(subTransition.tab);
@@ -29,28 +41,49 @@ export default function OperationsHub({
   const subTabSlide = useSlidingIndicator(subTab);
 
   useEffect(() => {
+    const handleHashSync = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#reservas' || hash === '#operaciones/reservas') {
+        setSubTab('reservations');
+        try { localStorage.setItem('steel:operations-subtab', 'reservations'); } catch (_) {}
+      } else if (hash === '#ambientes' || hash === '#operaciones/ambientes') {
+        setSubTab('rooms');
+        try { localStorage.setItem('steel:operations-subtab', 'rooms'); } catch (_) {}
+      } else if (hash === '#operaciones' || hash === '#fichas') {
+        setSubTab('manual');
+        try { localStorage.setItem('steel:operations-subtab', 'manual'); } catch (_) {}
+      }
+    };
+    window.addEventListener('popstate', handleHashSync);
+    window.addEventListener('hashchange', handleHashSync);
+    return () => {
+      window.removeEventListener('popstate', handleHashSync);
+      window.removeEventListener('hashchange', handleHashSync);
+    };
+  }, []);
+
+  useEffect(() => {
     if (initialClassData) {
-      setSubTab('manual');
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      switchSubTab('manual');
     }
   }, [initialClassData]);
 
   useEffect(() => {
-    if (defaultSubTab) {
+    if (defaultSubTab && defaultSubTab !== subTab) {
       setSubTab(defaultSubTab);
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      try { localStorage.setItem('steel:operations-subtab', defaultSubTab); } catch (_) {}
     }
   }, [defaultSubTab]);
 
   useEffect(() => {
     if (openManualModalTrigger) {
-      setSubTab('manual');
+      switchSubTab('manual');
     }
   }, [openManualModalTrigger]);
 
   useEffect(() => {
     if (openReservationModalTrigger) {
-      setSubTab('reservations');
+      switchSubTab('reservations');
     }
   }, [openReservationModalTrigger]);
 
@@ -58,6 +91,7 @@ export default function OperationsHub({
     if (onConsumeManualModalTrigger) onConsumeManualModalTrigger();
     if (onConsumeReservationModalTrigger) onConsumeReservationModalTrigger();
     setSubTab(target);
+    try { localStorage.setItem('steel:operations-subtab', target); } catch (_) {}
     const subHash = target === 'reservations' ? '#reservas' : (target === 'rooms' ? '#ambientes' : '#operaciones');
     if (window.location.hash.toLowerCase() !== subHash) {
       window.history.pushState({ tab: 'operations', subTab: target }, '', subHash);

@@ -69,8 +69,15 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState(() => {
-    const hash = (typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '');
-    return HASH_TAB_MAP[hash] || 'attendance';
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (HASH_TAB_MAP[hash]) return HASH_TAB_MAP[hash];
+      try {
+        const saved = localStorage.getItem('steel:active-tab');
+        if (saved && TABS.includes(saved)) return saved;
+      } catch (_) {}
+    }
+    return 'attendance';
   });
   const [tabTransition, setTabTransition] = useState(() => ({ tab: activeTab, dir: 'initial' }));
   if (tabTransition.tab !== activeTab) {
@@ -251,7 +258,19 @@ export default function App() {
   const [newTicketPrefill, setNewTicketPrefill] = useState(null);
   const [openNewLoanModalTrigger, setOpenNewLoanModalTrigger] = useState(null);
   const [manualSheetPrefill, setManualSheetPrefill] = useState(null);
-  const [operationsSubTab, setOperationsSubTab] = useState('manual');
+  const [operationsSubTab, setOperationsSubTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#reservas' || hash === '#operaciones/reservas') return 'reservations';
+      if (hash === '#ambientes' || hash === '#operaciones/ambientes') return 'rooms';
+      if (hash === '#operaciones' || hash === '#fichas') return 'manual';
+      try {
+        const saved = localStorage.getItem('steel:operations-subtab');
+        if (saved) return saved;
+      } catch (_) {}
+    }
+    return 'manual';
+  });
   const [openManualModalTrigger, setOpenManualModalTrigger] = useState(null);
   const [openReservationModalTrigger, setOpenReservationModalTrigger] = useState(null);
   const [attendanceSearchPrefill, setAttendanceSearchPrefill] = useState('');
@@ -286,16 +305,24 @@ export default function App() {
       setOpenReservationModalTrigger(null);
     }
     setActiveTab(targetTab);
-    const targetHash = TAB_HASH_MAP[targetTab] || '#control';
+    try { localStorage.setItem('steel:active-tab', targetTab); } catch (_) {}
+
+    let targetHash = TAB_HASH_MAP[targetTab] || '#control';
+    if (targetTab === 'operations') {
+      if (operationsSubTab === 'reservations') targetHash = '#reservas';
+      else if (operationsSubTab === 'rooms') targetHash = '#ambientes';
+      else targetHash = '#operaciones';
+    }
+
     const title = TAB_TITLES[targetTab] || 'UPN · Control Docente & Operaciones';
     document.title = title;
 
     if (pushState) {
       if (window.location.hash.toLowerCase() !== targetHash) {
-        window.history.pushState({ tab: targetTab }, title, targetHash);
+        window.history.pushState({ tab: targetTab, subTab: operationsSubTab }, title, targetHash);
       }
     } else {
-      window.history.replaceState({ tab: targetTab }, title, targetHash);
+      window.history.replaceState({ tab: targetTab, subTab: operationsSubTab }, title, targetHash);
     }
     scrollToTopGlobal();
   };
@@ -312,17 +339,45 @@ export default function App() {
     if (signMatch) {
       setMobileSignTicketId(signMatch[1]);
     } else {
-      const initialTab = HASH_TAB_MAP[currentHash] || 'attendance';
+      const initialTab = HASH_TAB_MAP[currentHash] || (() => {
+        try {
+          const saved = localStorage.getItem('steel:active-tab');
+          if (saved && TABS.includes(saved)) return saved;
+        } catch (_) {}
+        return 'attendance';
+      })();
+
       setActiveTab(initialTab);
+      try { localStorage.setItem('steel:active-tab', initialTab); } catch (_) {}
+
+      let initialSubTab = 'manual';
       if (currentHash === '#reservas' || currentHash === '#operaciones/reservas') {
-        setOperationsSubTab('reservations');
+        initialSubTab = 'reservations';
       } else if (currentHash === '#ambientes' || currentHash === '#operaciones/ambientes') {
-        setOperationsSubTab('rooms');
+        initialSubTab = 'rooms';
+      } else if (currentHash === '#operaciones' || currentHash === '#fichas') {
+        initialSubTab = 'manual';
+      } else {
+        try {
+          const savedSub = localStorage.getItem('steel:operations-subtab');
+          if (savedSub) initialSubTab = savedSub;
+        } catch (_) {}
       }
-      const targetHash = TAB_HASH_MAP[initialTab] || '#control';
+
+      setOperationsSubTab(initialSubTab);
+      try { localStorage.setItem('steel:operations-subtab', initialSubTab); } catch (_) {}
+
+      let targetHash = currentHash;
+      if (!targetHash || targetHash === '#') {
+        if (initialTab === 'operations') {
+          targetHash = initialSubTab === 'reservations' ? '#reservas' : (initialSubTab === 'rooms' ? '#ambientes' : '#operaciones');
+        } else {
+          targetHash = TAB_HASH_MAP[initialTab] || '#control';
+        }
+      }
       const title = TAB_TITLES[initialTab] || 'UPN · Control Docente & Operaciones';
       document.title = title;
-      window.history.replaceState({ tab: initialTab }, title, targetHash);
+      window.history.replaceState({ tab: initialTab, subTab: initialSubTab }, title, targetHash);
     }
 
     const handlePopState = (e) => {

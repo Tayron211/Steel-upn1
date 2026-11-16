@@ -3329,7 +3329,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
