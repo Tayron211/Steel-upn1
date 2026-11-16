@@ -24,16 +24,36 @@ html {
    Vector Sharpness, Subpixel Antialiasing & Crisp Geometry
    ========================================================= */
 
-/* Geometría vectorial ultra-nítida en íconos SVG */
+*, *::before, *::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Geometría vectorial ultra-nítida en íconos SVG y elementos vectoriales */
 svg {
   shape-rendering: geometricPrecision;
   text-rendering: geometricPrecision;
 }
 
-/* Renderizado nítido de imágenes a resolución nativa HiDPI */
+svg path, svg circle, svg rect, svg line, svg polyline, svg polygon {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Renderizado nítido de imágenes y canvas a resolución nativa HiDPI sin borrosidad */
 img,
-canvas {
+canvas,
+picture,
+video {
   image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Previene blur subpixel al animar o transformar */
+.transform-gpu,
+[class*="animate-"] {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 html,

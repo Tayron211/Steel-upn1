@@ -33,7 +33,8 @@ import {
   Table,
   LayoutGrid,
   Filter,
-  ChevronDown
+  ChevronDown,
+  BookOpen
 } from 'lucide-react';
 
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -684,6 +685,15 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   }, []);
 
   const activeFiltersCount = (selectedPabellon ? 1 : 0) + (selectedPisos.length > 0 ? 1 : 0) + (selectedCarrera ? 1 : 0);
+
+  // Estado para desplegar información de la próxima clase al dar clic
+  const [expandedNextEvents, setExpandedNextEvents] = useState({});
+  const toggleNextEvent = (roomAbrv) => {
+    setExpandedNextEvents(prev => ({
+      ...prev,
+      [roomAbrv]: !prev[roomAbrv]
+    }));
+  };
 
   // Días de la semana con fechas exactas sincronizadas (Semana actual)
   const weekDaysWithDates = useMemo(() => {
@@ -2118,10 +2128,14 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
             upcomingEvents.push({
               startM: cStartM,
               start: c.horaInicioProg,
-              end: c.horaFinProg,
+              end: c.horaFinProg || c.horaFinalProg,
               isReserva: false,
               title: c.curso || c.docente || 'Clase regular',
-              docente: c.docente
+              curso: c.curso || '',
+              docente: c.docente || '',
+              nrc: c.nrc || '',
+              carrera: c.carrera || '',
+              aula: c.aula || r.abrv
             });
           }
         }
@@ -2136,7 +2150,11 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               end: res.final,
               isReserva: true,
               title: res.motivo || res.detalle || 'Reserva de aula',
-              docente: res.docente
+              curso: res.motivo || res.detalle || 'Reserva de aula',
+              docente: res.docente || res.solicitante || '',
+              nrc: '',
+              carrera: '',
+              aula: res.aula || r.abrv
             });
           }
         }
@@ -2752,13 +2770,52 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         </span>
                       </div>
                       {room.nextEvent ? (
-                        <div className="text-[10.5px] text-slate-600 dark:text-zinc-400 flex items-center justify-between pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40">
-                          <span className="font-semibold text-slate-500 dark:text-zinc-400">
-                            Próx. {room.nextEvent.isReserva ? 'reserva' : 'clase'}:
-                          </span>
-                          <strong className="text-slate-800 dark:text-zinc-200 font-mono text-[11px]">
-                            {room.nextEvent.start} hrs
-                          </strong>
+                        <div className="pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleNextEvent(room.abrv);
+                            }}
+                            className="w-full flex items-center justify-between text-[10.5px] p-1 -m-1 rounded-lg hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition active:scale-[0.98] cursor-pointer group"
+                            title="Toca para ver qué clase está programada"
+                          >
+                            <span className="font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1 group-hover:text-emerald-800 dark:group-hover:text-emerald-300">
+                              <span>Próx. {room.nextEvent.isReserva ? 'reserva' : 'clase'}:</span>
+                              <ChevronDown className={`w-3 h-3 text-emerald-600 dark:text-emerald-400 transition-transform duration-200 ${expandedNextEvents[room.abrv] ? 'rotate-180' : ''}`} />
+                            </span>
+                            <strong className="text-slate-900 dark:text-zinc-100 font-mono text-[11px] bg-emerald-100/70 dark:bg-emerald-900/60 px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800/60 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800 transition">
+                              {room.nextEvent.start} hrs
+                            </strong>
+                          </button>
+
+                          {/* Detalle desplegable de la próxima clase al dar clic */}
+                          {expandedNextEvents[room.abrv] && (
+                            <div className="mt-2 p-2.5 rounded-xl bg-white/95 dark:bg-black/75 border border-emerald-300 dark:border-emerald-800 shadow-xs space-y-1.5 animate-fade-in text-[10.5px]">
+                              <div className="font-bold text-slate-900 dark:text-white flex items-start gap-1.5">
+                                <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                                <span className="leading-snug">
+                                  {room.nextEvent.curso || room.nextEvent.title || 'Clase regular programada'}
+                                </span>
+                              </div>
+
+                              {room.nextEvent.docente && (
+                                <div className="text-slate-600 dark:text-zinc-300 flex items-center gap-1.5 font-medium">
+                                  <User className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
+                                  <span className="truncate">{room.nextEvent.docente}</span>
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-zinc-400 font-mono pt-1 border-t border-slate-100 dark:border-zinc-800">
+                                <span>⏰ {room.nextEvent.start} - {room.nextEvent.end}</span>
+                                {room.nextEvent.nrc && (
+                                  <span className="bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.2 rounded font-semibold text-slate-700 dark:text-zinc-300">
+                                    NRC: {room.nextEvent.nrc}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 flex items-center gap-1">

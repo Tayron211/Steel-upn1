@@ -2,6 +2,7 @@ package edu.pe.upn.controldoc;
 
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
@@ -15,6 +16,10 @@ public class MainActivity extends BridgeActivity {
             WebView webView = getBridge().getWebView();
             if (webView != null) {
                 webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                WebSettings settings = webView.getSettings();
+                settings.setUseWideViewPort(true);
+                settings.setLoadWithOverviewMode(true);
+                settings.setTextZoom(100);
             }
         } catch (Exception ignored) {}
     }
