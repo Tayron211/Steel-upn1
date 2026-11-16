@@ -1,8 +1,8 @@
 {
-  "version": "1.0.48",
-  "versionCode": 49,
+  "version": "1.0.49",
+  "versionCode": 50,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.48 - Reserva multiple permite definir fecha, hora inicio y fin de manera individual por aula",
+  "notes": "v1.0.49 - Reserva multiple agrupada en una sola tarjeta por docente con horarios individuales",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

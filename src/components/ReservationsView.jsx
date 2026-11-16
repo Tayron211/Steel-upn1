@@ -252,6 +252,54 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       .filter(Boolean);
   };
 
+  // Obtener horario específico para un aula dentro de una reserva múltiple
+  const getRoomSchedule = (r, roomCode) => {
+    if (!r) return { fecha: '', inicio: '', final: '' };
+    let scheds = r.schedules;
+    if (!scheds && r.obs) {
+      try {
+        if (typeof r.obs === 'string' && r.obs.startsWith('{') && r.obs.includes('"schedules"')) {
+          const parsed = JSON.parse(r.obs);
+          scheds = parsed.schedules;
+        }
+      } catch (e) {}
+    }
+    const cleanRoom = String(roomCode || '').trim().toUpperCase();
+    if (scheds && scheds[cleanRoom]) {
+      return {
+        fecha: scheds[cleanRoom].fecha || r.fecha,
+        inicio: scheds[cleanRoom].inicio || r.inicio || r.hora_inicio,
+        final: scheds[cleanRoom].final || r.final || r.hora_fin
+      };
+    }
+    return {
+      fecha: r.fecha,
+      inicio: r.inicio || r.hora_inicio,
+      final: r.final || r.hora_fin
+    };
+  };
+
+  const hasMultipleDifferentSchedules = (r) => {
+    const rooms = getReservationRooms(r);
+    if (rooms.length <= 1) return false;
+    const base = getRoomSchedule(r, rooms[0]);
+    return rooms.some(a => {
+      const s = getRoomSchedule(r, a);
+      return s.fecha !== base.fecha || s.inicio !== base.inicio || s.final !== base.final;
+    });
+  };
+
+  const getCleanObsText = (obs) => {
+    if (!obs) return '';
+    if (typeof obs === 'string' && obs.startsWith('{') && obs.includes('"schedules"')) {
+      try {
+        const parsed = JSON.parse(obs);
+        return parsed.note || '';
+      } catch (e) {}
+    }
+    return obs;
+  };
+
   const MONTHS_LIST = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
     'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
@@ -815,95 +863,78 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       const finalUsuario = (isAdmin() ? (formData.usuario || getLoggedAssistantName()) : getLoggedAssistantName()).toUpperCase().trim();
       const finalPrioridad = (formData.prioridad || 'NORMAL').toUpperCase().trim();
 
-      if (cleanAulas.length === 1) {
-        // Reserva Única estándar
-        const aulaCode = cleanAulas[0];
-        const firstRm = roomMap[aulaCode];
-        const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
-        const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
-        const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes || 'OCTUBRE';
-        const userUbicacion = (formData.ubicacion || '').trim();
-        const fallbackUbicacion = firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : (deducePisoFromAula(aulaCode) || 'SEDE');
-        const finalUbicacion = (userUbicacion || fallbackUbicacion).toUpperCase();
+      const cleanAula = cleanAulas.join(', ');
+      const firstRm = roomMap[cleanAulas[0]];
+      const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+      const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
+      const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes || 'OCTUBRE';
+      const userUbicacion = (formData.ubicacion || '').trim();
+      const fallbackUbicacion = cleanAulas.map(a => {
+        const rm = roomMap[a];
+        return rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || 'SEDE');
+      }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
+      const finalUbicacion = (userUbicacion || fallbackUbicacion || (firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : 'SEDE')).toUpperCase();
 
-        const payload = {
-          fecha: formData.fecha,
-          mes: computedMes,
-          dia: computedDia,
-          inicio: formData.inicio,
-          final: formData.final,
-          aulas: [aulaCode],
-          aula: aulaCode,
-          ubicacion: finalUbicacion,
-          docente: finalDocente,
-          detalle: finalDetalle,
-          motivo: finalDetalle,
-          usuario: finalUsuario,
-          prioridad: finalPrioridad,
-          hoja: 'RESERVAS'
-        };
+      // Verificar si las aulas tienen horarios o fechas individuales diferentes
+      const hasDifferentSchedules = cleanAulas.length > 1 && cleanAulas.some(a => {
+        const s = roomSchedules[a] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
+        return s.fecha !== formData.fecha || s.inicio !== formData.inicio || s.final !== formData.final;
+      });
 
-        const res = await fetch('/api/reservations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+      // Si tienen horarios diferentes, empacar el desglose en obs y en el objeto schedules
+      let obsPayload = formData.obs || '';
+      if (hasDifferentSchedules) {
+        const schedulesPack = {};
+        cleanAulas.forEach(a => {
+          schedulesPack[a] = roomSchedules[a] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
         });
-        const json = await res.json();
-        if (json.success) {
-          setReservas(prev => [json.data, ...prev.filter(r => r.id !== json.data.id)]);
-          setToastMessage(`✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${aulaCode})`);
-          setTimeout(() => setToastMessage(''), 3500);
-          closeModal();
-          resetForm();
-        } else {
-          alert('Error al guardar reserva: ' + (json.error || json.message || 'intente nuevamente'));
-        }
-      } else {
-        // Reserva Múltiple: registra cada aula de manera individual con su fecha y horario propio
-        const createdList = [];
-        for (const aulaCode of cleanAulas) {
-          const sched = roomSchedules[aulaCode] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
-          const dt = new Date((sched.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
-          const computedDia = DAYS_OF_WEEK[dt.getDay()] || 'LUNES';
-          const computedMes = MONTHS_UPPER[dt.getMonth()] || 'NOVIEMBRE';
-          const rm = roomMap[aulaCode];
-          const roomUbicacion = (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(aulaCode) || 'SEDE')).toUpperCase();
-
-          const payload = {
-            fecha: sched.fecha,
-            mes: computedMes,
-            dia: computedDia,
-            inicio: sched.inicio,
-            final: sched.final,
-            aulas: [aulaCode],
-            aula: aulaCode,
-            ubicacion: roomUbicacion,
-            docente: finalDocente,
-            detalle: finalDetalle,
-            motivo: finalDetalle,
-            usuario: finalUsuario,
-            prioridad: finalPrioridad,
-            hoja: 'RESERVAS'
-          };
-
-          const res = await fetch('/api/reservations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const json = await res.json();
-          if (!json.success) {
-            throw new Error(`En el ambiente ${aulaCode}: ${json.error || json.message || 'Conflicto de horario'}`);
-          }
-          createdList.push(json.data);
-        }
-
-        setReservas(prev => [...createdList, ...prev.filter(r => !createdList.some(c => c.id === r.id))]);
-        setToastMessage(`✅ ${cleanAulas.length} reservas registradas con éxito con sus fechas y horarios individuales`);
-        setTimeout(() => setToastMessage(''), 3500);
-        closeModal();
-        resetForm();
+        obsPayload = JSON.stringify({ schedules: schedulesPack, note: formData.obs || '' });
       }
+
+      // Se guarda como UNA SOLA RESERVA (una sola tarjeta en la app y una fila maestra en Excel)
+      const payload = {
+        fecha: formData.fecha,
+        mes: computedMes,
+        dia: computedDia,
+        inicio: formData.inicio,
+        final: formData.final,
+        aulas: cleanAulas,
+        aula: cleanAula,
+        ubicacion: finalUbicacion,
+        docente: finalDocente,
+        detalle: finalDetalle,
+        motivo: finalDetalle,
+        usuario: finalUsuario,
+        prioridad: finalPrioridad,
+        obs: obsPayload,
+        schedules: hasDifferentSchedules ? roomSchedules : null,
+        hoja: 'RESERVAS'
+      };
+
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || json.message || 'Error al guardar reserva');
+      }
+
+      const createdReserva = {
+        ...json.data,
+        aulas: cleanAulas,
+        schedules: hasDifferentSchedules ? roomSchedules : null
+      };
+
+      setReservas(prev => [createdReserva, ...prev.filter(r => r.id !== createdReserva.id)]);
+      const toastDesc = cleanAulas.length > 1
+        ? `✅ Reserva múltiple guardada en una sola tarjeta (${cleanAulas.length} Aulas: ${cleanAula})`
+        : `✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${cleanAula})`;
+      setToastMessage(toastDesc);
+      setTimeout(() => setToastMessage(''), 3500);
+      closeModal();
+      resetForm();
     } catch (err) {
       console.error(err);
       alert('Error al registrar reserva: ' + err.message);
@@ -996,14 +1027,27 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const cardAulas = getReservationRooms(r);
     const finalAulas = cardAulas.length > 0 ? cardAulas : [(r.aula || 'S/A').trim().toUpperCase()];
 
-    // Generar fila para cada aula en simultáneo
+    // Generar fila para cada aula en simultáneo con sus respectivos horarios
     const rows = finalAulas.map(a => {
+      const sched = getRoomSchedule(r, a);
+      const roomFechaFormatted = formatExcelDate(sched.fecha || r.fecha);
+      let roomDia = dia;
+      if (sched.fecha && sched.fecha !== r.fecha) {
+        const dt = new Date(sched.fecha + 'T12:00:00');
+        if (!Number.isNaN(dt.getTime())) {
+          const daysMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+          roomDia = daysMap[dt.getDay()] || '';
+        }
+      }
+      const roomInicio = (sched.inicio || inicio).trim();
+      const roomFinal = (sched.final || final).trim();
+
       const rm = roomMap[a];
       let ubicacion = (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || r.ubicacion || 'SEDE')).trim().toUpperCase();
       if (rm && !ubicacion.includes('-') && rm.pabellon) {
         ubicacion = `${rm.piso} - ${rm.pabellon}`;
       }
-      return [formattedFecha, dia, inicio, final, a, ubicacion, docente, detalle];
+      return [roomFechaFormatted, roomDia, roomInicio, roomFinal, a, ubicacion, docente, detalle];
     });
 
     // Formato delimitado por tabulaciones (TSV) - estándar universal para pegar en celdas de Excel
@@ -1111,14 +1155,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       if (selectedDayOffset !== null) {
         const target = upcomingDays[selectedDayOffset];
         if (target) {
-          const rDateNorm = normalizeDateStr(r.fecha);
           const tDateNorm = normalizeDateStr(target.fecha);
-          if (rDateNorm && tDateNorm) {
-            if (rDateNorm !== tDateNorm) return false;
-          } else {
-            const sameDia = normalizeDay(r.dia) === target.diaName;
-            if (!sameDia) return false;
-          }
+          const rDateNorm = normalizeDateStr(r.fecha);
+          const hasDateMatch = (rDateNorm && tDateNorm && rDateNorm === tDateNorm) ||
+            (!rDateNorm && normalizeDay(r.dia) === target.diaName) ||
+            codeList.some(codeItem => {
+              const sched = getRoomSchedule(r, codeItem);
+              const schedNorm = normalizeDateStr(sched?.fecha);
+              return schedNorm && tDateNorm && schedNorm === tDateNorm;
+            });
+          if (!hasDateMatch) return false;
         }
       }
 
@@ -1839,15 +1885,51 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs font-mono bg-slate-50 dark:bg-[#121216] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-800 mb-3">
-                      <span className="text-slate-600 dark:text-zinc-300 font-semibold">
-                        {r.dia} · {r.fecha}
-                      </span>
-                      <span className="text-slate-900 dark:text-white font-bold inline-flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
-                        <span>{r.inicio || r.hora_inicio} - {r.final || r.hora_fin}</span>
-                      </span>
-                    </div>
+                    {/* Horarios: Desglose individual por aula si difieren fecha/hora, o bloque único consolidado si comparten el mismo horario */}
+                    {hasMultipleDifferentSchedules(r) ? (
+                      <div className="space-y-1.5 mb-3">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 px-0.5 flex items-center justify-between">
+                          <span>Horario Individual por Aula</span>
+                          <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{cardAulas.length} ambientes</span>
+                        </div>
+                        <div className="space-y-1">
+                          {cardAulas.map(a => {
+                            const sched = getRoomSchedule(r, a);
+                            const dtRoom = sched.fecha ? new Date(sched.fecha + 'T12:00:00') : null;
+                            const diaRoom = dtRoom && !Number.isNaN(dtRoom.getTime()) ? DAYS_SHORT[dtRoom.getDay()] : (r.dia || '');
+                            return (
+                              <div
+                                key={a}
+                                className="flex items-center justify-between text-xs font-mono bg-slate-50 dark:bg-[#121216] px-2.5 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-800"
+                              >
+                                <span className="font-black text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
+                                  <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono text-[11px] font-extrabold shrink-0">
+                                    {a}
+                                  </span>
+                                  <span className="text-slate-600 dark:text-zinc-300 font-semibold text-[11px] truncate">
+                                    {diaRoom} {sched.fecha}
+                                  </span>
+                                </span>
+                                <span className="text-slate-900 dark:text-white font-bold inline-flex items-center gap-1 text-[11px] shrink-0">
+                                  <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                                  <span>{sched.inicio} - {sched.final}</span>
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between text-xs font-mono bg-slate-50 dark:bg-[#121216] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-800 mb-3">
+                        <span className="text-slate-600 dark:text-zinc-300 font-semibold">
+                          {r.dia} · {r.fecha}
+                        </span>
+                        <span className="text-slate-900 dark:text-white font-bold inline-flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                          <span>{r.inicio || r.hora_inicio} - {r.final || r.hora_fin}</span>
+                        </span>
+                      </div>
+                    )}
 
                     <div className="space-y-1 mb-3">
                       <div className="text-xs font-bold text-slate-900 dark:text-white inline-flex items-start gap-1.5 w-full">
@@ -1857,9 +1939,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                       <p className="text-[11px] text-slate-600 dark:text-zinc-400 pl-5 font-semibold leading-relaxed break-words" title={r.motivo || r.detalle}>
                         {r.motivo || r.detalle || 'Sin detalle de actividad.'}
                       </p>
-                      {r.obs && (
+                      {getCleanObsText(r.obs) && (
                         <div className="text-[11px] text-amber-900 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/40 p-2 rounded-xl border border-amber-200/60 dark:border-amber-800/40 ml-5 font-medium">
-                          <strong className="font-bold">OBS:</strong> {r.obs}
+                          <strong className="font-bold">OBS:</strong> {getCleanObsText(r.obs)}
                         </div>
                       )}
                     </div>
