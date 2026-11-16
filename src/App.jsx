@@ -21,6 +21,7 @@ import { applyAdaptiveStatusBar, hideSplashScreenSmoothly, isCapacitorNative } f
 import { initScheduleNotifier } from './utils/scheduleNotifier';
 import { initAppUpdateChecker } from './utils/appUpdateChecker';
 import AppUpdateModal from './components/AppUpdateModal';
+import ConfirmModal from './components/ConfirmModal';
 import { useFadeModal } from './utils/useFadeModal';
 
 const TABS = ['attendance', 'operations', 'tickets', 'dashboard'];
@@ -509,19 +510,26 @@ export default function App() {
     navigateTab('attendance', true);
   };
 
-  const handleResetData = async () => {
-    if (!confirm('¿Deseas volver a sincronizar la base de datos SQLite desde CONTROL DOCENTE.xlsx?')) {
-      return;
-    }
+  const [showResetDataConfirm, setShowResetDataConfirm] = useState(false);
+  const [isResettingData, setIsResettingData] = useState(false);
+
+  const handleResetData = () => {
+    setShowResetDataConfirm(true);
+  };
+
+  const handleExecuteResetData = async () => {
+    setIsResettingData(true);
     try {
       const res = await fetch('/api/reset-excel', { method: 'POST' });
       const json = await res.json();
       if (json.success) {
-        alert('Base de datos SQLite sincronizada correctamente desde el Excel.');
         window.location.reload();
       }
     } catch (err) {
-      alert('Error al sincronizar: ' + err.message);
+      console.error('Error al sincronizar:', err);
+    } finally {
+      setIsResettingData(false);
+      setShowResetDataConfirm(false);
     }
   };
 
@@ -744,6 +752,20 @@ export default function App() {
           setOpenReservationModalTrigger(Date.now());
           scrollToTopGlobal();
         }}
+      />
+      {/* Modal de Confirmación Moderno para Sincronizar Base de Datos SQLite */}
+      <ConfirmModal
+        isOpen={showResetDataConfirm}
+        onClose={() => !isResettingData && setShowResetDataConfirm(false)}
+        onConfirm={handleExecuteResetData}
+        isLoading={isResettingData}
+        title="¿Sincronizar Base de Datos SQLite?"
+        subtitle="Desde CONTROL DOCENTE.xlsx"
+        message="¿Deseas volver a sincronizar la base de datos SQLite desde CONTROL DOCENTE.xlsx? Esto actualizará la base de datos con los registros más recientes del archivo Excel."
+        confirmText="Sí, Sincronizar"
+        cancelText="Cancelar"
+        variant="warning"
+        icon={AlertTriangle}
       />
     </div>
     </>

@@ -41,6 +41,7 @@ const MINUTES_60 = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
+import ConfirmModal from './ConfirmModal';
 import { useAssistants } from '../utils/assistants';
 import { getLoggedAssistantName, isAdmin, getAuthUser, getUserAssignments } from '../utils/auth';
 import { useFadeModal } from '../utils/useFadeModal';
@@ -756,8 +757,15 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         ? 'animate-slide-next'
         : 'animate-fade-in';
 
-  const handleResetDayToPending = async () => {
-    if (!confirm(`¿Restablecer todas las clases de ${selectedDia} (${selectedDayInfo?.dateStr || ''}) a PENDIENTE?\nEsto limpiará las marcas ficticias o pasadas que no correspondan.`)) return;
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isResettingDay, setIsResettingDay] = useState(false);
+
+  const handleResetDayToPending = () => {
+    setShowResetConfirm(true);
+  };
+
+  const handleExecuteResetDay = async () => {
+    setIsResettingDay(true);
     try {
       setLoading(true);
       const res = await fetch('/api/attendance/reset-future', {
@@ -774,6 +782,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       console.error(err);
       setToastMessage('❌ Error al restablecer día');
     } finally {
+      setIsResettingDay(false);
+      setShowResetConfirm(false);
       setLoading(false);
     }
   };
@@ -4271,6 +4281,21 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         </div>,
         document.body
       )}
+
+      {/* Modal de Confirmación Moderno para Restablecer Clases */}
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        onClose={() => !isResettingDay && setShowResetConfirm(false)}
+        onConfirm={handleExecuteResetDay}
+        isLoading={isResettingDay}
+        title="¿Restablecer día a PENDIENTE?"
+        subtitle={`Día: ${selectedDia} (${selectedDayInfo?.dateStr || ''})`}
+        message="¿Estás seguro de que deseas restablecer todas las clases de este día? Esto limpiará las marcas ficticias o pasadas que no correspondan, volviéndolas a estado PENDIENTE."
+        confirmText="Sí, Restablecer Clases"
+        cancelText="Cancelar"
+        variant="warning"
+        icon={RotateCcw}
+      />
     </div>
   );
 }

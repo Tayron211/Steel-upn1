@@ -5,6 +5,7 @@ import { buildMasterExcelFromTemplate } from '../utils/excelTemplateExporter';
 import { createDbChangeGate } from '../utils/webSignGate';
 import { formatCargoNumber } from '../utils/cargoPdfGenerator';
 import OneDriveSyncModal from './OneDriveSyncModal';
+import ConfirmModal from './ConfirmModal';
 import { useFadeModal } from '../utils/useFadeModal';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import {
@@ -182,6 +183,8 @@ export default function DashboardView() {
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [isClearingColumns, setIsClearingColumns] = useState(false);
   const clearConfirmFade = useFadeModal(showClearConfirmModal, () => setShowClearConfirmModal(false), 200);
+
+  const [importConfirmData, setImportConfirmData] = useState(null);
 
   useEffect(() => {
     return subscribeLiveExcelStatus((nextState) => {
@@ -618,24 +621,38 @@ export default function DashboardView() {
       }
 
       if (parsedClasses.length === 0) {
-        alert('No se pudieron extraer clases válidas del archivo Excel. Asegúrate de que las columnas tengan nombres estándar (NRC, DOCENTE, AULA, DIA, INICIO).');
+        setSyncMessage('⚠️ No se pudieron extraer clases válidas del archivo Excel. Asegúrate de que las columnas tengan nombres estándar (NRC, DOCENTE, AULA, DIA, INICIO).');
         setImporting(false);
-        setSyncMessage('');
+        setTimeout(() => setSyncMessage(''), 6000);
         return;
       }
 
-      const confirmImport = window.confirm(
-        `Se encontraron en "${file.name}":\n• ${parsedClasses.length} clases programadas\n• ${parsedTickets.length} atenciones\n• ${parsedManualSheets.length} hojas de asistencia\n• ${parsedReservas.length} reservas${parsedAmbientes.length > 0 ? `\n• ${parsedAmbientes.length} ambientes` : ''}\n\n¿Deseas jalar toda esta data de tu Excel hacia la aplicación?`
-      );
+      setImportConfirmData({
+        file,
+        parsedClasses,
+        parsedTickets,
+        parsedManualSheets,
+        parsedReservas,
+        parsedAmbientes
+      });
+      setImporting(false);
+      setSyncMessage('');
+    } catch (err) {
+      console.error('Error importando Excel:', err);
+      setSyncMessage('❌ Error al leer el archivo Excel: ' + err.message);
+      setTimeout(() => setSyncMessage(''), 6000);
+      setImporting(false);
+    }
+  };
 
-      if (!confirmImport) {
-        setImporting(false);
-        setSyncMessage('');
-        return;
-      }
+  const handleExecuteImport = async () => {
+    if (!importConfirmData) return;
+    const { file, parsedClasses, parsedTickets, parsedManualSheets, parsedReservas, parsedAmbientes } = importConfirmData;
+    setImportConfirmData(null);
+    setImporting(true);
+    setSyncMessage(`Sincronizando toda la data de "${file.name}"...`);
 
-      setSyncMessage(`Sincronizando toda la data de "${file.name}"...`);
-
+    try {
       const res = await fetch('/api/import-excel-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -655,13 +672,13 @@ export default function DashboardView() {
         silentRefreshStats();
         setTimeout(() => setSyncMessage(''), 6000);
       } else {
-        alert('Error al importar datos: ' + (json.error || json.message || 'error desconocido'));
-        setSyncMessage('');
+        setSyncMessage('❌ Error al importar datos: ' + (json.error || json.message || 'error desconocido'));
+        setTimeout(() => setSyncMessage(''), 6000);
       }
     } catch (err) {
       console.error('Error importando Excel:', err);
-      alert('Error al leer el archivo Excel: ' + err.message);
-      setSyncMessage('');
+      setSyncMessage('❌ Error al procesar datos');
+      setTimeout(() => setSyncMessage(''), 6000);
     } finally {
       setImporting(false);
     }
@@ -2143,6 +2160,26 @@ export default function DashboardView() {
           setSyncMessage(msg);
           setTimeout(() => setSyncMessage(''), 6000);
         }}
+      />
+
+      {/* Modal de Confirmación Moderno para Importar Excel */}
+      <ConfirmModal
+        isOpen={Boolean(importConfirmData)}
+        onClose={() => setImportConfirmData(null)}
+        onConfirm={handleExecuteImport}
+        title="¿Jalar y Sincronizar Data de Excel?"
+        subtitle={importConfirmData?.file?.name ? `Archivo: ${importConfirmData.file.name}` : undefined}
+        message="¿Deseas importar y actualizar toda esta data de tu archivo Excel hacia la aplicación?"
+        details={importConfirmData ? [
+          { label: 'Clases programadas', value: `${importConfirmData.parsedClasses?.length || 0} clases` },
+          { label: 'Atenciones / Préstamos', value: `${importConfirmData.parsedTickets?.length || 0} registros` },
+          { label: 'Hojas de Asistencia', value: `${importConfirmData.parsedManualSheets?.length || 0} hojas` },
+          { label: 'Reservas', value: `${importConfirmData.parsedReservas?.length || 0} reservas` }
+        ] : []}
+        confirmText="Sí, Jalar Data"
+        cancelText="Cancelar"
+        variant="primary"
+        icon={Upload}
       />
     </div>
   );

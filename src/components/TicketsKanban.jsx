@@ -28,6 +28,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
+import ConfirmModal from './ConfirmModal';
 import SignatureCanvas from './SignatureCanvas';
 import { useFadeModal } from '../utils/useFadeModal';
 import { FadeCollapse } from './FadeCollapse';
@@ -1001,9 +1002,16 @@ export default function TicketsKanban({
     }
   };
 
+  const [deleteConfirmTicketId, setDeleteConfirmTicketId] = useState(null);
+  const [showClearConcludedConfirm, setShowClearConcludedConfirm] = useState(false);
+
   // Limpiar todas las devoluciones archivadas en la app
-  const handleClearConcluded = async () => {
-    if (!window.confirm('¿Está seguro de limpiar todas las devoluciones archivadas en la app?')) return;
+  const handleClearConcluded = () => {
+    setShowClearConcludedConfirm(true);
+  };
+
+  const handleExecuteClearConcluded = async () => {
+    setShowClearConcludedConfirm(false);
     try {
       const res = await fetch('/api/tickets/clear-concluded', { method: 'POST' });
       const j = await res.json();
@@ -1036,8 +1044,14 @@ export default function TicketsKanban({
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Eliminar este registro de préstamo?')) return;
+  const handleDelete = (id) => {
+    setDeleteConfirmTicketId(id);
+  };
+
+  const handleExecuteDeleteTicket = async () => {
+    if (!deleteConfirmTicketId) return;
+    const id = deleteConfirmTicketId;
+    setDeleteConfirmTicketId(null);
     setTickets(prev => prev.filter(t => t.id !== id));
     await fetch(`/api/tickets/${id}`, { method: 'DELETE' });
   };
@@ -2508,6 +2522,34 @@ export default function TicketsKanban({
         </div>,
         document.body
       )}
+
+      {/* Modal de Confirmación Moderno para Eliminar Préstamo */}
+      <ConfirmModal
+        isOpen={Boolean(deleteConfirmTicketId)}
+        onClose={() => setDeleteConfirmTicketId(null)}
+        onConfirm={handleExecuteDeleteTicket}
+        title="¿Eliminar este registro de préstamo?"
+        subtitle="Se eliminará permanentemente de la app"
+        message="¿Estás seguro de que deseas eliminar este registro de atención / préstamo? Esta acción no se puede deshacer."
+        confirmText="Sí, Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        icon={Trash2}
+      />
+
+      {/* Modal de Confirmación Moderno para Limpiar Devoluciones */}
+      <ConfirmModal
+        isOpen={showClearConcludedConfirm}
+        onClose={() => setShowClearConcludedConfirm(false)}
+        onConfirm={handleExecuteClearConcluded}
+        title="¿Limpiar Devoluciones Archivadas?"
+        subtitle="Se limpiarán de la vista local de la app"
+        message="¿Estás seguro de limpiar todas las devoluciones archivadas en la app? Los préstamos activos y pendientes se mantendrán intactos."
+        confirmText="Sí, Limpiar Devoluciones"
+        cancelText="Volver"
+        variant="warning"
+        icon={RotateCcw}
+      />
     </div>
   );
 }

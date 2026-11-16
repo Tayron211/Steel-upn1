@@ -27,6 +27,7 @@ import {
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
 import CustomSelect from './CustomSelect';
+import ConfirmModal from './ConfirmModal';
 import { useFadeModal } from '../utils/useFadeModal';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 import { useAssistants } from '../utils/assistants';
@@ -1185,23 +1186,33 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (idOrCard) => {
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null);
+  const [isDeletingReservation, setIsDeletingReservation] = useState(false);
+
+  const handleDelete = (idOrCard) => {
     const card = typeof idOrCard === 'object' && idOrCard !== null ? idOrCard : { id: idOrCard, ids: [idOrCard], aulas: [] };
+    setDeleteConfirmTarget(card);
+  };
+
+  const handleExecuteDelete = async () => {
+    if (!deleteConfirmTarget || isDeletingReservation) return;
+    const card = deleteConfirmTarget;
     const idsToDelete = card.ids || [card.id];
     const count = idsToDelete.length;
-    const roomsLabel = card.aulas && card.aulas.length > 0 ? ` (${card.aulas.join(', ')})` : '';
-    const confirmMsg = count > 1
-      ? `¿Seguro que deseas cancelar esta reserva múltiple de ${card.aulas?.length || count} aulas${roomsLabel}? Se eliminará de la app y del Excel en OneDrive.`
-      : '¿Seguro que deseas cancelar esta reserva? Se eliminará de la app y del Excel en OneDrive.';
-    if (!confirm(confirmMsg)) return;
 
-    setReservas(prev => prev.filter(r => !idsToDelete.includes(r.id)));
-    const toastDesc = count > 1 ? `✅ Reserva múltiple cancelada y filas limpiadas en Excel` : `✅ Reserva cancelada y fila limpiada en Excel`;
-    setToastMessage(toastDesc);
-    setTimeout(() => setToastMessage(''), 3500);
+    setIsDeletingReservation(true);
+    try {
+      setReservas(prev => prev.filter(r => !idsToDelete.includes(r.id)));
+      const toastDesc = count > 1 ? `✅ Reserva múltiple cancelada y filas limpiadas en Excel` : `✅ Reserva cancelada y fila limpiada en Excel`;
+      setToastMessage(toastDesc);
+      setTimeout(() => setToastMessage(''), 3500);
 
-    for (const singleId of idsToDelete) {
-      await fetch(`/api/reservations/${singleId}`, { method: 'DELETE' }).catch(() => {});
+      for (const singleId of idsToDelete) {
+        await fetch(`/api/reservations/${singleId}`, { method: 'DELETE' }).catch(() => {});
+      }
+    } finally {
+      setIsDeletingReservation(false);
+      setDeleteConfirmTarget(null);
     }
   };
 
@@ -3472,6 +3483,39 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         </div>,
         document.body
       )}
+
+      {/* Modal de Confirmación Moderno y Fluido para Cancelar Reserva */}
+      <ConfirmModal
+        isOpen={Boolean(deleteConfirmTarget)}
+        onClose={() => !isDeletingReservation && setDeleteConfirmTarget(null)}
+        onConfirm={handleExecuteDelete}
+        isLoading={isDeletingReservation}
+        title={deleteConfirmTarget?.ids?.length > 1 ? '¿Cancelar Reserva Múltiple?' : '¿Cancelar esta Reserva?'}
+        subtitle="Se eliminará de la aplicación y del archivo Excel en OneDrive"
+        message="¿Estás seguro de que deseas cancelar esta reserva? Esta acción liberará el ambiente para nuevos préstamos o talleres."
+        details={deleteConfirmTarget ? [
+          { 
+            label: 'Aula(s)', 
+            value: deleteConfirmTarget.aulas?.join(', ') || deleteConfirmTarget.aula || deleteConfirmTarget.ambiente || 'Aula' 
+          },
+          { 
+            label: 'Solicitante', 
+            value: deleteConfirmTarget.docente || deleteConfirmTarget.solicitante || 'No especificado' 
+          },
+          { 
+            label: 'Horario', 
+            value: `${deleteConfirmTarget.hora_inicio || ''} - ${deleteConfirmTarget.hora_fin || ''}` 
+          },
+          { 
+            label: 'Fecha', 
+            value: deleteConfirmTarget.fecha || '' 
+          }
+        ].filter(d => Boolean(d.value && d.value !== ' - ')) : []}
+        confirmText="Sí, Cancelar Reserva"
+        cancelText="Volver"
+        variant="danger"
+        icon={Trash2}
+      />
     </div>
   );
 }
