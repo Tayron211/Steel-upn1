@@ -692,17 +692,15 @@ ${htmlRows.join('\n')}
 
   return (
     <div className="space-y-4 pb-36 md:pb-24 w-full mx-auto">
-      {/* Toast Alert - Portaled to viewport body so it's 100% visible regardless of scroll position */}
-      {(copiedSuccess || toastMessage) && (
-        <ToastBanner
-          message={toastMessage || '¡Texto de boleta copiado al portapapeles!'}
-          type="info"
-          onClose={() => {
-            setCopiedSuccess(false);
-            setToastMessage('');
-          }}
-        />
-      )}
+      {/* Toast Alert - Portaled to viewport body con transiciones fade fluidas */}
+      <ToastBanner
+        message={toastMessage || (copiedSuccess ? '¡Texto de boleta copiado al portapapeles!' : '')}
+        type="info"
+        onClose={() => {
+          setCopiedSuccess(false);
+          setToastMessage('');
+        }}
+      />
 
       {/* Top Controller Panel - Clean & Orderly */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5">

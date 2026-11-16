@@ -460,37 +460,37 @@ html:not(.dark) {
   animation: notificationSlideOutRight 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* Toast Banner Slide Down / Up (Notificaciones Flotantes al Centro Superior) */
+/* Toast Banner Slide Down / Up (Notificaciones Flotantes al Centro Superior con Fade) */
 @keyframes toastSlideDown {
   0% {
     opacity: 0;
-    transform: translateY(-16px);
+    transform: translateY(-16px) scale(0.96);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes toastSlideUp {
   0% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 
   100% {
     opacity: 0;
-    transform: translateY(-16px);
+    transform: translateY(-14px) scale(0.96);
   }
 }
 
 .animate-toast-slide-down {
-  animation: toastSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: toastSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-toast-slide-up {
-  animation: toastSlideUp 0.18s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: toastSlideUp 0.24s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Smooth Fluid Micro-Interactions on Interactive Elements */

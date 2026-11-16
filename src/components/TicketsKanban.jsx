@@ -1104,13 +1104,11 @@ export default function TicketsKanban({
 
   return (
     <div className="space-y-4 pb-32 md:pb-12 w-full max-w-[1880px] mx-auto">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <ToastBanner
-          message={toastMessage}
-          onClose={() => setToastMessage('')}
-        />
-      )}
+      {/* Toast Alert con transiciones fade fluidas */}
+      <ToastBanner
+        message={toastMessage}
+        onClose={() => setToastMessage('')}
+      />
 
       {/* =========================================================================
           CABECERA, CONMUTADOR (ACTIVOS / DEVUELTOS) Y BOTÓN REGISTRAR PRÉSTAMO

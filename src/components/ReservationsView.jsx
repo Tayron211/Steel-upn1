@@ -1818,13 +1818,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <ToastBanner
-          message={toastMessage}
-          onClose={() => setToastMessage('')}
-        />
-      )}
+      {/* Toast Alert con transiciones fade fluidas */}
+      <ToastBanner
+        message={toastMessage}
+        onClose={() => setToastMessage('')}
+      />
 
       {/* Panel Controlador Principal con Filtros por Día (Hoy / Próximos Días), Pabellones, Pisos y Aulas Libres */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-5 shadow-xs space-y-3">

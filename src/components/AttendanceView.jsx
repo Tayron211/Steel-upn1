@@ -2228,13 +2228,11 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
-      {/* Toast Notification Alert - Portaled to viewport body so it never scrolls out of view */}
-      {toastMessage && (
-        <ToastBanner
-          message={toastMessage}
-          onClose={() => setToastMessage('')}
-        />
-      )}
+      {/* Toast Notification Alert - Portaled to viewport body con transiciones fade fluidas */}
+      <ToastBanner
+        message={toastMessage}
+        onClose={() => setToastMessage('')}
+      />
 
       {/* Controlador Compacto, Ágil y Rápido */}
       <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200/90 dark:border-zinc-800 rounded-2xl p-2.5 sm:p-3.5 shadow-xs space-y-2 transition-colors">
@@ -2975,6 +2973,25 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md shrink-0">
                             {item.pisoPabellon || 'Campus'}
                           </span>
+                          {/* Aforo discreto para aulas estándar (no intrusivo, mantiene la simpleza visual) */}
+                          {(() => {
+                            if (!item.aula || !item.aula.trim()) return null;
+                            const aulaKey = item.aula.trim().toUpperCase();
+                            if (aulaKey === 'VIRTUAL' || aulaKey === 'S/A') return null;
+                            const rm = roomMap.get(aulaKey);
+                            const facility = rm ? getSpecializedFacility(rm.nombre, item.aula) : null;
+                            if (facility) return null; // ya se muestra en el banner especializado
+                            const aforo = rm?.aforo || 40;
+                            return (
+                              <span
+                                className="text-[10px] font-mono font-medium text-slate-400 dark:text-zinc-500 bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/60 px-1.5 py-0.5 rounded-md shrink-0 inline-flex items-center gap-1 select-none"
+                                title={`Capacidad del aula: ${aforo} personas`}
+                              >
+                                <Users className="w-2.5 h-2.5 text-slate-400 dark:text-zinc-500 shrink-0" />
+                                <span>{aforo}p</span>
+                              </span>
+                            );
+                          })()}
                           {(() => {
                             const pLabel = formatPeriodoDisplay(item.periodo);
                             if (!pLabel) return null;

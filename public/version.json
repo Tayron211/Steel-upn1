@@ -1,9 +1,17 @@
 {
-  "version": "1.0.64",
-  "versionCode": 65,
+  "version": "1.0.65",
+  "versionCode": 66,
   "releaseDate": "2026-11-16",
-  "notes": "Barras traslucidas de cristal esmerilado, sonido potente, navegacion superior y diseno pulido sin colisiones",
+  "notes": "Aforo discreto en aulas, transiciones fade en anuncios toast y barras traslúcidas.",
   "features": [
+    {
+      "title": "Aforo Discreto en Todas las Aulas",
+      "desc": "Visualización sutil y minimalista de la capacidad (ej. 40p) en todas las tarjetas de aula estándar sin sobrecargar el diseño."
+    },
+    {
+      "title": "Transiciones Fade en Notificaciones Toast",
+      "desc": "Aparición y desvanecimiento fluidos con animación suave al entrar y salir de la pantalla."
+    },
     {
       "title": "Barras Traslúcidas de Cristal Esmerilado",
       "desc": "Header superior y dock móvil con mayor transparencia y efecto glassmorphism nítido."
@@ -19,14 +27,6 @@
     {
       "title": "Diseño de Tarjetas sin Superposiciones",
       "desc": "Laboratorios y talleres especializados en fila dedicada sin colisionar con la etiqueta Pendiente ni los 3 puntos."
-    },
-    {
-      "title": "Píldoras de Operaciones Optimizadas",
-      "desc": "Píldoras Hojas Manuales y Reservas elevadas en PC y con espacio visual perfecto en celulares."
-    },
-    {
-      "title": "Modo Claro con Contraste Refinado",
-      "desc": "Tarjetas con sombra ambiental natural y bordes delimitados sin líneas negras toscas."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
