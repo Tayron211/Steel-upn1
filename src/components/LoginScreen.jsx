@@ -149,7 +149,13 @@ export default function LoginScreen({ onLogin }) {
         </div>
 
         {/* PANEL DERECHO: FORMULARIO LIMPIO CON DETECCIÓN INTELIGENTE DE ROL */}
-        <div className="login-form-panel">
+        <div
+          className="login-form-panel"
+          style={{
+            backdropFilter: 'blur(36px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(36px) saturate(200%)'
+          }}
+        >
           {/* Encabezado con Logotipo UPN */}
           <div className="login-form-header">
             <div className="login-brand-emblem">

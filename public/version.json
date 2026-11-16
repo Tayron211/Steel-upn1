@@ -1,8 +1,8 @@
 {
-  "version": "1.0.71",
-  "versionCode": 72,
+  "version": "1.0.72",
+  "versionCode": 73,
   "releaseDate": "2026-11-16",
-  "notes": "Efecto blur traslucido aplicado unicamente al panel derecho del formulario Login manteniendo el resto original",
+  "notes": "Efecto blur y desenfoque traslucido en panel derecho de login con resolucion de capas GPU",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",
