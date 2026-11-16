@@ -288,6 +288,12 @@ const TIME_OPTIONS = [
   '19:00', '19:30', '20:00', '20:20', '21:00', '21:10', '22:00', '22:50'
 ];
 
+const DAYS_OF_WEEK = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+const MONTHS_UPPER = [
+  'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+  'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
+];
+
 // Generador oficial de Tabla de Asistencia en HTML y TSV (14 columnas según modelo oficial de Excel)
 const generateAttendanceTableData = (items, selectedDia, explicitDateStr) => {
   const list = Array.isArray(items) ? items : [items];
@@ -1069,12 +1075,14 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   // Reservation Modal for Free Classrooms
   const [reservingRoom, setReservingRoom] = useState(null);
   const [reservationForm, setReservationForm] = useState({
-    tipo: 'DOCENTE',
-    nombre: '',
     fecha: new Date().toISOString().split('T')[0],
-    horaInicio: '08:00',
-    horaFin: '10:00',
-    actividades: ''
+    inicio: '10:50',
+    final: '12:30',
+    docente: '',
+    detalle: '',
+    motivo: '',
+    usuario: '',
+    prioridad: 'NORMAL'
   });
   const [savingReservation, setSavingReservation] = useState(false);
   const [docentesList, setDocentesList] = useState([]);
@@ -1281,27 +1289,43 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     );
 
     setReservationForm({
-      tipo: 'DOCENTE',
-      nombre: '',
       fecha: targetIso,
-      horaInicio: initStart,
-      horaFin: initEnd,
-      actividades: ''
+      inicio: initStart,
+      final: initEnd,
+      docente: '',
+      detalle: '',
+      motivo: '',
+      usuario: getLoggedAssistantName(),
+      prioridad: 'NORMAL'
     });
+    setDocenteSuggestionsOpen(false);
   };
 
   const handleSaveReservation = async (e) => {
     if (e) e.preventDefault();
     if (!reservingRoom) return;
-    if (!reservationForm.nombre.trim()) {
-      alert('Por favor, ingresa el nombre del docente o alumno solicitante.');
+
+    const finalDocente = (reservationForm.docente || '').trim().toUpperCase();
+    if (!finalDocente) {
+      alert('Por favor, ingresa o selecciona el nombre del Docente Solicitante.');
+      return;
+    }
+
+    const finalDetalle = (reservationForm.detalle || reservationForm.motivo || 'USO DE LABORATORIO').trim().toUpperCase();
+    if (!finalDetalle) {
+      alert('Por favor especifica la Actividad o Motivo de la reserva.');
+      return;
+    }
+
+    if (reservationForm.inicio && reservationForm.final && reservationForm.inicio >= reservationForm.final) {
+      alert('La hora de inicio debe ser anterior a la hora de fin.');
       return;
     }
 
     // Validar si el aula ya tiene una reserva que solape este mismo día/horario
     const aulaCode = reservingRoom.abrv.toUpperCase().trim();
-    const reqStartM = timeToMins(reservationForm.horaInicio);
-    const reqEndM = timeToMins(reservationForm.horaFin);
+    const reqStartM = timeToMins(reservationForm.inicio);
+    const reqEndM = timeToMins(reservationForm.final);
 
     const conflictingRes = reservations.find(r => {
       const rAulas = Array.isArray(r.aulas) && r.aulas.length > 0
@@ -1323,26 +1347,40 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
     setSavingReservation(true);
     try {
-      const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
-      const resDate = new Date(reservationForm.fecha + 'T12:00:00');
-      const diaName = days[resDate.getDay()];
+      const dt = new Date((reservationForm.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+      const computedDia = DAYS_OF_WEEK[dt.getDay()] || 'LUNES';
+      const computedMes = MONTHS_UPPER[dt.getMonth()] || 'NOVIEMBRE';
+      const finalUsuario = (isAdmin() ? (reservationForm.usuario || getLoggedAssistantName()) : getLoggedAssistantName()).toUpperCase().trim();
+      const finalPrioridad = (reservationForm.prioridad || 'NORMAL').toUpperCase().trim();
+      const finalUbicacion = `${reservingRoom.piso || ''} - ${reservingRoom.pabellon || ''}`.replace(/^ - | - $/g, '') || 'SEDE';
+
+      const groupId = 'grp_' + Date.now();
+      const obsPayload = JSON.stringify({
+        group_id: groupId,
+        schedules: {
+          [aulaCode]: { fecha: reservationForm.fecha, inicio: reservationForm.inicio, final: reservationForm.final }
+        },
+        note: ''
+      });
 
       const payload = {
         fecha: reservationForm.fecha,
-        dia: diaName,
-        inicio: reservationForm.horaInicio,
-        final: reservationForm.horaFin,
-        hora_inicio: reservationForm.horaInicio,
-        hora_fin: reservationForm.horaFin,
-        aula: reservingRoom.abrv,
-        ubicacion: `${reservingRoom.piso || ''} - ${reservingRoom.pabellon || ''}`.replace(/^ - | - $/g, ''),
-        docente: reservationForm.tipo === 'ALUMNO'
-          ? `[ALUMNO] ${reservationForm.nombre.trim().toUpperCase()}`
-          : reservationForm.nombre.trim().toUpperCase(),
-        detalle: reservationForm.actividades.trim() || 'RESERVA DE AULA',
-        motivo: reservationForm.actividades.trim() || 'RESERVA DE AULA',
-        usuario: 'OPERACIONES',
-        prioridad: 'NORMAL'
+        mes: computedMes,
+        dia: computedDia,
+        inicio: reservationForm.inicio,
+        final: reservationForm.final,
+        hora_inicio: reservationForm.inicio,
+        hora_fin: reservationForm.final,
+        aulas: [aulaCode],
+        aula: aulaCode,
+        ubicacion: finalUbicacion,
+        docente: finalDocente,
+        detalle: finalDetalle,
+        motivo: finalDetalle,
+        usuario: finalUsuario,
+        prioridad: finalPrioridad,
+        obs: obsPayload,
+        hoja: 'RESERVAS'
       };
 
       const res = await fetch('/api/reservations', {
@@ -1352,23 +1390,15 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       });
       const json = await res.json();
       if (json.success) {
-        setToastMessage(`✅ Aula ${reservingRoom.abrv} reservada con éxito (${reservationForm.horaInicio} - ${reservationForm.horaFin})`);
+        setToastMessage(`✅ Aula ${reservingRoom.abrv} reservada con éxito (${reservationForm.inicio} - ${reservationForm.final})`);
         setReservingRoom(null);
-        setReservationForm({
-          tipo: 'DOCENTE',
-          nombre: '',
-          fecha: new Date().toISOString().split('T')[0],
-          horaInicio: '08:00',
-          horaFin: '10:00',
-          actividades: ''
-        });
         await loadReservations();
       } else {
         alert('Error al guardar reserva: ' + (json.error || 'intente nuevamente'));
       }
     } catch (err) {
-      console.error('Error guardando reserva:', err);
-      alert('Error de conexión al guardar reserva');
+      console.error(err);
+      alert('Error al conectar con el servidor.');
     } finally {
       setSavingReservation(false);
     }
@@ -1602,8 +1632,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   }, [docentesList, data, dayAllClasses, reservations]);
 
   const docenteSuggestions = useMemo(() => {
-    if (reservationForm.tipo !== 'DOCENTE') return [];
-    const rawQ = (reservationForm.nombre || '').trim();
+    const rawQ = (reservationForm.docente || '').trim();
     if (!rawQ || rawQ.length < 2) return [];
 
     const cleanQ = rawQ
@@ -1624,7 +1653,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
       return queryTokens.every(tok => docNorm.includes(tok));
     }).slice(0, 10);
-  }, [reservationForm.nombre, reservationForm.tipo, allKnownDocentes]);
+  }, [reservationForm.docente, allKnownDocentes]);
 
   useEffect(() => {
     loadDayAllClasses(selectedDia);
@@ -3431,206 +3460,229 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
           return createPortal(
             <div
-              className={`fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 ${reserveRoomFade.backdropClass}`}
+              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 ${reserveRoomFade.backdropClass}`}
               onClick={() => !savingReservation && reserveRoomFade.requestClose()}
             >
               <div
-                className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${reserveRoomFade.modalClass} space-y-4 overflow-hidden`}
+                className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200/90 dark:border-zinc-800 max-h-[90vh] flex flex-col overflow-hidden ${reserveRoomFade.modalClass}`}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Encabezado */}
-                <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-2.5 min-w-0 pr-1">
-                    <span className="font-mono font-black text-sm bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs shrink-0">
-                      {activeReserveRoom.abrv}
-                    </span>
+                {/* Header del Modal - Fijo */}
+                <div className="p-5 sm:p-6 pb-3.5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2.5 shrink-0">
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                    <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs shrink-0">
+                      <Calendar className="w-5 h-5 stroke-[2.2]" />
+                    </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight break-words">
-                        Reservar {activeReserveRoom.nombre}
+                      <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+                        Nueva Reserva de Ambiente
                       </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold mt-0.5 break-words leading-tight">
-                        {activeReserveRoom.tipo} · Pab. {activeReserveRoom.pabellon} ({activeReserveRoom.piso}) · Cap. {activeReserveRoom.aforo} pers.
+                      <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                        Préstamo de aula o laboratorio con horario definido
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    disabled={savingReservation}
                     onClick={() => reserveRoomFade.requestClose()}
-                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0"
+                    className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center active:scale-90 shrink-0 cursor-pointer"
+                    title="Cerrar ventana"
                   >
                     <X className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
 
-                <form onSubmit={handleSaveReservation} className="space-y-3.5">
-                  {/* Tipo de Solicitante Toggle */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
-                      Tipo de Solicitante
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800">
-                      <button
-                        type="button"
-                        onClick={() => setReservationForm(f => ({ ...f, tipo: 'DOCENTE' }))}
-                        className={`h-9 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${reservationForm.tipo === 'DOCENTE'
-                          ? 'bg-amber-400 text-slate-950 shadow-xs'
-                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                      >
-                        <User className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>Docente</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReservationForm(f => ({ ...f, tipo: 'ALUMNO' }))}
-                        className={`h-9 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${reservationForm.tipo === 'ALUMNO'
-                          ? 'bg-amber-400 text-slate-950 shadow-xs'
-                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                      >
-                        <GraduationCap className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>Alumno / Delegado</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Nombre Solicitante con Autocompletado Inteligente */}
-                  <div className="relative">
-                    <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                      <span>Nombre del {reservationForm.tipo === 'DOCENTE' ? 'Docente' : 'Alumno'} *</span>
-                      {reservationForm.tipo === 'DOCENTE' && allKnownDocentes.length > 0 && (
-                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">
-                          {allKnownDocentes.length} docentes disponibles
-                        </span>
-                      )}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={reservationForm.nombre}
-                      onChange={(e) => {
-                        const val = e.target.value.toUpperCase();
-                        setReservationForm(f => ({ ...f, nombre: val }));
-                        setDocenteSuggestionsOpen(true);
-                      }}
-                      onFocus={() => setDocenteSuggestionsOpen(true)}
-                      onBlur={() => setTimeout(() => setDocenteSuggestionsOpen(false), 200)}
-                      placeholder={reservationForm.tipo === 'DOCENTE' ? 'Ej: ING. CARLOS MENDOZA' : 'Ej: JUAN PEREZ (Delegado)'}
-                      className="w-full h-11 px-3.5 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition uppercase"
-                    />
-
-                    {/* Menú de Autocompletado de Docentes */}
-                    {reservationForm.tipo === 'DOCENTE' && docenteSuggestionsOpen && docenteSuggestions.length > 0 && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-52 overflow-y-auto">
-                        <div className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-900/90 border-b border-slate-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center justify-between">
-                          <span>Docentes Sugeridos ({docenteSuggestions.length})</span>
-                          <button
-                            type="button"
-                            onClick={() => setDocenteSuggestionsOpen(false)}
-                            className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer text-xs"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        {docenteSuggestions.map((doc, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onMouseDown={() => {
-                              setReservationForm(f => ({ ...f, nombre: doc }));
-                              setDocenteSuggestionsOpen(false);
-                            }}
-                            className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 transition flex items-center justify-between group border-b border-slate-100 dark:border-zinc-800/50 last:border-b-0 cursor-pointer"
-                          >
-                            <span className="truncate">{doc}</span>
-                            <span className="text-[10px] text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shrink-0 font-black ml-2 uppercase">
-                              Elegir
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Fecha y Horario */}
-                  <div className="space-y-2.5">
+                <form onSubmit={handleSaveReservation} className="flex-1 overflow-y-auto flex flex-col">
+                  <div className="p-5 sm:p-6 space-y-3.5 flex-1">
+                    {/* Fila 1: FECHA */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                        Fecha *
+                      <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                        <span>Fecha de Reserva</span>
                       </label>
                       <CustomDatePicker
                         value={reservationForm.fecha}
-                        onChange={(val) => setReservationForm(f => ({ ...f, fecha: val }))}
+                        onChange={(val) => {
+                          if (!val) return;
+                          setReservationForm(prev => ({ ...prev, fecha: val }));
+                        }}
                         required
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-2.5">
+
+                    {/* Fila 2: HORARIO (Inicio y Final) */}
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                          Hora Inicio *
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                          Hora Inicio
                         </label>
                         <CustomSelect
-                          value={reservationForm.horaInicio}
-                          onChange={(val) => setReservationForm(f => ({ ...f, horaInicio: val }))}
+                          value={reservationForm.inicio}
+                          onChange={(val) => setReservationForm(prev => ({ ...prev, inicio: val }))}
                           options={TIME_OPTIONS}
                           placeholder="Hora Inicio"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                          Hora Fin *
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                          Hora Fin
                         </label>
                         <CustomSelect
-                          value={reservationForm.horaFin}
-                          onChange={(val) => setReservationForm(f => ({ ...f, horaFin: val }))}
+                          value={reservationForm.final}
+                          onChange={(val) => setReservationForm(prev => ({ ...prev, final: val }))}
                           options={TIME_OPTIONS}
                           placeholder="Hora Fin"
                         />
                       </div>
                     </div>
+
+                    {/* Fila 3: AMBIENTE / AULA A RESERVAR */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                        Ambiente a Reservar *
+                      </label>
+                      <div className="w-full min-h-11 py-2 px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0 shadow-2xs">
+                            {activeReserveRoom.abrv}
+                          </span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 truncate">
+                            {activeReserveRoom.tipo} · Pab. {activeReserveRoom.pabellon} ({activeReserveRoom.piso}) · Cap. {activeReserveRoom.aforo || 40} pers.
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80 shrink-0">
+                          Disponible
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Fila 4: DOCENTE SOLICITANTE CON AUTOCOMPLETADO DESDE EXCEL */}
+                    <div className="relative">
+                      <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                        <span>Docente Solicitante *</span>
+                        {allKnownDocentes.length > 0 && (
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">
+                            {allKnownDocentes.length} docentes disponibles
+                          </span>
+                        )}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={reservationForm.docente}
+                        onChange={(e) => {
+                          setReservationForm(prev => ({ ...prev, docente: e.target.value.toUpperCase() }));
+                          setDocenteSuggestionsOpen(true);
+                        }}
+                        onFocus={() => setDocenteSuggestionsOpen(true)}
+                        onBlur={() => setTimeout(() => setDocenteSuggestionsOpen(false), 200)}
+                        placeholder="Apellidos y Nombres completos del docente"
+                        className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
+                      />
+                      {docenteSuggestionsOpen && docenteSuggestions.length > 0 && (
+                        <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-56 overflow-y-auto">
+                          <div className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-900/90 border-b border-slate-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center justify-between">
+                            <span>Docentes Sugeridos ({docenteSuggestions.length})</span>
+                            <button
+                              type="button"
+                              onClick={() => setDocenteSuggestionsOpen(false)}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          {docenteSuggestions.map((doc, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onMouseDown={() => {
+                                setReservationForm(prev => ({ ...prev, docente: doc }));
+                                setDocenteSuggestionsOpen(false);
+                              }}
+                              className="w-full text-left px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 transition flex items-center justify-between group border-b border-slate-100 dark:border-zinc-800/50 last:border-b-0 cursor-pointer"
+                            >
+                              <span className="truncate">{doc}</span>
+                              <span className="text-[10px] text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shrink-0 font-black ml-2 uppercase">
+                                Elegir
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fila 5: ACTIVIDAD / MOTIVO */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                        Actividad / Motivo de Reserva *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={reservationForm.detalle || reservationForm.motivo}
+                        onChange={(e) => setReservationForm(prev => ({ ...prev, detalle: e.target.value.toUpperCase(), motivo: e.target.value.toUpperCase() }))}
+                        placeholder="Ej: USO DE LABORATORIO, TALLER CULTURAL, CHARLA..."
+                        className="w-full h-10 text-xs px-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition font-bold uppercase"
+                      />
+                    </div>
+
+                    {/* Fila 6: ASISTENTE RESPONSABLE Y PRIORIDAD */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                          Responsable / Asistente
+                        </label>
+                        {isAdmin() ? (
+                          <CustomSelect
+                            value={reservationForm.usuario}
+                            onChange={(val) => setReservationForm(prev => ({ ...prev, usuario: val }))}
+                            options={asistentes}
+                            placeholder="Seleccionar asistente"
+                          />
+                        ) : (
+                          <div className="h-10 sm:h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 select-none">
+                            <span className="truncate">{getLoggedAssistantName()}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                          Prioridad
+                        </label>
+                        <CustomSelect
+                          value={reservationForm.prioridad}
+                          onChange={(val) => setReservationForm(prev => ({ ...prev, prioridad: val }))}
+                          options={[
+                            { value: 'NORMAL', label: 'Normal' },
+                            { value: 'IMPORTANTE', label: 'Importante / Evento' }
+                          ]}
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Actividades que se realizarán */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                      Actividades que se realizarán *
-                    </label>
-                    <textarea
-                      rows="3"
-                      required
-                      value={reservationForm.actividades}
-                      onChange={(e) => setReservationForm(f => ({ ...f, actividades: e.target.value }))}
-                      placeholder="Ej: Asesoría de tesis, recuperación de clase, sustentación de proyecto, reunión de grupo..."
-                      className="w-full p-3 text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-2xl text-slate-950 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#15151a] focus:outline-none focus:border-[#FDBA30] focus:ring-2 focus:ring-[#FDBA30]/20 transition resize-none"
-                    />
-                  </div>
-
-                  {/* Acciones */}
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                  {/* Footer de Acciones */}
+                  <div className="p-5 sm:p-6 pt-3.5 border-t border-slate-100 dark:border-zinc-800 grid grid-cols-2 gap-3 shrink-0 bg-white/80 dark:bg-[#0c0c10]/80 backdrop-blur-xs">
                     <button
                       type="button"
                       disabled={savingReservation}
                       onClick={() => reserveRoomFade.requestClose()}
-                      className="h-11 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95 disabled:opacity-50"
+                      className="h-11 sm:h-12 rounded-2xl text-xs font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 transition flex items-center justify-center text-center active:scale-95 disabled:opacity-50 cursor-pointer"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={savingReservation}
-                      className="h-11 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95 disabled:opacity-50 gap-2"
+                      className="h-11 sm:h-12 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95 cursor-pointer"
                     >
                       {savingReservation ? (
-                        <>
+                        <div className="flex items-center gap-2">
                           <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
                           <span>Guardando...</span>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <CalendarPlus className="w-4 h-4 stroke-[2.5]" />
-                          <span>Confirmar Reserva</span>
-                        </>
+                        'Confirmar Reserva'
                       )}
                     </button>
                   </div>
