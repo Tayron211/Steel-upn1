@@ -1,28 +1,32 @@
 {
-  "version": "1.0.63",
-  "versionCode": 64,
+  "version": "1.0.64",
+  "versionCode": 65,
   "releaseDate": "2026-11-16",
-  "notes": "Navegacion instantanea a cabecera, sonido de notificacion potente y ventana de actualizacion con novedades detalladas",
+  "notes": "Barras traslucidas de cristal esmerilado, sonido potente, navegacion superior y diseno pulido sin colisiones",
   "features": [
     {
+      "title": "Barras Traslúcidas de Cristal Esmerilado",
+      "desc": "Header superior y dock móvil con mayor transparencia y efecto glassmorphism nítido."
+    },
+    {
       "title": "Navegación al Encabezado Superior",
-      "desc": "Al cambiar entre pestañas la nueva vista aparece siempre desde el encabezado, sin arrastrar el scroll hacia abajo."
+      "desc": "Al cambiar entre pestañas la nueva vista aparece siempre desde el encabezado sin scroll hacia abajo."
     },
     {
       "title": "Sonido de Notificación Más Fuerte",
-      "desc": "Chime de alerta institucional amplificado con compresor dinámico y vibración háptica en teléfonos."
+      "desc": "Chime de alerta amplificado con compresor dinámico, doble armónico y vibración háptica."
     },
     {
-      "title": "Centro de Operaciones Optimizado",
-      "desc": "Se removió la subpestaña redundante de Ambientes, dejando acceso directo a Hojas Manuales y Reservas."
+      "title": "Diseño de Tarjetas sin Superposiciones",
+      "desc": "Laboratorios y talleres especializados en fila dedicada sin colisionar con la etiqueta Pendiente ni los 3 puntos."
     },
     {
-      "title": "Detalle de Aforo y Taller Especializado",
-      "desc": "Identificación limpia de laboratorios y capacidad exacta de personas sin duplicar códigos de aula."
+      "title": "Píldoras de Operaciones Optimizadas",
+      "desc": "Píldoras Hojas Manuales y Reservas elevadas en PC y con espacio visual perfecto en celulares."
     },
     {
       "title": "Modo Claro con Contraste Refinado",
-      "desc": "Tarjetas con sombra ambiental natural y bordes delimitados sin líneas negras toscas para mayor claridad."
+      "desc": "Tarjetas con sombra ambiental natural y bordes delimitados sin líneas negras toscas."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
