@@ -1,8 +1,8 @@
 {
-  "version": "1.0.70",
-  "versionCode": 71,
+  "version": "1.0.71",
+  "versionCode": 72,
   "releaseDate": "2026-11-16",
-  "notes": "Efecto blur de cristal pulido en Login con biselado refractivo, brillo especular e inputs de cristal liquido",
+  "notes": "Efecto blur traslucido aplicado unicamente al panel derecho del formulario Login manteniendo el resto original",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",
