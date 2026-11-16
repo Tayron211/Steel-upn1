@@ -427,89 +427,70 @@ html:not(.dark) {
   transform-origin: bottom right;
 }
 
-/* Notification Slide In / Out (Alertas Flotantes a la Derecha) */
+/* Notification Slide In / Out (Alertas Flotantes a la Derecha - Razor Sharp Subpixel) */
 @keyframes notificationSlideInRight {
   0% {
     opacity: 0;
-    transform: translate3d(105%, 0, 0) scale(0.94);
-  }
-
-  60% {
-    opacity: 1;
-    transform: translate3d(-8px, 0, 0) scale(1.01);
+    transform: translateX(24px);
   }
 
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translateX(0);
   }
 }
 
 @keyframes notificationSlideOutRight {
   0% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  25% {
-    opacity: 0.95;
-    transform: translate3d(-8px, 0, 0) scale(1.01);
+    transform: translateX(0);
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(115%, 0, 0) scale(0.9);
+    transform: translateX(24px);
   }
 }
 
 .animate-notification-slide-in {
-  animation: notificationSlideInRight 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
+  animation: notificationSlideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-notification-slide-out {
-  animation: notificationSlideOutRight 0.26s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  will-change: transform, opacity;
+  animation: notificationSlideOutRight 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Toast Banner Slide Down / Up (Notificaciones Flotantes al Centro Superior) */
 @keyframes toastSlideDown {
   0% {
     opacity: 0;
-    transform: translate3d(0, -32px, 0) scale(0.92);
-  }
-
-  65% {
-    opacity: 1;
-    transform: translate3d(0, 4px, 0) scale(1.01);
+    transform: translateY(-16px);
   }
 
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes toastSlideUp {
   0% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translateY(0);
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(0, -36px, 0) scale(0.92);
+    transform: translateY(-16px);
   }
 }
 
 .animate-toast-slide-down {
-  animation: toastSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
+  animation: toastSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-toast-slide-up {
-  animation: toastSlideUp 0.24s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  will-change: transform, opacity;
+  animation: toastSlideUp 0.18s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Smooth Fluid Micro-Interactions on Interactive Elements */

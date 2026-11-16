@@ -2456,14 +2456,35 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                        {cardAulas.map(a => (
-                          <span
-                            key={a}
-                            className="text-sm sm:text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0 shadow-2xs"
-                          >
-                            {a}
+                        {cardAulas.map(a => {
+                          const rm = roomMap[a];
+                          return (
+                            <span
+                              key={a}
+                              className="text-sm sm:text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0 shadow-2xs"
+                              title={rm ? `${rm.tipo} · ${rm.nombre || rm.tipo} · Aforo: ${rm.aforo || 40}p` : undefined}
+                            >
+                              {a}
+                            </span>
+                          );
+                        })}
+                        {firstRm && firstRm.tipo && (
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
+                            firstRm.tipo.toUpperCase().includes('TALLER')
+                              ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                              : firstRm.tipo.toUpperCase().includes('LAB')
+                              ? 'bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                              : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                          }`}>
+                            {firstRm.tipo}
                           </span>
-                        ))}
+                        )}
+                        {firstRm?.aforo ? (
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-zinc-700 inline-flex items-center gap-1 shrink-0" title={`Aforo oficial: ${firstRm.aforo} personas`}>
+                            <Users className="w-2.5 h-2.5 stroke-[2]" />
+                            <span>{firstRm.aforo}p</span>
+                          </span>
+                        ) : null}
                         {cardAulas.length > 1 && (
                           <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
                             {cardAulas.length} Aulas

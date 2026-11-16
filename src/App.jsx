@@ -639,7 +639,7 @@ export default function App() {
         if (!item) return null;
         return (
           <div className={`fixed top-[calc(env(safe-area-inset-top,0px)+4.75rem)] sm:top-20 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] pointer-events-auto select-none ${shiftAlertFade.slideRightClass}`}>
-            <div className="bg-white/95 dark:bg-black/95 text-slate-900 dark:text-zinc-100 p-3.5 rounded-2xl border border-amber-300/80 dark:border-amber-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(253,186,48,0.20)] flex items-start justify-between gap-3 backdrop-blur-xl">
+            <div className="bg-white dark:bg-[#111116] text-slate-900 dark:text-zinc-100 p-3.5 rounded-2xl border border-amber-300 dark:border-amber-400/60 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)] flex items-start justify-between gap-3 subpixel-antialiased">
               <div className="flex items-start gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-400/15 text-amber-600 dark:text-[#FDBA30] border border-amber-500/20 dark:border-amber-400/30 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                   <BellRing className="w-5 h-5 animate-pulse" />
@@ -651,7 +651,7 @@ export default function App() {
                     <span>En {item.diff || 15} min</span>
                   </div>
                   <div className="font-upn font-bold text-xs sm:text-sm text-slate-900 dark:text-zinc-100 tracking-tight leading-snug">
-                    Bloque <span className="text-amber-700 dark:text-[#FDBA30] font-black underline underline-offset-2 decoration-amber-400/50">{item.label}</span> (Inicia {item.start})
+                    Bloque <span className="text-amber-700 dark:text-[#FDBA30] font-black underline underline-offset-2">{item.label}</span> (Inicia {item.start})
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5 leading-normal">
                     Prepara la ronda y verificación de asistencia docente.
@@ -677,7 +677,7 @@ export default function App() {
         if (!item) return null;
         return (
           <div className={`fixed top-[calc(env(safe-area-inset-top,0px)+5.25rem)] sm:top-24 right-3 sm:right-6 z-[99999] max-w-sm sm:max-w-md w-[calc(100%-1.5rem)] pointer-events-auto select-none ${pendingRoundFade.slideRightClass}`}>
-            <div className="bg-white/95 dark:bg-black/95 text-slate-900 dark:text-zinc-100 p-3.5 sm:p-4 rounded-2xl border border-amber-300/80 dark:border-amber-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(253,186,48,0.22)] flex items-start justify-between gap-3 backdrop-blur-xl">
+            <div className="bg-white dark:bg-[#111116] text-slate-900 dark:text-zinc-100 p-3.5 sm:p-4 rounded-2xl border border-amber-300 dark:border-amber-400/60 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)] flex items-start justify-between gap-3 subpixel-antialiased">
               <div className="flex items-start gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-400/15 text-amber-600 dark:text-[#FDBA30] border border-amber-500/20 dark:border-amber-400/30 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                   <AlertTriangle className="w-5 h-5 animate-pulse" />
@@ -690,7 +690,7 @@ export default function App() {
                   </div>
                   <div className="font-upn font-bold text-xs sm:text-sm text-slate-900 dark:text-zinc-100 tracking-tight leading-snug">
                     {item.pendingCount} aula(s) pendientes:{' '}
-                    <span className="text-amber-700 dark:text-[#FDBA30] font-black underline underline-offset-2 decoration-amber-400/50">
+                    <span className="text-amber-700 dark:text-[#FDBA30] font-black underline underline-offset-2">
                       {item.aulas}
                     </span>
                   </div>

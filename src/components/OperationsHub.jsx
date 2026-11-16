@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Calendar, Building2 } from 'lucide-react';
+import { FileText, Calendar } from 'lucide-react';
 import ManualSheetsView from './ManualSheetsView';
 import ReservationsView from './ReservationsView';
-import RoomsView from './RoomsView';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 
-const SUB_TABS = ['manual', 'reservations', 'rooms'];
+const SUB_TABS = ['manual', 'reservations'];
 
 export default function OperationsHub({ 
   initialClassData, 
   onClearInitialClass, 
-  onSelectRoomForSchedule,
   defaultSubTab = 'manual',
   openManualModalTrigger = null,
   openReservationModalTrigger = null,
@@ -20,15 +18,14 @@ export default function OperationsHub({
   const [subTab, setSubTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.toLowerCase();
-      if (hash === '#reservas' || hash === '#operaciones/reservas') return 'reservations';
-      if (hash === '#ambientes' || hash === '#operaciones/ambientes') return 'rooms';
+      if (hash === '#reservas' || hash === '#operaciones/reservas' || hash === '#ambientes' || hash === '#operaciones/ambientes') return 'reservations';
       if (hash === '#operaciones' || hash === '#fichas') return 'manual';
       try {
         const saved = localStorage.getItem('steel:operations-subtab');
-        if (saved) return saved;
+        if (saved && (saved === 'manual' || saved === 'reservations')) return saved;
       } catch (_) {}
     }
-    return defaultSubTab || 'manual';
+    return defaultSubTab === 'reservations' ? 'reservations' : 'manual';
   });
   const [subTransition, setSubTransition] = useState(() => ({ tab: subTab, dir: 'initial' }));
   if (subTransition.tab !== subTab) {
@@ -92,7 +89,7 @@ export default function OperationsHub({
     if (onConsumeReservationModalTrigger) onConsumeReservationModalTrigger();
     setSubTab(target);
     try { localStorage.setItem('steel:operations-subtab', target); } catch (_) {}
-    const subHash = target === 'reservations' ? '#reservas' : (target === 'rooms' ? '#ambientes' : '#operaciones');
+    const subHash = target === 'reservations' ? '#reservas' : '#operaciones';
     if (window.location.hash.toLowerCase() !== subHash) {
       window.history.pushState({ tab: 'operations', subTab: target }, '', subHash);
     }
@@ -106,7 +103,7 @@ export default function OperationsHub({
       {/* Sleek Apple-Style Segmented Sub-Navigation for Operations Hub */}
       <div
         ref={subTabSlide.containerRef}
-        className="relative apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm"
+        className="relative apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm max-w-md mx-auto"
       >
         <span
           aria-hidden="true"
@@ -117,7 +114,7 @@ export default function OperationsHub({
         <button
           onClick={() => switchSubTab('manual')}
           data-slide-active={subTab === 'manual' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
+          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'manual'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -130,7 +127,7 @@ export default function OperationsHub({
         <button
           onClick={() => switchSubTab('reservations')}
           data-slide-active={subTab === 'reservations' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
+          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${
             subTab === 'reservations'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -138,19 +135,6 @@ export default function OperationsHub({
         >
           <Calendar className="w-4 h-4 stroke-[2.2] shrink-0" />
           <span className="truncate">Reservas</span>
-        </button>
-
-        <button
-          onClick={() => switchSubTab('rooms')}
-          data-slide-active={subTab === 'rooms' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-2 sm:px-3 rounded-[14px] text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 active:scale-95 min-w-0 whitespace-nowrap ${
-            subTab === 'rooms'
-              ? 'text-slate-950 font-black'
-              : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <Building2 className="w-4 h-4 stroke-[2.2] shrink-0" />
-          <span className="truncate">Ambientes</span>
         </button>
       </div>
 
@@ -171,10 +155,6 @@ export default function OperationsHub({
             initialOpenTrigger={openReservationModalTrigger} 
             onConsumeTrigger={onConsumeReservationModalTrigger}
           />
-        )}
-
-        {subTab === 'rooms' && (
-          <RoomsView onSelectRoomForSchedule={onSelectRoomForSchedule} />
         )}
         </div>
       </div>

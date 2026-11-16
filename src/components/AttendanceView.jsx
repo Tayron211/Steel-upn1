@@ -608,6 +608,17 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   const [dayAllClasses, setDayAllClasses] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Mapa optimizado para consultar tipo, aforo y nombre de ambientes en tiempo real
+  const roomMap = useMemo(() => {
+    const map = new Map();
+    (rooms || []).forEach(r => {
+      if (r && r.abrv) {
+        map.set(r.abrv.toUpperCase().trim(), r);
+      }
+    });
+    return map;
+  }, [rooms]);
+
   const timeToMins = (t) => {
     if (!t || typeof t !== 'string') return 0;
     const [h, m] = t.split(':').map(Number);
@@ -2752,10 +2763,38 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                       </span>
                     </div>
 
-                    <div className="mb-2">
-                      <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/60">
-                        {room.tipo} · Pab. {room.pabellon} ({room.piso})
-                      </span>
+                    <div className="mb-2 space-y-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                          room.tipo && room.tipo.toUpperCase().includes('TALLER')
+                            ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                            : room.tipo && room.tipo.toUpperCase().includes('LAB')
+                            ? 'bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                        }`}>
+                          {room.tipo}
+                        </span>
+                        {room.aforo ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-zinc-700" title={`Aforo máximo: ${room.aforo} personas`}>
+                            <Users className="w-3 h-3 stroke-[2.2]" />
+                            <span>Aforo: {room.aforo}p</span>
+                          </span>
+                        ) : null}
+                        <span className="text-[10px] font-semibold text-slate-500 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-900 px-1.5 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-800">
+                          Pab. {room.pabellon} ({room.piso})
+                        </span>
+                      </div>
+                      {(() => {
+                        if (!room.nombre) return null;
+                        const upper = room.nombre.toUpperCase().trim();
+                        const abrvUpper = (room.abrv || '').toUpperCase().trim();
+                        if (upper === abrvUpper || upper === `AULA ${abrvUpper}` || upper === `AULA-${abrvUpper}`) return null;
+                        return (
+                          <div className="text-[10.5px] font-bold text-slate-700 dark:text-zinc-300 truncate" title={room.nombre}>
+                            {room.nombre}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Horario y Tiempo Disponible */}
@@ -2934,6 +2973,40 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md">
                             {item.pisoPabellon || 'Campus'}
                           </span>
+                          {/* Tipo de ambiente (Taller Especializado / Lab / Aula) y Aforo */}
+                          {(() => {
+                            const rm = item.aula ? roomMap.get(item.aula.trim().toUpperCase()) : null;
+                            if (!rm) return null;
+                            const isTaller = rm.tipo && rm.tipo.toUpperCase().includes('TALLER');
+                            const isLab = rm.tipo && rm.tipo.toUpperCase().includes('LAB');
+                            return (
+                              <>
+                                {rm.tipo && (
+                                  <span
+                                    className={`font-mono font-bold text-[9.5px] px-1.5 py-0.5 rounded-md border tracking-tight shrink-0 ${
+                                      isTaller
+                                        ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                                        : isLab
+                                        ? 'bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                                        : 'bg-slate-100 dark:bg-zinc-800/90 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                                    }`}
+                                    title={`Tipo de ambiente: ${rm.tipo}${rm.nombre ? ` (${rm.nombre})` : ''}`}
+                                  >
+                                    {rm.tipo}
+                                  </span>
+                                )}
+                                {rm.aforo ? (
+                                  <span
+                                    className="font-mono font-bold text-[9.5px] text-slate-600 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shrink-0"
+                                    title={`Aforo oficial: ${rm.aforo} personas`}
+                                  >
+                                    <Users className="w-2.5 h-2.5 stroke-[2.2]" />
+                                    <span>{rm.aforo}p</span>
+                                  </span>
+                                ) : null}
+                              </>
+                            );
+                          })()}
                           {(() => {
                             const pLabel = formatPeriodoDisplay(item.periodo);
                             if (!pLabel) return null;
@@ -3003,6 +3076,21 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           </button>
                         </div>
                       </div>
+
+                      {/* Denominación de Taller o Laboratorio Especializado si aplica */}
+                      {(() => {
+                        const rm = item.aula ? roomMap.get(item.aula.trim().toUpperCase()) : null;
+                        if (!rm || !rm.nombre) return null;
+                        const upper = rm.nombre.toUpperCase().trim();
+                        const aulaUpper = item.aula.toUpperCase().trim();
+                        if (upper === aulaUpper || upper === `AULA ${aulaUpper}` || upper === `AULA-${aulaUpper}`) return null;
+                        return (
+                          <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-amber-800 dark:text-amber-300 mb-1.5 bg-amber-50/80 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200/70 dark:border-amber-800/50">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                            <span className="truncate">{rm.nombre}</span>
+                          </div>
+                        );
+                      })()}
 
                       {/* Docente, Curso y Horario (Líneas legibles sin cortes) */}
                       <div className="mb-2">
