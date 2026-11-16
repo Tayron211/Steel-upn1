@@ -1,8 +1,8 @@
 {
-  "version": "1.0.68",
-  "versionCode": 69,
+  "version": "1.0.69",
+  "versionCode": 70,
   "releaseDate": "2026-11-16",
-  "notes": "Corrección de barra de navegación fija al hacer scroll vertical y transición suave 120fps fade en todos los apartados y ventanas",
+  "notes": "Efecto traslucido frosted glass estilo navbar en el Login y transicion suave fade post splashscreen",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

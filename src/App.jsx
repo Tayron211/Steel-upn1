@@ -592,7 +592,7 @@ export default function App() {
     <>
       <SplashScreen minDuration={1800} />
       <div
-        className="min-h-screen bg-[#edf0f5] dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950"
+        className="min-h-screen bg-[#edf0f5] dark:bg-black flex flex-col text-slate-800 dark:text-zinc-100 selection:bg-amber-400 selection:text-slate-950 animate-fade-in"
       >
       {/* Top Mobile/Desktop App Header with AMOLED Mode Toggle */}
       <Navbar

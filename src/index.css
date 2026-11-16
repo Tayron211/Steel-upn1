@@ -657,6 +657,7 @@ button:active {
   overflow-x: hidden;
   position: relative;
   transition: background-color 0.3s ease;
+  animation: fadeIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 html.dark .login-screen-wrapper {
@@ -685,24 +686,25 @@ html:not(.dark) .login-screen-wrapper {
   max-width: 920px;
   min-height: 520px;
   border-radius: 28px;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
   z-index: 10;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html.dark .login-card-container {
-  background: #0d0f15 !important;
-  border: 1.5px solid rgba(253, 186, 48, 0.35) !important;
-  box-shadow: 0 30px 95px -10px rgba(0, 0, 0, 0.95), 0 0 50px rgba(253, 186, 48, 0.16) !important;
+  background: rgba(10, 12, 18, 0.52) !important;
+  border: 1.5px solid rgba(253, 186, 48, 0.38) !important;
+  box-shadow: 0 30px 95px -10px rgba(0, 0, 0, 0.85), 0 0 50px rgba(253, 186, 48, 0.16), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 html:not(.dark) .login-card-container {
-  background: #ffffff !important;
-  border: 1.5px solid rgba(253, 186, 48, 0.45) !important;
-  box-shadow: 0 24px 70px -15px rgba(0, 0, 0, 0.14), 0 0 40px rgba(253, 186, 48, 0.15) !important;
+  background: rgba(255, 255, 255, 0.45) !important;
+  border: 1.5px solid rgba(253, 186, 48, 0.42) !important;
+  box-shadow: 0 24px 70px -15px rgba(0, 0, 0, 0.12), 0 0 40px rgba(253, 186, 48, 0.15), inset 0 1px 2px 0 rgba(255, 255, 255, 0.85) !important;
 }
 
 /* PANEL IZQUIERDO: Canvas Visual Continuo con Branding UPN y Fondo 3D */
@@ -715,19 +717,21 @@ html:not(.dark) .login-card-container {
   padding: 40px 36px;
   overflow: hidden;
   box-sizing: border-box;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   transition: all 0.3s ease;
 }
 
 html.dark .login-visual-panel {
   background:
-    linear-gradient(145deg, rgba(8, 10, 18, 0.90) 0%, rgba(13, 16, 26, 0.93) 55%, rgba(9, 11, 20, 0.96) 100%),
+    linear-gradient(145deg, rgba(8, 10, 18, 0.65) 0%, rgba(13, 16, 26, 0.72) 55%, rgba(9, 11, 20, 0.80) 100%),
     url('/login-bg-3d.jpg') center/cover no-repeat;
   border-right: 1px solid rgba(253, 186, 48, 0.2);
 }
 
 html:not(.dark) .login-visual-panel {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.95) 55%, rgba(241, 245, 249, 0.98) 100%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.60) 0%, rgba(248, 250, 252, 0.70) 55%, rgba(241, 245, 249, 0.78) 100%),
     url('/login-bg-3d.jpg') center/cover no-repeat;
   border-right: 1px solid rgba(253, 186, 48, 0.25);
 }
@@ -893,15 +897,16 @@ html:not(.dark) .login-visual-subtitle {
   position: relative;
   z-index: 2;
   box-sizing: border-box;
+  background: transparent !important;
   transition: all 0.3s ease;
 }
 
 html.dark .login-form-panel {
-  background: #0d0f15 !important;
+  background: transparent !important;
 }
 
 html:not(.dark) .login-form-panel {
-  background: #ffffff !important;
+  background: transparent !important;
 }
 
 .login-form-header {
@@ -916,6 +921,8 @@ html:not(.dark) .login-form-panel {
   width: 58px;
   height: 58px;
   border-radius: 18px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   background: rgba(253, 186, 48, 0.15) !important;
   border: 1.5px solid rgba(253, 186, 48, 0.50) !important;
   display: flex;
@@ -1049,19 +1056,21 @@ input.login-input {
   outline: none !important;
   transition: all 0.18s ease;
   box-sizing: border-box !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
 }
 
 html.dark .login-input,
 html.dark input.login-input {
-  background: #141720 !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(18, 22, 32, 0.58) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.16) !important;
   color: #f8fafc !important;
 }
 
 html:not(.dark) .login-input,
 html:not(.dark) input.login-input {
-  background: #f8fafc !important;
-  border: 1.5px solid rgba(203, 213, 225, 0.85) !important;
+  background: rgba(255, 255, 255, 0.65) !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
   color: #0f172a !important;
 }
 
@@ -1077,19 +1086,19 @@ input.login-input:focus {
 
 html.dark .login-input:focus,
 html.dark input.login-input:focus {
-  background: #181b26 !important;
+  background: rgba(24, 28, 42, 0.78) !important;
 }
 
 html:not(.dark) .login-input:focus,
 html:not(.dark) input.login-input:focus {
-  background: #ffffff !important;
+  background: rgba(255, 255, 255, 0.90) !important;
 }
 
 html.dark input.login-input:-webkit-autofill,
 html.dark input.login-input:-webkit-autofill:hover,
 html.dark input.login-input:-webkit-autofill:focus {
   -webkit-text-fill-color: #f8fafc !important;
-  -webkit-box-shadow: 0 0 0px 1000px #141720 inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(18, 22, 32, 0.85) inset !important;
   transition: background-color 5000s ease-in-out 0s;
   padding-left: 52px !important;
 }
@@ -1098,7 +1107,7 @@ html:not(.dark) input.login-input:-webkit-autofill,
 html:not(.dark) input.login-input:-webkit-autofill:hover,
 html:not(.dark) input.login-input:-webkit-autofill:focus {
   -webkit-text-fill-color: #0f172a !important;
-  -webkit-box-shadow: 0 0 0px 1000px #f8fafc inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.85) inset !important;
   transition: background-color 5000s ease-in-out 0s;
   padding-left: 52px !important;
 }
@@ -1173,7 +1182,9 @@ html:not(.dark) input.login-input:-webkit-autofill:focus {
     max-width: 420px;
     width: 100%;
     min-height: auto;
-    border-radius: 22px;
+    border-radius: 26px;
+    backdrop-filter: blur(32px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
   }
 
   .login-visual-panel {
@@ -1182,6 +1193,7 @@ html:not(.dark) input.login-input:-webkit-autofill:focus {
 
   .login-form-panel {
     padding: 34px 22px;
+    background: transparent !important;
   }
 
   .login-screen-wrapper {

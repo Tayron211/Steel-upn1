@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { hideSplashScreenSmoothly } from '../utils/statusBarHelper';
 
 /**
  * SplashScreen Controller
@@ -7,6 +8,9 @@ import React, { useEffect } from 'react';
  */
 export default function SplashScreen({ minDuration = 1800, onFinished }) {
   useEffect(() => {
+    // Si estamos en entorno nativo Capacitor (Android APK), desvanecer el splash nativo suavemente
+    hideSplashScreenSmoothly().catch(() => {});
+
     const splash = document.getElementById('upn-boot-splash');
     const root = document.getElementById('root');
 
@@ -26,8 +30,8 @@ export default function SplashScreen({ minDuration = 1800, onFinished }) {
       // 1. Iniciar aparición fluida con transición fade suave de la interfaz
       makeInterfaceVisible();
 
-      // 2. Iniciar desvanecimiento cinematográfico ultra suave 120fps del splash
-      splash.style.transition = 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+      // 2. Iniciar desvanecimiento cinematográfico ultra suave 120fps del splash con curva simétrica
+      splash.style.transition = 'opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1)';
       splash.style.opacity = '0';
       splash.style.pointerEvents = 'none';
 
@@ -39,7 +43,7 @@ export default function SplashScreen({ minDuration = 1800, onFinished }) {
           }
         } catch (_) {}
         if (onFinished) onFinished();
-      }, 680);
+      }, 750);
 
       return () => clearTimeout(removeTimer);
     }, minDuration);
