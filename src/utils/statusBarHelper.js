@@ -12,12 +12,11 @@ export function isCapacitorNative() {
 }
 
 export async function applyAdaptiveStatusBar(isDark) {
-  const bgHex = isDark ? '#09090B' : '#FFFFFF';
-
   // 1. Capacitor Native Android / iOS
   if (isCapacitorNative()) {
     try {
-      await StatusBar.setBackgroundColor({ color: bgHex });
+      await StatusBar.setOverlaysWebView({ overlay: true });
+      await StatusBar.setBackgroundColor({ color: '#00000000' });
       await StatusBar.setStyle({
         style: isDark ? Style.Dark : Style.Light
       });
@@ -28,6 +27,7 @@ export async function applyAdaptiveStatusBar(isDark) {
 
   // 2. Web & PWA (iOS Safari / Android Chrome)
   if (typeof document !== 'undefined') {
+    const bgHex = isDark ? '#09090B' : '#FFFFFF';
     let metaTheme = document.querySelector('meta[name="theme-color"]');
     if (!metaTheme) {
       metaTheme = document.createElement('meta');
@@ -42,7 +42,7 @@ export async function applyAdaptiveStatusBar(isDark) {
       metaApple.name = 'apple-mobile-web-app-status-bar-style';
       document.head.appendChild(metaApple);
     }
-    metaApple.setAttribute('content', isDark ? 'black-translucent' : 'default');
+    metaApple.setAttribute('content', 'black-translucent');
   }
 }
 
