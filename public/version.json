@@ -1,8 +1,8 @@
 {
-  "version": "1.0.53",
-  "versionCode": 54,
+  "version": "1.0.54",
+  "versionCode": 55,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.53 - Long-press exclusivo para el solicitante de la reserva",
+  "notes": "v1.0.54 - Sincronizacion bidireccional completa para hoja RESERVAS con Excel OneDrive",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

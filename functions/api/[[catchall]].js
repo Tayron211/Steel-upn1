@@ -974,47 +974,13 @@ async function handleApiRequest(context) {
       ).run();
 
       const created = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
-
-      // Guardar inmediatamente en la hoja y columna respectiva de RESERVAS 2026 - TAY.xlsx en segundo plano sin bloquear respuesta
-      let excelSync = null;
-      try {
-        if (context && typeof context.waitUntil === 'function') {
-          context.waitUntil(
-            appendReservationToExcel(db, created).catch(errSync => {
-              console.error('Error escribiendo en Excel de OneDrive en segundo plano:', errSync);
-            })
-          );
-          excelSync = { status: 'queued_background' };
-        } else {
-          excelSync = await appendReservationToExcel(db, created);
-        }
-      } catch (errSync) {
-        console.error('Error escribiendo en Excel de OneDrive:', errSync);
-      }
-
-      return json({ success: true, data: created, sheet: hoja, excelSync });
+      return json({ success: true, data: created, sheet: hoja });
     }
 
     const reservationMatch = path.match(/^\/api\/reservations\/([^/]+)$/);
     if (reservationMatch && method === 'DELETE') {
       const id = reservationMatch[1];
-      const existing = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
       await db.prepare('DELETE FROM reservas WHERE id = ?').bind(id).run();
-      if (existing) {
-        try {
-          if (context && typeof context.waitUntil === 'function') {
-            context.waitUntil(
-              deleteReservationFromExcel(db, existing).catch(errDel => {
-                console.error('Error eliminando fila en Excel en segundo plano:', errDel);
-              })
-            );
-          } else {
-            await deleteReservationFromExcel(db, existing);
-          }
-        } catch (errDel) {
-          console.error('Error eliminando fila en Excel:', errDel);
-        }
-      }
       return json({ success: true, message: 'Reserva eliminada' });
     }
 
