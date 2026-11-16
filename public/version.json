@@ -1,8 +1,8 @@
 {
-  "version": "1.0.56",
-  "versionCode": 57,
+  "version": "1.0.57",
+  "versionCode": 58,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.56 - Autocompletado inteligente de docentes al reservar aula libre",
+  "notes": "v1.0.57 - Formato unificado de aulas libres en Reservas, modal de reserva sincronizado con Excel y animaciones slide fluidas en alertas",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }
