@@ -1,8 +1,8 @@
 {
-  "version": "1.0.58",
-  "versionCode": 59,
+  "version": "1.0.59",
+  "versionCode": 60,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.58 - Barra de estado traslucida integrada con navbar frosted glass",
+  "notes": "v1.0.59 - Fluidez 100% optimizada a 60/120fps y botones de pisos P1 a P5 centrados",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

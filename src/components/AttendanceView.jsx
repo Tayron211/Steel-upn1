@@ -2392,13 +2392,13 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         type="button"
                         data-slide-active={isSlideOwner ? 'true' : undefined}
                         onClick={() => handleTogglePiso(p.val)}
-                        className={`relative z-10 h-6.5 px-2.5 rounded-lg text-[11px] font-bold transition-colors duration-200 active:scale-95 shrink-0 inline-flex items-center gap-1 ${isSelected
+                        className={`relative z-10 h-6.5 px-2.5 rounded-lg text-[11px] font-bold transition-colors duration-200 active:scale-95 shrink-0 inline-flex items-center justify-center gap-1 ${isSelected
                           ? `${selectedPisos.length > 1 ? 'bg-[#FDBA30] shadow-2xs ' : ''}text-slate-950 font-black`
-                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
                           }`}
                         title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
                       >
-                        <span>{p.short}</span>
+                        <span className="text-center">{p.short}</span>
                         {!isTodos && isSelected && (
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
                         )}

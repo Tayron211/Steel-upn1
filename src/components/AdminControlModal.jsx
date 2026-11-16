@@ -31,11 +31,11 @@ import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 const AVAILABLE_PABELLONES = ['A', 'B'];
 
 const AVAILABLE_PISOS = [
-  { val: '1ER PISO', label: '1er Piso', short: '1°' },
-  { val: '2DO PISO', label: '2do Piso', short: '2°' },
-  { val: '3ER PISO', label: '3er Piso', short: '3°' },
-  { val: '4TO PISO', label: '4to Piso', short: '4°' },
-  { val: '5TO PISO', label: '5to Piso', short: '5°' }
+  { val: '1ER PISO', label: '1er Piso', short: 'P1' },
+  { val: '2DO PISO', label: '2do Piso', short: 'P2' },
+  { val: '3ER PISO', label: '3er Piso', short: 'P3' },
+  { val: '4TO PISO', label: '4to Piso', short: 'P4' },
+  { val: '5TO PISO', label: '5to Piso', short: 'P5' }
 ];
 
 export default function AdminControlModal({ isOpen, onClose, authUser }) {
@@ -790,19 +790,19 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
               {selectedPisos.length === 0 ? 'Todos los pisos' : `${selectedPisos.length} selec.`}
             </span>
           </div>
-          <div className="grid grid-cols-6 gap-1.5">
+          <div className="grid grid-cols-6 gap-1.5 items-center">
             <button
               type="button"
               onClick={() => {
                 setIsDirty(true);
                 setSelectedPisos([]);
               }}
-              className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer active:scale-95 ${selectedPisos.length === 0
+              className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center text-center cursor-pointer active:scale-95 ${selectedPisos.length === 0
                 ? 'bg-[#FDBA30] text-black font-black shadow-xs ring-1 ring-[#FDBA30]/50'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 border border-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-700/60'
                 }`}
             >
-              Todos
+              <span className="w-full text-center">Todos</span>
             </button>
             {AVAILABLE_PISOS.map(p => {
               const isSelected = selectedPisos.includes(p.val);
@@ -811,13 +811,13 @@ function UserAssignmentCard({ user, isCurrentLogged, savedMsg, onSave }) {
                   key={p.val}
                   type="button"
                   onClick={() => handleTogglePiso(p.val)}
-                  className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer active:scale-95 ${isSelected
+                  className={`h-8 sm:h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center text-center cursor-pointer active:scale-95 ${isSelected
                     ? 'bg-[#FDBA30] text-black font-black shadow-xs ring-1 ring-[#FDBA30]/50'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 border border-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-700/60'
                     }`}
                   title={p.label}
                 >
-                  {p.short}
+                  <span className="w-full text-center">{p.short}</span>
                 </button>
               );
             })}

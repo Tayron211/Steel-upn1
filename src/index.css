@@ -31,11 +31,13 @@ svg {
 }
 
 /* Renderizado nítido de imágenes a resolución nativa HiDPI */
-img, canvas {
+img,
+canvas {
   image-rendering: -webkit-optimize-contrast;
 }
 
-html, body {
+html,
+body {
   max-width: 100%;
   overflow-x: hidden;
   margin: 0;
@@ -43,7 +45,9 @@ html, body {
   background-color: #f8fafc;
 }
 
-html.dark, html.dark body, html.dark #root {
+html.dark,
+html.dark body,
+html.dark #root {
   background-color: #000000 !important;
   color: #f4f4f5;
 }
@@ -55,12 +59,17 @@ html.dark, html.dark body, html.dark #root {
 }
 
 /* Headings in Sharp / Space Grotesk geometry (Official UPN Style) */
-h1, h2, h3, .font-upn {
+h1,
+h2,
+h3,
+.font-upn {
   font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
   letter-spacing: -0.025em;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   user-select: auto;
   -webkit-user-select: auto;
 }
@@ -69,12 +78,15 @@ input, textarea, select {
 .safe-top {
   padding-top: env(safe-area-inset-top, 0px);
 }
+
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Ensure dark mode applies to native scrollbars, inputs, and popups */
-html.dark, body.dark, .dark {
+html.dark,
+body.dark,
+.dark {
   color-scheme: dark !important;
   scrollbar-color: #3f3f46 transparent;
 }
@@ -93,32 +105,40 @@ html:not(.dark) {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent !important;
 }
+
 .dark ::-webkit-scrollbar-track {
   background: transparent !important;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
 .dark ::-webkit-scrollbar-thumb {
   background: #27272a;
   border-radius: 9999px;
   border: 1px solid #18181b;
 }
+
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
 ::-webkit-scrollbar-button {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
+
 ::-webkit-scrollbar-corner {
   background: transparent !important;
 }
@@ -128,6 +148,7 @@ html:not(.dark) {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
+
 .scrollbar-none::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
@@ -188,15 +209,13 @@ html:not(.dark) {
 
 /* Apple-style translucent liquid glass panel */
 .apple-liquid-glass {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(255, 255, 255, 0.3) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0.3) 100%);
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   border: 1.5px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 
+  box-shadow:
     0 20px 48px -8px rgba(15, 23, 42, 0.16),
     0 4px 16px -2px rgba(15, 23, 42, 0.06),
     inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
@@ -204,45 +223,39 @@ html:not(.dark) {
 }
 
 .dark .apple-liquid-glass {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(14, 14, 18, 0.65) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(14, 14, 18, 0.65) 100%);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1.5px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 
+  box-shadow:
     0 20px 48px -8px rgba(0, 0, 0, 0.8),
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* Apple-style floating menu / speed-dial pill */
 .apple-liquid-pill {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.65) 0%,
-    rgba(255, 255, 255, 0.35) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.65) 0%,
+      rgba(255, 255, 255, 0.35) 100%);
   backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
   border: 1.5px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 
+  box-shadow:
     0 12px 32px -4px rgba(15, 23, 42, 0.12),
     0 2px 8px -1px rgba(15, 23, 42, 0.04),
     inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95);
 }
 
 .dark .apple-liquid-pill {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(18, 18, 24, 0.7) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(18, 18, 24, 0.7) 100%);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1.5px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 
+  box-shadow:
     0 12px 32px -4px rgba(0, 0, 0, 0.7),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
 }
@@ -253,7 +266,7 @@ html:not(.dark) {
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1.5px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 
+  box-shadow:
     0 32px 72px -16px rgba(15, 23, 42, 0.22),
     0 12px 28px -6px rgba(15, 23, 42, 0.1),
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 1);
@@ -264,7 +277,7 @@ html:not(.dark) {
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1.5px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 
+  box-shadow:
     0 32px 72px -16px rgba(0, 0, 0, 0.9),
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.15);
 }
@@ -273,128 +286,166 @@ html:not(.dark) {
 @keyframes appleModalFadeEnter {
   0% {
     opacity: 0;
-    transform: scale(0.975) translateY(4px);
+    transform: translate3d(0, 6px, 0) scale(0.978);
   }
+
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 @keyframes appleModalFadeExit {
   0% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
+
   100% {
     opacity: 0;
-    transform: scale(0.975) translateY(4px);
+    transform: translate3d(0, 6px, 0) scale(0.978);
   }
 }
 
 @keyframes appleScaleUp {
   0% {
     opacity: 0;
-    transform: scale(0.96) translateY(4px);
+    transform: translate3d(0, 6px, 0) scale(0.96);
   }
+
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 @keyframes appleScaleExit {
   0% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
+
   100% {
     opacity: 0;
-    transform: scale(0.96) translateY(4px);
+    transform: translate3d(0, 6px, 0) scale(0.96);
   }
 }
 
+/* Animating only opacity on a static blur backdrop eliminates frame-by-frame convolution blur drops */
 @keyframes appleBackdropFade {
   0% {
     opacity: 0;
-    backdrop-filter: blur(0px);
   }
+
   100% {
     opacity: 1;
-    backdrop-filter: blur(8px);
   }
 }
 
 @keyframes appleBackdropFadeExit {
   0% {
     opacity: 1;
-    backdrop-filter: blur(8px);
   }
+
   100% {
     opacity: 0;
-    backdrop-filter: blur(0px);
   }
 }
 
 @keyframes appleSpeedDialItem {
   0% {
     opacity: 0;
-    transform: translateY(28px) scale(0.65);
+    transform: translate3d(0, 24px, 0) scale(0.7);
   }
+
   65% {
     opacity: 1;
-    transform: translateY(-5px) scale(1.04);
+    transform: translate3d(0, -4px, 0) scale(1.03);
   }
+
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 @keyframes appleSpeedDialExit {
   0% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
+
   100% {
     opacity: 0;
-    transform: translateY(18px) scale(0.75);
+    transform: translate3d(0, 16px, 0) scale(0.75);
   }
 }
 
 .animate-modal-fade,
 .animate-spring-up {
-  animation: appleModalFadeEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleModalFadeEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .animate-modal-fade-out {
-  animation: appleModalFadeExit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleModalFadeExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .animate-scale-up {
-  animation: appleScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .animate-scale-out {
-  animation: appleScaleExit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleScaleExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .animate-backdrop-fade {
   animation: appleBackdropFade 0.22s ease-out forwards;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 .animate-backdrop-fade-out {
-  animation: appleBackdropFadeExit 0.2s ease-in forwards;
+  animation: appleBackdropFadeExit 0.18s ease-in forwards;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 .animate-speed-dial {
-  animation: appleSpeedDialItem 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: appleSpeedDialItem 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   transform-origin: bottom right;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .animate-speed-dial-out {
-  animation: appleSpeedDialExit 0.19s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleSpeedDialExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: bottom right;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 /* Notification Slide In / Out (Alertas Flotantes a la Derecha) */
@@ -403,10 +454,12 @@ html:not(.dark) {
     opacity: 0;
     transform: translate3d(105%, 0, 0) scale(0.94);
   }
+
   60% {
     opacity: 1;
     transform: translate3d(-8px, 0, 0) scale(1.01);
   }
+
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
@@ -418,10 +471,12 @@ html:not(.dark) {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
+
   25% {
     opacity: 0.95;
     transform: translate3d(-8px, 0, 0) scale(1.01);
   }
+
   100% {
     opacity: 0;
     transform: translate3d(115%, 0, 0) scale(0.9);
@@ -444,10 +499,12 @@ html:not(.dark) {
     opacity: 0;
     transform: translate3d(0, -32px, 0) scale(0.92);
   }
+
   65% {
     opacity: 1;
     transform: translate3d(0, 4px, 0) scale(1.01);
   }
+
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
@@ -459,6 +516,7 @@ html:not(.dark) {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
+
   100% {
     opacity: 0;
     transform: translate3d(0, -36px, 0) scale(0.92);
@@ -476,46 +534,57 @@ html:not(.dark) {
 }
 
 /* Smooth Fluid Micro-Interactions on Interactive Elements */
-button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
   cursor: pointer;
 }
 
-button, a, input, select, textarea {
-  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+button,
+a,
+input,
+select,
+textarea {
+  transition-property: color, background-color, border-color, opacity, transform;
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-  transition-duration: 220ms;
+  transition-duration: 180ms;
 }
 
 button:active {
-  transform: scale(0.96);
-  transition-duration: 100ms;
+  transform: scale(0.97);
+  transition-duration: 90ms;
 }
 
 /* Fluid View Page Transition (Suave Fade In para toda la navegación y vistas) */
 @keyframes appleViewEnter {
   0% {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translate3d(0, 6px, 0);
   }
+
   100% {
     opacity: 1;
-    transform: none; /* CRITICAL: Clears transform so position: fixed is never trapped */
+    transform: none;
+    /* CRITICAL: Clears transform so position: fixed is never trapped */
   }
 }
 
 .animate-tab-view {
-  animation: appleViewEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleViewEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Transiciones Suaves y Graduales de Fade para toda la App (Cero transiciones bruscas) */
 @keyframes smoothFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translate3d(0, 6px, 0);
   }
+
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -523,6 +592,7 @@ button:active {
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -531,75 +601,98 @@ button:active {
 @keyframes softDropdownEnter {
   0% {
     opacity: 0;
-    transform: translateY(-8px) scale(0.98);
+    transform: translate3d(0, -6px, 0) scale(0.98);
   }
+
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 @keyframes softDropdownExit {
   0% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
+
   100% {
     opacity: 0;
-    transform: translateY(-6px) scale(0.98);
+    transform: translate3d(0, -6px, 0) scale(0.98);
   }
 }
 
 .animate-fade-in {
-  animation: smoothFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: smoothFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .animate-fade-out {
-  animation: appleModalFadeExit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleModalFadeExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .animate-fade-soft {
-  animation: pureFadeIn 0.28s ease-out forwards;
+  animation: pureFadeIn 0.22s ease-out forwards;
+  will-change: opacity;
 }
 
 .animate-dropdown-fade {
-  animation: softDropdownEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: softDropdownEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .animate-dropdown-fade-out {
-  animation: softDropdownExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: softDropdownExit 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 @keyframes slideInFromRight {
   0% {
     opacity: 0;
-    transform: translate3d(26px, 0, 0);
+    transform: translate3d(24px, 0, 0);
   }
+
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: none;
   }
 }
 
 @keyframes slideInFromLeft {
   0% {
     opacity: 0;
-    transform: translate3d(-26px, 0, 0);
+    transform: translate3d(-24px, 0, 0);
   }
+
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: none;
   }
 }
 
 .animate-slide-next {
-  animation: slideInFromRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: slideInFromRight 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .animate-slide-prev {
-  animation: slideInFromLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: slideInFromLeft 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Splash Screen Minimalist Hairline Progress */
@@ -609,11 +702,13 @@ button:active {
     width: 0%;
     opacity: 0.5;
   }
+
   50% {
     left: 25%;
     width: 60%;
     opacity: 1;
   }
+
   100% {
     left: 100%;
     width: 15%;
@@ -624,6 +719,7 @@ button:active {
 .animate-splash-progress {
   animation: splashProgress 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
+
 .login-screen-wrapper {
   min-height: 100dvh;
   width: 100%;
@@ -633,7 +729,7 @@ button:active {
   justify-content: center;
   padding: 24px 16px;
   background-color: #0b0b0b;
-  background-image: 
+  background-image:
     radial-gradient(circle at 50% 50%, rgba(11, 11, 11, 0.45) 0%, rgba(11, 11, 11, 0.82) 100%),
     url('/login-bg-3d.jpg');
   background-position: center center;
@@ -670,7 +766,7 @@ button:active {
   flex-direction: column;
   justify-content: space-between;
   padding: 40px 36px;
-  background: 
+  background:
     linear-gradient(145deg, rgba(5, 8, 20, 0.84) 0%, rgba(11, 19, 43, 0.90) 55%, rgba(5, 13, 34, 0.94) 100%),
     url('/login-bg-3d.jpg') center/cover no-repeat;
   border-right: 1px solid rgba(253, 181, 21, 0.15);
@@ -944,7 +1040,7 @@ input.login-input:focus {
 }
 
 input.login-input:-webkit-autofill,
-input.login-input:-webkit-autofill:hover, 
+input.login-input:-webkit-autofill:hover,
 input.login-input:-webkit-autofill:focus {
   -webkit-text-fill-color: #f8fafc !important;
   -webkit-box-shadow: 0 0 0px 1000px #070c1e inset !important;
@@ -1062,6 +1158,3 @@ input.login-input:-webkit-autofill:focus {
     display: none !important;
   }
 }
-
-
-
