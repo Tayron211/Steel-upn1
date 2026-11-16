@@ -99,11 +99,11 @@ export default function OperationsHub({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-1 sm:pt-2">
       {/* Sleek Apple-Style Segmented Sub-Navigation for Operations Hub */}
       <div
         ref={subTabSlide.containerRef}
-        className="relative apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm max-w-md mx-auto"
+        className="relative apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm max-w-md mx-auto my-1 sm:my-1.5"
       >
         <span
           aria-hidden="true"

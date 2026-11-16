@@ -287,15 +287,15 @@ export default function App() {
   }, []);
 
   const [attendanceSearchPrefill, setAttendanceSearchPrefill] = useState('');
-  const pageTopAnchorRef = useRef(null);
 
   const scrollToTopGlobal = () => {
     const doScroll = () => {
       try {
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      } catch (_) {
         window.scrollTo(0, 0);
-      }
+      } catch (_) {}
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      } catch (_) {}
       if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
       if (document.documentElement) document.documentElement.scrollTop = 0;
       if (document.body) document.body.scrollTop = 0;
@@ -303,11 +303,6 @@ export default function App() {
       if (root) root.scrollTop = 0;
       const main = document.querySelector('main');
       if (main) main.scrollTop = 0;
-      if (pageTopAnchorRef.current) {
-        try {
-          pageTopAnchorRef.current.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'instant' });
-        } catch (_) {}
-      }
       const scrollContainers = document.querySelectorAll('.overflow-y-auto, .overflow-auto');
       scrollContainers.forEach(el => { el.scrollTop = 0; });
     };
@@ -315,9 +310,9 @@ export default function App() {
     doScroll();
     requestAnimationFrame(doScroll);
     setTimeout(doScroll, 10);
-    setTimeout(doScroll, 40);
-    setTimeout(doScroll, 100);
-    setTimeout(doScroll, 200);
+    setTimeout(doScroll, 30);
+    setTimeout(doScroll, 80);
+    setTimeout(doScroll, 150);
   };
 
   // Al cambiar de pestaña, resetear scroll síncronamente antes del repintado para mostrar siempre el encabezado
@@ -601,7 +596,6 @@ export default function App() {
 
       {/* Main Fluid App Container - Amplio en escritorio para máxima visibilidad */}
       <main className="flex-1 max-w-[1880px] w-full mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-5 pb-32 md:pb-24 overflow-x-hidden">
-        <div ref={pageTopAnchorRef} id="app-top-anchor" className="h-0 w-0 pointer-events-none -mt-4 scroll-mt-28" />
         {activeTab === 'attendance' && (
           <div key="attendance" className={tabAnimClass}>
             <ErrorBoundary>

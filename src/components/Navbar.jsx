@@ -153,8 +153,14 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
   return (
     <>
-      {/* Native App Top Bar with Frosted Glass Blur & Official UPN Branding */}
-      <header className="sticky top-0 z-40 bg-white/70 dark:bg-black/70 backdrop-blur-2xl backdrop-saturate-180 border-b border-slate-200/70 dark:border-zinc-800/80 safe-top shadow-2xs supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/60 print:hidden">
+      {/* Native App Top Bar with Frosted Glass Blur & Official UPN Branding - Ultra Traslúcido */}
+      <header
+        className="sticky top-0 z-40 bg-white/35 dark:bg-black/40 supports-[backdrop-filter]:bg-white/25 dark:supports-[backdrop-filter]:bg-black/30 backdrop-blur-3xl backdrop-saturate-200 border-b border-slate-200/50 dark:border-white/10 safe-top shadow-2xs print:hidden transition-colors"
+        style={{
+          backdropFilter: 'blur(32px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(200%)'
+        }}
+      >
         <div className="max-w-[1880px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-2">
           {/* Official UPN Identity Brand */}
           <div
@@ -389,10 +395,6 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                     if (root) root.scrollTop = 0;
                     const main = document.querySelector('main');
                     if (main) main.scrollTop = 0;
-                    const anchor = document.getElementById('app-top-anchor');
-                    if (anchor) {
-                      try { anchor.scrollIntoView({ block: 'start', behavior: 'instant' }); } catch (_) {}
-                    }
                   }}
                   className={`relative z-10 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer ${isActive
                     ? desktopNavSlide.pillStyle.opacity === 0
@@ -419,10 +421,10 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
       {/* Floating Bottom App Dock con efecto Blur de Cristal Esmerilado Ultra Traslúcido (Móvil/APK) */}
       <div className="md:hidden fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
         <div
-          className="relative pointer-events-auto rounded-[28px] bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:bg-white/30 dark:supports-[backdrop-filter]:bg-black/35 backdrop-blur-3xl backdrop-saturate-200 border border-white/50 dark:border-white/15 shadow-[0_12px_36px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
+          className="relative pointer-events-auto rounded-[28px] bg-white/20 dark:bg-black/25 supports-[backdrop-filter]:bg-white/15 dark:supports-[backdrop-filter]:bg-black/20 backdrop-blur-3xl backdrop-saturate-200 border border-white/40 dark:border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.14)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.6)]"
           style={{
-            backdropFilter: 'blur(34px) saturate(200%)',
-            WebkitBackdropFilter: 'blur(34px) saturate(200%)'
+            backdropFilter: 'blur(36px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(36px) saturate(200%)'
           }}
         >
           {/* Sutil resplandor de borde interior tipo cristal */}
@@ -458,10 +460,6 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                     if (root) root.scrollTop = 0;
                     const main = document.querySelector('main');
                     if (main) main.scrollTop = 0;
-                    const anchor = document.getElementById('app-top-anchor');
-                    if (anchor) {
-                      try { anchor.scrollIntoView({ block: 'start', behavior: 'instant' }); } catch (_) {}
-                    }
                   }}
                   className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
                 >
