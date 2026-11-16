@@ -861,6 +861,8 @@ async function handleApiRequest(context) {
       const mes = url.searchParams.get('mes');
       const fecha = url.searchParams.get('fecha');
       const dia = url.searchParams.get('dia');
+      const docente = url.searchParams.get('docente');
+      const usuario = url.searchParams.get('usuario');
 
       let query = 'SELECT * FROM reservas WHERE 1=1';
       const params = [];
@@ -880,6 +882,14 @@ async function handleApiRequest(context) {
       if (dia) {
         query += ' AND UPPER(dia) = ?';
         params.push(dia.toUpperCase());
+      }
+      if (docente) {
+        query += ' AND UPPER(docente) LIKE ?';
+        params.push(`%${docente.toUpperCase().trim()}%`);
+      }
+      if (usuario) {
+        query += ' AND UPPER(usuario) LIKE ?';
+        params.push(`%${usuario.toUpperCase().trim()}%`);
       }
       query += ' ORDER BY created_at DESC, fecha DESC, inicio ASC';
 

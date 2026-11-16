@@ -1,8 +1,8 @@
 {
-  "version": "1.0.49",
-  "versionCode": 50,
+  "version": "1.0.50",
+  "versionCode": 51,
   "releaseDate": "2026-11-16",
-  "notes": "v1.0.49 - Reserva multiple agrupada en una sola tarjeta por docente con horarios individuales",
+  "notes": "v1.0.50 - Consolidacion automatica en una sola tarjeta y ventana de historial de reservas del ultimo ano por pulsacion prolongada",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

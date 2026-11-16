@@ -133,8 +133,8 @@ app.post('/api/manual-sheets', async (req, res) => {
 // --- RESERVAS ---
 app.get('/api/reservations', async (req, res) => {
   try {
-    const { dia, aula, fecha, search } = req.query;
-    const list = await db.getReservas({ dia, aula, fecha, search });
+    const { dia, aula, fecha, mes, docente, usuario, search } = req.query;
+    const list = await db.getReservas({ dia, aula, fecha, mes, docente, usuario, search });
     res.json({ success: true, count: list.length, data: list });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

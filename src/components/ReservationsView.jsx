@@ -20,7 +20,9 @@ import {
   ChevronRight,
   Copy,
   RefreshCw,
-  Filter
+  Filter,
+  GraduationCap,
+  UserCheck
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -149,6 +151,76 @@ const normalizeDateStr = (d) => {
   return str.slice(0, 10);
 };
 
+// Disparador de interacción para nombres en reservas (Exclusivo por Long-Press con vibración háptica)
+const PressableNameTrigger = ({ name, type = 'docente', onOpen, className = '' }) => {
+  const timerRef = useRef(null);
+  const touchStartPos = useRef(null);
+  const triggeredRef = useRef(false);
+
+  const startPress = (e) => {
+    triggeredRef.current = false;
+    if (e.touches && e.touches[0]) {
+      touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      triggeredRef.current = true;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(45); } catch (_) { }
+      }
+      onOpen(name, type);
+    }, 450);
+  };
+
+  const cancelPress = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartPos.current || !e.touches || !e.touches[0]) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
+    if (dx > 10 || dy > 10) {
+      cancelPress();
+    }
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    cancelPress();
+  };
+
+  const handleContextMenu = (e) => {
+    if (triggeredRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  return (
+    <span
+      onMouseDown={startPress}
+      onMouseUp={cancelPress}
+      onMouseLeave={cancelPress}
+      onTouchStart={startPress}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={cancelPress}
+      onTouchCancel={cancelPress}
+      onClick={handleClick}
+      onContextMenu={handleContextMenu}
+      className={`cursor-pointer inline-flex items-center gap-1 select-none active:scale-[0.98] transition-all group/pressable ${className}`}
+      title={`Mantén presionado para ver todas las reservas de ${name} en el último año`}
+    >
+      <span className="underline decoration-dotted decoration-amber-500/80 hover:decoration-amber-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors underline-offset-2 break-words font-semibold">
+        {name}
+      </span>
+    </span>
+  );
+};
+
 export default function ReservationsView({ initialOpenTrigger = null, onConsumeTrigger = null }) {
   const asistentes = useAssistants();
   const [reservas, setReservas] = useState([]);
@@ -193,6 +265,120 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const roomPickerModalFade = useFadeModal(isRoomPickerOpen, () => {
     setIsRoomPickerOpen(false);
   }, 200);
+
+  // Modal: Historial anual de reservas del docente / usuario
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyData, setHistoryData] = useState(null);
+  const [historySearch, setHistorySearch] = useState('');
+  const historyModalFade = useFadeModal(isHistoryModalOpen, () => {
+    setIsHistoryModalOpen(false);
+    setHistoryData(null);
+  }, 200);
+
+  const openHistoryModal = async (name, type = 'docente') => {
+    if (!name || name === 'Docente') return;
+    setIsHistoryModalOpen(true);
+    setHistorySearch('');
+    setHistoryData({
+      name: name.trim().toUpperCase(),
+      type,
+      loading: true,
+      items: []
+    });
+
+    try {
+      // Consultar historial completo de reservas
+      const res = await fetch('/api/reservations');
+      const json = await res.json();
+      const allRes = json.success && Array.isArray(json.data) ? json.data : reservas;
+
+      // Filtro del último año (365 días atrás desde hoy)
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      const oneYearAgoIso = oneYearAgo.toISOString().split('T')[0];
+
+      const targetClean = cleanDocenteName(name);
+      const matched = allRes.filter(r => {
+        if (r.fecha && r.fecha < oneYearAgoIso) return false;
+        if (type === 'usuario') {
+          const userClean = cleanDocenteName(r.usuario);
+          return userClean.includes(targetClean) || targetClean.includes(userClean);
+        } else {
+          const docClean = cleanDocenteName(r.docente);
+          return docClean.includes(targetClean) || targetClean.includes(docClean);
+        }
+      });
+
+      matched.sort((a, b) => {
+        return String(b.fecha || '').localeCompare(String(a.fecha || '')) ||
+          (timeToMins(b.inicio || b.hora_inicio) - timeToMins(a.inicio || a.hora_inicio));
+      });
+
+      setHistoryData({
+        name: name.trim().toUpperCase(),
+        type,
+        loading: false,
+        items: matched
+      });
+    } catch (e) {
+      console.warn('Error al cargar historial anual de reservas:', e);
+      setHistoryData(prev => prev ? { ...prev, loading: false } : null);
+    }
+  };
+
+  const calculateTotalHours = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return 0;
+    let mins = 0;
+    items.forEach(it => {
+      const start = timeToMins(it.inicio || it.hora_inicio);
+      const end = timeToMins(it.final || it.hora_fin);
+      if (end > start) mins += (end - start);
+    });
+    return (mins / 60).toFixed(1).replace('.0', '');
+  };
+
+  const getUniqueRoomsCount = (items) => {
+    if (!Array.isArray(items)) return 0;
+    const set = new Set();
+    items.forEach(it => {
+      getReservationRooms(it).forEach(a => set.add(a));
+    });
+    return set.size;
+  };
+
+  const isDateUpcoming = (fecha) => {
+    if (!fecha) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return fecha > today;
+  };
+
+  const isDateToday = (fecha) => {
+    if (!fecha) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return fecha === today;
+  };
+
+  const filteredHistoryItems = useMemo(() => {
+    if (!historyData || !Array.isArray(historyData.items)) return [];
+    if (!historySearch.trim()) return historyData.items;
+    const q = historySearch.trim().toLowerCase();
+    return historyData.items.filter(item => {
+      const rooms = getReservationRooms(item).join(' ').toLowerCase();
+      const det = (item.detalle || item.motivo || '').toLowerCase();
+      const mes = (item.mes || '').toLowerCase();
+      const fecha = (item.fecha || '').toLowerCase();
+      const dia = (item.dia || '').toLowerCase();
+      const u = (item.usuario || '').toLowerCase();
+      return (
+        rooms.includes(q) ||
+        det.includes(q) ||
+        mes.includes(q) ||
+        fecha.includes(q) ||
+        dia.includes(q) ||
+        u.includes(q)
+      );
+    });
+  }, [historyData, historySearch]);
 
   // Sliding pill indicators across filter & view strips
   const viewModeSlide = useSlidingIndicator(viewMode);
@@ -881,15 +1067,17 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         return s.fecha !== formData.fecha || s.inicio !== formData.inicio || s.final !== formData.final;
       });
 
-      // Si tienen horarios diferentes, empacar el desglose en obs y en el objeto schedules
-      let obsPayload = formData.obs || '';
-      if (hasDifferentSchedules) {
-        const schedulesPack = {};
-        cleanAulas.forEach(a => {
-          schedulesPack[a] = roomSchedules[a] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
-        });
-        obsPayload = JSON.stringify({ schedules: schedulesPack, note: formData.obs || '' });
-      }
+      // Generar ID de lote/grupo para vincular todas las aulas de la reserva múltiple
+      const groupId = 'grp_' + Date.now();
+      const schedulesPack = {};
+      cleanAulas.forEach(a => {
+        schedulesPack[a] = roomSchedules[a] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
+      });
+      const obsPayload = JSON.stringify({
+        group_id: groupId,
+        schedules: schedulesPack,
+        note: formData.obs || ''
+      });
 
       // Se guarda como UNA SOLA RESERVA (una sola tarjeta en la app y una fila maestra en Excel)
       const payload = {
@@ -972,12 +1160,24 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Seguro que deseas cancelar esta reserva? Se eliminará de la app y del Excel en OneDrive.')) return;
-    setReservas(prev => prev.filter(r => r.id !== id));
-    setToastMessage('✅ Reserva cancelada y fila limpiada en Excel');
+  const handleDelete = async (idOrCard) => {
+    const card = typeof idOrCard === 'object' && idOrCard !== null ? idOrCard : { id: idOrCard, ids: [idOrCard], aulas: [] };
+    const idsToDelete = card.ids || [card.id];
+    const count = idsToDelete.length;
+    const roomsLabel = card.aulas && card.aulas.length > 0 ? ` (${card.aulas.join(', ')})` : '';
+    const confirmMsg = count > 1
+      ? `¿Seguro que deseas cancelar esta reserva múltiple de ${card.aulas?.length || count} aulas${roomsLabel}? Se eliminará de la app y del Excel en OneDrive.`
+      : '¿Seguro que deseas cancelar esta reserva? Se eliminará de la app y del Excel en OneDrive.';
+    if (!confirm(confirmMsg)) return;
+
+    setReservas(prev => prev.filter(r => !idsToDelete.includes(r.id)));
+    const toastDesc = count > 1 ? `✅ Reserva múltiple cancelada y filas limpiadas en Excel` : `✅ Reserva cancelada y fila limpiada en Excel`;
+    setToastMessage(toastDesc);
     setTimeout(() => setToastMessage(''), 3500);
-    await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
+
+    for (const singleId of idsToDelete) {
+      await fetch(`/api/reservations/${singleId}`, { method: 'DELETE' }).catch(() => {});
+    }
   };
 
   const [copiedId, setCopiedId] = useState(null);
@@ -1112,29 +1312,208 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     }
   };
 
-  // Filtrado de Reservas Registradas (por Mes, Día/Fecha, Pabellón, Piso, Hora y Texto)
-  const filtered = useMemo(() => {
-    const list = reservas.filter(r => {
-      const codeList = getReservationRooms(r);
-      const code = codeList[0] || (r.aula || '').toUpperCase().trim();
-      const rm = roomMap[code];
-      const pab = rm?.pabellon || (code.startsWith('B') ? 'B' : (code.startsWith('A') ? 'A' : ''));
-      const pisoStr = rm?.piso || r.ubicacion || deducePisoFromAula(code);
+  // Copiar historial completo de un docente / usuario
+  const handleCopyAllHistory = async (items, name) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    const headers = ['FECHA', 'DIA', 'INICIO', 'FINAL', 'AULA', 'UBICACIÓN', 'DOCENTE', 'DETALLE', 'REGISTRADO POR'];
+    const rows = [];
 
-      // Filtro por Mes (MES en CONTROL DOCENTE - TAY.xlsx)
-      if (selectedMes) {
-        const targetMes = selectedMes.trim().toUpperCase();
-        const rowMes = (r.mes || '').trim().toUpperCase();
-        let deducedMes = '';
-        if (r.fecha) {
-          const dt = new Date(r.fecha + 'T12:00:00');
-          if (!Number.isNaN(dt.getTime())) deducedMes = MONTHS_UPPER[dt.getMonth()];
+    items.forEach(r => {
+      const rooms = getReservationRooms(r);
+      const finalAulas = rooms.length > 0 ? rooms : [(r.aula || 'S/A').trim().toUpperCase()];
+      finalAulas.forEach(a => {
+        const sched = getRoomSchedule(r, a);
+        const fFecha = formatExcelDate(sched.fecha || r.fecha);
+        let dia = (r.dia || '').trim().toUpperCase();
+        if (sched.fecha && sched.fecha !== r.fecha) {
+          const dt = new Date(sched.fecha + 'T12:00:00');
+          if (!Number.isNaN(dt.getTime())) {
+            const daysMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+            dia = daysMap[dt.getDay()] || '';
+          }
         }
-        if (rowMes !== targetMes && deducedMes !== targetMes) {
-          return false;
+        const inicio = sched.inicio || r.inicio || r.hora_inicio || '';
+        const final = sched.final || r.final || r.hora_fin || '';
+        const rm = roomMap[a];
+        let ubicacion = (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || r.ubicacion || 'SEDE')).trim().toUpperCase();
+        const docente = (r.docente || '').trim().toUpperCase();
+        const detalle = (r.detalle || r.motivo || '').trim().toUpperCase();
+        const usuario = (r.usuario || '').trim().toUpperCase();
+        rows.push([fFecha, dia, inicio, final, a, ubicacion, docente, detalle, usuario]);
+      });
+    });
+
+    const tsvText = `${headers.join('\t')}\n${rows.map(row => row.join('\t')).join('\n')}`;
+    const htmlTable = `
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<!--StartFragment-->
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:10pt;border:1px solid #000000;text-align:center;">
+  <thead>
+    <tr>
+      ${headers.map(h => `<th style="padding:6px 10px;border:1px solid #000000;background-color:#FFC000;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:bold;text-align:center;white-space:nowrap;">${h}</th>`).join('')}
+    </tr>
+  </thead>
+  <tbody>
+    ${rows.map(values => `
+    <tr style="background-color:#ffffff;color:#000000;">
+      ${values.map((v, idx) => {
+        const isLeft = idx === 6 || idx === 7 || idx === 8;
+        const isBold = idx === 0 || idx === 2 || idx === 3 || idx === 4;
+        return `<td style="padding:6px 8px;border:1px solid #000000;background-color:#FFFFFF;color:#000000;font-family:Calibri,Arial,sans-serif;font-size:10pt;text-align:${isLeft ? 'left' : 'center'};${isBold ? 'font-weight:bold;' : ''};white-space:nowrap;">${v || ''}</td>`;
+      }).join('')}
+    </tr>`).join('')}
+  </tbody>
+</table>
+<!--EndFragment-->`.trim();
+
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const textBlob = new Blob([tsvText], { type: 'text/plain' });
+        const htmlBlob = new Blob([htmlTable], { type: 'text/html' });
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'text/plain': textBlob, 'text/html': htmlBlob })
+        ]);
+      } else {
+        await navigator.clipboard.writeText(tsvText);
+      }
+      setToastMessage(`📋 Historial anual copiado (${rows.length} registros para Excel)`);
+      setTimeout(() => setToastMessage(''), 3500);
+    } catch (err) {
+      try {
+        await navigator.clipboard.writeText(tsvText);
+        setToastMessage(`📋 Historial anual copiado: ${name}`);
+        setTimeout(() => setToastMessage(''), 3500);
+      } catch (e2) {
+        alert('No se pudo copiar el historial al portapapeles.');
+      }
+    }
+  };
+
+  // Consolidación inteligente de reservas: agrupa reservas de una misma reserva múltiple en UNA SOLA TARJETA
+  const consolidatedReservas = useMemo(() => {
+    const map = new Map();
+    const order = [];
+
+    reservas.forEach(r => {
+      // 1. Clave de agrupación
+      let groupKey = null;
+      if (r.group_id) {
+        groupKey = `grp_${r.group_id}`;
+      } else if (r.obs && typeof r.obs === 'string' && r.obs.includes('"group_id"')) {
+        try {
+          const p = JSON.parse(r.obs);
+          if (p.group_id) groupKey = `grp_${p.group_id}`;
+        } catch (e) {}
+      }
+
+      // Agrupación heurística: mismo docente + misma actividad + mismo asistente en el mismo mes
+      if (!groupKey) {
+        const doc = cleanDocenteName(r.docente);
+        const det = String(r.detalle || r.motivo || '').trim().toUpperCase();
+        const user = String(r.usuario || '').trim().toUpperCase();
+        const mes = String(r.mes || '').trim().toUpperCase();
+
+        if (doc && det) {
+          let createdDay = '';
+          if (r.created_at) {
+            try { createdDay = String(r.created_at).slice(0, 10); } catch (e) {}
+          }
+          groupKey = `auto_${doc}_${det}_${user}_${mes}${createdDay ? `_${createdDay}` : ''}`;
+        } else {
+          groupKey = `single_${r.id}`;
         }
       }
 
+      const rooms = getReservationRooms(r);
+      const firstRm = roomMap[rooms[0]];
+      const itemUbicacion = r.ubicacion || (firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : (deducePisoFromAula(rooms[0]) || 'SEDE'));
+
+      if (!map.has(groupKey)) {
+        const card = {
+          key: groupKey,
+          id: r.id,
+          ids: [r.id],
+          items: [r],
+          docente: r.docente,
+          detalle: r.detalle || r.motivo || 'USO DE LABORATORIO',
+          motivo: r.motivo || r.detalle || 'USO DE LABORATORIO',
+          usuario: r.usuario,
+          prioridad: r.prioridad || 'NORMAL',
+          mes: r.mes || (r.fecha ? MONTHS_UPPER[new Date(r.fecha + 'T12:00:00').getMonth()] : 'NOVIEMBRE'),
+          hoja: r.hoja || 'RESERVAS',
+          created_at: r.created_at,
+          obs: r.obs || '',
+          fecha: r.fecha,
+          dia: r.dia,
+          inicio: r.inicio || r.hora_inicio,
+          final: r.final || r.hora_fin,
+          aulas: [...rooms],
+          ubicacion: itemUbicacion,
+          schedules: {}
+        };
+        rooms.forEach(a => {
+          card.schedules[a] = getRoomSchedule(r, a);
+        });
+        map.set(groupKey, card);
+        order.push(groupKey);
+      } else {
+        const card = map.get(groupKey);
+        if (!card.ids.includes(r.id)) card.ids.push(r.id);
+        card.items.push(r);
+        if (r.prioridad === 'IMPORTANTE') card.prioridad = 'IMPORTANTE';
+        rooms.forEach(a => {
+          if (!card.aulas.includes(a)) card.aulas.push(a);
+          card.schedules[a] = getRoomSchedule(r, a);
+        });
+        if (itemUbicacion && !card.ubicacion.includes(itemUbicacion)) {
+          card.ubicacion = `${card.ubicacion}, ${itemUbicacion}`;
+        }
+        if (r.created_at && (!card.created_at || r.created_at > card.created_at)) {
+          card.created_at = r.created_at;
+        }
+      }
+    });
+
+    order.forEach(k => {
+      const c = map.get(k);
+      if (c && Array.isArray(c.aulas)) {
+        c.aulas.sort();
+      }
+    });
+
+    return order.map(k => map.get(k));
+  }, [reservas, roomMap]);
+
+  // Filtrado de Tarjetas Consolidadas (por Mes, Día/Fecha, Pabellón, Piso, Hora y Texto)
+  const filtered = useMemo(() => {
+    const list = consolidatedReservas.filter(card => {
+      const codeList = card.aulas;
+      const code = codeList[0] || '';
+      const rm = roomMap[code];
+
+      // Filtro por Mes
+      if (selectedMes) {
+        const targetMes = selectedMes.trim().toUpperCase();
+        const rowMes = (card.mes || '').trim().toUpperCase();
+        let deducedMes = '';
+        if (card.fecha) {
+          const dt = new Date(card.fecha + 'T12:00:00');
+          if (!Number.isNaN(dt.getTime())) deducedMes = MONTHS_UPPER[dt.getMonth()];
+        }
+        const hasMesMatch = rowMes === targetMes || deducedMes === targetMes ||
+          card.items.some(item => {
+            const iMes = (item.mes || '').trim().toUpperCase();
+            let dMes = '';
+            if (item.fecha) {
+              const dt = new Date(item.fecha + 'T12:00:00');
+              if (!Number.isNaN(dt.getTime())) dMes = MONTHS_UPPER[dt.getMonth()];
+            }
+            return iMes === targetMes || dMes === targetMes;
+          });
+        if (!hasMesMatch) return false;
+      }
+
+      // Filtro por Pabellón
       if (selectedPabellon) {
         const matchPab = codeList.some(c => {
           const roomObj = roomMap[c];
@@ -1143,41 +1522,52 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         });
         if (!matchPab) return false;
       }
+
+      // Filtro por Piso
       if (selectedPisos.length > 0) {
         const matchPiso = codeList.some(c => {
           const roomObj = roomMap[c];
-          const pStr = roomObj?.piso || r.ubicacion || deducePisoFromAula(c);
+          const pStr = roomObj?.piso || card.ubicacion || deducePisoFromAula(c);
           return selectedPisos.some(p => matchesPiso(pStr, p));
         });
         if (!matchPiso) return false;
       }
 
+      // Filtro por Día / Fecha
       if (selectedDayOffset !== null) {
         const target = upcomingDays[selectedDayOffset];
         if (target) {
           const tDateNorm = normalizeDateStr(target.fecha);
-          const rDateNorm = normalizeDateStr(r.fecha);
+          const rDateNorm = normalizeDateStr(card.fecha);
           const hasDateMatch = (rDateNorm && tDateNorm && rDateNorm === tDateNorm) ||
-            (!rDateNorm && normalizeDay(r.dia) === target.diaName) ||
+            (!rDateNorm && normalizeDay(card.dia) === target.diaName) ||
             codeList.some(codeItem => {
-              const sched = getRoomSchedule(r, codeItem);
+              const sched = card.schedules[codeItem];
               const schedNorm = normalizeDateStr(sched?.fecha);
               return schedNorm && tDateNorm && schedNorm === tDateNorm;
+            }) ||
+            card.items.some(item => {
+              const iDateNorm = normalizeDateStr(item.fecha);
+              return (iDateNorm && tDateNorm && iDateNorm === tDateNorm) || (!iDateNorm && normalizeDay(item.dia) === target.diaName);
             });
           if (!hasDateMatch) return false;
         }
       }
 
+      // Filtro por Búsqueda de Texto
       if (search) {
         const q = search.toLowerCase();
+        const roomsStr = codeList.join(' ').toLowerCase();
+        const docStr = (card.docente || '').toLowerCase();
+        const detStr = (card.detalle || card.motivo || '').toLowerCase();
+        const userStr = (card.usuario || '').toLowerCase();
+        const obsStr = (card.obs || '').toLowerCase();
         return (
-          (r.aula && r.aula.toLowerCase().includes(q)) ||
-          (r.docente && r.docente.toLowerCase().includes(q)) ||
-          (r.motivo && r.motivo.toLowerCase().includes(q)) ||
-          (r.detalle && r.detalle.toLowerCase().includes(q)) ||
-          (r.usuario && r.usuario.toLowerCase().includes(q)) ||
-          (r.obs && r.obs.toLowerCase().includes(q)) ||
-          (r.hoja && r.hoja.toLowerCase().includes(q))
+          roomsStr.includes(q) ||
+          docStr.includes(q) ||
+          detStr.includes(q) ||
+          userStr.includes(q) ||
+          obsStr.includes(q)
         );
       }
       return true;
@@ -1193,7 +1583,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       if (aTime && bTime && aTime !== bTime) return bTime - aTime;
       return String(b.fecha || '').localeCompare(String(a.fecha || '')) || (timeToMins(a.inicio || a.hora_inicio) - timeToMins(b.inicio || b.hora_inicio));
     });
-  }, [reservas, selectedMes, roomMap, selectedPabellon, selectedPisos, selectedDayOffset, upcomingDays, search]);
+  }, [consolidatedReservas, selectedMes, roomMap, selectedPabellon, selectedPisos, selectedDayOffset, upcomingDays, search]);
 
   // Cálculo de Aulas Libres para Hoy y los Próximos Días
   const freeRooms = useMemo(() => {
@@ -1934,7 +2324,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <div className="space-y-1 mb-3">
                       <div className="text-xs font-bold text-slate-900 dark:text-white inline-flex items-start gap-1.5 w-full">
                         <User className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 stroke-[2.2] shrink-0 mt-0.5" />
-                        <span className="break-words leading-tight">{r.docente || 'Solicitante no especificado'}</span>
+                        <PressableNameTrigger
+                          name={r.docente || 'Solicitante no especificado'}
+                          type="docente"
+                          onOpen={openHistoryModal}
+                        />
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-zinc-400 pl-5 font-semibold leading-relaxed break-words" title={r.motivo || r.detalle}>
                         {r.motivo || r.detalle || 'Sin detalle de actividad.'}
@@ -1948,7 +2342,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   </div>
 
                   <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-zinc-500">
-                    <span className="truncate">Por: <strong className="text-slate-700 dark:text-zinc-300 font-semibold">{r.usuario}</strong></span>
+                    <span className="truncate">
+                      Por: <PressableNameTrigger
+                        name={r.usuario || 'Operaciones'}
+                        type="usuario"
+                        onOpen={openHistoryModal}
+                      />
+                    </span>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {/* Botón de Copiar Fila o Tabla de Reserva con Encabezados Oficiales */}
@@ -1973,7 +2373,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
                       <button
                         type="button"
-                        onClick={() => handleDelete(r.id)}
+                        onClick={() => handleDelete(r)}
                         className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition inline-flex items-center justify-center cursor-pointer"
                         title="Cancelar Reserva"
                       >
@@ -2735,6 +3135,201 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Modal: Historial Anual de Reservas por Docente / Usuario / Solicitante (Último Año) */}
+      {historyModalFade.shouldRender && typeof document !== 'undefined' && createPortal(
+        <div 
+          className={`fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-[9999] p-3 sm:p-4 ${historyModalFade.backdropClass}`}
+          onClick={() => historyModalFade.requestClose()}
+        >
+          <div 
+            className={`bg-white dark:bg-[#0c0c10] rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-zinc-800 ${historyModalFade.modalClass} flex flex-col max-h-[90vh] overflow-hidden`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del Modal */}
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+              <div className="flex items-start gap-3 min-w-0 pr-2">
+                <div className="p-2.5 bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 mt-0.5 border border-amber-300 dark:border-amber-700/60 shadow-xs">
+                  {historyData?.type === 'usuario' ? (
+                    <UserCheck className="w-5 h-5 stroke-[2.2]" />
+                  ) : (
+                    <GraduationCap className="w-5 h-5 stroke-[2.2]" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      {historyData?.type === 'usuario' ? 'Asistente de Operaciones' : 'Docente / Solicitante'}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
+                      Último año
+                    </span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight break-words mt-0.5">
+                    {historyData?.name}
+                  </h2>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => historyModalFade.requestClose()}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer shrink-0"
+                title="Cerrar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Resumen y Métricas del Último Año */}
+            {historyData && !historyData.loading && (
+              <div className="grid grid-cols-3 gap-2.5 py-3 border-b border-slate-100 dark:border-zinc-800/80 shrink-0">
+                <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-slate-200/70 dark:border-zinc-800/80 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                    Total Reservas
+                  </div>
+                  <div className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                    {historyData.items.length}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-slate-200/70 dark:border-zinc-800/80 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                    Horas Totales
+                  </div>
+                  <div className="text-lg font-black text-amber-600 dark:text-amber-400 font-mono mt-0.5">
+                    {calculateTotalHours(historyData.items)} h
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-zinc-900/60 p-2.5 rounded-2xl border border-slate-200/70 dark:border-zinc-800/80 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                    Ambientes Distintos
+                  </div>
+                  <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                    {getUniqueRoomsCount(historyData.items)}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Barra de Búsqueda y Filtro Rápido */}
+            <div className="pt-3 pb-2 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Buscar por aula, fecha, motivo o mes en su historial..."
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-amber-500 transition"
+                />
+              </div>
+            </div>
+
+            {/* Listado de Reservas con Scroll */}
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-2.5 pr-1 py-1">
+              {historyData?.loading ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                  <RefreshCw className="w-6 h-6 animate-spin text-amber-500" />
+                  <span className="text-xs font-bold">Cargando historial del último año...</span>
+                </div>
+              ) : filteredHistoryItems.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 dark:text-zinc-500">
+                  <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs font-bold">No se encontraron reservas registradas en el último año.</p>
+                </div>
+              ) : (
+                filteredHistoryItems.map((item, idx) => {
+                  const rooms = getReservationRooms(item);
+                  const isUpcoming = isDateUpcoming(item.fecha);
+                  const isToday = isDateToday(item.fecha);
+
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/80 dark:border-zinc-800/80 hover:border-amber-300/80 dark:hover:border-amber-700/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          {rooms.map(a => (
+                            <span
+                              key={a}
+                              className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25"
+                            >
+                              {a}
+                            </span>
+                          ))}
+                          <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-300">
+                            {item.dia || ''} · {formatExcelDate(item.fecha)}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500">
+                            ({item.mes || ''})
+                          </span>
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ml-auto shrink-0 ${
+                            isToday
+                              ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                              : isUpcoming
+                                ? 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700'
+                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
+                          }`}>
+                            {isToday ? 'Hoy' : isUpcoming ? 'Próxima' : 'Completada'}
+                          </span>
+                        </div>
+
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {item.detalle || item.motivo || 'Uso de Ambiente'}
+                        </div>
+
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
+                          <span className="inline-flex items-center gap-1 font-mono font-semibold text-slate-700 dark:text-zinc-300">
+                            <Clock className="w-3 h-3 text-amber-500 stroke-[2.2]" />
+                            {item.inicio || item.hora_inicio} - {item.final || item.hora_fin}
+                          </span>
+                          <span className="truncate">
+                            Por: <strong className="text-slate-700 dark:text-zinc-300">{item.usuario || 'Operaciones'}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopyReservation(item, false)}
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-bold border border-slate-200 dark:border-zinc-700 transition active:scale-95 shrink-0 cursor-pointer shadow-2xs"
+                        title="Copiar datos de esta reserva para Excel"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Copiar</span>
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleCopyAllHistory(filteredHistoryItems, historyData?.name)}
+                disabled={filteredHistoryItems.length === 0}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition active:scale-95 disabled:opacity-40 cursor-pointer shadow-xs"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copiar Todo el Historial ({filteredHistoryItems.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => historyModalFade.requestClose()}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

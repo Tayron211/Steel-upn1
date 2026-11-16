@@ -621,7 +621,7 @@ async function createManualSheet(item) {
 }
 
 // Reservas CRUD
-async function getReservas({ dia, aula, fecha, search }) {
+async function getReservas({ dia, aula, fecha, mes, docente, usuario, search } = {}) {
   let sql = 'SELECT * FROM reservas WHERE 1=1';
   const params = [];
 
@@ -637,10 +637,22 @@ async function getReservas({ dia, aula, fecha, search }) {
     sql += ' AND fecha = ?';
     params.push(fecha);
   }
+  if (mes) {
+    sql += ' AND UPPER(mes) = ?';
+    params.push(mes.toUpperCase().trim());
+  }
+  if (docente) {
+    sql += ' AND UPPER(docente) LIKE ?';
+    params.push(`%${docente.toUpperCase().trim()}%`);
+  }
+  if (usuario) {
+    sql += ' AND UPPER(usuario) LIKE ?';
+    params.push(`%${usuario.toUpperCase().trim()}%`);
+  }
   if (search) {
-    sql += ' AND (LOWER(aula) LIKE ? OR LOWER(docente) LIKE ? OR LOWER(detalle) LIKE ?)';
+    sql += ' AND (LOWER(aula) LIKE ? OR LOWER(docente) LIKE ? OR LOWER(detalle) LIKE ? OR LOWER(usuario) LIKE ?)';
     const s = `%${search.toLowerCase().trim()}%`;
-    params.push(s, s, s);
+    params.push(s, s, s, s);
   }
 
   sql += ' ORDER BY fecha DESC, inicio ASC';
