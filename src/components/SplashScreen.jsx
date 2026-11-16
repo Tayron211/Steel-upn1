@@ -26,10 +26,9 @@ export default function SplashScreen({ minDuration = 1800, onFinished }) {
       // 1. Iniciar aparición fluida con transición fade suave de la interfaz
       makeInterfaceVisible();
 
-      // 2. Iniciar desvanecimiento cinematográfico ultra suave del splash
-      splash.style.transition = 'opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+      // 2. Iniciar desvanecimiento cinematográfico ultra suave 120fps del splash
+      splash.style.transition = 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
       splash.style.opacity = '0';
-      splash.style.transform = 'scale(1.03)';
       splash.style.pointerEvents = 'none';
 
       // 3. Una vez completado el fade cruzado, remover el nodo

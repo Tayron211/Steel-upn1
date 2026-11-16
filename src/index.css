@@ -514,7 +514,7 @@ button:active {
   transition-duration: 90ms;
 }
 
-/* Fluid View Page Transition (Suave Fade In para toda la navegación y vistas) */
+/* Fluid View Page Transition (Suave Fade In 120fps para toda la navegación y vistas) */
 @keyframes appleViewEnter {
   0% {
     opacity: 0;
@@ -524,8 +524,11 @@ button:active {
   }
 }
 
-.animate-tab-view {
-  animation: appleViewEnter 0.2s ease-out forwards;
+.animate-tab-view,
+.animate-slide-next,
+.animate-slide-prev {
+  animation: appleViewEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity;
 }
 
 /* Transiciones Suaves y Graduales de Fade para toda la App (Cero transiciones bruscas) */

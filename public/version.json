@@ -1,16 +1,20 @@
 {
-  "version": "1.0.67",
-  "versionCode": 68,
+  "version": "1.0.68",
+  "versionCode": 69,
   "releaseDate": "2026-11-16",
-  "notes": "Detección automática de modo claro y oscuro de Android en la APK, SplashScreen adaptativo y transición fade suave de la interfaz",
+  "notes": "Corrección de barra de navegación fija al hacer scroll vertical y transición suave 120fps fade en todos los apartados y ventanas",
   "features": [
+    {
+      "title": "Barra de Navegación Fija al Hacer Scroll",
+      "desc": "La barra superior y el dock móvil permanecen perfectamente anclados sin moverse al desplazar el contenido."
+    },
+    {
+      "title": "Transición Suave 120fps Fade en Todos los Apartados",
+      "desc": "Entrada fluida y continua acelerada por GPU para todas las pantallas, pestañas, modales y salida del splashscreen."
+    },
     {
       "title": "Detección Automática de Modo Claro / Oscuro en Android",
       "desc": "La APK y el SplashScreen adoptan automáticamente el tema del sistema Android y se sincronizan en tiempo real al cambiar entre claro y oscuro."
-    },
-    {
-      "title": "Transición Fade Suave de la Interfaz",
-      "desc": "Aparición cinematográfica fluida de la pantalla de inicio y login tras el SplashScreen, sin cortes bruscos."
     },
     {
       "title": "Colores Corporativos UPN Duales en Login",
@@ -23,10 +27,6 @@
     {
       "title": "Transiciones Fade en Notificaciones Toast",
       "desc": "Aparición y desvanecimiento fluidos con animación suave al entrar y salir de la pantalla."
-    },
-    {
-      "title": "Barras Traslúcidas de Cristal Esmerilado",
-      "desc": "Header superior y dock móvil con mayor transparencia y efecto glassmorphism nítido."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",

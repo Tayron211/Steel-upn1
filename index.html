@@ -36,15 +36,14 @@
         50% { left: 25%; width: 60%; opacity: 1; }
         100% { left: 100%; width: 15%; opacity: 0.3; }
       }
-      /* Contenedor principal de la app con transición fade suave (no de golpe) */
+      /* Contenedor principal de la app con transición fade suave 120fps (sin transform para preservar navbar fija/sticky) */
       #root {
         opacity: 0;
-        transform: scale(0.992);
-        transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: opacity;
       }
       #root.app-ready {
         opacity: 1 !important;
-        transform: scale(1) !important;
       }
       /* Splash Screen adaptativo Institucional UPN */
       #upn-boot-splash {
