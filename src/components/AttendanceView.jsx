@@ -2962,34 +2962,19 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     <div>
                       {/* Top Bar: Aula, Pabellón, Estado y Menú 3 puntos */}
                       <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                           {item.aula && item.aula.trim() ? (
-                            <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
+                            <span className="font-mono font-black text-xs sm:text-sm bg-slate-900 dark:bg-zinc-800 text-white px-2 py-0.5 rounded-lg shadow-xs tracking-tight shrink-0">
                               {item.aula}
                             </span>
                           ) : (
-                            <span className="font-mono font-bold text-xs bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-lg shadow-xs tracking-tight">
+                            <span className="font-mono font-bold text-xs bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-lg shadow-xs tracking-tight shrink-0">
                               S/A
                             </span>
                           )}
-                          <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md">
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-200 uppercase bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 px-1.5 py-0.5 rounded-md shrink-0">
                             {item.pisoPabellon || 'Campus'}
                           </span>
-                          {/* Especialidad del ambiente solo si es Taller o Laboratorio Especializado (sin redundancias ni repetición de código) */}
-                          {(() => {
-                            const rm = item.aula ? roomMap.get(item.aula.trim().toUpperCase()) : null;
-                            if (!rm) return null;
-                            const facility = getSpecializedFacility(rm.nombre, item.aula);
-                            if (!facility) return null;
-                            return (
-                              <span
-                                className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800/70 px-2 py-0.5 rounded-md inline-flex items-center gap-1 shrink-0"
-                                title={`Ambiente especializado: ${facility} (Aforo: ${rm.aforo || 40}p)`}
-                              >
-                                {facility}
-                              </span>
-                            );
-                          })()}
                           {(() => {
                             const pLabel = formatPeriodoDisplay(item.periodo);
                             if (!pLabel) return null;
@@ -3059,6 +3044,26 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           </button>
                         </div>
                       </div>
+
+                      {/* Especialidad del ambiente en fila dedicada: nunca colisiona con el estado ni con el menú */}
+                      {(() => {
+                        const rm = item.aula ? roomMap.get(item.aula.trim().toUpperCase()) : null;
+                        if (!rm) return null;
+                        const facility = getSpecializedFacility(rm.nombre, item.aula);
+                        if (!facility) return null;
+                        return (
+                          <div className="mb-2">
+                            <span
+                              className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800/70 px-2 py-0.5 rounded-md inline-flex items-center gap-1.5 max-w-full"
+                              title={`Ambiente especializado: ${facility} (Aforo: ${rm.aforo || 40} personas)`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                              <span className="truncate">{facility}</span>
+                              <span className="text-[9.5px] text-amber-700/80 dark:text-amber-400/80 font-mono font-semibold shrink-0">({rm.aforo || 40}p)</span>
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       {/* Docente, Curso y Horario (Líneas legibles sin cortes) */}
                       <div className="mb-2">

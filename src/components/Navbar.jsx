@@ -155,7 +155,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
     <>
       {/* Native App Top Bar with Frosted Glass Blur & Official UPN Branding - Ultra Traslúcido */}
       <header
-        className="sticky top-0 z-40 bg-white/35 dark:bg-black/40 supports-[backdrop-filter]:bg-white/25 dark:supports-[backdrop-filter]:bg-black/30 backdrop-blur-3xl backdrop-saturate-200 border-b border-slate-200/50 dark:border-white/10 safe-top shadow-2xs print:hidden transition-colors"
+        className="sticky top-0 z-40 bg-white/35 dark:bg-black/40 supports-[backdrop-filter]:bg-white/25 dark:supports-[backdrop-filter]:bg-black/30 backdrop-blur-3xl backdrop-saturate-200 border-b border-black/5 dark:border-white/10 safe-top shadow-2xs print:hidden transition-colors"
         style={{
           backdropFilter: 'blur(32px) saturate(200%)',
           WebkitBackdropFilter: 'blur(32px) saturate(200%)'
@@ -371,7 +371,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
         </div>
 
         {/* Desktop / Tablet Navigation Strip */}
-        <div className="hidden md:block max-w-[1880px] mx-auto px-6 lg:px-8 xl:px-10 pb-2.5 pt-1 border-t border-slate-100 dark:border-zinc-900">
+        <div className="hidden md:block max-w-[1880px] mx-auto px-6 lg:px-8 xl:px-10 pb-2.5 pt-1">
           <div ref={desktopNavSlide.containerRef} className="relative flex items-center gap-1.5 overflow-x-auto scrollbar-none">
             <span
               aria-hidden="true"

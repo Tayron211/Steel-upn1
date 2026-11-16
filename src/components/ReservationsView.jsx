@@ -2484,7 +2484,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           const facility = getSpecializedFacility(firstRm?.nombre, cardAulas[0]);
                           if (facility) {
                             return (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800 max-w-[200px] sm:max-w-xs truncate" title={facility}>
                                 {facility}
                               </span>
                             );
