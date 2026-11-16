@@ -522,7 +522,7 @@ const copyRichTableToClipboard = async (plainText, htmlText) => {
   return false;
 };
 
-// Disparador de interacción para el nombre del docente (Soporta Click / Tap y Long-Press táctil con vibración)
+// Disparador de interacción para el nombre del docente (Exclusivo por Long-Press con vibración táctil)
 const TeacherNameTrigger = ({ docente, onOpen }) => {
   const timerRef = useRef(null);
   const touchStartPos = useRef(null);
@@ -533,10 +533,11 @@ const TeacherNameTrigger = ({ docente, onOpen }) => {
     if (e.touches && e.touches[0]) {
       touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
+    if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       triggeredRef.current = true;
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        try { navigator.vibrate(40); } catch (_) {}
+        try { navigator.vibrate(40); } catch (_) { }
       }
       onOpen(docente);
     }, 450);
@@ -553,7 +554,7 @@ const TeacherNameTrigger = ({ docente, onOpen }) => {
     if (!touchStartPos.current || !e.touches || !e.touches[0]) return;
     const dx = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
     const dy = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
-    if (dx > 8 || dy > 8) {
+    if (dx > 10 || dy > 10) {
       cancelPress();
     }
   };
@@ -561,8 +562,13 @@ const TeacherNameTrigger = ({ docente, onOpen }) => {
   const handleClick = (e) => {
     e.stopPropagation();
     cancelPress();
-    if (!triggeredRef.current) {
-      onOpen(docente);
+    // Exclusivo por pulsación prolongada: no abrir en click o tap simple
+  };
+
+  const handleContextMenu = (e) => {
+    if (triggeredRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   };
 
@@ -576,8 +582,9 @@ const TeacherNameTrigger = ({ docente, onOpen }) => {
       onTouchEnd={cancelPress}
       onTouchCancel={cancelPress}
       onClick={handleClick}
+      onContextMenu={handleContextMenu}
       className="cursor-pointer group/teacher inline-flex items-center gap-1 select-none active:scale-[0.98] transition-transform max-w-full"
-      title={`Toca o mantén presionado para ver todas las clases de hoy de ${docente}`}
+      title={`Mantén presionado para ver todas las clases de hoy de ${docente}`}
     >
       <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words leading-snug group-hover/teacher:text-[#FDBA30] dark:group-hover/teacher:text-[#FDBA30] transition-colors underline decoration-dotted decoration-slate-300 dark:decoration-zinc-700 underline-offset-2">
         {docente}
@@ -639,7 +646,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       const ass = getUserAssignments()[u?.username?.toLowerCase() || ''];
       const pab = ass?.pabellon !== undefined ? ass.pabellon : (u?.assignedPabellon || '');
       const pis = (ass?.pisos && ass.pisos.length > 0) ? ass.pisos : (u?.assignedPisos || []);
-      
+
       setSelectedPabellon(prev => prev === pab ? prev : pab);
       setSelectedPisos(prev => {
         const prevKey = prev.slice().sort().join(',');
@@ -1776,10 +1783,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         const itemPab = String(c.pisoPabellon || '').toUpperCase();
         const itemAula = String(c.aula || '').toUpperCase();
         const targetPab = selectedPabellon.toUpperCase();
-        const matchesPab = itemPab.includes(`- ${targetPab}`) || 
-                           itemPab.includes(`PABELLÓN ${targetPab}`) ||
-                           itemPab.includes(`PAB. ${targetPab}`) ||
-                           itemAula.startsWith(targetPab);
+        const matchesPab = itemPab.includes(`- ${targetPab}`) ||
+          itemPab.includes(`PABELLÓN ${targetPab}`) ||
+          itemPab.includes(`PAB. ${targetPab}`) ||
+          itemAula.startsWith(targetPab);
         if (!matchesPab) return false;
       }
 
@@ -1790,10 +1797,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         const matchesPiso = selectedPisos.some(p => {
           const pUpper = p.toUpperCase();
           const targetDigit = pUpper.includes('1') || pUpper.includes('PRIMER') ? '1' :
-                              pUpper.includes('2') || pUpper.includes('SEGUNDO') ? '2' :
-                              pUpper.includes('3') || pUpper.includes('TERCER') ? '3' :
-                              pUpper.includes('4') || pUpper.includes('CUARTO') ? '4' :
-                              pUpper.includes('5') || pUpper.includes('QUINTO') ? '5' : '';
+            pUpper.includes('2') || pUpper.includes('SEGUNDO') ? '2' :
+              pUpper.includes('3') || pUpper.includes('TERCER') ? '3' :
+                pUpper.includes('4') || pUpper.includes('CUARTO') ? '4' :
+                  pUpper.includes('5') || pUpper.includes('QUINTO') ? '5' : '';
 
           if (targetDigit === '1' && (itemUbi.includes('1ER') || itemUbi.includes('PRIMER') || itemUbi.includes('PISO 1') || itemUbi.includes('1°'))) return true;
           if (targetDigit === '2' && (itemUbi.includes('2DO') || itemUbi.includes('SEGUNDO') || itemUbi.includes('PISO 2') || itemUbi.includes('2°'))) return true;
@@ -1907,8 +1914,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 data-slide-active={isSelected ? 'true' : undefined}
                 onClick={() => setSelectedDia(item.name)}
                 className={`relative z-10 h-9 sm:h-10 text-[10px] sm:text-xs font-bold rounded-xl transition-colors duration-200 flex flex-col items-center justify-center active:scale-95 leading-tight ${isSelected
-                    ? 'text-slate-950 font-black'
-                    : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-zinc-800/70'
+                  ? 'text-slate-950 font-black'
+                  : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-zinc-800/70'
                   }`}
                 title={`${item.name} (${item.dateStr})`}
               >
@@ -1981,8 +1988,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 setIsCarreraModalOpen(true);
               }}
               className={`hidden sm:inline-flex h-7 px-2.5 rounded-xl border text-xs font-bold transition items-center gap-1.5 active:scale-95 shrink-0 max-w-[210px] ${selectedCarrera
-                  ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-2xs'
-                  : 'bg-slate-100 dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-2xs'
+                : 'bg-slate-100 dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800'
                 }`}
               title="Filtrar por carrera"
             >
@@ -1999,8 +2006,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
             type="button"
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
             className={`sm:hidden h-8 px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shrink-0 transition active:scale-95 ${activeFiltersCount > 0 || mobileFiltersOpen
-                ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
-                : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
+              ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black shadow-xs'
+              : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400'
               }`}
           >
             <Filter className="w-3.5 h-3.5 stroke-[2.4]" />
@@ -2055,8 +2062,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     setIsCarreraModalOpen(true);
                   }}
                   className={`flex sm:hidden h-8 px-3 rounded-xl border text-xs font-bold transition items-center justify-between w-full active:scale-98 ${selectedCarrera
-                      ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black'
-                      : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300'
+                    ? 'bg-[#FDBA30] text-slate-950 border-amber-400 font-black'
+                    : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300'
                     }`}
                 >
                   <div className="flex items-center gap-2 truncate">
@@ -2095,8 +2102,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         data-slide-active={isSlideOwner ? 'true' : undefined}
                         onClick={() => handleTogglePiso(p.val)}
                         className={`relative z-10 h-6.5 px-2.5 rounded-lg text-[11px] font-bold transition-colors duration-200 active:scale-95 shrink-0 inline-flex items-center gap-1 ${isSelected
-                            ? `${selectedPisos.length > 1 ? 'bg-[#FDBA30] shadow-2xs ' : ''}text-slate-950 font-black`
-                            : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                          ? `${selectedPisos.length > 1 ? 'bg-[#FDBA30] shadow-2xs ' : ''}text-slate-950 font-black`
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                           }`}
                         title={isTodos ? 'Mostrar todos los pisos' : `Filtrar ${p.label}`}
                       >
@@ -2134,8 +2141,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
               }}
               className={`relative z-10 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 flex items-center gap-1.5 ${viewMode === 'CLASSES'
-                  ? 'text-slate-900 dark:text-white font-black'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'text-slate-900 dark:text-white font-black'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
             >
               <span>Clases</span>
@@ -2152,8 +2159,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
               }}
               className={`relative z-10 h-7 px-2.5 rounded-lg text-xs font-bold transition-colors duration-200 active:scale-95 flex items-center gap-1.5 ${viewMode === 'FREE_ROOMS'
-                  ? 'text-white font-black'
-                  : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-200'
+                ? 'text-white font-black'
+                : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-200'
                 }`}
             >
               <DoorOpen className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -2174,12 +2181,12 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 aria-hidden="true"
                 style={statusSlide.pillStyle}
                 className={`pointer-events-none absolute top-0 left-0 z-0 rounded-lg shadow-xs ${statusFilter === 'PUNTUAL'
-                    ? 'bg-emerald-600'
-                    : statusFilter === 'TARDE'
-                      ? 'bg-amber-500'
-                      : statusFilter === 'FALTA'
-                        ? 'bg-rose-600'
-                        : 'bg-slate-800 dark:bg-zinc-700'
+                  ? 'bg-emerald-600'
+                  : statusFilter === 'TARDE'
+                    ? 'bg-amber-500'
+                    : statusFilter === 'FALTA'
+                      ? 'bg-rose-600'
+                      : 'bg-slate-800 dark:bg-zinc-700'
                   }`}
               />
               <button
@@ -2187,8 +2194,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 data-slide-active={statusFilter === 'PUNTUAL' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'PUNTUAL' ? 'ALL' : 'PUNTUAL')}
                 className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${statusFilter === 'PUNTUAL'
-                    ? 'text-white font-black'
-                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 dark:hover:text-emerald-200'
+                  ? 'text-white font-black'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 dark:hover:text-emerald-200'
                   }`}
                 title="Filtrar puntuales"
               >
@@ -2200,8 +2207,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 data-slide-active={statusFilter === 'TARDE' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'TARDE' ? 'ALL' : 'TARDE')}
                 className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${statusFilter === 'TARDE'
-                    ? 'text-slate-950 font-black'
-                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 dark:hover:text-amber-200'
+                  ? 'text-slate-950 font-black'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 dark:hover:text-amber-200'
                   }`}
                 title="Filtrar tardanzas"
               >
@@ -2213,8 +2220,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 data-slide-active={statusFilter === 'FALTA' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'FALTA' ? 'ALL' : 'FALTA')}
                 className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${statusFilter === 'FALTA'
-                    ? 'text-white font-black'
-                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 dark:hover:text-rose-200'
+                  ? 'text-white font-black'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 dark:hover:text-rose-200'
                   }`}
                 title="Filtrar faltas"
               >
@@ -2226,8 +2233,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 data-slide-active={statusFilter === 'PENDIENTE' ? 'true' : undefined}
                 onClick={() => setStatusFilter(statusFilter === 'PENDIENTE' ? 'ALL' : 'PENDIENTE')}
                 className={`relative z-10 h-7 px-2 rounded-lg font-bold transition-colors duration-200 active:scale-95 whitespace-nowrap cursor-pointer ${statusFilter === 'PENDIENTE'
-                    ? 'text-white font-black'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 dark:hover:text-white'
+                  ? 'text-white font-black'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 dark:hover:text-white'
                   }`}
                 title="Filtrar pendientes"
               >
@@ -2256,8 +2263,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               setSelectedHora('');
             }}
             className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 ${blockMode === 'CURRENT'
-                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                : 'text-slate-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/70'
+              ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+              : 'text-slate-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-zinc-800/70'
               }`}
             title={`Filtrar al bloque en curso (${getCurrentHourBlock()})`}
           >
@@ -2274,8 +2281,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               setSelectedHora('');
             }}
             className={`relative z-10 h-6.5 px-2.5 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap active:scale-95 shrink-0 ${blockMode === 'ALL' && !selectedHora
-                ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800/70'
+              ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800/70'
               }`}
           >
             Todo el día
@@ -2302,10 +2309,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                   }
                 }}
                 className={`relative z-10 h-6.5 px-2 rounded-lg font-mono text-[11px] font-bold transition-colors duration-200 whitespace-nowrap active:scale-95 shrink-0 ${isSelected
-                    ? 'text-slate-950 font-black'
-                    : isCurrent && blockMode === 'CURRENT'
-                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 font-black'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-zinc-800/70'
+                  ? 'text-slate-950 font-black'
+                  : isCurrent && blockMode === 'CURRENT'
+                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 font-black'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-zinc-800/70'
                   }`}
                 title={`Bloque ${b.start} a ${b.end}`}
               >
@@ -2524,8 +2531,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                             return (
                               <span
                                 className={`font-mono font-black text-[10px] px-1.5 py-0.5 rounded-md border tracking-tight shrink-0 ${isWA
-                                    ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
-                                    : 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800'
+                                  ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
+                                  : 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800'
                                   }`}
                                 title={`Programa: ${isWA ? 'Working Adult (WA)' : 'Pregrado (UG)'} (Excel: ${item.periodo || ''})`}
                               >
@@ -3153,8 +3160,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         type="button"
                         onClick={() => setReservationForm(f => ({ ...f, tipo: 'DOCENTE' }))}
                         className={`h-9 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${reservationForm.tipo === 'DOCENTE'
-                            ? 'bg-amber-400 text-slate-950 shadow-xs'
-                            : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                          ? 'bg-amber-400 text-slate-950 shadow-xs'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                           }`}
                       >
                         <User className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -3164,8 +3171,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         type="button"
                         onClick={() => setReservationForm(f => ({ ...f, tipo: 'ALUMNO' }))}
                         className={`h-9 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${reservationForm.tipo === 'ALUMNO'
-                            ? 'bg-amber-400 text-slate-950 shadow-xs'
-                            : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                          ? 'bg-amber-400 text-slate-950 shadow-xs'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                           }`}
                       >
                         <GraduationCap className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -3395,8 +3402,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                                         setManualTardeTime(`${h}:${m}`);
                                       }}
                                       className={`w-full py-1.5 rounded-xl font-mono text-xs font-bold transition text-center ${isSelected
-                                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                                          : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                                        ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                                        : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                                         }`}
                                     >
                                       {h}:00
@@ -3418,8 +3425,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                                         setManualTardeTime(`${h}:${m}`);
                                       }}
                                       className={`w-full py-1 rounded-lg font-mono text-xs font-bold transition text-center ${isSelected
-                                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                                          : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                                        ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                                        : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                                         }`}
                                     >
                                       :{m}
@@ -3617,8 +3624,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     carreraModalFade.requestClose();
                   }}
                   className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition flex items-center justify-between active:scale-98 ${selectedCarrera === ''
-                      ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                      : 'bg-slate-50 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-800 dark:text-zinc-200 border border-slate-200/60 dark:border-zinc-800/80'
+                    ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                    : 'bg-slate-50 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-800 dark:text-zinc-200 border border-slate-200/60 dark:border-zinc-800/80'
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -3649,8 +3656,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           carreraModalFade.requestClose();
                         }}
                         className={`w-full p-2.5 rounded-xl text-left text-xs font-bold transition flex items-center justify-between active:scale-98 ${isSel
-                            ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                            : 'bg-slate-50 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-800 dark:text-zinc-200 border border-slate-200/60 dark:border-zinc-800/80'
+                          ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                          : 'bg-slate-50 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-800 dark:text-zinc-200 border border-slate-200/60 dark:border-zinc-800/80'
                           }`}
                       >
                         <span className="break-words pr-2">{car}</span>
@@ -3768,11 +3775,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                             {cls.pisoPabellon || 'Campus'}
                           </span>
                           {pLabel && (
-                            <span className={`font-mono font-black text-[10px] px-1.5 py-0.5 rounded-md border tracking-tight ${
-                              isWA
+                            <span className={`font-mono font-black text-[10px] px-1.5 py-0.5 rounded-md border tracking-tight ${isWA
                                 ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
                                 : 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800'
-                            }`}>
+                              }`}>
                               {pLabel}
                             </span>
                           )}

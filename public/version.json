@@ -1,8 +1,8 @@
 {
-  "version": "1.0.46",
-  "versionCode": 47,
-  "releaseDate": "2026-11-15",
-  "notes": "v1.0.46 - Eliminado boton redundante Ver todas sus clases de hoy de modal de opciones",
+  "version": "1.0.48",
+  "versionCode": 49,
+  "releaseDate": "2026-11-16",
+  "notes": "v1.0.48 - Reserva multiple permite definir fecha, hora inicio y fin de manera individual por aula",
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
   "forceUpdate": false
 }

@@ -334,6 +334,56 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     prioridad: 'NORMAL'
   });
 
+  // Estado para horarios individuales por aula en reserva múltiple
+  const [roomSchedules, setRoomSchedules] = useState({});
+
+  const updateRoomSchedule = (room, field, val) => {
+    setRoomSchedules(prev => ({
+      ...prev,
+      [room]: {
+        ...(prev[room] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final }),
+        [field]: val
+      }
+    }));
+  };
+
+  const applyBaseScheduleToAll = () => {
+    const rooms = getReservationRooms(formData);
+    setRoomSchedules(prev => {
+      const next = { ...prev };
+      rooms.forEach(a => {
+        next[a] = {
+          fecha: formData.fecha,
+          inicio: formData.inicio,
+          final: formData.final
+        };
+      });
+      return next;
+    });
+    setToastMessage('✅ Horario base aplicado a todas las aulas');
+    setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const handleRemoveSelectedRoom = (roomToRemove) => {
+    const currentRooms = getReservationRooms(formData);
+    const rooms = currentRooms.filter(a => a !== roomToRemove);
+    setSelectedAulas(rooms);
+    setFormData(prev => ({
+      ...prev,
+      aulas: rooms,
+      aula: rooms.join(', '),
+      ubicacion: rooms.map(a => {
+        const rm = roomMap[a];
+        return rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || 'SEDE');
+      }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ')
+    }));
+    setRoomSchedules(prev => {
+      const next = { ...prev };
+      delete next[roomToRemove];
+      return next;
+    });
+  };
+
   // Mantener actualizado el asistente autenticado si cambia la sesión o se abre el modal
   useEffect(() => {
     const handleAuth = () => {
@@ -684,6 +734,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         aula: '',
         ubicacion: ''
       }));
+      setRoomSchedules({});
       roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false));
       return;
     }
@@ -699,6 +750,25 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       aula: cleanList.join(', '),
       ubicacion: userUbicacion || (primaryRm ? `${primaryRm.piso} - ${primaryRm.pabellon}` : prev.ubicacion)
     }));
+
+    // Inicializar o sincronizar horarios individuales por aula
+    setRoomSchedules(prev => {
+      const next = { ...prev };
+      cleanList.forEach(a => {
+        if (!next[a]) {
+          next[a] = {
+            fecha: formData.fecha,
+            inicio: formData.inicio,
+            final: formData.final
+          };
+        }
+      });
+      Object.keys(next).forEach(k => {
+        if (!cleanList.includes(k)) delete next[k];
+      });
+      return next;
+    });
+
     roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false));
   };
 
@@ -724,66 +794,119 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       return;
     }
 
-    if (formData.inicio && formData.final && formData.inicio >= formData.final) {
-      alert('La hora de inicio debe ser anterior a la hora de fin.');
-      return;
+    // Validación de horas individuales o generales
+    if (cleanAulas.length === 1) {
+      if (formData.inicio && formData.final && formData.inicio >= formData.final) {
+        alert('La hora de inicio debe ser anterior a la hora de fin.');
+        return;
+      }
+    } else {
+      for (const a of cleanAulas) {
+        const sched = roomSchedules[a] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
+        if (sched.inicio && sched.final && sched.inicio >= sched.final) {
+          alert(`En el ambiente ${a}, la hora de inicio (${sched.inicio}) debe ser anterior a la hora de fin (${sched.final}).`);
+          return;
+        }
+      }
     }
 
     setIsSubmitting(true);
     try {
-      const cleanAula = cleanAulas.join(', ');
-      const firstRm = roomMap[cleanAulas[0]];
-      const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
-      const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
-      const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes || 'OCTUBRE';
-      const userUbicacion = (formData.ubicacion || '').trim();
-      const fallbackUbicacion = cleanAulas.map(a => {
-        const rm = roomMap[a];
-        return rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(a) || 'SEDE');
-      }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
-      const finalUbicacion = (userUbicacion || fallbackUbicacion || (firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : 'SEDE')).toUpperCase();
       const finalUsuario = (isAdmin() ? (formData.usuario || getLoggedAssistantName()) : getLoggedAssistantName()).toUpperCase().trim();
       const finalPrioridad = (formData.prioridad || 'NORMAL').toUpperCase().trim();
 
-      const payload = {
-        fecha: formData.fecha,
-        mes: computedMes,
-        dia: computedDia,
-        inicio: formData.inicio,
-        final: formData.final,
-        aulas: cleanAulas,
-        aula: cleanAula,
-        ubicacion: finalUbicacion,
-        docente: finalDocente,
-        detalle: finalDetalle,
-        motivo: finalDetalle,
-        usuario: finalUsuario,
-        prioridad: finalPrioridad,
-        hoja: 'RESERVAS'
-      };
+      if (cleanAulas.length === 1) {
+        // Reserva Única estándar
+        const aulaCode = cleanAulas[0];
+        const firstRm = roomMap[aulaCode];
+        const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+        const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
+        const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes || 'OCTUBRE';
+        const userUbicacion = (formData.ubicacion || '').trim();
+        const fallbackUbicacion = firstRm ? `${firstRm.piso} - ${firstRm.pabellon}` : (deducePisoFromAula(aulaCode) || 'SEDE');
+        const finalUbicacion = (userUbicacion || fallbackUbicacion).toUpperCase();
 
-      const res = await fetch('/api/reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const json = await res.json();
-      if (json.success) {
-        setReservas(prev => [json.data, ...prev.filter(r => r.id !== json.data.id)]);
-        const toastDesc = cleanAulas.length > 1
-          ? `✅ Guardado en Excel: Hoja "RESERVAS" (${cleanAulas.length} Aulas: ${cleanAula})`
-          : `✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${cleanAula})`;
-        setToastMessage(toastDesc);
+        const payload = {
+          fecha: formData.fecha,
+          mes: computedMes,
+          dia: computedDia,
+          inicio: formData.inicio,
+          final: formData.final,
+          aulas: [aulaCode],
+          aula: aulaCode,
+          ubicacion: finalUbicacion,
+          docente: finalDocente,
+          detalle: finalDetalle,
+          motivo: finalDetalle,
+          usuario: finalUsuario,
+          prioridad: finalPrioridad,
+          hoja: 'RESERVAS'
+        };
+
+        const res = await fetch('/api/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.success) {
+          setReservas(prev => [json.data, ...prev.filter(r => r.id !== json.data.id)]);
+          setToastMessage(`✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${aulaCode})`);
+          setTimeout(() => setToastMessage(''), 3500);
+          closeModal();
+          resetForm();
+        } else {
+          alert('Error al guardar reserva: ' + (json.error || json.message || 'intente nuevamente'));
+        }
+      } else {
+        // Reserva Múltiple: registra cada aula de manera individual con su fecha y horario propio
+        const createdList = [];
+        for (const aulaCode of cleanAulas) {
+          const sched = roomSchedules[aulaCode] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
+          const dt = new Date((sched.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+          const computedDia = DAYS_OF_WEEK[dt.getDay()] || 'LUNES';
+          const computedMes = MONTHS_UPPER[dt.getMonth()] || 'NOVIEMBRE';
+          const rm = roomMap[aulaCode];
+          const roomUbicacion = (rm ? `${rm.piso} - ${rm.pabellon}` : (deducePisoFromAula(aulaCode) || 'SEDE')).toUpperCase();
+
+          const payload = {
+            fecha: sched.fecha,
+            mes: computedMes,
+            dia: computedDia,
+            inicio: sched.inicio,
+            final: sched.final,
+            aulas: [aulaCode],
+            aula: aulaCode,
+            ubicacion: roomUbicacion,
+            docente: finalDocente,
+            detalle: finalDetalle,
+            motivo: finalDetalle,
+            usuario: finalUsuario,
+            prioridad: finalPrioridad,
+            hoja: 'RESERVAS'
+          };
+
+          const res = await fetch('/api/reservations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const json = await res.json();
+          if (!json.success) {
+            throw new Error(`En el ambiente ${aulaCode}: ${json.error || json.message || 'Conflicto de horario'}`);
+          }
+          createdList.push(json.data);
+        }
+
+        setReservas(prev => [...createdList, ...prev.filter(r => !createdList.some(c => c.id === r.id))]);
+        setToastMessage(`✅ ${cleanAulas.length} reservas registradas con éxito con sus fechas y horarios individuales`);
         setTimeout(() => setToastMessage(''), 3500);
         closeModal();
         resetForm();
-      } else {
-        alert('Error al guardar reserva: ' + (json.error || 'intente nuevamente'));
       }
     } catch (err) {
       console.error(err);
-      setToastMessage('❌ Error al registrar reserva');
-      setTimeout(() => setToastMessage(''), 3000);
+      alert('Error al registrar reserva: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -808,6 +931,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       prioridad: 'NORMAL'
     });
     setSelectedAulas([]);
+    setRoomSchedules({});
     setIsMultiRoomMode(false);
     setDocenteSuggestionsOpen(false);
   };
@@ -1821,8 +1945,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               <div className="p-5 sm:p-6 space-y-3.5 flex-1">
               {/* Fila 1: FECHA (Calcula Día y Mes automáticamente para Excel) */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Fecha de Reserva
+                <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  <span>{getReservationRooms(formData).length > 1 ? 'Fecha Base (Predeterminada)' : 'Fecha de Reserva'}</span>
+                  {getReservationRooms(formData).length > 1 && (
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                      Horario predeterminado
+                    </span>
+                  )}
                 </label>
                 <CustomDatePicker
                   value={formData.fecha}
@@ -1846,7 +1975,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Hora Inicio
+                    {getReservationRooms(formData).length > 1 ? 'Hora Inicio Base' : 'Hora Inicio'}
                   </label>
                   <CustomSelect
                     value={formData.inicio}
@@ -1858,7 +1987,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Hora Fin
+                    {getReservationRooms(formData).length > 1 ? 'Hora Fin Base' : 'Hora Fin'}
                   </label>
                   <CustomSelect
                     value={formData.final}
@@ -1953,6 +2082,102 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   </div>
                 </button>
               </div>
+
+              {/* Horarios Individuales para cada Ambiente en Reserva Múltiple */}
+              {(() => {
+                const rooms = getReservationRooms(formData);
+                if (rooms.length <= 1) return null;
+                return (
+                  <div className="space-y-2.5 p-3 sm:p-3.5 rounded-2xl bg-amber-50/70 dark:bg-zinc-900/90 border border-amber-200 dark:border-zinc-800 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-[#d99000] dark:text-[#FDBA30]" />
+                        <span className="text-xs font-black uppercase text-slate-900 dark:text-white">
+                          Fecha y Horario Individual ({rooms.length} ambientes)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={applyBaseScheduleToAll}
+                        className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white border border-slate-200 dark:border-zinc-700 transition flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
+                        title="Copiar la fecha y horario base a todos los ambientes"
+                      >
+                        <Copy className="w-3 h-3 text-[#d99000] dark:text-[#FDBA30]" />
+                        <span>Copiar horario base a todas</span>
+                      </button>
+                    </div>
+                    <p className="text-[10.5px] text-slate-500 dark:text-zinc-400 leading-tight">
+                      Cada ambiente seleccionado puede tener su propia fecha, hora de inicio y hora final de manera individual.
+                    </p>
+
+                    <div className="space-y-2 pt-1">
+                      {rooms.map(aulaCode => {
+                        const rm = roomMap[aulaCode];
+                        const sched = roomSchedules[aulaCode] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
+                        return (
+                          <div
+                            key={aulaCode}
+                            className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0 shadow-2xs">
+                                  {aulaCode}
+                                </span>
+                                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate">
+                                  {rm?.tipo || rm?.nombre || 'Ambiente'} · <span className="font-medium text-slate-500 dark:text-zinc-400">{rm?.piso || deducePisoFromAula(aulaCode)}</span>
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSelectedRoom(aulaCode)}
+                                className="w-6 h-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition shrink-0 cursor-pointer"
+                                title={`Quitar ${aulaCode}`}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
+                                  Fecha
+                                </label>
+                                <CustomDatePicker
+                                  value={sched.fecha}
+                                  onChange={(val) => updateRoomSchedule(aulaCode, 'fecha', val)}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
+                                  Hora Inicio
+                                </label>
+                                <CustomSelect
+                                  value={sched.inicio}
+                                  onChange={(val) => updateRoomSchedule(aulaCode, 'inicio', val)}
+                                  options={TIME_OPTIONS}
+                                  placeholder="Inicio"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
+                                  Hora Fin
+                                </label>
+                                <CustomSelect
+                                  value={sched.final}
+                                  onChange={(val) => updateRoomSchedule(aulaCode, 'final', val)}
+                                  options={TIME_OPTIONS}
+                                  placeholder="Fin"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Fila 4: DOCENTE SOLICITANTE CON AUTOCOMPLETADO DESDE EXCEL */}
               <div className="relative">
@@ -2074,7 +2299,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   disabled={isSubmitting || getReservationRooms(formData).length === 0}
                   className="h-11 sm:h-12 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95 cursor-pointer"
                 >
-                  {isSubmitting ? 'Guardando Reserva...' : 'Confirmar Reserva'}
+                  {isSubmitting
+                    ? 'Guardando Reserva...'
+                    : (getReservationRooms(formData).length > 1
+                      ? `Confirmar ${getReservationRooms(formData).length} Reservas Individuales`
+                      : 'Confirmar Reserva')}
                 </button>
               </div>
             </form>
@@ -2391,7 +2620,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     {selectedAulas.length} {selectedAulas.length === 1 ? 'aula' : 'aulas'} seleccionada{selectedAulas.length === 1 ? '' : 's'}
                   </span>
                   <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">
-                    {selectedAulas.length > 1 ? 'Se reservarán en simultáneo' : 'Selecciona una o más aulas'}
+                    {selectedAulas.length > 1 ? 'Podrás definir fecha y horario individual para cada una' : 'Selecciona una o más aulas'}
                   </span>
                 </div>
                 <div className="hidden sm:flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[200px] pl-2 border-l border-slate-200 dark:border-zinc-700">
