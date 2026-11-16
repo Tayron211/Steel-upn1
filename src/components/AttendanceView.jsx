@@ -597,6 +597,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   const [data, setData] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [reservations, setReservations] = useState([]);
+  const [dayAllClasses, setDayAllClasses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const timeToMins = (t) => {
@@ -1268,12 +1269,21 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
   const handleOpenReserveModal = (room) => {
     setReservingRoom(room);
+    const targetIso = selectedDayInfo?.date
+      ? `${selectedDayInfo.date.getFullYear()}-${String(selectedDayInfo.date.getMonth() + 1).padStart(2, '0')}-${String(selectedDayInfo.date.getDate()).padStart(2, '0')}`
+      : new Date().toISOString().split('T')[0];
+
+    const initStart = room?.freeFrom || '10:50';
+    const initEnd = (room?.freeUntil && room.freeUntil !== '22:50') ? room.freeUntil : (
+      REAL_BLOCKS.find(b => b.start === initStart)?.end || '12:30'
+    );
+
     setReservationForm({
       tipo: 'DOCENTE',
       nombre: '',
-      fecha: new Date().toISOString().split('T')[0],
-      horaInicio: '08:00',
-      horaFin: '10:00',
+      fecha: targetIso,
+      horaInicio: initStart,
+      horaFin: initEnd,
       actividades: ''
     });
   };
@@ -1292,7 +1302,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     const reqEndM = timeToMins(reservationForm.horaFin);
 
     const conflictingRes = reservations.find(r => {
-      if ((r.aula || '').toUpperCase().trim() !== aulaCode) return false;
+      const rAulas = Array.isArray(r.aulas) && r.aulas.length > 0
+        ? r.aulas.map(a => String(a).toUpperCase().trim())
+        : String(r.aula || '').split(',').map(s => s.toUpperCase().trim()).filter(Boolean);
+      if (!rAulas.includes(aulaCode)) return false;
       const sameDate = (r.fecha === reservationForm.fecha);
       const sameDay = (r.dia && selectedDia && r.dia.toUpperCase() === selectedDia.toUpperCase());
       if (!sameDate && !sameDay) return false;
@@ -1509,16 +1522,34 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     }
   };
 
+  const loadDayAllClasses = async (targetDia = selectedDia) => {
+    if (!targetDia) return;
+    try {
+      const res = await fetch(`/api/attendance?dia=${encodeURIComponent(targetDia)}`);
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setDayAllClasses(json.data.map(sanitizeAttendanceItem));
+      }
+    } catch (err) {
+      console.warn('Error fetching day schedule:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadDayAllClasses(selectedDia);
+  }, [selectedDia]);
+
   useEffect(() => {
     loadRooms();
     loadReservations();
     const handlePulled = () => {
       silentRefreshAttendance();
       loadReservations();
+      loadDayAllClasses(selectedDia);
     };
     window.addEventListener('upn:excel-pulled', handlePulled);
     return () => window.removeEventListener('upn:excel-pulled', handlePulled);
-  }, []);
+  }, [selectedDia]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1839,49 +1870,189 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       ? selectedHora
       : getCurrentHourBlock();
 
-    // 1. Clases regulares ocupadas en el bloque targetHour
-    const classesInTarget = (blockMode === 'ALL')
-      ? data.filter(c => (c.horaInicioProg || '').trim() === targetHour)
-      : data;
-
-    const busyRoomCodes = new Set(classesInTarget.map(c => (c.aula || '').toUpperCase().trim()));
-
-    // 2. Aulas con reserva activa en la hoja RESERVAS para este día/fecha y horario
     const currentBlockDef = REAL_BLOCKS.find(b => b.start === targetHour) || {
+      start: targetHour,
+      end: '12:30',
       startM: timeToMins(targetHour),
       endM: timeToMins(targetHour) + 100
     };
 
-    const targetDateStr = selectedDayInfo?.dateStr; // ej "10/11/2026"
-    const targetIsoDate = selectedDayInfo?.date ? selectedDayInfo.date.toISOString().split('T')[0] : '';
+    // Helper para normalizar día sin tildes ni mayúsculas
+    const normDay = (s) => (s || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const currentNormDay = normDay(selectedDia);
 
-    for (const res of reservations) {
-      const resAula = (res.aula || '').toUpperCase().trim();
-      if (!resAula) continue;
+    // Fechas exactas del día seleccionado
+    const targetIsoDate = selectedDayInfo?.date
+      ? `${selectedDayInfo.date.getFullYear()}-${String(selectedDayInfo.date.getMonth() + 1).padStart(2, '0')}-${String(selectedDayInfo.date.getDate()).padStart(2, '0')}`
+      : '';
+    const targetDmyDate = selectedDayInfo?.dateStr || '';
 
-      const matchesDay = (res.dia && selectedDia && res.dia.toUpperCase() === selectedDia.toUpperCase());
-      const matchesDate = (res.fecha && (res.fecha === targetIsoDate || res.fecha === targetDateStr));
+    // Función para verificar si una reserva pertenece al día seleccionado
+    const isResForSelectedDay = (res) => {
+      if (!res) return false;
+      const resDate = String(res.fecha || '').trim().slice(0, 10);
+      if (resDate) {
+        if (targetIsoDate && resDate === targetIsoDate) return true;
+        if (targetDmyDate && (resDate === targetDmyDate || String(res.fecha).includes(targetDmyDate))) return true;
+        const dmyMatch = resDate.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (dmyMatch && targetIsoDate) {
+          const altIso = `${dmyMatch[3]}-${dmyMatch[2].padStart(2, '0')}-${dmyMatch[1].padStart(2, '0')}`;
+          if (altIso === targetIsoDate) return true;
+        }
+      }
+      if (res.dia && currentNormDay && normDay(res.dia) === currentNormDay) {
+        if (resDate && targetIsoDate && resDate !== targetIsoDate) {
+          return false;
+        }
+        return true;
+      }
+      return false;
+    };
 
-      if (matchesDay || matchesDate) {
-        const resStartM = timeToMins(res.inicio);
-        const resEndM = timeToMins(res.final);
+    // Extraer aulas de una reserva (soporta aula única y múltiples aulas separadas por coma o array)
+    const getResAulas = (res) => {
+      if (!res) return [];
+      if (Array.isArray(res.aulas) && res.aulas.length > 0) {
+        return res.aulas.map(a => String(a).toUpperCase().trim()).filter(Boolean);
+      }
+      return String(res.aula || '')
+        .split(',')
+        .map(s => s.toUpperCase().trim())
+        .filter(Boolean);
+    };
 
-        // Comprobar solapamiento de horario (inicio < fin_bloque && fin > inicio_bloque)
-        if (resStartM < currentBlockDef.endM && resEndM > currentBlockDef.startM) {
-          busyRoomCodes.add(resAula);
+    // Reservas que corresponden a este día
+    const dayReservas = reservations.filter(isResForSelectedDay);
+
+    // Conjunto de aulas ocupadas en el bloque actual
+    const busyRoomCodes = new Set();
+
+    // 1. Clases regulares ocupadas en el bloque targetHour
+    const poolClasses = (dayAllClasses && dayAllClasses.length > 0) ? dayAllClasses : data;
+    for (const c of poolClasses) {
+      const cAula = (c.aula || '').toUpperCase().trim();
+      if (!cAula) continue;
+      const cStart = (c.horaInicioProg || '').trim();
+      const cEnd = (c.horaFinProg || '').trim();
+      const cStartM = timeToMins(cStart);
+      const cEndM = cEnd ? timeToMins(cEnd) : (cStartM + 100);
+
+      // Solapamiento con el bloque actual
+      if (cStartM < currentBlockDef.endM && cEndM > currentBlockDef.startM) {
+        busyRoomCodes.add(cAula);
+      }
+    }
+
+    // 2. Aulas con reserva activa en este bloque (REGLA: si hay una reserva ya hecha NO debe salir en aulas libres)
+    for (const res of dayReservas) {
+      const resAulas = getResAulas(res);
+      if (resAulas.length === 0) continue;
+
+      const resStartM = timeToMins(res.inicio);
+      const resEndM = timeToMins(res.final);
+
+      // Comprobar solapamiento de horario (inicio < fin_bloque && fin > inicio_bloque)
+      if (resStartM < currentBlockDef.endM && resEndM > currentBlockDef.startM) {
+        for (const ra of resAulas) {
+          busyRoomCodes.add(ra);
         }
       }
     }
 
-    return rooms.filter(r => {
-      if (selectedPabellon && r.pabellon !== selectedPabellon) return false;
-      if (selectedPisos.length > 0) {
-        const matchesAnyPiso = selectedPisos.some(p => matchesPiso(r.piso, p));
-        if (!matchesAnyPiso) return false;
-      }
-      return !busyRoomCodes.has((r.abrv || '').toUpperCase().trim());
-    });
-  }, [data, rooms, reservations, selectedPabellon, selectedPisos, blockMode, selectedHora, selectedDia, selectedDayInfo]);
+    // Filtrar aulas no ocupadas y calcular disponibilidad horaria exacta y reservas del día
+    return rooms
+      .filter(r => {
+        if (selectedPabellon && r.pabellon !== selectedPabellon) return false;
+        if (selectedPisos.length > 0) {
+          const matchesAnyPiso = selectedPisos.some(p => matchesPiso(r.piso, p));
+          if (!matchesAnyPiso) return false;
+        }
+        return !busyRoomCodes.has((r.abrv || '').toUpperCase().trim());
+      })
+      .map(r => {
+        const roomAbrv = (r.abrv || '').toUpperCase().trim();
+
+        // Todas las clases de esta aula hoy
+        const roomClassesToday = poolClasses.filter(c => (c.aula || '').toUpperCase().trim() === roomAbrv);
+
+        // Todas las reservas de esta aula hoy
+        const roomReservasToday = dayReservas.filter(res => getResAulas(res).includes(roomAbrv));
+
+        // Todos los eventos futuros a partir del inicio del bloque actual
+        const upcomingEvents = [];
+
+        // Clases futuras hoy
+        for (const c of roomClassesToday) {
+          const cStartM = timeToMins(c.horaInicioProg);
+          if (cStartM >= currentBlockDef.endM) {
+            upcomingEvents.push({
+              startM: cStartM,
+              start: c.horaInicioProg,
+              end: c.horaFinProg,
+              isReserva: false,
+              title: c.curso || c.docente || 'Clase regular',
+              docente: c.docente
+            });
+          }
+        }
+
+        // Reservas futuras hoy
+        for (const res of roomReservasToday) {
+          const rStartM = timeToMins(res.inicio);
+          if (rStartM >= currentBlockDef.endM) {
+            upcomingEvents.push({
+              startM: rStartM,
+              start: res.inicio,
+              end: res.final,
+              isReserva: true,
+              title: res.motivo || res.detalle || 'Reserva de aula',
+              docente: res.docente
+            });
+          }
+        }
+
+        // Ordenar eventos futuros por hora de inicio cronológica
+        upcomingEvents.sort((a, b) => a.startM - b.startM);
+
+        const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+
+        // Calcular de qué hora a qué hora está libre y cuánto tiempo
+        let freeUntil = '22:50'; // Cierre de campus
+        let isRestOfDay = true;
+
+        if (nextEvent) {
+          freeUntil = nextEvent.start;
+          isRestOfDay = false;
+        }
+
+        const freeStartM = currentBlockDef.startM;
+        const freeEndM = timeToMins(freeUntil);
+        const freeDiffM = Math.max(0, freeEndM - freeStartM);
+        const freeHours = Math.floor(freeDiffM / 60);
+        const freeMins = freeDiffM % 60;
+
+        let freeDurationStr = '';
+        if (isRestOfDay) {
+          freeDurationStr = `Resto del día (${freeHours}h libres)`;
+        } else {
+          freeDurationStr = `${freeHours > 0 ? `${freeHours}h ` : ''}${freeMins > 0 ? `${freeMins}m` : ''} libres`.trim();
+        }
+
+        const freeTimeRange = `${currentBlockDef.start} - ${freeUntil}`;
+
+        return {
+          ...r,
+          freeFrom: currentBlockDef.start,
+          freeUntil,
+          freeTimeRange,
+          freeDurationStr,
+          freeDiffM,
+          isRestOfDay,
+          nextEvent,
+          dayReservations: roomReservasToday
+        };
+      });
+  }, [data, dayAllClasses, rooms, reservations, selectedPabellon, selectedPisos, blockMode, selectedHora, selectedDia, selectedDayInfo]);
 
   return (
     <div className="space-y-4 pb-36 md:pb-12">
@@ -2439,6 +2610,59 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     <span className="inline-block text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md mb-2.5 border border-blue-200/60 dark:border-blue-800/60">
                       {room.tipo} · Pab. {room.pabellon} ({room.piso})
                     </span>
+
+                    {/* Horario y Tiempo Disponible */}
+                    <div className="mb-2 p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/70 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center justify-between text-xs font-black text-emerald-950 dark:text-emerald-200">
+                        <span className="inline-flex items-center gap-1.5 font-mono">
+                          <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.4]" />
+                          <span>{room.freeTimeRange}</span>
+                        </span>
+                        <span className="text-[10px] uppercase tracking-tight px-2 py-0.5 rounded-md bg-emerald-200/80 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-100 font-extrabold shadow-2xs">
+                          {room.freeDurationStr}
+                        </span>
+                      </div>
+                      {room.nextEvent ? (
+                        <div className="text-[10.5px] text-slate-600 dark:text-zinc-400 flex items-center justify-between pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40">
+                          <span className="font-semibold text-slate-500 dark:text-zinc-400">
+                            Próx. {room.nextEvent.isReserva ? 'reserva' : 'clase'}:
+                          </span>
+                          <strong className="text-slate-800 dark:text-zinc-200 font-mono text-[11px]">
+                            {room.nextEvent.start} hrs
+                          </strong>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 flex items-center gap-1">
+                          <span>✨ Sin más clases hoy (todo el resto del día)</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Reservas programadas para este día */}
+                    {room.dayReservations && room.dayReservations.length > 0 ? (
+                      <div className="mb-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-[11px] space-y-1">
+                        <div className="flex items-center justify-between font-bold text-amber-900 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                            <span>{room.dayReservations.length === 1 ? '1 reserva hoy' : `${room.dayReservations.length} reservas hoy`}</span>
+                          </span>
+                          <span className="font-mono text-[10px] font-black text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-1.5 py-0.5 rounded">
+                            {room.dayReservations[0].inicio} - {room.dayReservations[0].final}
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-amber-800 dark:text-amber-300 font-medium truncate" title={room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}>
+                          👤 {room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mb-2 px-2 py-1 rounded-lg bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60 text-[10px] text-slate-500 dark:text-zinc-400 flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-slate-400 dark:text-zinc-500" />
+                          <span>Sin reservas hoy</span>
+                        </span>
+                        <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold">100% disponible</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-zinc-900/80 p-2 rounded-xl border border-slate-100 dark:border-zinc-800">
                       <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400">
