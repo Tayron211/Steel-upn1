@@ -54,6 +54,8 @@ export function useFadeModal(isOpen, onClose, duration = 200) {
     backdropClass: isClosing ? 'animate-backdrop-fade-out pointer-events-none' : 'animate-backdrop-fade',
     modalClass: isClosing ? 'animate-modal-fade-out pointer-events-none' : 'animate-modal-fade',
     dropdownClass: isClosing ? 'animate-dropdown-fade-out pointer-events-none' : 'animate-dropdown-fade',
+    slideRightClass: isClosing ? 'animate-notification-slide-out pointer-events-none' : 'animate-notification-slide-in',
+    slideDownClass: isClosing ? 'animate-toast-slide-up pointer-events-none' : 'animate-toast-slide-down',
   };
 }
 
