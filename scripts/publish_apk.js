@@ -65,13 +65,13 @@ try {
     console.log('-> Eliminada APK recursiva de android/app/src/main/assets/public');
   }
 
-  // 4. Compilar APK Nativa con Gradle
-  console.log('[4/5] Compilando APK Nativa con Gradle...');
-  const gradlewCmd = process.platform === 'win32' ? 'gradlew.bat assembleDebug' : './gradlew assembleDebug';
+  // 4. Compilar APK Nativa con Gradle en modo Release (Produccion sin debuggable)
+  console.log('[4/5] Compilando APK Nativa Release con Gradle...');
+  const gradlewCmd = process.platform === 'win32' ? 'gradlew.bat assembleRelease' : './gradlew assembleRelease';
   run(gradlewCmd, path.join(rootDir, 'android'));
 
-  // 5. Copiar APK a public/control-doc.apk
-  const srcApk = path.join(rootDir, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+  // 5. Copiar APK Release a public/control-doc.apk
+  const srcApk = path.join(rootDir, 'android', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
   const destApk = path.join(rootDir, 'public', 'control-doc.apk');
   fs.copyFileSync(srcApk, destApk);
   console.log(`[5/5] APK copiada exitosamente a public/control-doc.apk (${(fs.statSync(destApk).size / (1024 * 1024)).toFixed(2)} MB)`);
