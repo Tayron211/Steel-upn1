@@ -766,6 +766,18 @@ export default function TeacherSchedulesView() {
                           </div>
                         </div>
                       ))}
+
+                      {/* Botón para Copiar Todo en Bloque (Todas las clases de este docente) */}
+                      {teacher.totalClasses > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => copyTeacherSchedule(teacher)}
+                          className="w-full mt-2 py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.98] text-amber-900 dark:text-amber-300 border border-amber-300/70 dark:border-amber-800/70 text-[11px] font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                        >
+                          <Copy className="w-3.5 h-3.5 stroke-[2.3] text-amber-600 dark:text-amber-400" />
+                          <span>Copiar todo en bloque ({teacher.totalClasses} clases en Excel)</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
