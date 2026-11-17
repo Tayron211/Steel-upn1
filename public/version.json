@@ -1,8 +1,8 @@
 {
-  "version": "1.0.91",
-  "versionCode": 92,
+  "version": "1.0.92",
+  "versionCode": 93,
   "releaseDate": "2026-11-17",
-  "notes": "Desplegable de horarios individuales en tarjetas de reservas para simetria perfecta",
+  "notes": "Desglose detallado por aula fecha y hora en historial de docente",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

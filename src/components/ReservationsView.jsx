@@ -363,9 +363,19 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     if (!Array.isArray(items) || items.length === 0) return 0;
     let mins = 0;
     items.forEach(it => {
-      const start = timeToMins(it.inicio || it.hora_inicio);
-      const end = timeToMins(it.final || it.hora_fin);
-      if (end > start) mins += (end - start);
+      if (hasMultipleDifferentSchedules(it)) {
+        const rooms = getReservationRooms(it);
+        rooms.forEach(a => {
+          const s = getRoomSchedule(it, a);
+          const start = timeToMins(s.inicio);
+          const end = timeToMins(s.final);
+          if (end > start) mins += (end - start);
+        });
+      } else {
+        const start = timeToMins(it.inicio || it.hora_inicio);
+        const end = timeToMins(it.final || it.hora_fin);
+        if (end > start) mins += (end - start);
+      }
     });
     return (mins / 60).toFixed(1).replace('.0', '');
   };
@@ -3516,58 +3526,122 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   const rooms = getReservationRooms(item);
                   const isUpcoming = isDateUpcoming(item.fecha);
                   const isToday = isDateToday(item.fecha);
+                  const hasMultiSched = hasMultipleDifferentSchedules(item);
 
                   return (
                     <div
                       key={item.id || idx}
-                      className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/80 dark:border-zinc-800/80 hover:border-amber-300/80 dark:hover:border-amber-700/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                      className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/80 dark:border-zinc-800/80 hover:border-amber-300/80 dark:hover:border-amber-700/50 transition-all flex flex-col sm:flex-row sm:items-start justify-between gap-2.5"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                          {rooms.map(a => (
-                            <span
-                              key={a}
-                              className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25"
-                            >
-                              {a}
-                            </span>
-                          ))}
-                          <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-300">
-                            {item.dia || ''} · {formatExcelDate(item.fecha)}
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500">
-                            ({item.mes || ''})
-                          </span>
-                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ml-auto shrink-0 ${
-                            isToday
-                              ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
-                              : isUpcoming
-                                ? 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700'
-                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
-                          }`}>
-                            {isToday ? 'Hoy' : isUpcoming ? 'Próxima' : 'Completada'}
-                          </span>
-                        </div>
+                        {hasMultiSched ? (
+                          <>
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25 inline-flex items-center gap-1">
+                                <Layers className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                                <span>{rooms.length} Aulas</span>
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500">
+                                ({item.mes || ''})
+                              </span>
+                              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ml-auto shrink-0 ${
+                                isToday
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                                  : isUpcoming
+                                    ? 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700'
+                                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
+                              }`}>
+                                {isToday ? 'Hoy' : isUpcoming ? 'Próxima' : 'Completada'}
+                              </span>
+                            </div>
 
-                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          {item.detalle || item.motivo || 'Uso de Ambiente'}
-                        </div>
+                            <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                              {item.detalle || item.motivo || 'Uso de Ambiente'}
+                            </div>
 
-                        <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
-                          <span className="inline-flex items-center gap-1 font-mono font-semibold text-slate-700 dark:text-zinc-300">
-                            <Clock className="w-3 h-3 text-amber-500 stroke-[2.2]" />
-                            {item.inicio || item.hora_inicio} - {item.final || item.hora_fin}
-                          </span>
-                          <span className="truncate">
-                            Por: <strong className="text-slate-700 dark:text-zinc-300">{item.usuario || 'Operaciones'}</strong>
-                          </span>
-                        </div>
+                            {/* Desglose individual de cada aula con su fecha y horario */}
+                            <div className="mt-2 space-y-1">
+                              {rooms.map(a => {
+                                const sched = getRoomSchedule(item, a);
+                                const dtRoom = sched.fecha ? new Date(sched.fecha + 'T12:00:00') : null;
+                                const diaRoom = dtRoom && !Number.isNaN(dtRoom.getTime()) ? DAYS_SHORT[dtRoom.getDay()] : (item.dia || '');
+                                return (
+                                  <div
+                                    key={a}
+                                    className="flex items-center justify-between text-xs font-mono bg-white dark:bg-zinc-800/80 px-2.5 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-700/60 shadow-2xs"
+                                  >
+                                    <span className="font-black text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
+                                      <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono text-[10.5px] font-extrabold shrink-0">
+                                        {a}
+                                      </span>
+                                      <span className="text-slate-600 dark:text-zinc-300 font-semibold text-[10.5px] truncate">
+                                        {diaRoom} {formatExcelDate(sched.fecha)}
+                                      </span>
+                                    </span>
+                                    <span className="text-slate-900 dark:text-white font-bold inline-flex items-center gap-1 text-[10.5px] shrink-0">
+                                      <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                                      <span>{sched.inicio} - {sched.final}</span>
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-zinc-400 mt-2">
+                              <span className="truncate">
+                                Por: <strong className="text-slate-700 dark:text-zinc-300">{item.usuario || 'Operaciones'}</strong>
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              {rooms.map(a => (
+                                <span
+                                  key={a}
+                                  className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25"
+                                >
+                                  {a}
+                                </span>
+                              ))}
+                              <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-300">
+                                {item.dia || ''} · {formatExcelDate(item.fecha)}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500">
+                                ({item.mes || ''})
+                              </span>
+                              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ml-auto shrink-0 ${
+                                isToday
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                                  : isUpcoming
+                                    ? 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700'
+                                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
+                              }`}>
+                                {isToday ? 'Hoy' : isUpcoming ? 'Próxima' : 'Completada'}
+                              </span>
+                            </div>
+
+                            <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                              {item.detalle || item.motivo || 'Uso de Ambiente'}
+                            </div>
+
+                            <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
+                              <span className="inline-flex items-center gap-1 font-mono font-semibold text-slate-700 dark:text-zinc-300">
+                                <Clock className="w-3 h-3 text-amber-500 stroke-[2.2]" />
+                                {item.inicio || item.hora_inicio} - {item.final || item.hora_fin}
+                              </span>
+                              <span className="truncate">
+                                Por: <strong className="text-slate-700 dark:text-zinc-300">{item.usuario || 'Operaciones'}</strong>
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       <button
                         type="button"
                         onClick={() => handleCopyReservation(item, false)}
-                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-bold border border-slate-200 dark:border-zinc-700 transition active:scale-95 shrink-0 cursor-pointer shadow-2xs"
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-bold border border-slate-200 dark:border-zinc-700 transition active:scale-95 shrink-0 cursor-pointer shadow-2xs self-start sm:self-center"
                         title="Copiar datos de esta reserva para Excel"
                       >
                         <Copy className="w-3.5 h-3.5 text-amber-500" />
