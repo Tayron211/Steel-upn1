@@ -376,7 +376,7 @@ export default function TeacherSchedulesView() {
       {/* Header Panel con Selector Múltiple de Días */}
       <div className="bg-white dark:bg-[#0c0c10] rounded-3xl p-4 sm:p-6 border border-slate-200/90 dark:border-zinc-800 shadow-sm space-y-4">
         <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
-          <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-[#FDBA30]/20 text-[#b37700] dark:text-[#FDBA30] flex items-center justify-center shadow-xs shrink-0">
             <GraduationCap className="w-5 h-5 stroke-[2.3]" />
           </div>
           <div>
@@ -393,7 +393,7 @@ export default function TeacherSchedulesView() {
         <div>
           <label className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
             <span>Días Seleccionados ({selectedDays.length} activos)</span>
-            <span className="text-amber-600 dark:text-amber-400 font-bold lowercase">
+            <span className="text-[#b37700] dark:text-[#FDBA30] font-bold lowercase">
               Toca para marcar o desmarcar
             </span>
           </label>
@@ -477,7 +477,7 @@ export default function TeacherSchedulesView() {
               type="button"
               onClick={() => setSelectedJornada('MANANA')}
               className={`flex-1 py-1.5 px-2 rounded-xl text-center transition ${selectedJornada === 'MANANA'
-                  ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 shadow-xs font-black'
+                  ? 'bg-[#FDBA30] text-slate-950 shadow-xs font-black'
                   : 'text-slate-600 dark:text-zinc-400 hover:text-slate-950'
                 }`}
             >
@@ -513,7 +513,7 @@ export default function TeacherSchedulesView() {
               <span className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 dark:text-zinc-500 block truncate">Docentes</span>
               <span className="text-sm sm:text-lg font-black text-slate-900 dark:text-white font-mono">{stats.teachersCount}</span>
             </div>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FDBA30]/20 text-[#b37700] dark:text-[#FDBA30] flex items-center justify-center shrink-0">
               <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.4]" />
             </div>
           </div>
@@ -544,10 +544,10 @@ export default function TeacherSchedulesView() {
       {!loading && teachersGrouped.length > 0 && (
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">
-            Mostrando <span className="font-black text-slate-900 dark:text-white font-mono">{teachersGrouped.length}</span> docentes · <span className="font-mono text-amber-600 dark:text-amber-400 font-black">{stats.classesCount}</span> clases activas
+            Mostrando <span className="font-black text-slate-900 dark:text-white font-mono">{teachersGrouped.length}</span> docentes · <span className="font-mono text-[#b37700] dark:text-[#FDBA30] font-black">{stats.classesCount}</span> clases activas
           </div>
           <span className="text-[11px] text-slate-400 dark:text-zinc-500 hidden sm:inline-flex items-center gap-1 font-medium">
-            <Eye className="w-3.5 h-3.5 text-amber-500" />
+            <Eye className="w-3.5 h-3.5 text-[#FDBA30]" />
             Toca cualquier tarjeta para ver su horario en ventana flotante
           </span>
         </div>
@@ -575,22 +575,22 @@ export default function TeacherSchedulesView() {
               <div
                 key={teacher.name}
                 onClick={() => setSelectedTeacherForModal(teacher)}
-                className="h-[72px] bg-white dark:bg-[#0c0c10] rounded-2xl p-3 border border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-amber-400/80 dark:hover:border-amber-500/60 hover:shadow-md transition-all duration-150 flex flex-col justify-center cursor-pointer group select-none active:scale-[0.99]"
+                className="h-[72px] bg-white dark:bg-[#0c0c10] rounded-2xl p-3 border border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-[#FDBA30] dark:hover:border-[#FDBA30]/70 hover:shadow-md transition-all duration-150 flex flex-col justify-center cursor-pointer group select-none active:scale-[0.99]"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 group-hover:bg-[#FDBA30] group-hover:text-slate-950 flex items-center justify-center shrink-0 transition">
+                    <div className="w-8 h-8 rounded-xl bg-[#FDBA30]/15 dark:bg-[#FDBA30]/25 text-[#9e6700] dark:text-[#FDBA30] group-hover:bg-[#FDBA30] group-hover:text-slate-950 flex items-center justify-center shrink-0 transition">
                       <GraduationCap className="w-4 h-4 stroke-[2.3]" />
                     </div>
                     <div className="min-w-0 flex-1 overflow-hidden">
                       <h3
-                        className="font-extrabold text-xs text-slate-950 dark:text-white tracking-tight truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors"
+                        className="font-extrabold text-xs text-slate-950 dark:text-white tracking-tight truncate leading-tight group-hover:text-[#b37700] dark:group-hover:text-[#FDBA30] transition-colors"
                         title={teacher.name}
                       >
                         {teacher.name}
                       </h3>
                       <div className="flex items-center gap-1.5 mt-1 flex-nowrap overflow-hidden">
-                        <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
+                        <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-[#FDBA30]/20 text-slate-950 dark:text-amber-200">
                           {teacher.totalClasses} {teacher.totalClasses === 1 ? 'Clase' : 'Clases'}
                         </span>
                         <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
@@ -650,7 +650,7 @@ export default function TeacherSchedulesView() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-900 dark:text-zinc-200 bg-[#FDBA30]/20 px-2 py-0.5 rounded-md border border-[#FDBA30]/40">
                           Horario Docente UPN
                         </span>
                         <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-400 truncate max-w-[180px]">
@@ -661,7 +661,7 @@ export default function TeacherSchedulesView() {
                         {doc.name}
                       </h3>
                       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                        <span className="text-[10px] sm:text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300">
+                        <span className="text-[10px] sm:text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-[#FDBA30]/20 text-slate-900 dark:text-amber-200">
                           {doc.totalClasses} {doc.totalClasses === 1 ? 'Clase' : 'Clases'}
                         </span>
                         <span className="text-[10px] sm:text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
@@ -684,20 +684,11 @@ export default function TeacherSchedulesView() {
                   </button>
                 </div>
 
-                {/* Barra de Acción: Copiar todo en bloque (Excel con colores) */}
-                <div className="px-4 sm:px-6 py-2 bg-amber-50/60 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span className="text-[11px] sm:text-xs font-bold text-amber-900 dark:text-amber-300">
+                {/* Subcabecera de listado (limpia y sin botón redundante) */}
+                <div className="px-4 sm:px-6 py-2.5 bg-slate-50 dark:bg-zinc-900/40 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+                  <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-zinc-400">
                     Listado cronológico de clases programadas
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => copyTeacherSchedule(doc)}
-                    className="w-full sm:w-auto h-9 sm:h-8 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
-                    title="Copiar todas las clases en formato tabla Excel con colores"
-                  >
-                    <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
-                    <span>Copiar todo en bloque (Excel)</span>
-                  </button>
                 </div>
 
                 {/* Cuerpo del Modal: Lista de Clases con NRC, Horas y Copia Individual */}
@@ -705,7 +696,7 @@ export default function TeacherSchedulesView() {
                   {doc.classes.map((c, idx) => (
                     <div
                       key={`${c.aula}-${c.horaInicioProg}-${c.dia}-${idx}`}
-                      className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200/80 dark:border-zinc-800 flex flex-col gap-1.5 hover:border-amber-400/60 transition group"
+                      className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200/80 dark:border-zinc-800 flex flex-col gap-1.5 hover:border-[#FDBA30]/60 transition group"
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -724,14 +715,14 @@ export default function TeacherSchedulesView() {
 
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-xs font-mono font-black text-slate-800 dark:text-zinc-200 flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-amber-500 stroke-[2.4]" />
+                            <Clock className="w-3.5 h-3.5 text-[#FDBA30] stroke-[2.4]" />
                             {c.horaInicioProg} - {c.horaFinalProg}
                           </span>
                           <button
                             type="button"
                             onClick={() => copySingleClass(c, doc.name)}
                             title="Copiar esta clase individual en tabla Excel con colores"
-                            className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-500 hover:text-amber-800 dark:text-zinc-400 dark:hover:text-amber-300 border border-slate-200 dark:border-zinc-700 flex items-center justify-center transition active:scale-90 cursor-pointer shadow-2xs"
+                            className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 hover:bg-[#FDBA30] hover:text-slate-950 dark:text-zinc-400 dark:hover:bg-[#FDBA30] dark:hover:text-slate-950 border border-slate-200 dark:border-zinc-700 flex items-center justify-center transition active:scale-90 cursor-pointer shadow-2xs"
                           >
                             <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
                           </button>
@@ -758,7 +749,8 @@ export default function TeacherSchedulesView() {
                     <button
                       type="button"
                       onClick={() => copyTeacherSchedule(doc)}
-                      className="flex-1 sm:flex-none h-10 sm:h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                      className="flex-1 sm:flex-none h-10 sm:h-9 px-4 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="Copiar horario en formato tabla de Excel con colores oficiales"
                     >
                       <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
                       <span>Copiar todo en bloque</span>
