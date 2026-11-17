@@ -248,7 +248,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       </button>
                     )}
 
-                    {/* Fila de Iconos de Acciones (Botones Sólidos 100% Opacos) */}
+                    {/* Fila de Iconos de Acciones (Botones Sólidos 100% Opacos en Tonos Zinc de la App) */}
                     <div className="grid grid-cols-3 gap-2">
                       {/* 1. Modo Claro / Oscuro */}
                       <button
@@ -256,7 +256,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         onClick={() => {
                           onToggleDarkMode();
                         }}
-                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-slate-100 dark:bg-[#1a1f2c] dark:hover:bg-[#22293a] border border-slate-300 dark:border-zinc-700 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-700 transition-all active:scale-95 cursor-pointer shadow-xs"
                         title={darkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro (AMOLED)'}
                       >
                         {darkMode ? (
@@ -273,7 +273,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           handleSyncOneDrive();
                         }}
                         disabled={isSyncing}
-                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-slate-100 dark:bg-[#142032] dark:hover:bg-[#1c2c44] border border-slate-300 dark:border-sky-800/60 transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-700 transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-xs"
                         title="Sincronizar OneDrive (Excel ↔ App)"
                       >
                         {isSyncing ? (
@@ -292,7 +292,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           setUserMenuOpen(false);
                           onLogout();
                         }}
-                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-rose-50 dark:bg-[#27151a] dark:hover:bg-[#351b22] border border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-rose-50 dark:bg-zinc-900 dark:hover:bg-rose-950/40 border border-rose-300 dark:border-zinc-700 text-rose-600 dark:text-rose-400 transition-all active:scale-95 cursor-pointer shadow-xs"
                         title="Cerrar Sesión"
                       >
                         <LogOut className="w-4 h-4 stroke-[2.2]" />
@@ -309,7 +309,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                             setUserMenuOpen(false);
                             triggerDirectApkInstall();
                           }}
-                          className="h-8 px-2 rounded-xl bg-white hover:bg-emerald-50 dark:bg-[#13251c] dark:hover:bg-[#1b3426] border border-emerald-300 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-300 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-xs group cursor-pointer"
+                          className="h-8 px-2 rounded-xl bg-white hover:bg-emerald-50 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-emerald-300 dark:border-zinc-700 text-emerald-950 dark:text-emerald-300 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-xs group cursor-pointer"
                           title="Descargar e Instalar APK Nativo para Android"
                         >
                           <AndroidIcon className="w-3.5 h-3.5 text-[#3DDC84] shrink-0 group-hover:scale-110 transition-transform" />
@@ -323,7 +323,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                             setUserMenuOpen(false);
                             handleInstallPwa();
                           }}
-                          className="h-8 px-2 rounded-xl bg-white hover:bg-slate-100 dark:bg-[#1c202a] dark:hover:bg-[#252b38] border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-xs cursor-pointer group"
+                          className="h-8 px-2 rounded-xl bg-white hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-xs cursor-pointer group"
                           title="Instalar WebApp en Apple iOS (iPhone / iPad) o Safari"
                         >
                           <AppleIcon className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0 group-hover:scale-110 transition-transform" />
