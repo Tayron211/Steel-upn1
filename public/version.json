@@ -1,8 +1,8 @@
 {
-  "version": "1.0.90",
-  "versionCode": 91,
+  "version": "1.0.91",
+  "versionCode": 92,
   "releaseDate": "2026-11-17",
-  "notes": "Mejora de fluidez en modales sin parones y limpieza de redundancias en reservas",
+  "notes": "Desplegable de horarios individuales en tarjetas de reservas para simetria perfecta",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

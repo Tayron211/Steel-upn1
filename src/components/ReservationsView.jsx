@@ -280,6 +280,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [pickerPabellon, setPickerPabellon] = useState(''); // '' | 'A' | 'B'
   const [pickerPiso, setPickerPiso] = useState(''); // '' | 'SOT' | '1ER PISO' | ...
   const [toastMessage, setToastMessage] = useState('');
+  const [expandedSchedules, setExpandedSchedules] = useState({});
+
+  const toggleScheduleExpand = (id) => {
+    setExpandedSchedules(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   const reservationModalFade = useFadeModal(isModalOpen, () => {
     setIsModalOpen(false);
@@ -2525,37 +2533,57 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
                     {/* Horarios: Desglose individual por aula si difieren fecha/hora, o bloque único consolidado si comparten el mismo horario */}
                     {hasMultipleDifferentSchedules(r) ? (
-                      <div className="space-y-1.5 mb-3">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 px-0.5">
-                          <span>Horario Individual por Aula</span>
-                        </div>
-                        <div className="space-y-1">
-                          {cardAulas.map(a => {
-                            const sched = getRoomSchedule(r, a);
-                            const dtRoom = sched.fecha ? new Date(sched.fecha + 'T12:00:00') : null;
-                            const diaRoom = dtRoom && !Number.isNaN(dtRoom.getTime()) ? DAYS_SHORT[dtRoom.getDay()] : (r.dia || '');
-                            return (
-                              <div
-                                key={a}
-                                className="flex items-center justify-between text-xs font-mono bg-slate-50 dark:bg-[#121216] px-2.5 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-800"
-                              >
-                                <span className="font-black text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
-                                  <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono text-[11px] font-extrabold shrink-0">
-                                    {a}
-                                  </span>
-                                  <span className="text-slate-600 dark:text-zinc-300 font-semibold text-[11px] truncate">
-                                    {diaRoom} {sched.fecha}
-                                  </span>
-                                </span>
-                                <span className="text-slate-900 dark:text-white font-bold inline-flex items-center gap-1 text-[11px] shrink-0">
-                                  <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
-                                  <span>{sched.inicio} - {sched.final}</span>
-                                </span>
+                      (() => {
+                        const isExpanded = Boolean(expandedSchedules[r.id]);
+                        return (
+                          <div className="mb-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50 dark:bg-[#121216] overflow-hidden transition-all duration-200">
+                            <button
+                              type="button"
+                              onClick={() => toggleScheduleExpand(r.id)}
+                              className="w-full flex items-center justify-between text-xs font-mono px-3 py-1.5 hover:bg-slate-100/80 dark:hover:bg-zinc-800/60 transition cursor-pointer select-none"
+                              title={isExpanded ? "Ocultar desglose de horarios" : "Desplegar horarios por aula"}
+                            >
+                              <span className="text-slate-700 dark:text-zinc-200 font-bold flex items-center gap-1.5 min-w-0">
+                                <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2] shrink-0" />
+                                <span className="truncate">{cardAulas.length} Horarios por Aula</span>
+                              </span>
+                              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 inline-flex items-center gap-1 shrink-0 ml-2">
+                                <span>{isExpanded ? 'Ocultar' : 'Ver detalle'}</span>
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 stroke-[2.5] ${isExpanded ? 'rotate-180' : ''}`} />
+                              </span>
+                            </button>
+
+                            {isExpanded && (
+                              <div className="p-2 border-t border-slate-200/70 dark:border-zinc-800 space-y-1 bg-slate-100/50 dark:bg-black/40 animate-fade-in">
+                                {cardAulas.map(a => {
+                                  const sched = getRoomSchedule(r, a);
+                                  const dtRoom = sched.fecha ? new Date(sched.fecha + 'T12:00:00') : null;
+                                  const diaRoom = dtRoom && !Number.isNaN(dtRoom.getTime()) ? DAYS_SHORT[dtRoom.getDay()] : (r.dia || '');
+                                  return (
+                                    <div
+                                      key={a}
+                                      className="flex items-center justify-between text-xs font-mono bg-white dark:bg-[#121216] px-2.5 py-1.5 rounded-lg border border-slate-200/60 dark:border-zinc-800 shadow-2xs"
+                                    >
+                                      <span className="font-black text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
+                                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono text-[10.5px] font-extrabold shrink-0">
+                                          {a}
+                                        </span>
+                                        <span className="text-slate-600 dark:text-zinc-300 font-semibold text-[10.5px] truncate">
+                                          {diaRoom} {sched.fecha}
+                                        </span>
+                                      </span>
+                                      <span className="text-slate-900 dark:text-white font-bold inline-flex items-center gap-1 text-[10.5px] shrink-0">
+                                        <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                                        <span>{sched.inicio} - {sched.final}</span>
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                            )}
+                          </div>
+                        );
+                      })()
                     ) : (
                       <div className="flex items-center justify-between text-xs font-mono bg-slate-50 dark:bg-[#121216] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-800 mb-3">
                         <span className="text-slate-600 dark:text-zinc-300 font-semibold">
