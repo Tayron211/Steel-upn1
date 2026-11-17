@@ -749,28 +749,19 @@ export default function TeacherSchedulesView() {
                 </div>
 
                 {/* Pie del Modal (Adaptado a móviles) */}
-                <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-safe">
+                <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex flex-col sm:flex-row items-center justify-between gap-2.5 pb-safe">
                   <div className="text-xs font-bold text-slate-500 dark:text-zinc-400 text-center sm:text-left">
                     Total: <span className="font-black text-slate-900 dark:text-white font-mono">{doc.totalClasses}</span> clases asignadas
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => copyTeacherSchedule(doc)}
-                      className="flex-1 sm:flex-none h-10 sm:h-9 px-4 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
-                      title="Copiar horario en formato tabla de Excel con colores oficiales"
-                    >
-                      <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
-                      <span>Copiar todo en bloque</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => teacherModalFade.requestClose()}
-                      className="h-10 sm:h-9 px-4 rounded-xl bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-black transition cursor-pointer flex items-center justify-center active:scale-95"
-                    >
-                      Cerrar
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyTeacherSchedule(doc)}
+                    className="w-full sm:w-auto h-10 sm:h-9 px-4 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                    title="Copiar horario en formato tabla de Excel con colores oficiales"
+                  >
+                    <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
+                    <span>Copiar todo en bloque</span>
+                  </button>
                 </div>
               </div>
             </div>
