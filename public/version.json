@@ -1,8 +1,8 @@
 {
-  "version": "1.0.95",
-  "versionCode": 96,
+  "version": "1.0.96",
+  "versionCode": 97,
   "releaseDate": "2026-11-17",
-  "notes": "Compilacion Release de produccion sin debuggable y optimizada para Xiaomi",
+  "notes": "Firma oficial de produccion UPN Control Docente con certificado limpio",
   "features": [
     {
       "title": "Auditoría de Seguridad y Protección de Cabeceras",
