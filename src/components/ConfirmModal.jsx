@@ -73,7 +73,7 @@ export default function ConfirmModal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 bg-slate-950/60 dark:bg-black/80 z-[9999] flex items-center justify-center p-4 ${fadeModal.backdropClass}`}
+      className={`fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 ${fadeModal.backdropClass}`}
       onClick={handleCancel}
     >
       <div

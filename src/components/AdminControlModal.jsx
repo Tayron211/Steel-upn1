@@ -40,7 +40,7 @@ const AVAILABLE_PISOS = [
 ];
 
 export default function AdminControlModal({ isOpen, onClose, authUser }) {
-  const fadeModal = useFadeModal(isOpen, onClose, 200);
+  const fadeModal = useFadeModal(isOpen, onClose, 200, { isModal: true });
 
   const [activeTab, setActiveTab] = useState('assignments'); // 'assignments' | 'users'
   const [users, setUsers] = useState([]);
@@ -201,7 +201,7 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/80 ${fadeModal.backdropClass}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md ${fadeModal.backdropClass}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) fadeModal.requestClose();
       }}

@@ -1,5 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+let activeModalCount = 0;
+
+function syncGlobalModalBlur(shouldBeActive) {
+  if (typeof document === 'undefined') return;
+  if (shouldBeActive) {
+    activeModalCount++;
+    document.body.classList.add('modal-backdrop-blur-active');
+    document.documentElement.setAttribute('data-modal-open', 'true');
+  } else {
+    activeModalCount = Math.max(0, activeModalCount - 1);
+    if (activeModalCount === 0) {
+      document.body.classList.remove('modal-backdrop-blur-active');
+      document.documentElement.removeAttribute('data-modal-open');
+    }
+  }
+}
+
 /**
  * useFadeModal
  * Hook to manage silky-smooth enter AND exit fade animations for any modal, dialog, drawer or popup.
@@ -7,6 +24,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * @param {boolean|any} isOpen - Whether modal is open (boolean or item object)
  * @param {Function} [onClose] - Callback when modal is fully closed
  * @param {number} [duration=200] - Duration of exit fade animation in ms
+ * @param {Object} [options={}] - Options object (e.g. { isModal: true })
  */
 export function useFadeModal(isOpen, onClose, duration = 200, options = {}) {
   const isModal = Boolean(options?.isModal);
@@ -14,6 +32,7 @@ export function useFadeModal(isOpen, onClose, duration = 200, options = {}) {
   const [isClosing, setIsClosing] = useState(false);
   const [cachedData, setCachedData] = useState(isOpen || null);
   const timerRef = useRef(null);
+  const wasActiveRef = useRef(false);
 
   useEffect(() => {
     if (Boolean(isOpen)) {
@@ -35,30 +54,25 @@ export function useFadeModal(isOpen, onClose, duration = 200, options = {}) {
     };
   }, [isOpen, duration]);
 
-  // Sincroniza el estado global de ventana modal abierta para difuminar suavemente el fondo de la app (main)
+  // Sincroniza atómicamente el estado global de desenfoque del fondo cuando la ventana modal está activa
   useEffect(() => {
-    if (typeof document === 'undefined' || !isModal) return;
-    if (shouldRender && !isClosing) {
-      document.documentElement.setAttribute('data-modal-open', 'true');
-    } else {
-      const timer = setTimeout(() => {
-        if (!document.querySelector('.animate-backdrop-fade, .apple-liquid-modal, [role="dialog"]')) {
-          document.documentElement.removeAttribute('data-modal-open');
-        }
-      }, 60);
-      return () => clearTimeout(timer);
+    if (!isModal || typeof document === 'undefined') return;
+    const isActive = shouldRender && !isClosing;
+    if (isActive && !wasActiveRef.current) {
+      wasActiveRef.current = true;
+      syncGlobalModalBlur(true);
+    } else if (!isActive && wasActiveRef.current) {
+      wasActiveRef.current = false;
+      syncGlobalModalBlur(false);
     }
   }, [shouldRender, isClosing, isModal]);
 
   useEffect(() => {
     if (!isModal) return;
     return () => {
-      if (typeof document !== 'undefined') {
-        setTimeout(() => {
-          if (!document.querySelector('.animate-backdrop-fade, .apple-liquid-modal, [role="dialog"]')) {
-            document.documentElement.removeAttribute('data-modal-open');
-          }
-        }, 60);
+      if (wasActiveRef.current) {
+        wasActiveRef.current = false;
+        syncGlobalModalBlur(false);
       }
     };
   }, [isModal]);

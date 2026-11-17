@@ -177,11 +177,11 @@ export default function ManualSheetsView({
   const newSheetFade = useFadeModal(isModalOpen, () => {
     setIsModalOpen(false);
     if (onConsumeTrigger) onConsumeTrigger();
-  }, 200);
+  }, 200, { isModal: true });
 
   const printSheetFade = useFadeModal(selectedForPrint, () => {
     setSelectedForPrint(null);
-  }, 200);
+  }, 200, { isModal: true });
 
   const closeModal = () => {
     newSheetFade.requestClose();
@@ -1050,7 +1050,7 @@ ${htmlRows.join('\n')}
       {/* Modal: New Manual Sheet - 100% Symmetrical con Fade In y Fade Out Suave */}
       {newSheetFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 ${newSheetFade.backdropClass}`}
+          className={`fixed inset-0 bg-slate-900/50 backdrop-blur-md flex items-center justify-center z-[9999] p-4 ${newSheetFade.backdropClass}`}
           onClick={() => closeModal()}
         >
           <div
@@ -1318,7 +1318,7 @@ ${htmlRows.join('\n')}
 
         return createPortal(
           <div
-            className={`fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 ${printSheetFade.backdropClass}`}
+            className={`fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[9999] p-4 ${printSheetFade.backdropClass}`}
             onClick={() => printSheetFade.requestClose()}
           >
             <div

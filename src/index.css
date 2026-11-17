@@ -1287,22 +1287,26 @@ html:not(.dark) .apple-liquid-pill {
 
 /* =========================================================
    UNIVERSAL FROSTED GLASS FOR ALL APP MODALS / WINDOWS / DIALOGS
-   Desenfoca y difumina únicamente el contenedor principal (<main>) cuando se abre
-   una ventana modal o diálogo, manteniendo la Navbar (<header>) fija y sin desplazamientos.
+   Desenfoca y difumina todo el contenido subyacente de la app (#app-content-root)
+   cuando cualquier ventana modal o diálogo está abierto.
    ========================================================= */
 
+#app-content-root,
 main,
 .app-main-content {
-  transition: filter 0.24s cubic-bezier(0.16, 1, 0.3, 1), -webkit-filter 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: filter 0.22s cubic-bezier(0.16, 1, 0.3, 1), -webkit-filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+body.modal-backdrop-blur-active #app-content-root,
+html[data-modal-open="true"] #app-content-root,
+body:has([role="dialog"]) #app-content-root,
+body:has(.apple-liquid-modal) #app-content-root,
+body.modal-backdrop-blur-active main,
 html[data-modal-open="true"] main,
-html:has(.apple-liquid-modal) main,
-html:has([role="dialog"]) main,
-body:has(.apple-liquid-modal) main,
-body:has([role="dialog"]) main {
-  filter: blur(8px) saturate(120%) !important;
-  -webkit-filter: blur(8px) saturate(120%) !important;
+body:has([role="dialog"]) main,
+body:has(.apple-liquid-modal) main {
+  filter: blur(8px) saturate(120%) brightness(0.95) !important;
+  -webkit-filter: blur(8px) saturate(120%) brightness(0.95) !important;
   pointer-events: none;
   user-select: none;
 }

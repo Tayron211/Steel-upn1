@@ -2185,7 +2185,7 @@ export default function TicketsKanban({
           ========================================================================= */}
       {newLoanFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className={`fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-black/60 ${newLoanFade.backdropClass}`}
+          className={`fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 dark:bg-black/75 backdrop-blur-md ${newLoanFade.backdropClass}`}
           onClick={() => newLoanFade.requestClose()}
         >
           <div
@@ -2194,6 +2194,8 @@ export default function TicketsKanban({
               WebkitBackdropFilter: 'blur(36px) saturate(200%)',
             }}
             className={`apple-liquid-modal w-full max-w-2xl border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${newLoanFade.modalClass}`}
+            role="dialog"
+            aria-modal="true"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal */}

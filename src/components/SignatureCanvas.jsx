@@ -40,7 +40,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
       }
     }
     isConfirmedRef.current = false;
-  }, 200);
+  }, 200, { isModal: true });
   const [modalHasContent, setModalHasContent] = useState(Boolean(initialImage));
 
   useEffect(() => {
@@ -462,7 +462,7 @@ const SignatureCanvas = forwardRef(function SignatureCanvas(
       {/* Ventana Modal Grande para Firmar con Comodidad con Fade In y Fade Out */}
       {canvasFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className={`fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-5 ${canvasFade.backdropClass}`}
+          className={`fixed inset-0 bg-slate-950/75 backdrop-blur-md flex items-center justify-center z-[999999] p-3 sm:p-5 ${canvasFade.backdropClass}`}
           onClick={handleModalClose}
         >
           <div
