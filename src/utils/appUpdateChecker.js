@@ -2,8 +2,8 @@ import { App } from '@capacitor/app';
 import { registerPlugin } from '@capacitor/core';
 import { isCapacitorNative } from './statusBarHelper';
 
-export const APP_CURRENT_VERSION = '1.0.96';
-export const APP_CURRENT_BUILD = 97;
+export const APP_CURRENT_VERSION = '1.0.97';
+export const APP_CURRENT_BUILD = 98;
 
 export const AppInstaller = registerPlugin('AppInstaller');
 

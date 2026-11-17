@@ -1,8 +1,8 @@
 {
-  "version": "1.0.96",
-  "versionCode": 97,
+  "version": "1.0.97",
+  "versionCode": 98,
   "releaseDate": "2026-11-17",
-  "notes": "Firma oficial de produccion UPN Control Docente con certificado limpio",
+  "notes": "Restauración de firma original compatible para actualización directa sin conflicto",
   "features": [
     {
       "title": "Auditoría de Seguridad y Protección de Cabeceras",

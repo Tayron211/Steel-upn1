@@ -7,8 +7,8 @@ android {
         applicationId "edu.pe.upn.controldoc"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 97
-        versionName "1.0.96"
+        versionCode 98
+        versionName "1.0.97"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,10 +18,10 @@ android {
     }
     signingConfigs {
         controldocConfig {
-            storeFile file('controldoc_official.keystore')
-            storePassword 'controldoc2026'
-            keyAlias 'controldoc'
-            keyPassword 'controldoc2026'
+            storeFile file('controldoc.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
             v1SigningEnabled true
             v2SigningEnabled true
         }
