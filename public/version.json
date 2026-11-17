@@ -1,8 +1,8 @@
 {
-  "version": "1.0.100",
-  "versionCode": 101,
+  "version": "1.0.102",
+  "versionCode": 103,
   "releaseDate": "2026-11-17",
-  "notes": "Horarios de docentes con domingos, tarjetas desplegables con NRC, iconos vectoriales Lucide, layout mas ancho y eliminacion de FAB v1.0.100",
+  "notes": "Fix TDZ reference error en Horarios Docentes v1.0.101",
   "features": [
     {
       "title": "Auditoría de Seguridad y Protección de Cabeceras",

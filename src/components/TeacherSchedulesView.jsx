@@ -112,28 +112,6 @@ export default function TeacherSchedulesView() {
     setSelectedDays(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']);
   };
 
-  // Estado para desplegar/colapsar clases de docentes individual o globalmente
-  const [expandedTeachers, setExpandedTeachers] = useState({});
-
-  const toggleTeacher = (name) => {
-    setExpandedTeachers(prev => ({
-      ...prev,
-      [name]: !prev[name]
-    }));
-  };
-
-  const expandAll = () => {
-    const next = {};
-    teachersGrouped.forEach(t => { next[t.name] = true; });
-    setExpandedTeachers(next);
-  };
-
-  const collapseAll = () => {
-    setExpandedTeachers({});
-  };
-
-  const allAreExpanded = teachersGrouped.length > 0 && teachersGrouped.every(t => expandedTeachers[t.name]);
-
   // Filtrado y agrupación de clases por docente
   const teachersGrouped = useMemo(() => {
     if (!Array.isArray(classes) || classes.length === 0) return [];
@@ -241,6 +219,28 @@ export default function TeacherSchedulesView() {
       roomsCount: roomSet.size
     };
   }, [teachersGrouped]);
+
+  // Estado para desplegar/colapsar clases de docentes individual o globalmente
+  const [expandedTeachers, setExpandedTeachers] = useState({});
+
+  const toggleTeacher = (name) => {
+    setExpandedTeachers(prev => ({
+      ...prev,
+      [name]: !prev[name]
+    }));
+  };
+
+  const expandAll = () => {
+    const next = {};
+    teachersGrouped.forEach(t => { next[t.name] = true; });
+    setExpandedTeachers(next);
+  };
+
+  const collapseAll = () => {
+    setExpandedTeachers({});
+  };
+
+  const allAreExpanded = teachersGrouped.length > 0 && teachersGrouped.every(t => expandedTeachers[t.name]);
 
   const copyTeacherSchedule = (teacher) => {
     let text = `📋 HORARIO DE CLASES - ${teacher.name}\n`;
