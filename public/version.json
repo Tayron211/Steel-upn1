@@ -1,6 +1,6 @@
 {
-  "version": "1.0.111",
-  "versionCode": 112,
+  "version": "1.0.112",
+  "versionCode": 113,
   "releaseDate": "2026-11-17",
   "notes": "Fix TDZ reference error en Horarios Docentes v1.0.101",
   "features": [

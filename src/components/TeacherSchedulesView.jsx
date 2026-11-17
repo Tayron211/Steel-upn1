@@ -404,26 +404,37 @@ export default function TeacherSchedulesView() {
                   key={d.id}
                   type="button"
                   onClick={() => toggleDay(d.id)}
-                  className={`h-11 sm:h-12 rounded-xl sm:rounded-2xl text-xs font-black transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 active:scale-95 border cursor-pointer ${
+                  className={`h-11 sm:h-12 rounded-xl sm:rounded-2xl text-xs font-black transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 active:scale-95 border cursor-pointer px-0.5 sm:px-2 overflow-hidden ${
                     isSelected
                       ? 'bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 border-[#FDBA30] shadow-[0_4px_16px_rgba(253,186,48,0.35)] scale-[1.02]'
                       : 'bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800'
                   }`}
                 >
-                  <div className="flex items-center gap-1">
-                    <span className="sm:hidden text-[10px] font-black tracking-tight">{d.short}</span>
-                    <span className="hidden sm:inline text-xs truncate">{d.label}</span>
+                  {/* Vista Móvil (< sm): verticalmente centrado y apilado si es HOY para que quepa perfecto */}
+                  <div className="sm:hidden flex flex-col items-center justify-center leading-none">
                     {isToday && (
-                      <span className={`text-[7px] font-black uppercase px-1 py-0.2 rounded leading-none ${
+                      <span className={`text-[7px] font-black uppercase px-1 py-0.5 rounded leading-none mb-0.5 ${
+                        isSelected ? 'bg-slate-950 text-[#FDBA30]' : 'bg-emerald-600 text-white'
+                      }`}>
+                        HOY
+                      </span>
+                    )}
+                    <span className="text-[10px] font-black tracking-tight">
+                      {d.short}
+                    </span>
+                  </div>
+
+                  {/* Vista Desktop (>= sm): horizontal con nombre completo y check */}
+                  <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs truncate font-black">{d.label}</span>
+                    {isToday && (
+                      <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
                         isSelected ? 'bg-slate-950 text-[#FDBA30]' : 'bg-emerald-600 text-white'
                       }`}>
                         HOY
                       </span>
                     )}
                   </div>
-                  {isSelected && !isToday && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950 sm:hidden" />
-                  )}
                   <div className={`hidden sm:flex w-4 h-4 rounded-full items-center justify-center shrink-0 ${
                     isSelected ? 'bg-slate-950 text-[#FDBA30]' : 'border border-slate-300 dark:border-zinc-700'
                   }`}>
