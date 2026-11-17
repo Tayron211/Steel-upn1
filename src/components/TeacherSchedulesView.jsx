@@ -18,9 +18,115 @@ import {
   Moon,
   ChevronDown,
   ChevronsUpDown,
-  Hash
+  Hash,
+  FileSpreadsheet
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
+
+// Helper de copia enriquecida a portapapeles: Formato tabla HTML para Excel (con colores) + Texto TSV
+const copyRichTableToClipboard = async (plainText, htmlText) => {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.ClipboardItem) {
+    try {
+      const blobHtml = new Blob([htmlText], { type: 'text/html' });
+      const blobText = new Blob([plainText], { type: 'text/plain' });
+      const item = new window.ClipboardItem({
+        'text/html': blobHtml,
+        'text/plain': blobText
+      });
+      await navigator.clipboard.write([item]);
+      return true;
+    } catch (e) {
+      console.warn('ClipboardItem copy failed, trying fallback:', e);
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    try {
+      let copyOk = false;
+      const listener = (e) => {
+        e.preventDefault();
+        e.clipboardData.setData('text/html', htmlText);
+        e.clipboardData.setData('text/plain', plainText);
+        copyOk = true;
+      };
+      document.addEventListener('copy', listener);
+      const successful = document.execCommand('copy');
+      document.removeEventListener('copy', listener);
+      if (copyOk || successful) return true;
+    } catch (err) {
+      console.warn('Fallback copy listener falló:', err);
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(plainText);
+        return true;
+      } catch (e) {
+        console.warn('navigator.clipboard.writeText falló:', e);
+      }
+    }
+  }
+
+  return false;
+};
+
+// Generador de tablas con estilos oficiales UPN para exportar o pegar en Excel
+const generateTeacherScheduleTable = (teachers) => {
+  const teacherList = Array.isArray(teachers) ? teachers : [teachers];
+  const headers = ['N°', 'DOCENTE', 'DÍA', 'HORA INICIO', 'HORA FIN', 'AULA', 'NRC', 'CURSO', 'CARRERA / SECCIÓN'];
+
+  const tsvRows = [headers.join('\t')];
+  let globalIndex = 1;
+  const tableRowsHtml = [];
+
+  teacherList.forEach(t => {
+    t.classes.forEach(c => {
+      const docName = (t.name || c.docente || '').trim();
+      const dia = c.dia || '';
+      const inicio = c.horaInicioProg || '';
+      const fin = c.horaFinalProg || '';
+      const aula = c.aula || '';
+      const nrc = c.nrc || '-';
+      const curso = c.curso || 'CURSO PROGRAMADO';
+      const carreraSec = [c.carrera, c.seccion ? `Sec: ${c.seccion}` : ''].filter(Boolean).join(' • ') || 'UPN';
+
+      tsvRows.push([globalIndex, docName, dia, inicio, fin, aula, nrc, curso, carreraSec].join('\t'));
+
+      tableRowsHtml.push(`
+        <tr style="background-color:#FFFFFF;color:#000000;">
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;background-color:#F2F2F2;">${globalIndex}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:left;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;white-space:nowrap;">${docName}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;white-space:nowrap;">${dia}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;white-space:nowrap;">${inicio}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;white-space:nowrap;">${fin}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;background-color:#FFF2CC;color:#B25900;white-space:nowrap;">${aula}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;background-color:#E0E7FF;color:#312E81;white-space:nowrap;">${nrc}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:left;font-family:Calibri,Arial,sans-serif;font-size:10pt;">${curso}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:left;font-family:Calibri,Arial,sans-serif;font-size:9.5pt;color:#4B5563;">${carreraSec}</td>
+        </tr>
+      `);
+      globalIndex++;
+    });
+  });
+
+  const html = `
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<!--StartFragment-->
+<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:10pt;border:1px solid #000000;text-align:center;">
+  <thead>
+    <tr style="background-color:#FFC000;color:#000000;">
+      ${headers.map(h => `<th style="border:1px solid #000000;padding:6px 10px;background-color:#FFC000;color:#000000;font-weight:bold;font-family:Calibri,Arial,sans-serif;font-size:11pt;text-align:center;white-space:nowrap;">${h}</th>`).join('')}
+    </tr>
+  </thead>
+  <tbody>
+    ${tableRowsHtml.join('')}
+  </tbody>
+</table>
+<!--EndFragment-->
+  `.trim();
+
+  return { html, plain: tsvRows.join('\n'), totalRows: globalIndex - 1 };
+};
 
 const DAYS_ORDER = [
   { id: 'LUNES', short: 'LUN', label: 'Lunes' },
@@ -242,25 +348,49 @@ export default function TeacherSchedulesView() {
 
   const allAreExpanded = teachersGrouped.length > 0 && teachersGrouped.every(t => expandedTeachers[t.name]);
 
-  const copyTeacherSchedule = (teacher) => {
-    let text = `📋 HORARIO DE CLASES - ${teacher.name}\n`;
-    text += `Días: ${selectedDays.join(', ')} | Total: ${teacher.totalClasses} clase(s) (${teacher.totalHours} hrs)\n`;
-    text += `--------------------------------------------------\n`;
-    teacher.classes.forEach((c, idx) => {
-      text += `${idx + 1}. [${c.dia}] ${c.horaInicioProg} - ${c.horaFinalProg} | Aula: ${c.aula} | ${c.curso}\n`;
-    });
-    text += `--------------------------------------------------\n`;
-    text += `Universidad Privada del Norte - Control Docente`;
+  // Copia individual de clases de un docente en formato Tabla Excel con colores oficiales
+  const copyTeacherSchedule = async (teacher) => {
+    try {
+      const { html, plain, totalRows } = generateTeacherScheduleTable(teacher);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setToastMessage(`📋 Tabla Excel copiada: ${teacher.name} (${totalRows} clase${totalRows === 1 ? '' : 's'})`);
+      } else {
+        setToastMessage('❌ No se pudo copiar la tabla al portapapeles');
+      }
+      setTimeout(() => setToastMessage(''), 3000);
+    } catch (err) {
+      console.error('Error al copiar horario de docente:', err);
+      setToastMessage('❌ Error al copiar tabla de horario');
+      setTimeout(() => setToastMessage(''), 3000);
+    }
+  };
 
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      setToastMessage(`✅ Horario de ${teacher.name} copiado al portapapeles`);
+  // Copia grupal de todos los docentes y clases actualmente filtrados en formato Tabla Excel con colores
+  const copyAllTeachersSchedule = async () => {
+    try {
+      if (!teachersGrouped || teachersGrouped.length === 0) {
+        setToastMessage('⚠️ No hay docentes para copiar con los filtros actuales');
+        setTimeout(() => setToastMessage(''), 2500);
+        return;
+      }
+      const { html, plain, totalRows } = generateTeacherScheduleTable(teachersGrouped);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setToastMessage(`📋 Tabla Excel copiada: ${teachersGrouped.length} docentes (${totalRows} clases)`);
+      } else {
+        setToastMessage('❌ No se pudo copiar la tabla al portapapeles');
+      }
+      setTimeout(() => setToastMessage(''), 3000);
+    } catch (err) {
+      console.error('Error al copiar tabla grupal:', err);
+      setToastMessage('❌ Error al copiar tabla grupal');
       setTimeout(() => setToastMessage(''), 3000);
     }
   };
 
   return (
-    <div className="space-y-4 w-full max-w-[1720px] mx-auto px-1 sm:px-2">
+    <div className="space-y-4 pb-36 md:pb-12 animate-fade-in">
       {/* Toast Notificación */}
       {toastMessage && (
         <ToastBanner
@@ -478,18 +608,29 @@ export default function TeacherSchedulesView() {
 
       {/* Barra de Control de Despliegue y Conteo */}
       {!loading && teachersGrouped.length > 0 && (
-        <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
           <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">
             Mostrando <span className="font-black text-slate-900 dark:text-white font-mono">{teachersGrouped.length}</span> docentes · <span className="font-mono text-amber-600 dark:text-amber-400 font-black">{stats.classesCount}</span> clases
           </div>
-          <button
-            type="button"
-            onClick={allAreExpanded ? collapseAll : expandAll}
-            className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
-          >
-            <ChevronsUpDown className="w-3.5 h-3.5 stroke-[2.4] text-amber-500" />
-            <span>{allAreExpanded ? 'Colapsar todas' : 'Desplegar todas'}</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={copyAllTeachersSchedule}
+              className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Copiar todas las clases de los docentes filtrados en tabla Excel con colores oficiales"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 stroke-[2.4] text-emerald-600 dark:text-emerald-400" />
+              <span>Copiar grupo (Excel)</span>
+            </button>
+            <button
+              type="button"
+              onClick={allAreExpanded ? collapseAll : expandAll}
+              className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <ChevronsUpDown className="w-3.5 h-3.5 stroke-[2.4] text-amber-500" />
+              <span>{allAreExpanded ? 'Colapsar todas' : 'Desplegar todas'}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -506,7 +647,7 @@ export default function TeacherSchedulesView() {
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Prueba seleccionando más días (incluyendo Domingo) o cambiando los filtros de búsqueda</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 items-start">
           {teachersGrouped.map((teacher) => {
             const isExpanded = Boolean(expandedTeachers[teacher.name]);
             const uniqueRooms = Array.from(new Set(teacher.classes.map(c => c.aula).filter(Boolean)));
@@ -515,40 +656,46 @@ export default function TeacherSchedulesView() {
             return (
               <div
                 key={teacher.name}
-                className={`bg-white dark:bg-[#0c0c10] rounded-2xl p-3 sm:p-3.5 border transition-all duration-200 flex flex-col justify-between ${
+                className={`bg-white dark:bg-[#0c0c10] rounded-2xl p-3 border transition-all duration-200 flex flex-col ${
                   isExpanded
                     ? 'border-amber-400/80 dark:border-amber-500/60 shadow-md ring-1 ring-amber-400/20'
-                    : 'border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700'
+                    : 'h-[72px] justify-center border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700'
                 }`}
               >
-                {/* Header de la Tarjeta del Docente - Compacto y Clickeable */}
+                {/* Header de la Tarjeta del Docente - Altura Sincrónica y Simétrica */}
                 <div>
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => toggleTeacher(teacher.name)}
-                      className="min-w-0 flex-1 text-left flex items-start gap-2 cursor-pointer group"
+                      className="min-w-0 flex-1 text-left flex items-center gap-2 cursor-pointer group"
                     >
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition ${
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition ${
                         isExpanded
                           ? 'bg-[#FDBA30] text-slate-950 font-black'
                           : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 group-hover:bg-amber-200'
                       }`}>
-                        <GraduationCap className="w-3.5 h-3.5 stroke-[2.3]" />
+                        <GraduationCap className="w-4 h-4 stroke-[2.3]" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-extrabold text-xs text-slate-950 dark:text-white tracking-tight leading-snug line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <h3
+                          className="font-extrabold text-xs text-slate-950 dark:text-white tracking-tight truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors"
+                          title={teacher.name}
+                        >
                           {teacher.name}
                         </h3>
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          <span className="text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
+                        <div className="flex items-center gap-1.5 mt-1 flex-nowrap overflow-hidden">
+                          <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
                             {teacher.totalClasses} {teacher.totalClasses === 1 ? 'Clase' : 'Clases'}
                           </span>
-                          <span className="text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                          <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
                             {teacher.totalHours} hrs
                           </span>
                           {!isExpanded && roomSummary && (
-                            <span className="text-[9.5px] font-mono text-slate-500 dark:text-zinc-400 truncate max-w-[120px]">
+                            <span
+                              className="text-[9.5px] font-mono text-slate-500 dark:text-zinc-400 truncate shrink min-w-0"
+                              title={`Aulas: ${uniqueRooms.join(', ')}`}
+                            >
                               · {roomSummary}
                             </span>
                           )}
@@ -560,8 +707,8 @@ export default function TeacherSchedulesView() {
                       <button
                         type="button"
                         onClick={() => copyTeacherSchedule(teacher)}
-                        title="Copiar horario del docente"
-                        className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition active:scale-90"
+                        title="Copiar horario en formato tabla de Excel con colores oficiales"
+                        className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-950/60 dark:hover:text-amber-300 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition active:scale-90"
                       >
                         <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
                       </button>
