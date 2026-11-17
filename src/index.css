@@ -302,7 +302,7 @@ html.dark .apple-liquid-modal {
 @keyframes appleModalFadeEnter {
   0% {
     opacity: 0;
-    transform: translateY(6px) scale(0.98);
+    transform: translateY(8px) scale(0.96);
   }
 
   100% {
@@ -319,7 +319,7 @@ html.dark .apple-liquid-modal {
 
   100% {
     opacity: 0;
-    transform: translateY(6px) scale(0.98);
+    transform: translateY(8px) scale(0.96);
   }
 }
 
@@ -399,31 +399,37 @@ html.dark .apple-liquid-modal {
 
 .animate-modal-fade,
 .animate-spring-up {
-  animation: appleModalFadeEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleModalFadeEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
 }
 
 .animate-modal-fade-out {
   animation: appleModalFadeExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
 }
 
 .animate-scale-up {
-  animation: appleScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: appleScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
 }
 
 .animate-scale-out {
   animation: appleScaleExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
 }
 
 .animate-backdrop-fade {
-  animation: appleBackdropFade 0.22s ease-out forwards;
+  animation: appleBackdropFade 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
+  will-change: opacity;
 }
 
 .animate-backdrop-fade-out {
-  animation: appleBackdropFadeExit 0.18s ease-in forwards;
+  animation: appleBackdropFadeExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
+  will-change: opacity;
 }
 
 .animate-speed-dial {
@@ -565,7 +571,7 @@ button:active {
 @keyframes softDropdownEnter {
   0% {
     opacity: 0;
-    transform: translate3d(0, -4px, 0);
+    transform: translateY(-8px) scale(0.96);
   }
 
   100% {
@@ -582,7 +588,7 @@ button:active {
 
   100% {
     opacity: 0;
-    transform: translate3d(0, -4px, 0);
+    transform: translateY(-6px) scale(0.96);
   }
 }
 
@@ -599,13 +605,15 @@ button:active {
 }
 
 .animate-dropdown-fade {
-  animation: softDropdownEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transform-origin: top;
+  animation: softDropdownEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+  will-change: opacity, transform;
 }
 
 .animate-dropdown-fade-out {
-  animation: softDropdownExit 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transform-origin: top;
+  animation: softDropdownExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+  will-change: opacity, transform;
 }
 
 @keyframes slideInFromRight {
@@ -1279,21 +1287,20 @@ html:not(.dark) .apple-liquid-pill {
 
 /* =========================================================
    UNIVERSAL FROSTED GLASS FOR ALL APP MODALS / WINDOWS / DIALOGS
-   Desenfoca y difumina todo el fondo de la pantalla (#root) cuando se abre
-   cualquier ventana modal, diálogo o ficha flotante.
+   Desenfoca y difumina únicamente el contenedor principal (<main>) cuando se abre
+   una ventana modal o diálogo, manteniendo la Navbar (<header>) fija y sin desplazamientos.
    ========================================================= */
 
-#root {
-  transition: filter 0.22s cubic-bezier(0.16, 1, 0.3, 1), -webkit-filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+main,
+.app-main-content {
+  transition: filter 0.24s cubic-bezier(0.16, 1, 0.3, 1), -webkit-filter 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html[data-modal-open="true"] #root,
-html:has(.animate-backdrop-fade) #root,
-html:has(.apple-liquid-modal) #root,
-html:has([role="dialog"]) #root,
-body:has(.animate-backdrop-fade) #root,
-body:has(.apple-liquid-modal) #root,
-body:has([role="dialog"]) #root {
+html[data-modal-open="true"] main,
+html:has(.apple-liquid-modal) main,
+html:has([role="dialog"]) main,
+body:has(.apple-liquid-modal) main,
+body:has([role="dialog"]) main {
   filter: blur(8px) saturate(120%) !important;
   -webkit-filter: blur(8px) saturate(120%) !important;
   pointer-events: none;

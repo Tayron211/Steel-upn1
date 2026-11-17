@@ -1,8 +1,8 @@
 {
-  "version": "1.0.86",
-  "versionCode": 87,
+  "version": "1.0.87",
+  "versionCode": 88,
   "releaseDate": "2026-11-17",
-  "notes": "Difuminar y desenfocar fondo de app al abrir ventanas modales",
+  "notes": "Mejora fluidez del fade y fijacion de navbar en APK",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

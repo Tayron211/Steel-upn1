@@ -1132,10 +1132,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   const [docentesList, setDocentesList] = useState([]);
   const [docenteSuggestionsOpen, setDocenteSuggestionsOpen] = useState(false);
 
-  const classOptionsFade = useFadeModal(selectedClassOptions, () => setSelectedClassOptions(null), 200);
-  const quickAttentionFade = useFadeModal(quickAttentionItem, () => setQuickAttentionItem(null), 200);
-  const activeModalFade = useFadeModal(activeModalItem, () => setActiveModalItem(null), 200);
-  const reserveRoomFade = useFadeModal(reservingRoom, () => setReservingRoom(null), 200);
+  const classOptionsFade = useFadeModal(selectedClassOptions, () => setSelectedClassOptions(null), 220, { isModal: true });
+  const quickAttentionFade = useFadeModal(quickAttentionItem, () => setQuickAttentionItem(null), 220, { isModal: true });
+  const activeModalFade = useFadeModal(activeModalItem, () => setActiveModalItem(null), 220, { isModal: true });
+  const reserveRoomFade = useFadeModal(reservingRoom, () => setReservingRoom(null), 220, { isModal: true });
 
   // Modales de Acción al Mantener Presionado
   const [manualTardeItem, setManualTardeItem] = useState(null);
@@ -1144,10 +1144,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   const manualTardeFade = useFadeModal(manualTardeItem, () => {
     setManualTardeItem(null);
     setShowTimePickerMenu(false);
-  }, 200);
+  }, 220, { isModal: true });
 
   const [faltaOptionsItem, setFaltaOptionsItem] = useState(null);
-  const faltaOptionsFade = useFadeModal(faltaOptionsItem, () => setFaltaOptionsItem(null), 200);
+  const faltaOptionsFade = useFadeModal(faltaOptionsItem, () => setFaltaOptionsItem(null), 220, { isModal: true });
 
   // Manejador Central de Pulsación Larga (Long Press) para Tarde y Falta
   const longPressRef = useRef({

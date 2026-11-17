@@ -8,7 +8,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * @param {Function} [onClose] - Callback when modal is fully closed
  * @param {number} [duration=200] - Duration of exit fade animation in ms
  */
-export function useFadeModal(isOpen, onClose, duration = 200) {
+export function useFadeModal(isOpen, onClose, duration = 200, options = {}) {
+  const isModal = Boolean(options?.isModal);
   const [shouldRender, setShouldRender] = useState(Boolean(isOpen));
   const [isClosing, setIsClosing] = useState(false);
   const [cachedData, setCachedData] = useState(isOpen || null);
@@ -34,9 +35,9 @@ export function useFadeModal(isOpen, onClose, duration = 200) {
     };
   }, [isOpen, duration]);
 
-  // Sincroniza el estado global de ventana abierta para difuminar suavemente el fondo (#root)
+  // Sincroniza el estado global de ventana modal abierta para difuminar suavemente el fondo de la app (main)
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || !isModal) return;
     if (shouldRender && !isClosing) {
       document.documentElement.setAttribute('data-modal-open', 'true');
     } else {
@@ -47,9 +48,10 @@ export function useFadeModal(isOpen, onClose, duration = 200) {
       }, 60);
       return () => clearTimeout(timer);
     }
-  }, [shouldRender, isClosing]);
+  }, [shouldRender, isClosing, isModal]);
 
   useEffect(() => {
+    if (!isModal) return;
     return () => {
       if (typeof document !== 'undefined') {
         setTimeout(() => {
@@ -59,7 +61,7 @@ export function useFadeModal(isOpen, onClose, duration = 200) {
         }, 60);
       }
     };
-  }, []);
+  }, [isModal]);
 
   const requestClose = useCallback((callback) => {
     if (isClosing) return;

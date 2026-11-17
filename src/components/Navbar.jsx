@@ -44,7 +44,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuFade = useFadeModal(userMenuOpen, () => setUserMenuOpen(false), 180);
+  const userMenuFade = useFadeModal(userMenuOpen, () => setUserMenuOpen(false), 200, { isModal: false });
   const userMenuRef = useRef(null);
   const dropdownRef = useRef(null);
   const [dropdownCoords, setDropdownCoords] = useState({ top: 60, right: 16 });

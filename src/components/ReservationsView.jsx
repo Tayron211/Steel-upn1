@@ -284,11 +284,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     setIsModalOpen(false);
     resetForm();
     if (onConsumeTrigger) onConsumeTrigger();
-  }, 200);
+  }, 220, { isModal: true });
 
   const roomPickerModalFade = useFadeModal(isRoomPickerOpen, () => {
     setIsRoomPickerOpen(false);
-  }, 200);
+  }, 220, { isModal: true });
 
   // Modal: Historial anual de reservas del docente / usuario
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -297,7 +297,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const historyModalFade = useFadeModal(isHistoryModalOpen, () => {
     setIsHistoryModalOpen(false);
     setHistoryData(null);
-  }, 200);
+  }, 220, { isModal: true });
 
   const openHistoryModal = async (name, type = 'docente') => {
     if (!name || name === 'Docente') return;

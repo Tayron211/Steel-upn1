@@ -22,7 +22,7 @@ export default function ConfirmModal({
   details = [],
   isLoading = false
 }) {
-  const fadeModal = useFadeModal(Boolean(isOpen), onClose, 200);
+  const fadeModal = useFadeModal(Boolean(isOpen), onClose, 220, { isModal: true });
 
   if (!fadeModal.shouldRender || typeof document === 'undefined') return null;
 

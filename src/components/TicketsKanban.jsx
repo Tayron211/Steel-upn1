@@ -276,9 +276,9 @@ export default function TicketsKanban({
   // Classroom Calendar Picker State (Excel catalog & categorization)
   const [isRoomCalendarOpen, setIsRoomCalendarOpen] = useState(false);
 
-  const roomCalendarFade = useFadeModal(isRoomCalendarOpen, () => setIsRoomCalendarOpen(false), 200);
-  const detailTicketFade = useFadeModal(detailTicket, () => setDetailTicket(null), 200);
-  const newLoanFade = useFadeModal(isNewLoanModalOpen, () => setIsNewLoanModalOpen(false), 200);
+  const roomCalendarFade = useFadeModal(isRoomCalendarOpen, () => setIsRoomCalendarOpen(false), 220, { isModal: true });
+  const detailTicketFade = useFadeModal(detailTicket, () => setDetailTicket(null), 220, { isModal: true });
+  const newLoanFade = useFadeModal(isNewLoanModalOpen, () => setIsNewLoanModalOpen(false), 220, { isModal: true });
   const [calendarPabellon, setCalendarPabellon] = useState('A'); // 'A' | 'B' | 'TODOS'
   const [calendarPiso, setCalendarPiso] = useState('TODOS');
   const [calendarCategory, setCalendarCategory] = useState('TODOS'); // 'TODOS' | 'AULA' | 'LABORATORIO' | 'TALLER'
