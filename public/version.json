@@ -1,8 +1,8 @@
 {
-  "version": "1.0.84",
-  "versionCode": 85,
+  "version": "1.0.85",
+  "versionCode": 86,
   "releaseDate": "2026-11-17",
-  "notes": "Efecto blur esmerilado real desenfocado en todas las ventanas y modales",
+  "notes": "Invertir orden Reservas a la izquierda y difuminado esmerilado en ventanas",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

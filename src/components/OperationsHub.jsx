@@ -4,11 +4,11 @@ import ManualSheetsView from './ManualSheetsView';
 import ReservationsView from './ReservationsView';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 
-const SUB_TABS = ['manual', 'reservations'];
+const SUB_TABS = ['reservations', 'manual'];
 
-export default function OperationsHub({ 
-  initialClassData, 
-  onClearInitialClass, 
+export default function OperationsHub({
+  initialClassData,
+  onClearInitialClass,
   defaultSubTab = 'manual',
   openManualModalTrigger = null,
   openReservationModalTrigger = null,
@@ -23,7 +23,7 @@ export default function OperationsHub({
       try {
         const saved = localStorage.getItem('steel:operations-subtab');
         if (saved && (saved === 'manual' || saved === 'reservations')) return saved;
-      } catch (_) {}
+      } catch (_) { }
     }
     return defaultSubTab === 'reservations' ? 'reservations' : 'manual';
   });
@@ -42,13 +42,13 @@ export default function OperationsHub({
       const hash = window.location.hash.toLowerCase();
       if (hash === '#reservas' || hash === '#operaciones/reservas') {
         setSubTab('reservations');
-        try { localStorage.setItem('steel:operations-subtab', 'reservations'); } catch (_) {}
+        try { localStorage.setItem('steel:operations-subtab', 'reservations'); } catch (_) { }
       } else if (hash === '#ambientes' || hash === '#operaciones/ambientes') {
         setSubTab('rooms');
-        try { localStorage.setItem('steel:operations-subtab', 'rooms'); } catch (_) {}
+        try { localStorage.setItem('steel:operations-subtab', 'rooms'); } catch (_) { }
       } else if (hash === '#operaciones' || hash === '#fichas') {
         setSubTab('manual');
-        try { localStorage.setItem('steel:operations-subtab', 'manual'); } catch (_) {}
+        try { localStorage.setItem('steel:operations-subtab', 'manual'); } catch (_) { }
       }
     };
     window.addEventListener('popstate', handleHashSync);
@@ -68,7 +68,7 @@ export default function OperationsHub({
   useEffect(() => {
     if (defaultSubTab && defaultSubTab !== subTab) {
       setSubTab(defaultSubTab);
-      try { localStorage.setItem('steel:operations-subtab', defaultSubTab); } catch (_) {}
+      try { localStorage.setItem('steel:operations-subtab', defaultSubTab); } catch (_) { }
     }
   }, [defaultSubTab]);
 
@@ -88,7 +88,7 @@ export default function OperationsHub({
     if (onConsumeManualModalTrigger) onConsumeManualModalTrigger();
     if (onConsumeReservationModalTrigger) onConsumeReservationModalTrigger();
     setSubTab(target);
-    try { localStorage.setItem('steel:operations-subtab', target); } catch (_) {}
+    try { localStorage.setItem('steel:operations-subtab', target); } catch (_) { }
     const subHash = target === 'reservations' ? '#reservas' : '#operaciones';
     if (window.location.hash.toLowerCase() !== subHash) {
       window.history.pushState({ tab: 'operations', subTab: target }, '', subHash);
@@ -112,50 +112,48 @@ export default function OperationsHub({
         />
 
         <button
-          onClick={() => switchSubTab('manual')}
-          data-slide-active={subTab === 'manual' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${
-            subTab === 'manual'
-              ? 'text-slate-950 font-black'
-              : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <FileText className="w-4 h-4 stroke-[2.2] shrink-0" />
-          <span className="truncate">Hojas Manuales</span>
-        </button>
-
-        <button
           onClick={() => switchSubTab('reservations')}
           data-slide-active={subTab === 'reservations' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${
-            subTab === 'reservations'
+          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'reservations'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
+            }`}
         >
           <Calendar className="w-4 h-4 stroke-[2.2] shrink-0" />
           <span className="truncate">Reservas</span>
+        </button>
+
+        <button
+          onClick={() => switchSubTab('manual')}
+          data-slide-active={subTab === 'manual' ? 'true' : undefined}
+          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'manual'
+              ? 'text-slate-950 font-black'
+              : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <FileText className="w-4 h-4 stroke-[2.2] shrink-0" />
+          <span className="truncate">Hojas Manuales</span>
         </button>
       </div>
 
       {/* Render Active Sub-View con transicion direccional deslizable */}
       <div className="overflow-x-hidden">
         <div key={subTab} className={subAnimClass}>
-        {subTab === 'manual' && (
-          <ManualSheetsView
-            initialClassData={initialClassData}
-            onClearInitialClass={onClearInitialClass}
-            initialOpenTrigger={openManualModalTrigger}
-            onConsumeTrigger={onConsumeManualModalTrigger}
-          />
-        )}
+          {subTab === 'manual' && (
+            <ManualSheetsView
+              initialClassData={initialClassData}
+              onClearInitialClass={onClearInitialClass}
+              initialOpenTrigger={openManualModalTrigger}
+              onConsumeTrigger={onConsumeManualModalTrigger}
+            />
+          )}
 
-        {subTab === 'reservations' && (
-          <ReservationsView 
-            initialOpenTrigger={openReservationModalTrigger} 
-            onConsumeTrigger={onConsumeReservationModalTrigger}
-          />
-        )}
+          {subTab === 'reservations' && (
+            <ReservationsView
+              initialOpenTrigger={openReservationModalTrigger}
+              onConsumeTrigger={onConsumeReservationModalTrigger}
+            />
+          )}
         </div>
       </div>
     </div>

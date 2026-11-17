@@ -416,10 +416,14 @@ html.dark .apple-liquid-modal {
 
 .animate-backdrop-fade {
   animation: appleBackdropFade 0.22s ease-out forwards;
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 
 .animate-backdrop-fade-out {
   animation: appleBackdropFadeExit 0.18s ease-in forwards;
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 
 .animate-speed-dial {
@@ -1278,21 +1282,29 @@ html:not(.dark) .apple-liquid-pill {
    Mismo efecto Blur y cristal esmerilado que la Navbar en todas las ventanas
    ========================================================= */
 
-/* 1. Telón de Fondo (Backdrop Overlay) - CERO backdrop-filter para permitir que la ventana aplique su blur real */
-.fixed.inset-0,
-.fixed.inset-0[class*="z-"],
-.fixed.inset-0[class*="backdrop-blur-"] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+/* 1. Telón de Fondo (Backdrop Overlay) - Efecto Blur Esmerilado que difumina el fondo al abrir cualquier ventana */
+.fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
+.fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash),
+.fixed.inset-0[class*="bg-"]:not(#upn-boot-splash),
+.animate-backdrop-fade,
+div[class*="fixed inset-0"]:not(#upn-boot-splash) {
+  backdrop-filter: blur(12px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
 }
 
 html:not(.dark) .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
-html:not(.dark) .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
+html:not(.dark) .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash),
+html:not(.dark) .fixed.inset-0[class*="bg-"]:not(#upn-boot-splash),
+html:not(.dark) .animate-backdrop-fade,
+html:not(.dark) div[class*="fixed inset-0"]:not(#upn-boot-splash) {
   background-color: rgba(15, 23, 42, 0.40) !important;
 }
 
 html.dark .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
-html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
+html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash),
+html.dark .fixed.inset-0[class*="bg-"]:not(#upn-boot-splash),
+html.dark .animate-backdrop-fade,
+html.dark div[class*="fixed inset-0"]:not(#upn-boot-splash) {
   background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
