@@ -235,6 +235,98 @@ export default function TicketsKanban({
   // Columna 10: USUARIO
   const [beneficiaryType, setBeneficiaryType] = useState('DOCENTE'); // 'DOCENTE' | 'ALUMNO'
   const [personName, setPersonName] = useState('');
+  const [docentesList, setDocentesList] = useState([]);
+  const [docenteSuggestionsOpen, setDocenteSuggestionsOpen] = useState(false);
+
+  // Cargar catálogo de docentes universitarios desde horario Excel
+  useEffect(() => {
+    fetch('/api/attendance')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && Array.isArray(json.data)) {
+          const docs = Array.from(
+            new Set(
+              json.data
+                .map(c => (c.docente || '').trim().toUpperCase())
+                .filter(d => d && !d.includes('#N/D') && !d.includes('#N/A') && d.length > 3)
+            )
+          ).sort();
+          setDocentesList(docs);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const allKnownDocentes = useMemo(() => {
+    const rawList = [];
+    docentesList.forEach(d => { if (d) rawList.push(d); });
+    tickets.forEach(t => {
+      const ben = extractBeneficiary(t);
+      if (ben && ben.type === 'DOCENTE' && ben.name) {
+        rawList.push(ben.name);
+      }
+    });
+
+    const groups = new Map();
+    for (const raw of rawList) {
+      const cleaned = String(raw || '')
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/\u00a0/g, ' ')
+        .replace(/[\/,.\-_]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+      if (!cleaned || cleaned.includes('#N/D') || cleaned.includes('#N/A') || cleaned.length < 4) continue;
+      if (cleaned.startsWith('PRUEBA') || cleaned === 'TEST') continue;
+
+      const words = cleaned
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .split(' ')
+        .filter(w => w.length > 1)
+        .sort();
+      const sig = words.join(' ');
+      if (!groups.has(sig)) groups.set(sig, new Set());
+      groups.get(sig).add(cleaned);
+    }
+
+    const uniqueList = [];
+    for (const [sig, variantsSet] of groups.entries()) {
+      const variants = Array.from(variantsSet);
+      variants.sort((a, b) => b.length - a.length);
+      uniqueList.push(variants[0]);
+    }
+    return uniqueList.sort((a, b) => a.localeCompare(b, 'es'));
+  }, [docentesList, tickets]);
+
+  const docenteSuggestions = useMemo(() => {
+    if (beneficiaryType !== 'DOCENTE') return [];
+    const rawQ = (personName || '').trim();
+    if (!rawQ || rawQ.length < 2) return [];
+
+    const cleanQ = rawQ
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[\/,.\-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const queryWords = cleanQ.split(' ').filter(Boolean);
+    if (queryWords.length === 0) return [];
+
+    return allKnownDocentes
+      .filter(doc => {
+        const normDoc = doc
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toUpperCase()
+          .replace(/[\/,.\-_]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        if (normDoc === cleanQ) return false;
+        return queryWords.every(word => normDoc.includes(word));
+      })
+      .slice(0, 8);
+  }, [allKnownDocentes, personName, beneficiaryType]);
   // Columna 11: DESCRIPCIÓN / SOLUCIÓN
   const [loanDescription, setLoanDescription] = useState('');
   // Columna 12: RESPONSABLE (Autocompletado con el asistente autenticado)
@@ -2326,7 +2418,10 @@ export default function TicketsKanban({
                         <button
                           type="button"
                           data-slide-active={beneficiaryType === 'DOCENTE' ? 'true' : undefined}
-                          onClick={() => setBeneficiaryType('DOCENTE')}
+                          onClick={() => {
+                            setBeneficiaryType('DOCENTE');
+                            if (personName.trim().length >= 2) setDocenteSuggestionsOpen(true);
+                          }}
                           className={`relative z-10 px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors duration-200 ${
                             beneficiaryType === 'DOCENTE'
                               ? 'text-slate-950 font-black'
@@ -2338,7 +2433,10 @@ export default function TicketsKanban({
                         <button
                           type="button"
                           data-slide-active={beneficiaryType === 'ALUMNO' ? 'true' : undefined}
-                          onClick={() => setBeneficiaryType('ALUMNO')}
+                          onClick={() => {
+                            setBeneficiaryType('ALUMNO');
+                            setDocenteSuggestionsOpen(false);
+                          }}
                           className={`relative z-10 px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors duration-200 ${
                             beneficiaryType === 'ALUMNO'
                               ? 'text-slate-950 font-black'
@@ -2349,15 +2447,54 @@ export default function TicketsKanban({
                         </button>
                       </div>
                     </div>
-                    <input
-                      id="prestamo-person-name"
-                      type="text"
-                      required
-                      value={personName}
-                      onChange={(e) => setPersonName(e.target.value)}
-                      placeholder={beneficiaryType === 'DOCENTE' ? 'Apellidos y Nombres del Docente...' : 'Nombre o código del estudiante...'}
-                      className="w-full h-10 px-3.5 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:border-[#FDBA30] transition"
-                    />
+                    <div className="relative">
+                      <input
+                        id="prestamo-person-name"
+                        type="text"
+                        required
+                        value={personName}
+                        onChange={(e) => {
+                          setPersonName(e.target.value);
+                          if (beneficiaryType === 'DOCENTE') setDocenteSuggestionsOpen(true);
+                        }}
+                        onFocus={() => {
+                          if (beneficiaryType === 'DOCENTE') setDocenteSuggestionsOpen(true);
+                        }}
+                        onBlur={() => setTimeout(() => setDocenteSuggestionsOpen(false), 200)}
+                        placeholder={beneficiaryType === 'DOCENTE' ? 'Apellidos y Nombres del Docente...' : 'Nombre o código del estudiante...'}
+                        className="w-full h-10 px-3.5 text-xs bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 font-bold focus:outline-none focus:border-[#FDBA30] transition uppercase"
+                      />
+
+                      {/* Sugerencias de Docentes (Solo si está seleccionado DOCENTE) */}
+                      {beneficiaryType === 'DOCENTE' && docenteSuggestionsOpen && docenteSuggestions.length > 0 && (
+                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-[#121216] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[9999] overflow-hidden max-h-56 overflow-y-auto animate-fade-in">
+                          <div className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-900/90 border-b border-slate-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center justify-between">
+                            <span>Docentes Sugeridos ({docenteSuggestions.length})</span>
+                            <button
+                              type="button"
+                              onClick={() => setDocenteSuggestionsOpen(false)}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          {docenteSuggestions.map((doc, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setPersonName(doc);
+                                setDocenteSuggestionsOpen(false);
+                              }}
+                              className="w-full text-left px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 transition flex items-center justify-between group border-b border-slate-100 dark:border-zinc-800/50 last:border-b-0 cursor-pointer"
+                            >
+                              <span className="truncate">{doc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

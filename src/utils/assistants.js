@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { getAllUsers } from './auth';
+import { getCustomUsers } from './auth';
 
-// LISTA OFICIAL BASE DE ASISTENTES / RESPONSABLES
+// LISTA OFICIAL Y ÚNICA AUTORIZADA DE ASISTENTES / RESPONSABLES (UPN COMAS)
 export const OFFICIAL_ASSISTANTS = [
   'ANTHONY PALOMINO',
   'TAYRON SALINAS',
   'ALESSANDRO PASCUAL',
   'FRANCISCO VILLAFAN',
   'JOSE MIRANDA',
-  'JAEL GALLARDO'
+  'JAEL GALLARDO',
+  'JANETH VIVAR PEREZ'
 ];
 
 export const DEFAULT_ASSISTANTS = [...OFFICIAL_ASSISTANTS];
@@ -16,15 +17,14 @@ export const DEFAULT_ASSISTANTS = [...OFFICIAL_ASSISTANTS];
 let cachedAssistants = [...OFFICIAL_ASSISTANTS];
 
 export function getCachedAssistants() {
-  // Combinar base con usuarios registrados localmente
   try {
-    const all = getAllUsers();
-    const names = all.map(u => String(u.name || '').trim().toUpperCase()).filter(Boolean);
-    const combined = Array.from(new Set([...OFFICIAL_ASSISTANTS, ...names]));
+    const custom = getCustomUsers();
+    const customNames = custom.map(u => String(u.name || '').trim().toUpperCase()).filter(Boolean);
+    const combined = Array.from(new Set([...OFFICIAL_ASSISTANTS, ...customNames]));
     cachedAssistants = combined;
     return combined;
   } catch (_) {
-    return cachedAssistants;
+    return OFFICIAL_ASSISTANTS;
   }
 }
 
@@ -33,23 +33,24 @@ export function useAssistants() {
 
   const fetchAssistants = async () => {
     try {
-      const localUsers = getAllUsers().map(u => String(u.name || '').trim().toUpperCase());
       const res = await fetch('/api/assistants');
       const json = await res.json();
       if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
         const serverList = json.data.map(a => String(a || '').trim().toUpperCase()).filter(Boolean);
-        const unified = Array.from(new Set([...OFFICIAL_ASSISTANTS, ...localUsers, ...serverList]));
+        const custom = getCustomUsers();
+        const customNames = custom.map(u => String(u.name || '').trim().toUpperCase()).filter(Boolean);
+        const unified = Array.from(new Set([...OFFICIAL_ASSISTANTS, ...serverList, ...customNames]));
         cachedAssistants = unified;
         setAssistants(unified);
       } else {
-        const unified = Array.from(new Set([...OFFICIAL_ASSISTANTS, ...localUsers]));
+        const custom = getCustomUsers();
+        const customNames = custom.map(u => String(u.name || '').trim().toUpperCase()).filter(Boolean);
+        const unified = Array.from(new Set([...OFFICIAL_ASSISTANTS, ...customNames]));
         cachedAssistants = unified;
         setAssistants(unified);
       }
     } catch (_) {
-      const localUsers = getAllUsers().map(u => String(u.name || '').trim().toUpperCase());
-      const unified = Array.from(new Set([...OFFICIAL_ASSISTANTS, ...localUsers]));
-      setAssistants(unified);
+      setAssistants(getCachedAssistants());
     }
   };
 

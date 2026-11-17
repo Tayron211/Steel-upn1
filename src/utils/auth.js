@@ -21,6 +21,12 @@
 
 export const USERS_REGISTRY = [
   {
+    username: 'apalomino',
+    name: 'ANTHONY PALOMINO',
+    role: 'asistente',
+    passwords: ['1234', 'palomino', 'palomino2026', 'upn2026']
+  },
+  {
     username: 'tsalinas',
     name: 'TAYRON SALINAS',
     role: 'admin',
@@ -28,63 +34,33 @@ export const USERS_REGISTRY = [
   },
   {
     username: 'apascual',
-    name: 'ALESSANDRO PASCUAL ROMERO',
+    name: 'ALESSANDRO PASCUAL',
     role: 'admin',
     passwords: ['1234', '210391', 'pascual', 'pascual2026', 'admin', 'upn2026']
   },
   {
-    username: 'jmiranda',
-    name: 'JOSÉ CARLOS MIRANDA ROSALES',
-    role: 'asistente',
-    passwords: ['1234', 'miranda', 'miranda2026', 'upn2026']
-  },
-  {
     username: 'fvillafan',
-    name: 'FRANCISCO ALONSO VILLAFAN COLONIA',
+    name: 'FRANCISCO VILLAFAN',
     role: 'asistente',
     passwords: ['1234', 'villafan', 'villafan2026', 'upn2026']
   },
   {
-    username: 'jbenites',
-    name: 'JAVIER ALEXANDER BENITES ALBAN',
+    username: 'jmiranda',
+    name: 'JOSE MIRANDA',
     role: 'asistente',
-    passwords: ['1234', 'benites', 'benites2026', 'upn2026']
+    passwords: ['1234', 'miranda', 'miranda2026', 'upn2026']
   },
   {
     username: 'jgallardo',
-    name: 'JAEL ZULEMA GALLARDO CARRANZA',
+    name: 'JAEL GALLARDO',
     role: 'asistente',
     passwords: ['1234', 'gallardo', 'gallardo2026', 'upn2026']
-  },
-  {
-    username: 'evelasquez',
-    name: 'EDUARDO ANTONIO VELASQUEZ CARRION',
-    role: 'asistente',
-    passwords: ['1234', 'velasquez', 'velasquez2026', 'upn2026']
-  },
-  {
-    username: 'jflores',
-    name: 'JUNIOR MARINO FLORES PUMACAYO',
-    role: 'asistente',
-    passwords: ['1234', 'flores', 'flores2026', 'upn2026']
-  },
-  {
-    username: 'dhusarez',
-    name: 'DAVID SAMUEL HUSAREZ CABRERA',
-    role: 'asistente',
-    passwords: ['1234', 'husarez', 'husarez2026', 'upn2026']
   },
   {
     username: 'jvivar',
     name: 'JANETH VIVAR PEREZ',
     role: 'asistente',
     passwords: ['1234', 'vivar', 'vivar2026', 'upn2026']
-  },
-  {
-    username: 'apalomino',
-    name: 'ANTHONY PALOMINO',
-    role: 'asistente',
-    passwords: ['1234', 'palomino', 'palomino2026', 'upn2026']
   },
   {
     username: 'admin',

@@ -1,8 +1,8 @@
 {
-  "version": "1.0.92",
-  "versionCode": 93,
+  "version": "1.0.93",
+  "versionCode": 94,
   "releaseDate": "2026-11-17",
-  "notes": "Desglose detallado por aula fecha y hora en historial de docente",
+  "notes": "Autocompletado de docentes al escribir y lista oficial de asistentes de la foto",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

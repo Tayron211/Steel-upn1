@@ -277,13 +277,16 @@ async function handleApiRequest(context) {
     }
 
     if (path === '/api/assistants' && method === 'GET') {
-      await ensureUsersTable(db);
-      const rows = await db.prepare("SELECT name FROM app_users ORDER BY name ASC").all();
-      let names = (rows?.results || []).map(r => r.name).filter(Boolean);
-      if (names.length === 0) {
-        names = ['ANTHONY PALOMINO', 'TAYRON SALINAS', 'ALESSANDRO PASCUAL', 'FRANCISCO VILLAFAN', 'JOSE MIRANDA', 'JAEL GALLARDO'];
-      }
-      return json({ success: true, count: names.length, data: names });
+      const officialList = [
+        'ANTHONY PALOMINO',
+        'TAYRON SALINAS',
+        'ALESSANDRO PASCUAL',
+        'FRANCISCO VILLAFAN',
+        'JOSE MIRANDA',
+        'JAEL GALLARDO',
+        'JANETH VIVAR PEREZ'
+      ];
+      return json({ success: true, count: officialList.length, data: officialList });
     }
 
     // -------------------------------------------------------------
@@ -677,7 +680,8 @@ async function handleApiRequest(context) {
         'ALESSANDRO PASCUAL',
         'FRANCISCO VILLAFAN',
         'JOSE MIRANDA',
-        'JAEL GALLARDO'
+        'JAEL GALLARDO',
+        'JANETH VIVAR PEREZ'
       ];
 
       return json({ success: true, count: officialList.length, data: officialList });
