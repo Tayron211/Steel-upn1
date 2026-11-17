@@ -640,18 +640,15 @@ export default function TeacherSchedulesView() {
 
           return (
             <div
-              className={`fixed inset-0 z-[999999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-md ${teacherModalFade.backdropClass}`}
+              className={`fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 dark:bg-black/80 backdrop-blur-md select-none ${teacherModalFade.backdropClass}`}
               onClick={() => teacherModalFade.requestClose()}
             >
               <div
-                className={`w-full max-w-2xl bg-white dark:bg-[#0c0c10] border-t sm:border border-slate-200/90 dark:border-zinc-800 rounded-t-[28px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] ${teacherModalFade.modalClass}`}
+                className={`w-full max-w-lg bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] ${teacherModalFade.modalClass}`}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Indicador táctil superior para móvil tipo Bottom Sheet */}
-                <div className="w-10 h-1 bg-slate-300 dark:bg-zinc-700 rounded-full mx-auto mt-2.5 sm:hidden" />
-
                 {/* Cabecera de la Ventana Flotante */}
-                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-zinc-800 flex items-start justify-between gap-3 bg-slate-50/70 dark:bg-zinc-900/40">
+                <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-start justify-between gap-3 bg-slate-50/70 dark:bg-zinc-900/40 shrink-0">
                   <div className="flex items-start gap-3 min-w-0">
                     <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#FDBA30] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-0.5">
                       <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.4]" />
@@ -748,15 +745,15 @@ export default function TeacherSchedulesView() {
                   ))}
                 </div>
 
-                {/* Pie del Modal (Adaptado a móviles) */}
-                <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex flex-col sm:flex-row items-center justify-between gap-2.5 pb-safe">
-                  <div className="text-xs font-bold text-slate-500 dark:text-zinc-400 text-center sm:text-left">
+                {/* Pie del Modal Flotante */}
+                <div className="p-3.5 sm:p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/40 flex items-center justify-between gap-2.5 shrink-0">
+                  <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">
                     Total: <span className="font-black text-slate-900 dark:text-white font-mono">{doc.totalClasses}</span> clases asignadas
                   </div>
                   <button
                     type="button"
                     onClick={() => copyTeacherSchedule(doc)}
-                    className="w-full sm:w-auto h-10 sm:h-9 px-4 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                    className="h-9 px-4 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs shrink-0"
                     title="Copiar horario en formato tabla de Excel con colores oficiales"
                   >
                     <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
