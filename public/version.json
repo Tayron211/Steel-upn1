@@ -1,32 +1,36 @@
 {
-  "version": "1.0.93",
-  "versionCode": 94,
+  "version": "1.0.94",
+  "versionCode": 95,
   "releaseDate": "2026-11-17",
-  "notes": "Autocompletado de docentes al escribir y lista oficial de asistentes de la foto",
+  "notes": "Auditoría de seguridad, depuración general, autocompletado de docentes y optimización",
   "features": [
     {
-      "title": "Barra de Navegación Fija al Hacer Scroll",
-      "desc": "La barra superior y el dock móvil permanecen perfectamente anclados sin moverse al desplazar el contenido."
+      "title": "Auditoría de Seguridad y Protección de Cabeceras",
+      "desc": "Implementación de cabeceras HTTP de seguridad estrictas (nosniff, sameorigin, políticas de permisos) y blindaje contra inyecciones y ataques."
     },
     {
-      "title": "Transición Suave 120fps Fade en Todos los Apartados",
-      "desc": "Entrada fluida y continua acelerada por GPU para todas las pantallas, pestañas, modales y salida del splashscreen."
+      "title": "Depuración y Optimización de Código",
+      "desc": "Limpieza de módulos obsoletos y archivos residuales sin alterar la funcionalidad, logrando una app más liviana y rápida."
     },
     {
-      "title": "Detección Automática de Modo Claro / Oscuro en Android",
-      "desc": "La APK y el SplashScreen adoptan automáticamente el tema del sistema Android y se sincronizan en tiempo real al cambiar entre claro y oscuro."
+      "title": "Autocompletado Inteligente de Docentes",
+      "desc": "Búsqueda y sugerencia en tiempo real de docentes al escribir, activo únicamente cuando se marca la opción 'Docente'."
     },
     {
-      "title": "Colores Corporativos UPN Duales en Login",
-      "desc": "Diseño refinado con el oro oficial #FDBA30 adaptado con elegancia tanto para modo claro como modo oscuro."
+      "title": "Personal y Asistentes Oficiales Actualizados",
+      "desc": "Sincronización exacta con la nómina de 7 asistentes autorizados tanto en la APK como en la plataforma web."
     },
     {
-      "title": "Aforo Discreto en Todas las Aulas",
-      "desc": "Visualización sutil y minimalista de la capacidad (ej. 40p) en todas las tarjetas de aula estándar sin sobrecargar el diseño."
+      "title": "Tarjetas de Reserva Simétricas con Desplegable",
+      "desc": "Horarios por aula compactados en un acordeón desplegable que elimina espacios en blanco y mantiene la simetría perfecta."
     },
     {
-      "title": "Transiciones Fade en Notificaciones Toast",
-      "desc": "Aparición y desvanecimiento fluidos con animación suave al entrar y salir de la pantalla."
+      "title": "Desglose Completo en Historial de Reservas",
+      "desc": "Detalle cronológico por fecha, día y rango horario para cada ambiente en la ventana de historial anual."
+    },
+    {
+      "title": "Apertura y Cierre Fluido de Modales (120 FPS)",
+      "desc": "Animaciones fade perfeccionadas y aceleradas por hardware para ventanas y formularios sin parones."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
