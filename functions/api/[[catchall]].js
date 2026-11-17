@@ -910,13 +910,14 @@ async function handleApiRequest(context) {
 
     if (path === '/api/reservations' && method === 'POST') {
       const body = await request.json();
-      const id = `res_${Date.now()}`;
       const months = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
       const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
-      const fechaStr = body.fecha || new Date().toISOString().split('T')[0];
-      const dt = new Date(fechaStr + 'T12:00:00');
-      const mes = body.mes || months[dt.getMonth()] || 'NOVIEMBRE';
-      const dia = body.dia || days[dt.getDay()] || 'LUNES';
+
+      const requestedRooms = (body.aula || '')
+        .split(',')
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+
       const inicio = body.inicio || body.hora_inicio || body.horaInicio || '08:00';
       const final = body.final || body.hora_fin || body.horaFin || '10:00';
       const aula = (body.aula || '').toUpperCase().trim();
@@ -929,63 +930,103 @@ async function handleApiRequest(context) {
       const obs = (body.obs || body.observaciones || '').trim();
       const hoja = 'RESERVAS';
 
-      // Validar si alguna de las aulas ya está reservada para esa misma fecha/día y rango de horas
-      const requestedRooms = (body.aula || '')
-        .split(',')
-        .map(s => s.trim().toUpperCase())
-        .filter(Boolean);
+      // Soporte para reservas en Rango de Días (body.dates: array de fechas YYYY-MM-DD)
+      const datesToProcess = Array.isArray(body.dates) && body.dates.length > 0
+        ? body.dates
+        : [body.fecha || new Date().toISOString().split('T')[0]];
 
-      const targetIso = (fechaStr || '').slice(0, 10);
-      let targetAlt = targetIso;
-      const ymdMatch = targetIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (ymdMatch) {
-        targetAlt = `${ymdMatch[3]}/${ymdMatch[2]}/${ymdMatch[1]}`;
-      }
-      const existingReservas = await db.prepare(`
-        SELECT * FROM reservas
-        WHERE (fecha = ? OR fecha = ? OR (fecha IS NULL AND UPPER(TRIM(dia)) = UPPER(TRIM(?))))
-        AND inicio < ? AND final > ?
-      `).bind(targetIso, targetAlt, dia, final, inicio).all();
+      // PASO 1: Validación estricta de cruce de horario para CADA fecha y CADA aula solicitada
+      for (const curFecha of datesToProcess) {
+        const dt = new Date(curFecha + 'T12:00:00');
+        const dia = days[dt.getDay()] || 'LUNES';
+        const targetIso = (curFecha || '').slice(0, 10);
+        let targetAlt = targetIso;
+        const ymdMatch = targetIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (ymdMatch) {
+          targetAlt = `${ymdMatch[3]}/${ymdMatch[2]}/${ymdMatch[1]}`;
+        }
 
-      if (existingReservas && Array.isArray(existingReservas.results)) {
-        for (const existing of existingReservas.results) {
-          const existingRooms = (existing.aula || '')
-            .split(',')
-            .map(s => s.trim().toUpperCase())
-            .filter(Boolean);
-          const common = requestedRooms.find(r => existingRooms.includes(r));
-          if (common) {
-            return json({
-              success: false,
-              error: `El aula ${common} ya se encuentra reservada por ${existing.docente || 'otro usuario'} de ${existing.inicio} a ${existing.final}.`
-            }, 400);
+        const existingReservas = await db.prepare(`
+          SELECT * FROM reservas
+          WHERE (fecha = ? OR fecha = ? OR (fecha IS NULL AND UPPER(TRIM(dia)) = UPPER(TRIM(?))))
+          AND inicio < ? AND final > ?
+        `).bind(targetIso, targetAlt, dia, final, inicio).all();
+
+        if (existingReservas && Array.isArray(existingReservas.results)) {
+          for (const existing of existingReservas.results) {
+            const existingRooms = (existing.aula || '')
+              .split(',')
+              .map(s => s.trim().toUpperCase())
+              .filter(Boolean);
+            const common = requestedRooms.find(r => existingRooms.includes(r));
+            if (common) {
+              return json({
+                success: false,
+                error: `Cruce detectado: El aula ${common} ya se encuentra reservada el día ${targetIso} (${dia}) por ${existing.docente || 'otro usuario'} de ${existing.inicio} a ${existing.final}.`
+              }, 400);
+            }
           }
         }
       }
 
-      await db.prepare(`
-        INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, motivo, usuario, prioridad, obs, hoja, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `).bind(
-        id,
-        fechaStr,
-        mes,
-        dia,
-        inicio,
-        final,
-        aula,
-        ubicacion,
-        docente,
-        detalle,
-        motivo,
-        usuario,
-        prioridad,
-        obs,
-        hoja
-      ).run();
+      // PASO 2: Inserción de todas las fechas validadas sin cruces
+      const createdList = [];
+      const baseGroupId = body.group_id || `grp_${Date.now()}`;
 
-      const created = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
-      return json({ success: true, data: created, sheet: hoja });
+      for (let i = 0; i < datesToProcess.length; i++) {
+        const curFecha = datesToProcess[i];
+        const dt = new Date(curFecha + 'T12:00:00');
+        const mes = months[dt.getMonth()] || 'NOVIEMBRE';
+        const dia = days[dt.getDay()] || 'LUNES';
+        const id = `res_${Date.now()}_${i}`;
+
+        let finalObs = obs;
+        if (datesToProcess.length > 1) {
+          try {
+            let obsObj = {};
+            if (obs.startsWith('{')) obsObj = JSON.parse(obs);
+            else if (obs) obsObj.note = obs;
+            obsObj.group_id = baseGroupId;
+            obsObj.range_index = i + 1;
+            obsObj.range_total = datesToProcess.length;
+            finalObs = JSON.stringify(obsObj);
+          } catch (_) {
+            finalObs = `${obs} [Rango: ${datesToProcess[0]} a ${datesToProcess[datesToProcess.length - 1]}]`;
+          }
+        }
+
+        await db.prepare(`
+          INSERT INTO reservas (id, fecha, mes, dia, inicio, final, aula, ubicacion, docente, detalle, motivo, usuario, prioridad, obs, hoja, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+          id,
+          curFecha,
+          mes,
+          dia,
+          inicio,
+          final,
+          aula,
+          ubicacion,
+          docente,
+          detalle,
+          motivo,
+          usuario,
+          prioridad,
+          finalObs,
+          hoja
+        ).run();
+
+        const created = await db.prepare('SELECT * FROM reservas WHERE id = ?').bind(id).first();
+        if (created) createdList.push(created);
+      }
+
+      return json({
+        success: true,
+        count: createdList.length,
+        data: createdList[0],
+        allCreated: createdList,
+        sheet: hoja
+      });
     }
 
     const reservationMatch = path.match(/^\/api\/reservations\/([^/]+)$/);

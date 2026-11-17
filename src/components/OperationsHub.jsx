@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Calendar } from 'lucide-react';
+import { FileText, Calendar, GraduationCap } from 'lucide-react';
 import ManualSheetsView from './ManualSheetsView';
 import ReservationsView from './ReservationsView';
+import TeacherSchedulesView from './TeacherSchedulesView';
 import { useSlidingIndicator } from '../utils/useSlidingIndicator';
 
-const SUB_TABS = ['reservations', 'manual'];
+const SUB_TABS = ['reservations', 'manual', 'teachers'];
 
 export default function OperationsHub({
   initialClassData,
@@ -19,13 +20,14 @@ export default function OperationsHub({
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.toLowerCase();
       if (hash === '#reservas' || hash === '#operaciones/reservas' || hash === '#ambientes' || hash === '#operaciones/ambientes') return 'reservations';
+      if (hash === '#docentes' || hash === '#horarios-docentes' || hash === '#operaciones/docentes') return 'teachers';
       if (hash === '#operaciones' || hash === '#fichas') return 'manual';
       try {
         const saved = localStorage.getItem('steel:operations-subtab');
-        if (saved && (saved === 'manual' || saved === 'reservations')) return saved;
+        if (saved && (saved === 'manual' || saved === 'reservations' || saved === 'teachers')) return saved;
       } catch (_) { }
     }
-    return defaultSubTab === 'reservations' ? 'reservations' : 'manual';
+    return defaultSubTab === 'reservations' ? 'reservations' : (defaultSubTab === 'teachers' ? 'teachers' : 'manual');
   });
   const [subTransition, setSubTransition] = useState(() => ({ tab: subTab, dir: 'initial' }));
   if (subTransition.tab !== subTab) {
@@ -103,7 +105,7 @@ export default function OperationsHub({
       {/* Sleek Apple-Style Segmented Sub-Navigation for Operations Hub */}
       <div
         ref={subTabSlide.containerRef}
-        className="relative apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm max-w-md mx-auto -mt-1 mb-2.5 md:-mt-2.5 md:mb-3"
+        className="relative apple-liquid-pill rounded-[20px] p-1.5 flex items-center gap-1 shadow-sm max-w-xl mx-auto -mt-1 mb-2.5 md:-mt-2.5 md:mb-3"
       >
         <span
           aria-hidden="true"
@@ -114,7 +116,7 @@ export default function OperationsHub({
         <button
           onClick={() => switchSubTab('reservations')}
           data-slide-active={subTab === 'reservations' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'reservations'
+          className={`relative z-10 flex-1 py-2 px-2.5 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'reservations'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
@@ -126,13 +128,25 @@ export default function OperationsHub({
         <button
           onClick={() => switchSubTab('manual')}
           data-slide-active={subTab === 'manual' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-3 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'manual'
+          className={`relative z-10 flex-1 py-2 px-2.5 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'manual'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
         >
           <FileText className="w-4 h-4 stroke-[2.2] shrink-0" />
           <span className="truncate">Hojas Manuales</span>
+        </button>
+
+        <button
+          onClick={() => switchSubTab('teachers')}
+          data-slide-active={subTab === 'teachers' ? 'true' : undefined}
+          className={`relative z-10 flex-1 py-2 px-2.5 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'teachers'
+              ? 'text-slate-950 font-black'
+              : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+        >
+          <GraduationCap className="w-4 h-4 stroke-[2.2] shrink-0" />
+          <span className="truncate">Horarios Docentes</span>
         </button>
       </div>
 
@@ -153,6 +167,10 @@ export default function OperationsHub({
               initialOpenTrigger={openReservationModalTrigger}
               onConsumeTrigger={onConsumeReservationModalTrigger}
             />
+          )}
+
+          {subTab === 'teachers' && (
+            <TeacherSchedulesView />
           )}
         </div>
       </div>

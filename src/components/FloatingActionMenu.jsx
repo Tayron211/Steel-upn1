@@ -98,10 +98,10 @@ export default function FloatingActionMenu({ onOpenManualSheet, onOpenNewTicket,
 
   return (
     <>
-      {/* Backdrop rendered at root body to prevent any coordinate or clipping trap */}
-      {fabFade.shouldRender && typeof document !== 'undefined' && createPortal(
+      {/* Backdrop 100% transparente sin ningún tipo de blur ni oscurecimiento para cerrar al hacer clic afuera */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <div
-          className={`fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[9990] transition-all cursor-pointer ${fabFade.backdropClass}`}
+          className="fixed inset-0 z-[9990] cursor-default bg-transparent"
           onClick={() => fabFade.requestClose()}
         />,
         document.body

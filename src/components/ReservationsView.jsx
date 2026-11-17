@@ -25,7 +25,8 @@ import {
   UserCheck,
   BookOpen,
   Sparkles,
-  Layers
+  Layers,
+  AlertTriangle
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -243,6 +244,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [rooms, setRooms] = useState([]);
   const [dayClasses, setDayClasses] = useState([]);
   const [modalDayClasses, setModalDayClasses] = useState([]);
+  const [allScheduleClasses, setAllScheduleClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -594,21 +596,44 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     }
   };
 
-  const [formData, setFormData] = useState({
-    fecha: new Date().toISOString().split('T')[0],
-    mes: MONTHS_UPPER[new Date().getMonth()],
-    dia: DAYS_OF_WEEK[new Date().getDay()],
-    inicio: '14:30',
-    final: '16:10',
-    aulas: [],
-    aula: '',
-    ubicacion: '',
-    docente: '',
-    motivo: '',
-    detalle: '',
-    usuario: getLoggedAssistantName(),
-    obs: '',
-    prioridad: 'NORMAL'
+  const todayIso = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  const defaultRangeFinIso = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 4);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  const [formData, setFormData] = useState(() => {
+    const now = new Date();
+    const tIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const next4 = new Date(now);
+    next4.setDate(next4.getDate() + 4);
+    const endIso = `${next4.getFullYear()}-${String(next4.getMonth() + 1).padStart(2, '0')}-${String(next4.getDate()).padStart(2, '0')}`;
+
+    return {
+      isDateRange: false,
+      fecha: tIso,
+      fechaInicio: tIso,
+      fechaFin: endIso,
+      selectedWeekdays: [1, 2, 3, 4, 5],
+      mes: MONTHS_UPPER[now.getMonth()],
+      dia: DAYS_OF_WEEK[now.getDay()],
+      inicio: '14:30',
+      final: '16:10',
+      aulas: [],
+      aula: '',
+      ubicacion: '',
+      docente: '',
+      motivo: '',
+      detalle: '',
+      usuario: getLoggedAssistantName(),
+      obs: '',
+      prioridad: 'NORMAL'
+    };
   });
 
   // Estado para horarios individuales por aula en reserva múltiple
@@ -733,12 +758,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     return () => window.removeEventListener('upn:excel-pulled', handlePulled);
   }, []);
 
-  // Cargar lista completa de docentes de la universidad desde el horario (Excel) para autocompletado inteligente
+  // Cargar lista completa de docentes y horarios de toda la semana desde el horario (Excel) para autocompletado y validación de cruces
   useEffect(() => {
     fetch('/api/attendance')
       .then(r => r.json())
       .then(json => {
         if (json.success && Array.isArray(json.data)) {
+          setAllScheduleClasses(json.data);
           const docs = Array.from(
             new Set(
               json.data
@@ -905,43 +931,157 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     };
   }, [formData.fecha, activeDayInfo.diaName, dayClasses]);
 
-  // Solo aulas que estén 100% LIBRES en la fecha y rango horario (inicio - final) de la Nueva Reserva
+  // Cálculo de todas las fechas individuales en un Rango de Días (ej. Lun a Vie entre fechaInicio y fechaFin)
+  const rangeDates = useMemo(() => {
+    if (!formData.isDateRange) {
+      return formData.fecha ? [formData.fecha] : [];
+    }
+    const startStr = formData.fechaInicio || todayIso;
+    const endStr = formData.fechaFin || startStr;
+    if (!startStr || !endStr || startStr > endStr) return [];
+
+    const result = [];
+    const curr = new Date(startStr + 'T12:00:00');
+    const end = new Date(endStr + 'T12:00:00');
+    const selectedWk = new Set(formData.selectedWeekdays || [1, 2, 3, 4, 5]);
+
+    let count = 0;
+    while (curr <= end && count < 60) {
+      const dayOfWeek = curr.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+      if (selectedWk.has(dayOfWeek)) {
+        const iso = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
+        result.push(iso);
+      }
+      curr.setDate(curr.getDate() + 1);
+      count++;
+    }
+    return result;
+  }, [formData.isDateRange, formData.fecha, formData.fechaInicio, formData.fechaFin, formData.selectedWeekdays, todayIso]);
+
+  // Solo aulas que estén 100% LIBRES en la fecha (o en TODOS los días del rango) y rango horario de la Nueva Reserva
   const freeRoomsForModalTime = useMemo(() => {
     const bStart = timeToMins(formData.inicio);
     const bEnd = timeToMins(formData.final);
-    const targetFecha = normalizeDateStr(formData.fecha);
+    const datesToCheck = formData.isDateRange ? rangeDates : [formData.fecha];
+    if (datesToCheck.length === 0) return allRooms;
+
+    const classPool = allScheduleClasses.length > 0 ? allScheduleClasses : modalDayClasses;
 
     return allRooms.filter(rm => {
       const code = (rm.abrv || '').toUpperCase().trim();
 
-      // Conflicto con clases programadas ese día
-      const classConflict = modalDayClasses.some(c => {
-        if ((c.aula || '').toUpperCase().trim() !== code) return false;
-        const cStart = timeToMins(c.horaInicioProg);
-        const cEnd = timeToMins(c.horaFinalProg);
-        return cStart < bEnd && cEnd > bStart;
-      });
-      if (classConflict) return false;
+      for (const curFecha of datesToCheck) {
+        if (!curFecha) continue;
+        const curDt = new Date(curFecha + 'T12:00:00');
+        const curDia = DAYS_OF_WEEK[curDt.getDay()] || formData.dia || 'LUNES';
+        const targetFecha = normalizeDateStr(curFecha);
 
-      // Conflicto con otras reservas en esa misma fecha (evitar cualquier aula ocupada)
-      const resConflict = reservas.some(r => {
-        const rRooms = getReservationRooms(r);
-        if (!rRooms.includes(code)) return false;
-        const rFecha = normalizeDateStr(r.fecha);
-        if (rFecha && targetFecha) {
-          if (rFecha !== targetFecha) return false;
-        } else if (normalizeDay(r.dia) !== normalizeDay(formData.dia)) {
-          return false;
-        }
-        const rStart = timeToMins(r.inicio || r.hora_inicio);
-        const rEnd = timeToMins(r.final || r.hora_fin);
-        return rStart < bEnd && rEnd > bStart;
-      });
-      if (resConflict) return false;
+        // Conflicto con clases académicas programadas ese día
+        const classConflict = classPool.some(c => {
+          if ((c.aula || '').toUpperCase().trim() !== code) return false;
+          if (normalizeDay(c.dia) !== normalizeDay(curDia)) return false;
+          const cStart = timeToMins(c.horaInicioProg);
+          const cEnd = timeToMins(c.horaFinalProg);
+          return cStart < bEnd && cEnd > bStart;
+        });
+        if (classConflict) return false;
+
+        // Conflicto con otras reservas en esa misma fecha (evitar cualquier aula ocupada)
+        const resConflict = reservas.some(r => {
+          const rRooms = getReservationRooms(r);
+          if (!rRooms.includes(code)) return false;
+          const rFecha = normalizeDateStr(r.fecha);
+          if (rFecha && targetFecha) {
+            if (rFecha !== targetFecha) return false;
+          } else if (normalizeDay(r.dia) !== normalizeDay(curDia)) {
+            return false;
+          }
+          const rStart = timeToMins(r.inicio || r.hora_inicio);
+          const rEnd = timeToMins(r.final || r.hora_fin);
+          return rStart < bEnd && rEnd > bStart;
+        });
+        if (resConflict) return false;
+      }
 
       return true;
     });
-  }, [allRooms, modalDayClasses, reservas, formData.fecha, formData.dia, formData.inicio, formData.final]);
+  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
+
+  // Detección estricta y en tiempo real de cruces con clases académicas y otras reservas
+  const activeConflicts = useMemo(() => {
+    const selectedRooms = getReservationRooms(formData);
+    if (selectedRooms.length === 0) return [];
+
+    const conflicts = [];
+    const classPool = allScheduleClasses.length > 0 ? allScheduleClasses : modalDayClasses;
+
+    selectedRooms.forEach(aulaCode => {
+      const sched = roomSchedules[aulaCode] || {
+        fecha: formData.fecha,
+        inicio: formData.inicio,
+        final: formData.final
+      };
+
+      const datesToCheck = formData.isDateRange ? rangeDates : [sched.fecha || formData.fecha];
+      const reqStart = timeToMins(sched.inicio || formData.inicio);
+      const reqEnd = timeToMins(sched.final || formData.final);
+
+      datesToCheck.forEach(curDate => {
+        if (!curDate) return;
+        const curDt = new Date(curDate + 'T12:00:00');
+        const curDia = DAYS_OF_WEEK[curDt.getDay()] || formData.dia || 'LUNES';
+        const targetFecha = normalizeDateStr(curDate);
+
+        // 1. Cruce con clases programadas en el horario semanal oficial
+        classPool.forEach(c => {
+          if ((c.aula || '').toUpperCase().trim() !== aulaCode) return;
+          if (normalizeDay(c.dia) !== normalizeDay(curDia)) return;
+          const cStart = timeToMins(c.horaInicioProg);
+          const cEnd = timeToMins(c.horaFinalProg);
+          if (cStart < reqEnd && cEnd > reqStart) {
+            conflicts.push({
+              type: 'CLASE',
+              aula: aulaCode,
+              fecha: curDate,
+              dia: curDia,
+              inicio: c.horaInicioProg,
+              final: c.horaFinalProg,
+              titulo: c.curso || 'Clase Académica Programada',
+              responsable: c.docente || 'Docente de Horario'
+            });
+          }
+        });
+
+        // 2. Cruce con reservas existentes registradas en la app / base de datos
+        reservas.forEach(r => {
+          const rRooms = getReservationRooms(r);
+          if (!rRooms.includes(aulaCode)) return;
+          const rFecha = normalizeDateStr(r.fecha);
+          const isSameDay = rFecha && targetFecha
+            ? (rFecha === targetFecha)
+            : (normalizeDay(r.dia) === normalizeDay(curDia));
+          if (!isSameDay) return;
+
+          const rStart = timeToMins(r.inicio || r.hora_inicio);
+          const rEnd = timeToMins(r.final || r.hora_fin);
+          if (rStart < reqEnd && rEnd > reqStart) {
+            conflicts.push({
+              type: 'RESERVA',
+              aula: aulaCode,
+              fecha: curDate,
+              dia: curDia,
+              inicio: r.inicio || r.hora_inicio,
+              final: r.final || r.hora_fin,
+              titulo: r.detalle || r.motivo || 'Reserva Registrada',
+              responsable: r.docente || r.usuario || 'Otro usuario'
+            });
+          }
+        });
+      });
+    });
+
+    return conflicts;
+  }, [formData, roomSchedules, rangeDates, allScheduleClasses, modalDayClasses, reservas]);
 
   // Si las aulas previamente seleccionadas por el usuario pasan a estar ocupadas al cambiar horario/fecha, mantener solo las que sigan libres
   useEffect(() => {
@@ -1053,6 +1193,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     e.preventDefault();
     if (isSubmitting) return;
 
+    if (activeConflicts.length > 0) {
+      alert(`No es posible guardar la reserva: Hay ${activeConflicts.length} cruce(s) detectados con clases programadas o reservas existentes. Por favor resuelve los cruces indicados en la advertencia roja.`);
+      return;
+    }
+
+    if (formData.isDateRange && rangeDates.length === 0) {
+      alert('Por favor selecciona al menos un día válido que coincida dentro del rango de fechas.');
+      return;
+    }
+
     const cleanAulas = getReservationRooms(formData);
     if (cleanAulas.length === 0) {
       alert('Por favor selecciona al menos un ambiente libre para reservar.');
@@ -1094,7 +1244,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
       const cleanAula = cleanAulas.join(', ');
       const firstRm = roomMap[cleanAulas[0]];
-      const dt = new Date((formData.fecha || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+      const targetMainFecha = formData.isDateRange ? (rangeDates[0] || formData.fechaInicio) : (formData.fecha || todayIso);
+      const dt = new Date(targetMainFecha + 'T12:00:00');
       const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia || 'LUNES';
       const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes || 'OCTUBRE';
       const userUbicacion = (formData.ubicacion || '').trim();
@@ -1110,7 +1261,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         return s.fecha !== formData.fecha || s.inicio !== formData.inicio || s.final !== formData.final;
       });
 
-      // Generar ID de lote/grupo para vincular todas las aulas de la reserva múltiple
+      // Generar ID de lote/grupo para vincular todas las aulas o fechas de la reserva
       const groupId = 'grp_' + Date.now();
       const schedulesPack = {};
       cleanAulas.forEach(a => {
@@ -1118,13 +1269,15 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       });
       const obsPayload = JSON.stringify({
         group_id: groupId,
+        is_range: formData.isDateRange,
+        range_dates_count: formData.isDateRange ? rangeDates.length : 1,
         schedules: schedulesPack,
         note: formData.obs || ''
       });
 
-      // Se guarda como UNA SOLA RESERVA (una sola tarjeta en la app y una fila maestra en Excel)
       const payload = {
-        fecha: formData.fecha,
+        dates: formData.isDateRange ? rangeDates : [targetMainFecha],
+        fecha: targetMainFecha,
         mes: computedMes,
         dia: computedDia,
         inicio: formData.inicio,
@@ -1152,16 +1305,22 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         throw new Error(json.error || json.message || 'Error al guardar reserva');
       }
 
-      const createdReserva = {
-        ...json.data,
-        aulas: cleanAulas,
-        schedules: hasDifferentSchedules ? roomSchedules : null
-      };
+      if (json.allCreated && Array.isArray(json.allCreated) && json.allCreated.length > 0) {
+        setReservas(prev => [...json.allCreated, ...prev.filter(r => !json.allCreated.some(c => c.id === r.id))]);
+      } else if (json.data) {
+        const createdReserva = {
+          ...json.data,
+          aulas: cleanAulas,
+          schedules: hasDifferentSchedules ? roomSchedules : null
+        };
+        setReservas(prev => [createdReserva, ...prev.filter(r => r.id !== createdReserva.id)]);
+      }
 
-      setReservas(prev => [createdReserva, ...prev.filter(r => r.id !== createdReserva.id)]);
-      const toastDesc = cleanAulas.length > 1
-        ? `✅ Reserva múltiple guardada en una sola tarjeta (${cleanAulas.length} Aulas: ${cleanAula})`
-        : `✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${cleanAula})`;
+      const toastDesc = formData.isDateRange
+        ? `✅ Rango confirmado: Se crearon ${rangeDates.length} reservas para [${cleanAula}]`
+        : (cleanAulas.length > 1
+          ? `✅ Reserva múltiple guardada (${cleanAulas.length} Aulas: ${cleanAula})`
+          : `✅ Guardado en Excel: Hoja "RESERVAS" (Aula ${cleanAula})`);
       setToastMessage(toastDesc);
       setTimeout(() => setToastMessage(''), 3500);
       closeModal();
@@ -1178,7 +1337,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const target = activeDayInfo || upcomingDays[0];
     const blockObj = REAL_BLOCKS.find(b => b.start === selectedHoraBlock) || REAL_BLOCKS[4];
     setFormData({
-      fecha: target.fecha,
+      isDateRange: false,
+      fecha: target.fecha || todayIso,
+      fechaInicio: target.fecha || todayIso,
+      fechaFin: defaultRangeFinIso,
+      selectedWeekdays: [1, 2, 3, 4, 5],
       mes: target.mesName,
       dia: target.diaName,
       inicio: blockObj.start,
@@ -2706,32 +2869,173 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col">
               <div className="p-5 sm:p-6 space-y-3.5 flex-1">
-              {/* Fila 1: FECHA (Calcula Día y Mes automáticamente para Excel) */}
-              <div>
-                <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  <span>{getReservationRooms(formData).length > 1 ? 'Fecha Base (Predeterminada)' : 'Fecha de Reserva'}</span>
-                  {getReservationRooms(formData).length > 1 && (
-                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                      Horario predeterminado
-                    </span>
-                  )}
-                </label>
-                <CustomDatePicker
-                  value={formData.fecha}
-                  onChange={(val) => {
-                    if (!val) return;
-                    const dt = new Date(val + 'T12:00:00');
-                    const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
-                    const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
-                    setFormData(prev => ({
-                      ...prev,
-                      fecha: val,
-                      dia: computedDia,
-                      mes: computedMes
-                    }));
-                  }}
-                  required
-                />
+              {/* Fila 1: MODALIDAD DE FECHA (Día Único vs Rango de Días) */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+                    Modalidad de Reserva
+                  </label>
+                  <div className="inline-flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, isDateRange: false }))}
+                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition ${
+                        !formData.isDateRange
+                          ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      📅 Día Único
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, isDateRange: true }))}
+                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition ${
+                        formData.isDateRange
+                          ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      🗓️ Rango de Días (ej. Lun a Vie)
+                    </button>
+                  </div>
+                </div>
+
+                {!formData.isDateRange ? (
+                  <div>
+                    <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      <span>{getReservationRooms(formData).length > 1 ? 'Fecha Base (Predeterminada)' : 'Fecha de Reserva'}</span>
+                      {getReservationRooms(formData).length > 1 && (
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                          Horario predeterminado
+                        </span>
+                      )}
+                    </label>
+                    <CustomDatePicker
+                      value={formData.fecha}
+                      minDate={todayIso}
+                      onChange={(val) => {
+                        if (!val) return;
+                        const dt = new Date(val + 'T12:00:00');
+                        const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
+                        const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
+                        setFormData(prev => ({
+                          ...prev,
+                          fecha: val,
+                          dia: computedDia,
+                          mes: computedMes
+                        }));
+                      }}
+                      required
+                    />
+                  </div>
+                ) : (
+                  <div className="p-3 sm:p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/50 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                          Desde (Fecha Inicio)
+                        </label>
+                        <CustomDatePicker
+                          value={formData.fechaInicio}
+                          minDate={todayIso}
+                          onChange={(val) => {
+                            if (!val) return;
+                            setFormData(p => ({
+                              ...p,
+                              fechaInicio: val,
+                              fechaFin: p.fechaFin < val ? val : p.fechaFin
+                            }));
+                          }}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                          Hasta (Fecha Fin)
+                        </label>
+                        <CustomDatePicker
+                          value={formData.fechaFin}
+                          minDate={formData.fechaInicio || todayIso}
+                          onChange={(val) => val && setFormData(p => ({ ...p, fechaFin: val }))}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Días de la semana permitidos en el rango */}
+                    <div className="space-y-1.5 pt-1.5 border-t border-amber-200/60 dark:border-amber-900/40">
+                      <div className="flex items-center justify-between text-[10.5px]">
+                        <span className="font-bold text-slate-700 dark:text-zinc-300">
+                          Repetir en los días:
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5] }))}
+                            className="text-[10.5px] font-black text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                          >
+                            Lun a Vie
+                          </button>
+                          <span className="text-slate-300 dark:text-zinc-600">·</span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5, 6] }))}
+                            className="text-[10.5px] font-black text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                          >
+                            Toda la Semana
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { id: 1, label: 'Lunes', short: 'LU' },
+                          { id: 2, label: 'Martes', short: 'MA' },
+                          { id: 3, label: 'Miércoles', short: 'MI' },
+                          { id: 4, label: 'Jueves', short: 'JU' },
+                          { id: 5, label: 'Viernes', short: 'VI' },
+                          { id: 6, label: 'Sábado', short: 'SÁ' },
+                          { id: 0, label: 'Domingo', short: 'DO' }
+                        ].map(day => {
+                          const isSelected = (formData.selectedWeekdays || []).includes(day.id);
+                          return (
+                            <button
+                              key={day.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData(p => {
+                                  const current = p.selectedWeekdays || [];
+                                  const next = isSelected
+                                    ? (current.length > 1 ? current.filter(x => x !== day.id) : current)
+                                    : [...current, day.id];
+                                  return { ...p, selectedWeekdays: next };
+                                });
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                                isSelected
+                                  ? 'bg-amber-500 text-slate-950 shadow-2xs ring-1 ring-amber-500'
+                                  : 'bg-white/90 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100'
+                              }`}
+                              title={day.label}
+                            >
+                              {day.short}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px] text-amber-900 dark:text-amber-200 font-bold pt-0.5">
+                        <Calendar className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span>
+                          {rangeDates.length === 0
+                            ? 'Ningún día coincide en este rango'
+                            : `${rangeDates.length} fecha(s) en total coinciden con la selección`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Fila 2: HORARIO (Columnas INICIO y FINAL) */}
@@ -2908,6 +3212,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                                 </label>
                                 <CustomDatePicker
                                   value={sched.fecha}
+                                  minDate={todayIso}
                                   onChange={(val) => updateRoomSchedule(aulaCode, 'fecha', val)}
                                 />
                               </div>
@@ -3047,6 +3352,31 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
               </div>
 
+                {/* Banner de Advertencia Estricta de Cruce de Horarios */}
+                {activeConflicts.length > 0 && (
+                  <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-2 animate-fade-in">
+                    <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-black text-xs">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                      <span>No es posible reservar: Cruce de horarios detectado ({activeConflicts.length})</span>
+                    </div>
+                    <div className="max-h-28 overflow-y-auto space-y-1.5 text-[11px] text-rose-800 dark:text-rose-200 font-medium pr-1">
+                      {activeConflicts.slice(0, 5).map((conf, idx) => (
+                        <div key={idx} className="flex items-start gap-1.5 bg-rose-100/70 dark:bg-rose-900/40 p-2 rounded-xl">
+                          <span className="font-mono font-black text-rose-950 dark:text-rose-100 shrink-0">[{conf.aula}]</span>
+                          <span className="leading-tight">
+                            {conf.fecha} ({conf.dia}) {conf.inicio} - {conf.final} ya ocupado por: <span className="font-bold">{conf.titulo || conf.responsable}</span> ({conf.type === 'CLASE' ? 'Clase programada' : 'Reserva'})
+                          </span>
+                        </div>
+                      ))}
+                      {activeConflicts.length > 5 && (
+                        <div className="text-[10.5px] text-rose-600 dark:text-rose-400 font-bold italic pt-0.5">
+                          ... y {activeConflicts.length - 5} cruce(s) más no mostrados.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               <div className="p-5 sm:p-6 pt-3.5 border-t border-slate-100 dark:border-zinc-800 grid grid-cols-2 gap-3 shrink-0 bg-white/80 dark:bg-[#0c0c10]/80 backdrop-blur-xs">
@@ -3059,14 +3389,30 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || getReservationRooms(formData).length === 0}
-                  className="h-11 sm:h-12 rounded-2xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 shadow-xs transition flex items-center justify-center text-center active:scale-95 cursor-pointer"
+                  disabled={isSubmitting || getReservationRooms(formData).length === 0 || activeConflicts.length > 0 || (formData.isDateRange && rangeDates.length === 0)}
+                  className={`h-11 sm:h-12 rounded-2xl text-xs font-black shadow-xs transition flex items-center justify-center text-center active:scale-95 cursor-pointer ${
+                    activeConflicts.length > 0
+                      ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 cursor-not-allowed'
+                      : (isSubmitting || getReservationRooms(formData).length === 0 || (formData.isDateRange && rangeDates.length === 0))
+                        ? 'bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed'
+                        : 'bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-amber-500/25'
+                  }`}
                 >
-                  {isSubmitting
-                    ? 'Guardando Reserva...'
-                    : (getReservationRooms(formData).length > 1
-                      ? `Confirmar ${getReservationRooms(formData).length} Reservas Individuales`
-                      : 'Confirmar Reserva')}
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-1.5">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Guardando Reserva...</span>
+                    </span>
+                  ) : activeConflicts.length > 0 ? (
+                    <span className="flex items-center gap-1.5 truncate px-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>Cruce Detectado ({activeConflicts.length})</span>
+                    </span>
+                  ) : formData.isDateRange ? (
+                    `Confirmar ${rangeDates.length} Días (${getReservationRooms(formData).join(', ')})`
+                  ) : (getReservationRooms(formData).length > 1
+                    ? `Confirmar ${getReservationRooms(formData).length} Reservas Individuales`
+                    : 'Confirmar Reserva')}
                 </button>
               </div>
             </form>

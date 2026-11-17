@@ -16,7 +16,9 @@ export default function CustomDatePicker({
   label,
   placeholder = 'Seleccionar fecha',
   required = false,
-  className = ''
+  className = '',
+  minDate = null,
+  maxDate = null
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const pickerFade = useFadeModal(isOpen, () => setIsOpen(false), 200);
@@ -161,6 +163,13 @@ export default function CustomDatePicker({
     return selY === y && selM - 1 === m && selD === d;
   };
 
+  const isDateDisabled = (y, m, d) => {
+    const dateStr = formatDateToString(y, m, d);
+    if (minDate && dateStr < minDate) return true;
+    if (maxDate && dateStr > maxDate) return true;
+    return false;
+  };
+
   return (
     <div className="relative w-full">
       {/* Trigger Button - Mimics native input perfectly but opens our branded Apple-glass calendar */}
@@ -237,20 +246,24 @@ export default function CustomDatePicker({
               {allCalendarDays.map((cell, idx) => {
                 const selected = isSelected(cell.year, cell.month, cell.day);
                 const today = isToday(cell.year, cell.month, cell.day);
+                const disabled = isDateDisabled(cell.year, cell.month, cell.day);
 
                 return (
                   <button
                     key={`${cell.year}-${cell.month}-${cell.day}-${idx}`}
                     type="button"
-                    onClick={() => handleSelectDay(cell.year, cell.month, cell.day)}
+                    disabled={disabled}
+                    onClick={() => !disabled && handleSelectDay(cell.year, cell.month, cell.day)}
                     className={`h-8 rounded-xl text-xs font-bold transition flex items-center justify-center active:scale-90 ${
-                      selected
+                      disabled
+                        ? 'opacity-20 cursor-not-allowed line-through text-slate-400 dark:text-zinc-600 select-none'
+                        : selected
                         ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs scale-105 z-10'
                         : cell.isCurrentMonth
                         ? 'text-slate-800 dark:text-zinc-100 hover:bg-amber-50 dark:hover:bg-zinc-800'
                         : 'text-slate-300 dark:text-zinc-600 hover:bg-slate-50 dark:hover:bg-zinc-900'
                     } ${
-                      today && !selected
+                      today && !selected && !disabled
                         ? 'border border-amber-400/80 dark:border-amber-400/60 font-extrabold text-amber-600 dark:text-amber-400'
                         : ''
                     }`}
@@ -266,7 +279,8 @@ export default function CustomDatePicker({
               <button
                 type="button"
                 onClick={handleSelectToday}
-                className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline px-2 py-1 rounded-lg transition"
+                disabled={minDate && formatDateToString(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) < minDate}
+                className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline px-2 py-1 rounded-lg transition disabled:opacity-30 disabled:no-underline disabled:cursor-not-allowed"
               >
                 Hoy
               </button>

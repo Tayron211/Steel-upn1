@@ -1,8 +1,8 @@
 {
-  "version": "1.0.98",
-  "versionCode": 99,
+  "version": "1.0.99",
+  "versionCode": 100,
   "releaseDate": "2026-11-17",
-  "notes": "Correccion de blur y bloqueo de clics en boton flotante y modales",
+  "notes": "Rango de fechas para reservas, bloqueo de fechas pasadas, prevencion estricta de cruces, solucion blur FAB y horarios docentes en tarjetas",
   "features": [
     {
       "title": "Auditoría de Seguridad y Protección de Cabeceras",
