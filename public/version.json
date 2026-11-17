@@ -1,8 +1,8 @@
 {
-  "version": "1.0.89",
-  "versionCode": 90,
+  "version": "1.0.90",
+  "versionCode": 91,
   "releaseDate": "2026-11-17",
-  "notes": "Desenfocar fondo de forma garantizada y atomica al abrir Registrar Prestamo y dialogos",
+  "notes": "Mejora de fluidez en modales sin parones y limpieza de redundancias en reservas",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

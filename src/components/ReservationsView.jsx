@@ -24,7 +24,8 @@ import {
   GraduationCap,
   UserCheck,
   BookOpen,
-  Sparkles
+  Sparkles,
+  Layers
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -2468,18 +2469,25 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                        {cardAulas.map(a => {
-                          const rm = roomMap[a];
-                          return (
-                            <span
-                              key={a}
-                              className="text-sm sm:text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0 shadow-2xs"
-                              title={rm ? `${rm.tipo} · ${rm.nombre || rm.tipo} · Aforo: ${rm.aforo || 40}p` : undefined}
-                            >
-                              {a}
-                            </span>
-                          );
-                        })}
+                        {hasMultipleDifferentSchedules(r) ? (
+                          <span className="text-sm sm:text-base font-black text-amber-950 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0 shadow-2xs inline-flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                            <span>{cardAulas.length} Aulas</span>
+                          </span>
+                        ) : (
+                          cardAulas.map(a => {
+                            const rm = roomMap[a];
+                            return (
+                              <span
+                                key={a}
+                                className="text-sm sm:text-base font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-xl font-mono tracking-tight shrink-0 shadow-2xs"
+                                title={rm ? `${rm.tipo} · ${rm.nombre || rm.tipo} · Aforo: ${rm.aforo || 40}p` : undefined}
+                              >
+                                {a}
+                              </span>
+                            );
+                          })
+                        )}
                         {(() => {
                           const facility = getSpecializedFacility(firstRm?.nombre, cardAulas[0]);
                           if (facility) {
@@ -2491,7 +2499,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           }
                           return null;
                         })()}
-                        {cardAulas.length > 1 && (
+                        {!hasMultipleDifferentSchedules(r) && cardAulas.length > 1 && (
                           <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
                             {cardAulas.length} Aulas
                           </span>
@@ -2518,9 +2526,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     {/* Horarios: Desglose individual por aula si difieren fecha/hora, o bloque único consolidado si comparten el mismo horario */}
                     {hasMultipleDifferentSchedules(r) ? (
                       <div className="space-y-1.5 mb-3">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 px-0.5 flex items-center justify-between">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 px-0.5">
                           <span>Horario Individual por Aula</span>
-                          <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{cardAulas.length} ambientes</span>
                         </div>
                         <div className="space-y-1">
                           {cardAulas.map(a => {
