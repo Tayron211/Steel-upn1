@@ -46,6 +46,28 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuFade = useFadeModal(userMenuOpen, () => setUserMenuOpen(false), 180);
   const userMenuRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 60, right: 16 });
+
+  useEffect(() => {
+    if (userMenuOpen && userMenuRef.current) {
+      const updateCoords = () => {
+        if (!userMenuRef.current) return;
+        const rect = userMenuRef.current.getBoundingClientRect();
+        setDropdownCoords({
+          top: rect.bottom + 8,
+          right: Math.max(12, window.innerWidth - rect.right),
+        });
+      };
+      updateCoords();
+      window.addEventListener('resize', updateCoords);
+      window.addEventListener('scroll', updateCoords, true);
+      return () => {
+        window.removeEventListener('resize', updateCoords);
+        window.removeEventListener('scroll', updateCoords, true);
+      };
+    }
+  }, [userMenuOpen]);
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIos, setIsIos] = useState(false);
@@ -81,7 +103,9 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+      const clickedTrigger = userMenuRef.current && userMenuRef.current.contains(e.target);
+      const clickedMenu = dropdownRef.current && dropdownRef.current.contains(e.target);
+      if (!clickedTrigger && !clickedMenu) {
         setUserMenuOpen(false);
       }
     };
@@ -216,9 +240,17 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   } ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Menú Desplegable: Acciones Rápidas + Descargas */}
-                {userMenuFade.shouldRender && (
-                  <div className={`user-dropdown-window absolute right-0 mt-2 w-68 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
+                {/* Menú Desplegable: Portaled a document.body para evitar clipping de backdrop-filter de header */}
+                {userMenuFade.shouldRender && typeof document !== 'undefined' && createPortal(
+                  <div
+                    ref={dropdownRef}
+                    style={{
+                      position: 'fixed',
+                      top: `${dropdownCoords.top}px`,
+                      right: `${dropdownCoords.right}px`,
+                    }}
+                    className={`user-dropdown-window w-68 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-[99999] ${userMenuFade.dropdownClass}`}
+                  >
                     {/* Cabecera del Usuario */}
                     <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate uppercase">
@@ -363,7 +395,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         </button>
                       )}
                     </div>
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             )}

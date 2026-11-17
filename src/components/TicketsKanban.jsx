@@ -227,8 +227,8 @@ export default function TicketsKanban({
   const [loanRango, setLoanRango] = useState(() => computeRango(new Date().toTimeString().slice(0, 5)));
   // Columna 5, 6, 7: AMBIENTE, PISO y PABELLÓN
   const [roomInput, setRoomInput] = useState('');
-  // Columna 8: TIPO DE SOLICITUD (Multiselección + opción manual)
-  const [selectedMaterials, setSelectedMaterials] = useState(['PROYECTOR']);
+  // Columna 8: TIPO DE SOLICITUD (Multiselección + opción manual - NADA preseleccionado por defecto)
+  const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [manualItemText, setManualItemText] = useState('');
   // Columna 9: ESTADO
   const [loanStatus, setLoanStatus] = useState('EN PROCESO'); // 'EN PROCESO' | 'ATENDIDO' | 'PENDIENTE'
@@ -511,6 +511,7 @@ export default function TicketsKanban({
   useEffect(() => {
     if (openModalTrigger) {
       setActiveViewTab('ACTIVOS');
+      setSelectedMaterials([]);
       setIsNewLoanModalOpen(true);
       if (onConsumeModalTrigger) onConsumeModalTrigger();
     }
@@ -825,7 +826,7 @@ export default function TicketsKanban({
         setRoomInput('');
         setManualItemText('');
         setLoanDescription('');
-        setSelectedMaterials(['PROYECTOR']);
+        setSelectedMaterials([]);
         setLoanStatus('EN PROCESO');
         if (solicitanteFormSignRef.current) solicitanteFormSignRef.current.clear();
         setIsNewLoanModalOpen(false);
@@ -1193,7 +1194,10 @@ export default function TicketsKanban({
           {/* Botón Principal: Registrar Préstamo (Alineado a la derecha en móvil para pulgar derecho) */}
           <button
             type="button"
-            onClick={() => setIsNewLoanModalOpen(true)}
+            onClick={() => {
+              setSelectedMaterials([]);
+              setIsNewLoanModalOpen(true);
+            }}
             className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0 ml-auto sm:ml-0"
           >
             <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
@@ -2185,11 +2189,11 @@ export default function TicketsKanban({
           onClick={() => newLoanFade.requestClose()}
         >
           <div
-            className={`w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${newLoanFade.modalClass}`}
+            className={`apple-liquid-modal w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${newLoanFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-zinc-900/40">
+            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-3 bg-slate-50 dark:bg-[#121215]">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-10 h-10 rounded-2xl bg-[#FDBA30] text-slate-950 flex items-center justify-center shadow-xs shrink-0">
                   <HandHelping className="w-5 h-5 stroke-[2.4]" />
@@ -2497,7 +2501,7 @@ export default function TicketsKanban({
             </div>
 
             {/* Footer con Botón Registrar */}
-            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 flex items-center justify-end gap-2.5">
+            <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-[#121215] flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => newLoanFade.requestClose()}
