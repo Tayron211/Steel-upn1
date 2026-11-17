@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   RotateCw,
   Download,
@@ -18,7 +19,7 @@ import { useFadeModal } from '../utils/useFadeModal';
 
 export default function AppUpdateModal({ updateInfo, onClose }) {
   const isAvailable = Boolean(isCapacitorNative() && updateInfo && updateInfo.isAvailable);
-  const fade = useFadeModal(isAvailable ? updateInfo : null, onClose, 220);
+  const fade = useFadeModal(isAvailable ? updateInfo : null, onClose, 220, { isModal: true });
   const rawInfo = (fade.cachedData && typeof fade.cachedData === 'object') ? fade.cachedData : (updateInfo && typeof updateInfo === 'object' ? updateInfo : {});
 
   // Extraer versiones con respaldo garantizado
@@ -42,7 +43,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
   const [progress, setProgress] = useState(0);
 
   // El popup de actualización SOLO se debe mostrar en la app nativa (APK Android)
-  if (!isCapacitorNative() || !fade.shouldRender) return null;
+  if (!isCapacitorNative() || !fade.shouldRender || typeof document === 'undefined') return null;
 
   const handleUpdate = async () => {
     if (progress >= 100) {
@@ -73,7 +74,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
     }
   };
 
-  return (
+  return createPortal(
     <div
       className={`fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 select-none ${fade.backdropClass}`}
       onClick={() => {
@@ -241,6 +242,7 @@ export default function AppUpdateModal({ updateInfo, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

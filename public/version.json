@@ -1,8 +1,8 @@
 {
-  "version": "1.0.87",
-  "versionCode": 88,
+  "version": "1.0.88",
+  "versionCode": 89,
   "releaseDate": "2026-11-17",
-  "notes": "Mejora fluidez del fade y fijacion de navbar en APK",
+  "notes": "Corregir modal de actualizacion para que solo difumine el fondo y se mantenga nitida",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",
