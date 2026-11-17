@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   GraduationCap,
   Calendar,
@@ -19,9 +20,12 @@ import {
   ChevronDown,
   ChevronsUpDown,
   Hash,
-  FileSpreadsheet
+  FileSpreadsheet,
+  X,
+  Eye
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
+import { useFadeModal } from '../utils/useFadeModal';
 
 // Helper de copia enriquecida a portapapeles: Formato tabla HTML para Excel (con colores) + Texto TSV
 const copyRichTableToClipboard = async (plainText, htmlText) => {
@@ -326,27 +330,14 @@ export default function TeacherSchedulesView() {
     };
   }, [teachersGrouped]);
 
-  // Estado para desplegar/colapsar clases de docentes individual o globalmente
-  const [expandedTeachers, setExpandedTeachers] = useState({});
-
-  const toggleTeacher = (name) => {
-    setExpandedTeachers(prev => ({
-      ...prev,
-      [name]: !prev[name]
-    }));
-  };
-
-  const expandAll = () => {
-    const next = {};
-    teachersGrouped.forEach(t => { next[t.name] = true; });
-    setExpandedTeachers(next);
-  };
-
-  const collapseAll = () => {
-    setExpandedTeachers({});
-  };
-
-  const allAreExpanded = teachersGrouped.length > 0 && teachersGrouped.every(t => expandedTeachers[t.name]);
+  // Estado para la ventana flotante (Modal) con el horario detallado del docente
+  const [selectedTeacherForModal, setSelectedTeacherForModal] = useState(null);
+  const teacherModalFade = useFadeModal(
+    selectedTeacherForModal,
+    () => setSelectedTeacherForModal(null),
+    200,
+    { isModal: true }
+  );
 
   // Copia grupal de todas las clases de un docente en formato Tabla Excel con colores oficiales
   const copyTeacherSchedule = async (teacher) => {
@@ -604,24 +595,20 @@ export default function TeacherSchedulesView() {
         </div>
       </div>
 
-      {/* Barra de Control de Despliegue y Conteo */}
+      {/* Barra de Conteo y Resumen */}
       {!loading && teachersGrouped.length > 0 && (
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">
-            Mostrando <span className="font-black text-slate-900 dark:text-white font-mono">{teachersGrouped.length}</span> docentes · <span className="font-mono text-amber-600 dark:text-amber-400 font-black">{stats.classesCount}</span> clases
+            Mostrando <span className="font-black text-slate-900 dark:text-white font-mono">{teachersGrouped.length}</span> docentes · <span className="font-mono text-amber-600 dark:text-amber-400 font-black">{stats.classesCount}</span> clases activas
           </div>
-          <button
-            type="button"
-            onClick={allAreExpanded ? collapseAll : expandAll}
-            className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
-          >
-            <ChevronsUpDown className="w-3.5 h-3.5 stroke-[2.4] text-amber-500" />
-            <span>{allAreExpanded ? 'Colapsar todas' : 'Desplegar todas'}</span>
-          </button>
+          <span className="text-[11px] text-slate-400 dark:text-zinc-500 hidden sm:inline-flex items-center gap-1 font-medium">
+            <Eye className="w-3.5 h-3.5 text-amber-500" />
+            Toca cualquier tarjeta para ver su horario en ventana flotante
+          </span>
         </div>
       )}
 
-      {/* Cuadrícula Masonry Fluida por Columnas (Elimina los vacíos al desplegar) */}
+      {/* Cuadrícula Uniforme y 100% Simétrica de Tarjetas de Docentes */}
       {loading ? (
         <div className="p-12 text-center bg-white dark:bg-[#0c0c10] rounded-3xl border border-slate-200 dark:border-zinc-800">
           <RefreshCw className="w-8 h-8 text-[#FDBA30] animate-spin mx-auto mb-3" />
@@ -634,157 +621,225 @@ export default function TeacherSchedulesView() {
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Prueba seleccionando más días (incluyendo Domingo) o cambiando los filtros de búsqueda</p>
         </div>
       ) : (
-        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 2xl:columns-5 gap-3 [column-fill:_balance]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 items-start">
           {teachersGrouped.map((teacher) => {
-            const isExpanded = Boolean(expandedTeachers[teacher.name]);
             const uniqueRooms = Array.from(new Set(teacher.classes.map(c => c.aula).filter(Boolean)));
             const roomSummary = uniqueRooms.slice(0, 3).join(', ') + (uniqueRooms.length > 3 ? '...' : '');
 
             return (
               <div
                 key={teacher.name}
-                className={`break-inside-avoid inline-block w-full mb-3 bg-white dark:bg-[#0c0c10] rounded-2xl p-3 border transition-all duration-200 flex flex-col ${
-                  isExpanded
-                    ? 'border-amber-400/80 dark:border-amber-500/60 shadow-md ring-1 ring-amber-400/20'
-                    : 'h-[72px] justify-center border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700'
-                }`}
+                onClick={() => setSelectedTeacherForModal(teacher)}
+                className="h-[72px] bg-white dark:bg-[#0c0c10] rounded-2xl p-3 border border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-amber-400/80 dark:hover:border-amber-500/60 hover:shadow-md transition-all duration-150 flex flex-col justify-center cursor-pointer group select-none active:scale-[0.99]"
               >
-                {/* Header de la Tarjeta del Docente - Altura Sincrónica y Simétrica */}
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleTeacher(teacher.name)}
-                      className="min-w-0 flex-1 text-left flex items-center gap-2 cursor-pointer group"
-                    >
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition ${
-                        isExpanded
-                          ? 'bg-[#FDBA30] text-slate-950 font-black'
-                          : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 group-hover:bg-amber-200'
-                      }`}>
-                        <GraduationCap className="w-4 h-4 stroke-[2.3]" />
-                      </div>
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <h3
-                          className="font-extrabold text-xs text-slate-950 dark:text-white tracking-tight truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors"
-                          title={teacher.name}
-                        >
-                          {teacher.name}
-                        </h3>
-                        <div className="flex items-center gap-1.5 mt-1 flex-nowrap overflow-hidden">
-                          <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
-                            {teacher.totalClasses} {teacher.totalClasses === 1 ? 'Clase' : 'Clases'}
-                          </span>
-                          <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
-                            {teacher.totalHours} hrs
-                          </span>
-                          {!isExpanded && roomSummary && (
-                            <span
-                              className="text-[9.5px] font-mono text-slate-500 dark:text-zinc-400 truncate shrink min-w-0"
-                              title={`Aulas: ${uniqueRooms.join(', ')}`}
-                            >
-                              · {roomSummary}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => copyTeacherSchedule(teacher)}
-                        title="Copiar horario en formato tabla de Excel con colores oficiales"
-                        className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-950/60 dark:hover:text-amber-300 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition active:scale-90"
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 group-hover:bg-[#FDBA30] group-hover:text-slate-950 flex items-center justify-center shrink-0 transition">
+                      <GraduationCap className="w-4 h-4 stroke-[2.3]" />
+                    </div>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <h3
+                        className="font-extrabold text-xs text-slate-950 dark:text-white tracking-tight truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors"
+                        title={teacher.name}
                       >
-                        <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleTeacher(teacher.name)}
-                        title={isExpanded ? 'Ocultar clases' : 'Desplegar clases'}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition active:scale-90 cursor-pointer ${
-                          isExpanded
-                            ? 'bg-amber-500 text-slate-950'
-                            : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300'
-                        }`}
-                      >
-                        <ChevronDown className={`w-3.5 h-3.5 stroke-[2.6] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                      </button>
+                        {teacher.name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 mt-1 flex-nowrap overflow-hidden">
+                        <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
+                          {teacher.totalClasses} {teacher.totalClasses === 1 ? 'Clase' : 'Clases'}
+                        </span>
+                        <span className="shrink-0 text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                          {teacher.totalHours} hrs
+                        </span>
+                        {roomSummary && (
+                          <span
+                            className="text-[9.5px] font-mono text-slate-500 dark:text-zinc-400 truncate shrink min-w-0"
+                            title={`Aulas: ${uniqueRooms.join(', ')}`}
+                          >
+                            · {roomSummary}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Lista Cronológica de Clases del Docente (Desplegable) */}
-                  {isExpanded && (
-                    <div className="space-y-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80 animate-fade-in">
-                      {teacher.classes.map((c, idx) => (
-                        <div
-                          key={`${c.aula}-${c.horaInicioProg}-${c.dia}-${idx}`}
-                          className="p-2 rounded-xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200/70 dark:border-zinc-800/80 flex flex-col gap-1 hover:border-amber-400/50 transition"
-                        >
-                          <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-[11px] shadow-2xs">
-                                {c.aula}
-                              </span>
-                              {c.nrc && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-[10px] border border-indigo-200/60 dark:border-indigo-800/60">
-                                  NRC: {c.nrc}
-                                </span>
-                              )}
-                              {selectedDays.length > 1 && (
-                                <span className="text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300">
-                                  {c.dia}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="text-[10.5px] font-mono font-black text-slate-800 dark:text-zinc-200 flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
-                                {c.horaInicioProg} - {c.horaFinalProg}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copySingleClass(c, teacher.name);
-                                }}
-                                title="Copiar esta clase en formato tabla Excel con colores"
-                                className="w-5.5 h-5.5 rounded-md bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-500 hover:text-amber-800 dark:text-zinc-400 dark:hover:text-amber-300 border border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-center transition active:scale-90"
-                              >
-                                <Copy className="w-2.8 h-2.8 stroke-[2.2]" />
-                              </button>
-                            </div>
-                          </div>
-
-                          <p className="text-[11.5px] font-extrabold text-slate-900 dark:text-zinc-100 truncate leading-snug">
-                            {c.curso || 'CURSO PROGRAMADO'}
-                          </p>
-
-                          <div className="text-[9.5px] text-slate-500 dark:text-zinc-400 font-medium truncate">
-                            {c.carrera || c.seccion ? `${c.carrera || ''} ${c.seccion ? `• Sec: ${c.seccion}` : ''}` : 'Horario Académico UPN'}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Botón para Copiar Todo en Bloque (Todas las clases de este docente) */}
-                      {teacher.totalClasses > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => copyTeacherSchedule(teacher)}
-                          className="w-full mt-2 py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.98] text-amber-900 dark:text-amber-300 border border-amber-300/70 dark:border-amber-800/70 text-[11px] font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
-                        >
-                          <Copy className="w-3.5 h-3.5 stroke-[2.3] text-amber-600 dark:text-amber-400" />
-                          <span>Copiar todo en bloque ({teacher.totalClasses} clases en Excel)</span>
-                        </button>
-                      )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyTeacherSchedule(teacher);
+                      }}
+                      title="Copiar horario en formato tabla de Excel con colores oficiales"
+                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-950/60 dark:hover:text-amber-300 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition active:scale-90"
+                    >
+                      <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                    </button>
+                    <div
+                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 group-hover:bg-amber-500 group-hover:text-slate-950 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0"
+                      title="Ver horario completo en ventana flotante"
+                    >
+                      <Eye className="w-3.5 h-3.5 stroke-[2.3]" />
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Ventana Flotante (Modal) con la Información y Clases del Docente */}
+      {teacherModalFade.shouldRender && typeof document !== 'undefined' && createPortal(
+        (() => {
+          const doc = teacherModalFade.cachedData || selectedTeacherForModal;
+          if (!doc) return null;
+          const uniqueRoomsList = Array.from(new Set(doc.classes.map(c => c.aula).filter(Boolean)));
+
+          return (
+            <div
+              className={`fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md ${teacherModalFade.backdropClass}`}
+              onClick={() => teacherModalFade.requestClose()}
+            >
+              <div
+                className={`w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${teacherModalFade.modalClass}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Cabecera de la Ventana Flotante */}
+                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-zinc-800 flex items-start justify-between gap-3 bg-slate-50/70 dark:bg-zinc-900/40">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-[#FDBA30] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                      <GraduationCap className="w-6 h-6 stroke-[2.4]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60">
+                          Horario Docente UPN
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-400">
+                          {selectedDays.join(' · ')}
+                        </span>
+                      </div>
+                      <h3 className="text-base sm:text-xl font-black text-slate-950 dark:text-white leading-tight tracking-tight">
+                        {doc.name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 sm:gap-2 mt-2 flex-wrap">
+                        <span className="text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300">
+                          {doc.totalClasses} {doc.totalClasses === 1 ? 'Clase' : 'Clases'}
+                        </span>
+                        <span className="text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                          {doc.totalHours} hrs totales
+                        </span>
+                        <span className="text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                          {doc.uniqueRoomsCount} {doc.uniqueRoomsCount === 1 ? 'Aula' : 'Aulas'} ({uniqueRoomsList.join(', ')})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => teacherModalFade.requestClose()}
+                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0 cursor-pointer active:scale-90"
+                    title="Cerrar ventana"
+                  >
+                    <X className="w-5 h-5 stroke-[2.5]" />
+                  </button>
+                </div>
+
+                {/* Barra de Acción: Copiar todo en bloque (Excel con colores) */}
+                <div className="px-4 sm:px-6 py-2.5 bg-amber-50/50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/30 flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-amber-900 dark:text-amber-300">
+                    Listado cronológico de clases programadas
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyTeacherSchedule(doc)}
+                    className="py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                    title="Copiar todas las clases en formato tabla Excel con colores"
+                  >
+                    <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
+                    <span>Copiar todo en bloque (Excel)</span>
+                  </button>
+                </div>
+
+                {/* Cuerpo del Modal: Lista de Clases con NRC, Horas y Copia Individual */}
+                <div className="p-4 sm:p-6 overflow-y-auto max-h-[60vh] space-y-2.5 custom-scrollbar">
+                  {doc.classes.map((c, idx) => (
+                    <div
+                      key={`${c.aula}-${c.horaInicioProg}-${c.dia}-${idx}`}
+                      className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200/80 dark:border-zinc-800 flex flex-col gap-1.5 hover:border-amber-400/60 transition group"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-lg bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shadow-2xs">
+                            Aula {c.aula}
+                          </span>
+                          {c.nrc && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-[11px] border border-indigo-200/60 dark:border-indigo-800/60">
+                              NRC: {c.nrc}
+                            </span>
+                          )}
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300">
+                            {c.dia}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-mono font-black text-slate-800 dark:text-zinc-200 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-amber-500 stroke-[2.4]" />
+                            {c.horaInicioProg} - {c.horaFinalProg}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copySingleClass(c, doc.name)}
+                            title="Copiar esta clase individual en tabla Excel con colores"
+                            className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-500 hover:text-amber-800 dark:text-zinc-400 dark:hover:text-amber-300 border border-slate-200 dark:border-zinc-700 flex items-center justify-center transition active:scale-90 cursor-pointer shadow-2xs"
+                          >
+                            <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="text-xs sm:text-sm font-extrabold text-slate-950 dark:text-white leading-snug">
+                        {c.curso || 'CURSO PROGRAMADO'}
+                      </p>
+
+                      <div className="text-[10.5px] text-slate-500 dark:text-zinc-400 font-medium truncate">
+                        {c.carrera || c.seccion ? `${c.carrera || ''} ${c.seccion ? `• Sec: ${c.seccion}` : ''}` : 'Horario Académico UPN'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pie del Modal */}
+                <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex items-center justify-between gap-2">
+                  <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">
+                    Total: <span className="font-black text-slate-900 dark:text-white font-mono">{doc.totalClasses}</span> clases asignadas
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => copyTeacherSchedule(doc)}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    >
+                      <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
+                      <span>Copiar todo en bloque</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => teacherModalFade.requestClose()}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-black transition cursor-pointer"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })(),
+        document.body
       )}
     </div>
   );
