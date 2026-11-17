@@ -1,6 +1,8 @@
 package edu.pe.upn.controldoc;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -245,5 +247,112 @@ public class AppInstallerPlugin extends Plugin {
         } else {
             task.run();
         }
+    }
+
+    private boolean doScheduleExactAlarm(int notifId, String title, String body, long triggerAtMillis) {
+        Context context = getContext();
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) return false;
+
+        try {
+            Intent intent = new Intent(context, UpnAlarmReceiver.class);
+            intent.putExtra("notif_id", notifId);
+            intent.putExtra("notif_title", title);
+            intent.putExtra("notif_body", body);
+
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                notifId,
+                intent,
+                flags
+            );
+
+            Intent showIntent = new Intent(context, MainActivity.class);
+            PendingIntent showPendingIntent = PendingIntent.getActivity(
+                context,
+                notifId,
+                showIntent,
+                flags
+            );
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                AlarmManager.AlarmClockInfo clockInfo = new AlarmManager.AlarmClockInfo(triggerAtMillis, showPendingIntent);
+                alarmManager.setAlarmClock(clockInfo, pendingIntent);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+            }
+
+            Log.d(TAG, "Alarma nativa tipo AlarmClock programada ID " + notifId + " para: " + triggerAtMillis);
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Error programando alarma nativa", e);
+            return false;
+        }
+    }
+
+    @PluginMethod
+    public void scheduleExactAlarm(PluginCall call) {
+        int notifId = call.getInt("id", 1000);
+        String title = call.getString("title", "🔔 UPN Control Docente");
+        String body = call.getString("body", "Alerta de ronda docente");
+        Long triggerAtMillis = call.getLong("timestamp");
+
+        if (triggerAtMillis == null || triggerAtMillis <= System.currentTimeMillis()) {
+            call.reject("Timestamp inválido o en el pasado");
+            return;
+        }
+
+        boolean ok = doScheduleExactAlarm(notifId, title, body, triggerAtMillis);
+        if (ok) {
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("id", notifId);
+            call.resolve(ret);
+        } else {
+            call.reject("No se pudo programar la alarma nativa");
+        }
+    }
+
+    @PluginMethod
+    public void cancelExactAlarm(PluginCall call) {
+        Context context = getContext();
+        int notifId = call.getInt("id", 1000);
+        try {
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager != null) {
+                Intent intent = new Intent(context, UpnAlarmReceiver.class);
+                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
+                }
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notifId, intent, flags);
+                alarmManager.cancel(pendingIntent);
+            }
+            call.resolve();
+        } catch (Exception e) {
+            call.reject(e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void testAlarmInSeconds(PluginCall call) {
+        int seconds = call.getInt("seconds", 10);
+        long target = System.currentTimeMillis() + (seconds * 1000L);
+        int notifId = 9999;
+        String title = "🔔 Alarma UPN (App Cerrada / Segundo Plano)";
+        String body = "¡Excelente! Las alarmas y notificaciones funcionan con la app cerrada o minimizada.";
+        
+        boolean ok = doScheduleExactAlarm(notifId, title, body, target);
+        JSObject ret = new JSObject();
+        ret.put("success", ok);
+        ret.put("seconds", seconds);
+        call.resolve(ret);
     }
 }

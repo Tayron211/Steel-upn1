@@ -20,9 +20,12 @@ import {
   RotateCw,
   CheckCircle2,
   ShieldCheck,
+  Bell,
   X
 } from 'lucide-react';
 import AdminControlModal from './AdminControlModal';
+import ToastBanner from './ToastBanner';
+import { triggerTestAlarmClosed } from '../utils/scheduleNotifier';
 import { checkAppVersion, APP_CURRENT_VERSION, triggerDirectApkInstall } from '../utils/appUpdateChecker';
 import { isCapacitorNative } from '../utils/statusBarHelper';
 import UpnLogo from './UpnLogo';
@@ -54,6 +57,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
   const updateModalFade = useFadeModal(Boolean(isCapacitorNative() && updateStatusModal), () => setUpdateStatusModal(null), 200);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [isAdminControlOpen, setIsAdminControlOpen] = useState(false);
+  const [notificationNotice, setNotificationNotice] = useState('');
 
   useEffect(() => {
     const isIosDevice = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -362,6 +366,24 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           <span className="font-mono text-[9.5px] text-slate-400 dark:text-zinc-500 font-semibold">v{APP_CURRENT_VERSION}</span>
                         </button>
                       )}
+
+                      {/* Probar Notificación con app cerrada (10 segundos) */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setUserMenuOpen(false);
+                          await triggerTestAlarmClosed(10);
+                          setNotificationNotice('⏰ Alarma programada en 10 segundos. ¡Minimiza o cierra la app ahora para probar!');
+                        }}
+                        className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-[10.5px] font-bold transition active:scale-95 cursor-pointer group"
+                        title="Programa una alarma de prueba a los 10 segundos para verificar que suena con la app cerrada"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Bell className="w-3 h-3 text-amber-500 shrink-0 group-hover:rotate-12 transition-transform" />
+                          <span>Probar alerta (cierra la app)</span>
+                        </div>
+                        <span className="font-mono text-[9px] text-amber-600/80 dark:text-amber-400/80 font-black">10s</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -598,6 +620,15 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Alerta flotante al programar prueba de notificación */}
+      {Boolean(notificationNotice) && (
+        <ToastBanner 
+          message={notificationNotice} 
+          onClose={() => setNotificationNotice('')} 
+          duration={8000} 
+        />
       )}
     </>
   );

@@ -231,8 +231,8 @@ export async function scheduleNativeAlarms() {
       }
     });
 
-    // 4.2 Programar días siguientes (días 1 al 6) con los bloques oficiales
-    for (let dayOffset = 1; dayOffset <= 6; dayOffset++) {
+    // 4.2 Programar día de mañana (dayOffset = 1) con los bloques oficiales (evita exceder cuotas de alarmas del sistema)
+    for (let dayOffset = 1; dayOffset <= 1; dayOffset++) {
       for (const block of CLASS_BLOCKS) {
         const notifDate = new Date();
         notifDate.setDate(now.getDate() + dayOffset);
@@ -280,6 +280,22 @@ export async function scheduleNativeAlarms() {
 
     if (notificationsToSchedule.length > 0) {
       await LocalNotifications.schedule({ notifications: notificationsToSchedule });
+
+      // Doble garantía nativa: registrar en AlarmManager de Android vía AlarmClock
+      if (AppInstaller?.scheduleExactAlarm) {
+        for (const notif of notificationsToSchedule.slice(0, 15)) {
+          if (notif.schedule?.at && notif.schedule.at instanceof Date) {
+            try {
+              await AppInstaller.scheduleExactAlarm({
+                id: notif.id,
+                title: notif.title,
+                body: notif.body,
+                timestamp: notif.schedule.at.getTime()
+              });
+            } catch (_) {}
+          }
+        }
+      }
     }
   } catch (err) {
     console.warn('[Notifier] Error scheduling native notifications:', err);
@@ -499,6 +515,51 @@ export async function sendTestDesktopNotification() {
   } catch (e) {
     return { success: false, error: e.message };
   }
+}
+
+/**
+ * Programa una alarma nativa de prueba en 10 segundos para verificar que llega
+ * incluso si la aplicación es cerrada o minimizada inmediatamente por el usuario.
+ */
+export async function triggerTestAlarmClosed(seconds = 10) {
+  playNotificationChime();
+
+  if (isCapacitorNative()) {
+    try {
+      if (AppInstaller?.testAlarmInSeconds) {
+        await AppInstaller.testAlarmInSeconds({ seconds });
+      }
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 9999,
+            title: '🔔 Alarma UPN (App Cerrada / Segundo Plano)',
+            body: '¡Excelente! Las notificaciones y alarmas funcionan con la app cerrada o minimizada.',
+            channelId: UPN_NOTIF_CHANNEL_ID,
+            sound: 'default',
+            smallIcon: 'ic_stat_notify',
+            iconColor: '#FDBA30',
+            schedule: {
+              at: new Date(Date.now() + seconds * 1000),
+              allowWhileIdle: true
+            },
+            autoCancel: true,
+            isExactNotification: true
+          }
+        ]
+      });
+      return { success: true, native: true };
+    } catch (err) {
+      console.warn('Test alarm error:', err);
+    }
+  }
+
+  // Fallback para Web / Desktop: disparar después de N segundos
+  setTimeout(() => {
+    sendTestDesktopNotification();
+  }, seconds * 1000);
+
+  return { success: true, native: false };
 }
 
 /**
