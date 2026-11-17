@@ -1,7 +1,7 @@
 {
-  "version": "1.0.75",
-  "versionCode": 76,
-  "releaseDate": "2026-11-16",
+  "version": "1.0.76",
+  "versionCode": 77,
+  "releaseDate": "2026-11-17",
   "notes": "Efecto blur y cristal esmerilado universal para todas las ventanas, modales y dialogos de la app",
   "features": [
     {
