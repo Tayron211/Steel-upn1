@@ -73,11 +73,15 @@ export default function ConfirmModal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 ${fadeModal.backdropClass}`}
+      className={`fixed inset-0 bg-slate-950/60 dark:bg-black/80 z-[9999] flex items-center justify-center p-4 ${fadeModal.backdropClass}`}
       onClick={handleCancel}
     >
       <div
-        className={`apple-liquid-modal rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#121216] ${fadeModal.modalClass} overflow-hidden transform-gpu`}
+        style={{
+          backdropFilter: 'blur(36px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(36px) saturate(200%)',
+        }}
+        className={`apple-liquid-modal rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/80 dark:border-zinc-800 ${fadeModal.modalClass} overflow-hidden transform-gpu`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

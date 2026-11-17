@@ -248,6 +248,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       position: 'fixed',
                       top: `${dropdownCoords.top}px`,
                       right: `${dropdownCoords.right}px`,
+                      backdropFilter: 'blur(36px) saturate(200%)',
+                      WebkitBackdropFilter: 'blur(36px) saturate(200%)',
                     }}
                     className={`user-dropdown-window w-68 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-[99999] ${userMenuFade.dropdownClass}`}
                   >

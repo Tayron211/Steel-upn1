@@ -2185,11 +2185,15 @@ export default function TicketsKanban({
           ========================================================================= */}
       {newLoanFade.shouldRender && typeof document !== 'undefined' && createPortal(
         <div
-          className={`fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm ${newLoanFade.backdropClass}`}
+          className={`fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-black/60 ${newLoanFade.backdropClass}`}
           onClick={() => newLoanFade.requestClose()}
         >
           <div
-            className={`apple-liquid-modal w-full max-w-2xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${newLoanFade.modalClass}`}
+            style={{
+              backdropFilter: 'blur(36px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(200%)',
+            }}
+            className={`apple-liquid-modal w-full max-w-2xl border border-slate-200/90 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${newLoanFade.modalClass}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal */}

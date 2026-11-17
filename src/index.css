@@ -1282,16 +1282,17 @@ html:not(.dark) .apple-liquid-pill {
    Mismo efecto Blur y cristal esmerilado que la Navbar en todas las ventanas
    ========================================================= */
 
-/* 1. Backdrop Overlay Traslúcido con Desenfoque Suave y Limpio (5px) */
+/* 1. Telón de Fondo (Backdrop Overlay) - CERO backdrop-filter para permitir que la ventana aplique su blur real */
+.fixed.inset-0,
 .fixed.inset-0[class*="z-"],
 .fixed.inset-0[class*="backdrop-blur-"] {
-  backdrop-filter: blur(5px) !important;
-  -webkit-backdrop-filter: blur(5px) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 html:not(.dark) .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
 html:not(.dark) .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
-  background-color: rgba(15, 23, 42, 0.35) !important;
+  background-color: rgba(15, 23, 42, 0.40) !important;
 }
 
 html.dark .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
@@ -1299,27 +1300,29 @@ html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
   background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
-/* 2. Marco Exterior de Ventanas Modales Flotantes (Efecto Cristal Esmerilado Denso - Blur 30px) */
+/* 2. Marco Exterior de Ventanas Modales Flotantes (Efecto Cristal Esmerilado Puro - Blur 36px) */
 .apple-liquid-modal,
 .app-modal-window,
+.user-dropdown-window,
 .fixed.inset-0 > div[class*="max-w-"],
 .fixed.inset-0 > div[class*="rounded-3xl"],
 .fixed.inset-0 > div[class*="rounded-2xl"],
 [role="dialog"] {
-  backdrop-filter: blur(30px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
-  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  backdrop-filter: blur(36px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Modo Claro en Ventanas Modales (Fondo esmerilado blanco denso al 94%, cero transparencia) */
+/* Modo Claro en Ventanas Modales (Efecto Esmerilado Cristalino similar a la Navbar) */
 html:not(.dark) .apple-liquid-modal,
 html:not(.dark) .app-modal-window,
+html:not(.dark) .user-dropdown-window,
 html:not(.dark) .fixed.inset-0 > div[class*="max-w-"],
 html:not(.dark) .fixed.inset-0 > div[class*="rounded-3xl"],
 html:not(.dark) .fixed.inset-0 > div[class*="rounded-2xl"],
 html:not(.dark) [role="dialog"] {
-  background-color: rgba(255, 255, 255, 0.94) !important;
-  border-color: rgba(255, 255, 255, 0.90) !important;
+  background-color: rgba(255, 255, 255, 0.80) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
   box-shadow:
     0 24px 75px -12px rgba(15, 23, 42, 0.16),
     0 8px 24px -4px rgba(15, 23, 42, 0.06),
@@ -1328,27 +1331,28 @@ html:not(.dark) [role="dialog"] {
     inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
 }
 
-/* Modo Oscuro en Ventanas Modales (Tono Neutro Oscuro / AMOLED Zinc al 94%, cero azul y cero transparencia) */
+/* Modo Oscuro en Ventanas Modales (Tono Neutro Oscuro / AMOLED Zinc Esmerilado - CERO AZUL) */
 html.dark .apple-liquid-modal,
 html.dark .app-modal-window,
+html.dark .user-dropdown-window,
 html.dark .fixed.inset-0 > div[class*="max-w-"],
 html.dark .fixed.inset-0 > div[class*="rounded-3xl"],
 html.dark .fixed.inset-0 > div[class*="rounded-2xl"],
 html.dark [role="dialog"] {
-  background-color: rgba(14, 14, 16, 0.94) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(12, 12, 14, 0.80) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow:
     0 32px 90px -10px rgba(0, 0, 0, 0.90),
     0 0 45px rgba(253, 186, 48, 0.12),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.14) !important;
 }
 
-/* 3. Encabezados y Secciones Interiores de las Ventanas Modales (Sólidos, Cero Transparencia) */
+/* 3. Encabezados y Secciones Interiores de las Ventanas Modales (Sólidos, Nítidos) */
 html:not(.dark) .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-b"],
 html:not(.dark) .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-t"],
 html:not(.dark) [role="dialog"] div[class*="border-b"],
 html:not(.dark) [role="dialog"] div[class*="border-t"] {
-  background-color: #f8fafc !important;
+  background-color: rgba(248, 250, 252, 0.85) !important;
   border-color: #e2e8f0 !important;
 }
 
@@ -1356,7 +1360,7 @@ html.dark .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-b"],
 html.dark .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-t"],
 html.dark [role="dialog"] div[class*="border-b"],
 html.dark [role="dialog"] div[class*="border-t"] {
-  background-color: #121215 !important;
+  background-color: rgba(18, 18, 22, 0.85) !important;
   border-color: #27272a !important;
 }
 
@@ -1364,14 +1368,14 @@ html.dark [role="dialog"] div[class*="border-t"] {
 .user-dropdown-window,
 div[class*="w-68"][class*="rounded-2xl"],
 .fab-floating-container button[class*="rounded-full"] {
-  backdrop-filter: blur(30px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  backdrop-filter: blur(36px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
 }
 
 html:not(.dark) .user-dropdown-window,
 html:not(.dark) div[class*="w-68"][class*="rounded-2xl"],
 html:not(.dark) .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(255, 255, 255, 0.94) !important;
+  background-color: rgba(255, 255, 255, 0.80) !important;
   border-color: rgba(255, 255, 255, 0.90) !important;
   box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.18), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
@@ -1379,7 +1383,7 @@ html:not(.dark) .fab-floating-container button[class*="rounded-full"] {
 html.dark .user-dropdown-window,
 html.dark div[class*="w-68"][class*="rounded-2xl"],
 html.dark .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(14, 14, 16, 0.94) !important;
+  background-color: rgba(12, 12, 14, 0.80) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
   box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), inset 0 1px 1px 0 rgba(255, 255, 255, 0.12) !important;
 }

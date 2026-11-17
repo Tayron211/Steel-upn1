@@ -201,13 +201,17 @@ export default function AdminControlModal({ isOpen, onClose, authUser }) {
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md ${fadeModal.backdropClass}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/80 ${fadeModal.backdropClass}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) fadeModal.requestClose();
       }}
     >
       <div
-        className={`w-full max-w-xl max-h-[85vh] flex flex-col rounded-3xl bg-white dark:bg-[#0c0c10] border border-slate-200/90 dark:border-[#FDBA30]/30 shadow-2xl text-slate-900 dark:text-white overflow-hidden font-sans ${fadeModal.modalClass}`}
+        style={{
+          backdropFilter: 'blur(36px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(36px) saturate(200%)',
+        }}
+        className={`apple-liquid-modal w-full max-w-xl max-h-[85vh] flex flex-col rounded-3xl border border-slate-200/90 dark:border-[#FDBA30]/30 shadow-2xl text-slate-900 dark:text-white overflow-hidden font-sans ${fadeModal.modalClass}`}
       >
 
         {/* Cabecera del Panel con Branding UPN */}
