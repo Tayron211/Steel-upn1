@@ -391,11 +391,8 @@ export default function TeacherSchedulesView() {
 
         {/* Barra de Selección Múltiple de Días (7 Días en 1 sola fila responsiva) */}
         <div>
-          <label className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
-            <span>Días Seleccionados ({selectedDays.length} activos)</span>
-            <span className="text-[#b37700] dark:text-[#FDBA30] font-bold lowercase">
-              Toca para marcar o desmarcar
-            </span>
+          <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
+            Días Seleccionados ({selectedDays.length} activos)
           </label>
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {DAYS_ORDER.map(d => {
