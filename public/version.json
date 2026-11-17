@@ -1,8 +1,8 @@
 {
-  "version": "1.0.99",
-  "versionCode": 100,
+  "version": "1.0.100",
+  "versionCode": 101,
   "releaseDate": "2026-11-17",
-  "notes": "Rango de fechas para reservas, bloqueo de fechas pasadas, prevencion estricta de cruces, solucion blur FAB y horarios docentes en tarjetas",
+  "notes": "Horarios de docentes con domingos, tarjetas desplegables con NRC, iconos vectoriales Lucide, layout mas ancho y eliminacion de FAB v1.0.100",
   "features": [
     {
       "title": "Auditoría de Seguridad y Protección de Cabeceras",

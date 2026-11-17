@@ -25,7 +25,25 @@ import {
   Table,
   LayoutGrid,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Projector,
+  Target,
+  Cable,
+  Zap,
+  Scissors,
+  Mouse,
+  Video,
+  Globe,
+  Headphones,
+  Cpu,
+  Camera,
+  DoorOpen,
+  Wrench,
+  Compass,
+  FlaskConical,
+  Monitor,
+  Building,
+  UserCheck
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import ConfirmModal from './ConfirmModal';
@@ -113,18 +131,18 @@ const copyRichTableToClipboard = async (plainText, htmlText) => {
 };
 
 const CORE_MATERIALS = [
-  { id: 'PROYECTOR', label: 'PROYECTOR', icon: '📽️', desc: 'Préstamo de Proyector' },
-  { id: 'PUNTERO', label: 'PUNTERO', icon: '🎯', desc: 'Préstamo de Puntero' },
-  { id: 'CABLE HDMI', label: 'CABLE HDMI', icon: '🔌', desc: 'Préstamo de Cable HDMI' },
-  { id: 'ADAPTADOR', label: 'ADAPTADOR', icon: '⚡', desc: 'Préstamo de Adaptador' },
-  { id: 'CUTTING', label: 'CUTTING', icon: '🔪', desc: 'Préstamo de Cutting' },
-  { id: 'MOUSE', label: 'MOUSE', icon: '🖱️', desc: 'Préstamo de Mouse' },
-  { id: 'CAMARA WEB', label: 'CAMARA WEB', icon: '📷', desc: 'Préstamo de Cámara Web' },
-  { id: 'CABLE DE RED', label: 'CABLE DE RED', icon: '🌐', desc: 'Préstamo de Cable de Red' },
-  { id: 'AUDIFONOS', label: 'AUDIFONOS', icon: '🎧', desc: 'Préstamo de Audífonos' },
-  { id: 'ADAPTADOR VGA/HDMI', label: 'ADAPT. VGA/HDMI', icon: '🔌', desc: 'Préstamo de Adaptador VGA/HDMI' },
-  { id: 'CAMARA DIGITAL', label: 'CAMARA DIGITAL', icon: '📸', desc: 'Préstamo de Cámara Digital' },
-  { id: 'MANUAL', label: 'OTRO / MANUAL', icon: '✏️', desc: '' }
+  { id: 'PROYECTOR', label: 'PROYECTOR', icon: Projector, desc: 'Préstamo de Proyector' },
+  { id: 'PUNTERO', label: 'PUNTERO', icon: Target, desc: 'Préstamo de Puntero' },
+  { id: 'CABLE HDMI', label: 'CABLE HDMI', icon: Cable, desc: 'Préstamo de Cable HDMI' },
+  { id: 'ADAPTADOR', label: 'ADAPTADOR', icon: Zap, desc: 'Préstamo de Adaptador' },
+  { id: 'CUTTING', label: 'CUTTING', icon: Scissors, desc: 'Préstamo de Cutting' },
+  { id: 'MOUSE', label: 'MOUSE', icon: Mouse, desc: 'Préstamo de Mouse' },
+  { id: 'CAMARA WEB', label: 'CAMARA WEB', icon: Video, desc: 'Préstamo de Cámara Web' },
+  { id: 'CABLE DE RED', label: 'CABLE DE RED', icon: Globe, desc: 'Préstamo de Cable de Red' },
+  { id: 'AUDIFONOS', label: 'AUDIFONOS', icon: Headphones, desc: 'Préstamo de Audífonos' },
+  { id: 'ADAPTADOR VGA/HDMI', label: 'ADAPT. VGA/HDMI', icon: Cpu, desc: 'Préstamo de Adaptador VGA/HDMI' },
+  { id: 'CAMARA DIGITAL', label: 'CAMARA DIGITAL', icon: Camera, desc: 'Préstamo de Cámara Digital' },
+  { id: 'MANUAL', label: 'OTRO / MANUAL', icon: PenTool, desc: '' }
 ];
 
 const computeRango = (timeStr) => {
@@ -1836,26 +1854,28 @@ export default function TicketsKanban({
                   className="pointer-events-none absolute top-0 left-0 z-0 rounded-xl bg-amber-400 shadow-xs ring-1 ring-amber-500/50"
                 />
                 {[
-                  { id: 'TODOS', label: 'Todos los Ambientes' },
-                  { id: 'AULA', label: '🏫 Aulas' },
-                  { id: 'TALLER_ESP', label: '🛠️ Talleres Espec.' },
-                  { id: 'TALLER_ARQ', label: '📐 Talleres Arq.' },
-                  { id: 'LAB_ESP', label: '🔬 Labs. Espec.' },
-                  { id: 'LAB_COMPUTO', label: '💻 Labs. Cómputo' }
+                  { id: 'TODOS', label: 'Todos', icon: Layers },
+                  { id: 'AULA', label: 'Aulas', icon: DoorOpen },
+                  { id: 'TALLER_ESP', label: 'Talleres Espec.', icon: Wrench },
+                  { id: 'TALLER_ARQ', label: 'Talleres Arq.', icon: Compass },
+                  { id: 'LAB_ESP', label: 'Labs. Espec.', icon: FlaskConical },
+                  { id: 'LAB_COMPUTO', label: 'Labs. Cómputo', icon: Monitor }
                 ].map((cat) => {
                   const isActive = calendarCategory === cat.id;
+                  const CatIcon = cat.icon;
                   return (
                     <button
                       key={cat.id}
                       type="button"
                       data-slide-active={isActive ? 'true' : undefined}
                       onClick={() => setCalendarCategory(cat.id)}
-                      className={`relative z-10 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors duration-200 active:scale-95 shrink-0 ${isActive
+                      className={`relative z-10 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors duration-200 active:scale-95 shrink-0 inline-flex items-center gap-1.5 ${isActive
                           ? 'text-slate-950 font-black'
                           : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                      {cat.label}
+                      <CatIcon className="w-3.5 h-3.5 shrink-0" />
+                      <span>{cat.label}</span>
                     </button>
                   );
                 })}
@@ -1994,9 +2014,10 @@ export default function TicketsKanban({
                     setRoomInput('DOCENCIA');
                     roomCalendarFade.requestClose();
                   }}
-                  className="px-3 py-2 text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition"
+                  className="px-3 py-2 text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition inline-flex items-center gap-1.5"
                 >
-                  🏢 Docencia
+                  <Building className="w-3.5 h-3.5" />
+                  <span>Docencia</span>
                 </button>
                 <button
                   type="button"
@@ -2004,9 +2025,10 @@ export default function TicketsKanban({
                     setRoomInput('');
                     roomCalendarFade.requestClose();
                   }}
-                  className="px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition"
+                  className="px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition inline-flex items-center gap-1.5"
                 >
-                  ❌ Sin Aula
+                  <X className="w-3.5 h-3.5" />
+                  <span>Sin Aula</span>
                 </button>
               </div>
 
@@ -2101,9 +2123,13 @@ export default function TicketsKanban({
                       <div className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500">
                         Solicitante ({ben.label})
                       </div>
-                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5 break-words">
-                        {ben.type === 'ALUMNO' ? '🎓 ' : '👨‍🏫 '}
-                        {ben.name || detailTicket.recibidoPor || detailTicket.entregadoPor || 'Registrado en sede'}
+                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5 break-words inline-flex items-center gap-1.5">
+                        {ben.type === 'ALUMNO' ? (
+                          <GraduationCap className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                        ) : (
+                          <UserCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        )}
+                        <span>{ben.name || detailTicket.recibidoPor || detailTicket.entregadoPor || 'Registrado en sede'}</span>
                       </div>
                     </div>
 
@@ -2523,7 +2549,7 @@ export default function TicketsKanban({
                               : 'bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-800'
                           }`}
                         >
-                          <span>{item.icon}</span>
+                          <item.icon className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
                           <span>{item.label}</span>
                           {isSelected && <Check className="w-3.5 h-3.5 stroke-[3] text-slate-950 shrink-0 ml-0.5" />}
                         </button>

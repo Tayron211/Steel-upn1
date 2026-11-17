@@ -764,26 +764,7 @@ export default function App() {
         />
       )}
 
-      {/* Floating Action Speed Dial (FAB) visible en todas las páginas */}
-      <FloatingActionMenu
-        onOpenManualSheet={() => {
-          setOperationsSubTab('manual');
-          navigateTab('operations', true);
-          setOpenManualModalTrigger(Date.now());
-          scrollToTopGlobal();
-        }}
-        onOpenNewTicket={() => {
-          navigateTab('tickets', true);
-          setOpenNewLoanModalTrigger(Date.now());
-          scrollToTopGlobal();
-        }}
-        onOpenReservation={() => {
-          setOperationsSubTab('reservations');
-          navigateTab('operations', true);
-          setOpenReservationModalTrigger(Date.now());
-          scrollToTopGlobal();
-        }}
-      />
+
       {/* Modal de Confirmación Moderno para Sincronizar Base de Datos SQLite */}
       <ConfirmModal
         isOpen={showResetDataConfirm}

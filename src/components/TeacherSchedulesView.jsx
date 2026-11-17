@@ -15,7 +15,10 @@ import {
   RefreshCw,
   Sun,
   Sunset,
-  Moon
+  Moon,
+  ChevronDown,
+  ChevronsUpDown,
+  Hash
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 
@@ -25,7 +28,8 @@ const DAYS_ORDER = [
   { id: 'MIERCOLES', short: 'MIÉ', label: 'Miércoles' },
   { id: 'JUEVES', short: 'JUE', label: 'Jueves' },
   { id: 'VIERNES', short: 'VIE', label: 'Viernes' },
-  { id: 'SABADO', short: 'SÁB', label: 'Sábado' }
+  { id: 'SABADO', short: 'SÁB', label: 'Sábado' },
+  { id: 'DOMINGO', short: 'DOM', label: 'Domingo' }
 ];
 
 const normalizeDay = (d) => {
@@ -50,11 +54,13 @@ export default function TeacherSchedulesView() {
   const [selectedJornada, setSelectedJornada] = useState('ALL'); // 'ALL' | 'MANANA' | 'TARDE' | 'NOCHE'
   const [toastMessage, setToastMessage] = useState('');
 
-  // Día actual predeterminado
+  // Día actual predeterminado (incluyendo Domingo = 0)
   const currentDayIndex = new Date().getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
-  const defaultDay = currentDayIndex >= 1 && currentDayIndex <= 6
-    ? DAYS_ORDER[currentDayIndex - 1].id
-    : 'LUNES';
+  const defaultDay = currentDayIndex === 0
+    ? 'DOMINGO'
+    : (currentDayIndex >= 1 && currentDayIndex <= 6
+      ? DAYS_ORDER[currentDayIndex - 1].id
+      : 'LUNES');
 
   // Selección múltiple de días (Set de IDs en mayúsculas sin tildes)
   const [selectedDays, setSelectedDays] = useState(() => [defaultDay]);
@@ -98,9 +104,35 @@ export default function TeacherSchedulesView() {
     setSelectedDays(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES']);
   };
 
-  const selectAllDays = () => {
-    setSelectedDays(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']);
+  const selectWeekend = () => {
+    setSelectedDays(['SABADO', 'DOMINGO']);
   };
+
+  const selectAllDays = () => {
+    setSelectedDays(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']);
+  };
+
+  // Estado para desplegar/colapsar clases de docentes individual o globalmente
+  const [expandedTeachers, setExpandedTeachers] = useState({});
+
+  const toggleTeacher = (name) => {
+    setExpandedTeachers(prev => ({
+      ...prev,
+      [name]: !prev[name]
+    }));
+  };
+
+  const expandAll = () => {
+    const next = {};
+    teachersGrouped.forEach(t => { next[t.name] = true; });
+    setExpandedTeachers(next);
+  };
+
+  const collapseAll = () => {
+    setExpandedTeachers({});
+  };
+
+  const allAreExpanded = teachersGrouped.length > 0 && teachersGrouped.every(t => expandedTeachers[t.name]);
 
   // Filtrado y agrupación de clases por docente
   const teachersGrouped = useMemo(() => {
@@ -228,7 +260,7 @@ export default function TeacherSchedulesView() {
   };
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="space-y-4 w-full max-w-[1720px] mx-auto px-1 sm:px-2">
       {/* Toast Notificación */}
       {toastMessage && (
         <ToastBanner
@@ -266,13 +298,13 @@ export default function TeacherSchedulesView() {
                   : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
               }`}
             >
-              Hoy ({defaultDay})
+              Hoy ({DAYS_ORDER.find(d => d.id === defaultDay)?.label || defaultDay})
             </button>
             <button
               type="button"
               onClick={selectWeekdays}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${
-                selectedDays.length === 5 && !selectedDays.includes('SABADO')
+                selectedDays.length === 5 && !selectedDays.includes('SABADO') && !selectedDays.includes('DOMINGO')
                   ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
                   : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
               }`}
@@ -281,14 +313,25 @@ export default function TeacherSchedulesView() {
             </button>
             <button
               type="button"
-              onClick={selectAllDays}
+              onClick={selectWeekend}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${
-                selectedDays.length === 6
+                selectedDays.length === 2 && selectedDays.includes('SABADO') && selectedDays.includes('DOMINGO')
                   ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
                   : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
               }`}
             >
-              Toda la Semana (6 Días)
+              Fin de Semana (Sáb y Dom)
+            </button>
+            <button
+              type="button"
+              onClick={selectAllDays}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${
+                selectedDays.length === 7
+                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
+                  : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
+              }`}
+            >
+              Toda la Semana (7 Días)
             </button>
           </div>
         </div>
@@ -301,7 +344,7 @@ export default function TeacherSchedulesView() {
               Toca para marcar o desmarcar varios días
             </span>
           </label>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
             {DAYS_ORDER.map(d => {
               const isSelected = selectedDays.includes(d.id);
               return (
@@ -433,7 +476,24 @@ export default function TeacherSchedulesView() {
         </div>
       </div>
 
-      {/* Grid de Tarjetas de Docentes */}
+      {/* Barra de Control de Despliegue y Conteo */}
+      {!loading && teachersGrouped.length > 0 && (
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">
+            Mostrando <span className="font-black text-slate-900 dark:text-white font-mono">{teachersGrouped.length}</span> docentes · <span className="font-mono text-amber-600 dark:text-amber-400 font-black">{stats.classesCount}</span> clases
+          </div>
+          <button
+            type="button"
+            onClick={allAreExpanded ? collapseAll : expandAll}
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <ChevronsUpDown className="w-3.5 h-3.5 stroke-[2.4] text-amber-500" />
+            <span>{allAreExpanded ? 'Colapsar todas' : 'Desplegar todas'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Grid de Tarjetas de Docentes (Expandible a 4 y 5 columnas) */}
       {loading ? (
         <div className="p-12 text-center bg-white dark:bg-[#0c0c10] rounded-3xl border border-slate-200 dark:border-zinc-800">
           <RefreshCw className="w-8 h-8 text-[#FDBA30] animate-spin mx-auto mb-3" />
@@ -443,87 +503,128 @@ export default function TeacherSchedulesView() {
         <div className="p-12 text-center bg-white dark:bg-[#0c0c10] rounded-3xl border border-slate-200 dark:border-zinc-800">
           <Search className="w-8 h-8 text-slate-400 mx-auto mb-3" />
           <p className="text-sm font-bold text-slate-700 dark:text-zinc-200">No se encontraron docentes con clases programadas</p>
-          <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Prueba seleccionando más días o cambiando los filtros de búsqueda</p>
+          <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Prueba seleccionando más días (incluyendo Domingo) o cambiando los filtros de búsqueda</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-          {teachersGrouped.map((teacher) => (
-            <div
-              key={teacher.name}
-              className="bg-white dark:bg-[#0c0c10] rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-zinc-800 shadow-sm hover:shadow-md transition flex flex-col justify-between gap-3.5"
-            >
-              {/* Header de la Tarjeta del Docente */}
-              <div>
-                <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100 dark:border-zinc-800/80">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-extrabold text-xs sm:text-sm text-slate-950 dark:text-white tracking-tight leading-snug line-clamp-2">
-                      {teacher.name}
-                    </h3>
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
-                        {teacher.totalClasses} {teacher.totalClasses === 1 ? 'Clase' : 'Clases'}
-                      </span>
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
-                        {teacher.totalHours} hrs
-                      </span>
-                      {selectedDays.length > 1 && (
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500">
-                          en {teacher.uniqueDaysCount} {teacher.uniqueDaysCount === 1 ? 'día' : 'días'}
-                        </span>
-                      )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3">
+          {teachersGrouped.map((teacher) => {
+            const isExpanded = Boolean(expandedTeachers[teacher.name]);
+            const uniqueRooms = Array.from(new Set(teacher.classes.map(c => c.aula).filter(Boolean)));
+            const roomSummary = uniqueRooms.slice(0, 3).join(', ') + (uniqueRooms.length > 3 ? '...' : '');
+
+            return (
+              <div
+                key={teacher.name}
+                className={`bg-white dark:bg-[#0c0c10] rounded-2xl p-3 sm:p-3.5 border transition-all duration-200 flex flex-col justify-between ${
+                  isExpanded
+                    ? 'border-amber-400/80 dark:border-amber-500/60 shadow-md ring-1 ring-amber-400/20'
+                    : 'border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700'
+                }`}
+              >
+                {/* Header de la Tarjeta del Docente - Compacto y Clickeable */}
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleTeacher(teacher.name)}
+                      className="min-w-0 flex-1 text-left flex items-start gap-2 cursor-pointer group"
+                    >
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition ${
+                        isExpanded
+                          ? 'bg-[#FDBA30] text-slate-950 font-black'
+                          : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 group-hover:bg-amber-200'
+                      }`}>
+                        <GraduationCap className="w-3.5 h-3.5 stroke-[2.3]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-extrabold text-xs text-slate-950 dark:text-white tracking-tight leading-snug line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                          {teacher.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span className="text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
+                            {teacher.totalClasses} {teacher.totalClasses === 1 ? 'Clase' : 'Clases'}
+                          </span>
+                          <span className="text-[9.5px] font-black uppercase px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                            {teacher.totalHours} hrs
+                          </span>
+                          {!isExpanded && roomSummary && (
+                            <span className="text-[9.5px] font-mono text-slate-500 dark:text-zinc-400 truncate max-w-[120px]">
+                              · {roomSummary}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => copyTeacherSchedule(teacher)}
+                        title="Copiar horario del docente"
+                        className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition active:scale-90"
+                      >
+                        <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleTeacher(teacher.name)}
+                        title={isExpanded ? 'Ocultar clases' : 'Desplegar clases'}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition active:scale-90 cursor-pointer ${
+                          isExpanded
+                            ? 'bg-amber-500 text-slate-950'
+                            : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300'
+                        }`}
+                      >
+                        <ChevronDown className={`w-3.5 h-3.5 stroke-[2.6] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => copyTeacherSchedule(teacher)}
-                    title="Copiar horario del docente"
-                    className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition active:scale-90 shrink-0"
-                  >
-                    <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                  </button>
-                </div>
-
-                {/* Lista Cronológica de Clases del Docente */}
-                <div className="space-y-2 mt-3">
-                  {teacher.classes.map((c, idx) => (
-                    <div
-                      key={`${c.aula}-${c.horaInicioProg}-${c.dia}-${idx}`}
-                      className="p-2.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200/70 dark:border-zinc-800/80 flex items-start justify-between gap-2.5 hover:border-amber-400/50 transition"
-                    >
-                      <div className="min-w-0 flex-1">
-                        {/* Aula y Día */}
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shadow-2xs">
-                            {c.aula}
-                          </span>
-                          {selectedDays.length > 1 && (
-                            <span className="text-[10px] font-black uppercase px-1.5 py-0.2 rounded-md bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300">
-                              {c.dia}
+                  {/* Lista Cronológica de Clases del Docente (Desplegable) */}
+                  {isExpanded && (
+                    <div className="space-y-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80 animate-fade-in">
+                      {teacher.classes.map((c, idx) => (
+                        <div
+                          key={`${c.aula}-${c.horaInicioProg}-${c.dia}-${idx}`}
+                          className="p-2 rounded-xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200/70 dark:border-zinc-800/80 flex flex-col gap-1 hover:border-amber-400/50 transition"
+                        >
+                          <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-[11px] shadow-2xs">
+                                {c.aula}
+                              </span>
+                              {c.nrc && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-[10px] border border-indigo-200/60 dark:border-indigo-800/60">
+                                  NRC: {c.nrc}
+                                </span>
+                              )}
+                              {selectedDays.length > 1 && (
+                                <span className="text-[9.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300">
+                                  {c.dia}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10.5px] font-mono font-black text-slate-800 dark:text-zinc-200 flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
+                              {c.horaInicioProg} - {c.horaFinalProg}
                             </span>
-                          )}
-                          <span className="text-[11px] font-mono font-black text-slate-800 dark:text-zinc-200 flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
-                            {c.horaInicioProg} - {c.horaFinalProg}
-                          </span>
-                        </div>
+                          </div>
 
-                        {/* Asignatura / Curso */}
-                        <p className="text-xs font-extrabold text-slate-900 dark:text-zinc-100 truncate">
-                          {c.curso || 'CURSO PROGRAMADO'}
-                        </p>
+                          <p className="text-[11.5px] font-extrabold text-slate-900 dark:text-zinc-100 truncate leading-snug">
+                            {c.curso || 'CURSO PROGRAMADO'}
+                          </p>
 
-                        {/* Carrera o Sección */}
-                        <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium truncate mt-0.5">
-                          {c.carrera || c.seccion ? `${c.carrera || ''} ${c.seccion ? `• Sec: ${c.seccion}` : ''}` : 'Horario Académico UPN'}
+                          <div className="text-[9.5px] text-slate-500 dark:text-zinc-400 font-medium truncate">
+                            {c.carrera || c.seccion ? `${c.carrera || ''} ${c.seccion ? `• Sec: ${c.seccion}` : ''}` : 'Horario Académico UPN'}
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

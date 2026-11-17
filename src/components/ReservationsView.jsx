@@ -26,7 +26,10 @@ import {
   BookOpen,
   Sparkles,
   Layers,
-  AlertTriangle
+  AlertTriangle,
+  FlaskConical,
+  Wrench,
+  Mic
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -2544,8 +2547,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                               {room.dayReservations[0].inicio || room.dayReservations[0].hora_inicio} - {room.dayReservations[0].final || room.dayReservations[0].hora_fin}
                             </span>
                           </div>
-                          <p className="text-[10.5px] text-amber-800 dark:text-amber-300 font-medium truncate" title={room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}>
-                            👤 {room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}
+                          <p className="text-[10.5px] text-amber-800 dark:text-amber-300 font-medium truncate flex items-center gap-1" title={room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}>
+                            <User className="w-3 h-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span className="truncate">{room.dayReservations[0].docente || room.dayReservations[0].detalle || room.dayReservations[0].motivo}</span>
                           </p>
                         </div>
                       ) : (
@@ -2879,24 +2883,26 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <button
                       type="button"
                       onClick={() => setFormData(p => ({ ...p, isDateRange: false }))}
-                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition ${
+                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition inline-flex items-center gap-1.5 ${
                         !formData.isDateRange
                           ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
                           : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      📅 Día Único
+                      <Calendar className="w-3.5 h-3.5 stroke-[2.3]" />
+                      <span>Día Único</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData(p => ({ ...p, isDateRange: true }))}
-                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition ${
+                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition inline-flex items-center gap-1.5 ${
                         formData.isDateRange
                           ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
                           : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      🗓️ Rango de Días (ej. Lun a Vie)
+                      <CalendarDays className="w-3.5 h-3.5 stroke-[2.3]" />
+                      <span>Rango de Días (ej. Lun a Vie)</span>
                     </button>
                   </div>
                 </div>
@@ -3489,13 +3495,14 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-2xs"
                 />
                 {[
-                  { id: 'ALL', label: 'Todos Libres', count: freeRoomsForModalTime.length },
-                  { id: 'AULA', label: '🏫 Aulas', count: freeRoomsForModalTime.filter(r => r.categoria === 'AULA').length },
-                  { id: 'LABORATORIO', label: '🔬 Laboratorios', count: freeRoomsForModalTime.filter(r => r.categoria === 'LABORATORIO').length },
-                  { id: 'TALLER', label: '📐 Talleres', count: freeRoomsForModalTime.filter(r => r.categoria === 'TALLER').length },
-                  { id: 'ESPECIAL', label: '🎙️ Conferencias / Litigación', count: freeRoomsForModalTime.filter(r => r.categoria === 'ESPECIAL').length }
+                  { id: 'ALL', label: 'Todos Libres', icon: Layers, count: freeRoomsForModalTime.length },
+                  { id: 'AULA', label: 'Aulas', icon: DoorOpen, count: freeRoomsForModalTime.filter(r => r.categoria === 'AULA').length },
+                  { id: 'LABORATORIO', label: 'Laboratorios', icon: FlaskConical, count: freeRoomsForModalTime.filter(r => r.categoria === 'LABORATORIO').length },
+                  { id: 'TALLER', label: 'Talleres', icon: Wrench, count: freeRoomsForModalTime.filter(r => r.categoria === 'TALLER').length },
+                  { id: 'ESPECIAL', label: 'Conferencias / Litigación', icon: Mic, count: freeRoomsForModalTime.filter(r => r.categoria === 'ESPECIAL').length }
                 ].map(cat => {
                   const active = pickerCategory === cat.id;
+                  const CatIcon = cat.icon;
                   return (
                     <button
                       key={cat.id}
@@ -3508,6 +3515,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
+                      <CatIcon className="w-3.5 h-3.5 shrink-0" />
                       <span>{cat.label}</span>
                       <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-black ${
                         active ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-200/70 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
@@ -3683,14 +3691,28 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           }`}>
                             {rm.abrv}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider border ${catBadge}`}>
-                            {rm.categoria === 'LABORATORIO'
-                              ? '🔬 Laboratorio'
-                              : rm.categoria === 'TALLER'
-                              ? '📐 Taller'
-                              : rm.categoria === 'ESPECIAL'
-                              ? '🎙️ Especial'
-                              : '🏫 Aula'}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider border inline-flex items-center gap-1 ${catBadge}`}>
+                            {rm.categoria === 'LABORATORIO' ? (
+                              <>
+                                <FlaskConical className="w-3 h-3 stroke-[2.4]" />
+                                <span>Laboratorio</span>
+                              </>
+                            ) : rm.categoria === 'TALLER' ? (
+                              <>
+                                <Wrench className="w-3 h-3 stroke-[2.4]" />
+                                <span>Taller</span>
+                              </>
+                            ) : rm.categoria === 'ESPECIAL' ? (
+                              <>
+                                <Mic className="w-3 h-3 stroke-[2.4]" />
+                                <span>Especial</span>
+                              </>
+                            ) : (
+                              <>
+                                <DoorOpen className="w-3 h-3 stroke-[2.4]" />
+                                <span>Aula</span>
+                              </>
+                            )}
                           </span>
                         </div>
                         <p className="text-xs font-bold text-slate-900 dark:text-white truncate">

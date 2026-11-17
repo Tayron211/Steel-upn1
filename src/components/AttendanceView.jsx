@@ -34,7 +34,17 @@ import {
   LayoutGrid,
   Filter,
   ChevronDown,
-  BookOpen
+  BookOpen,
+  Projector,
+  Target,
+  Zap,
+  Scissors,
+  Mouse,
+  Video,
+  Globe,
+  Headphones,
+  Cpu,
+  Camera
 } from 'lucide-react';
 
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -1460,18 +1470,18 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
   // Quick Loan Chips for Attention Drawer (11 Materiales exactos solicitados + MANUAL)
   const commonLoanChips = [
-    { id: "PROYECTOR", label: "PROYECTOR", icon: "📽️" },
-    { id: "PUNTERO", label: "PUNTERO", icon: "🎯" },
-    { id: "CABLE HDMI", label: "CABLE HDMI", icon: "🔌" },
-    { id: "ADAPTADOR", label: "ADAPTADOR", icon: "⚡" },
-    { id: "CUTTING", label: "CUTTING", icon: "🔪" },
-    { id: "MOUSE", label: "MOUSE", icon: "🖱️" },
-    { id: "CAMARA WEB", label: "CÁMARA WEB", icon: "📷" },
-    { id: "CABLE DE RED", label: "CABLE DE RED", icon: "🌐" },
-    { id: "AUDIFONOS", label: "AUDÍFONOS", icon: "🎧" },
-    { id: "ADAPTADOR VGA/HDMI", label: "ADAPTADOR VGA/HDMI", icon: "🔌" },
-    { id: "CAMARA DIGITAL", label: "CÁMARA DIGITAL", icon: "📸" },
-    { id: "MANUAL", label: "OTRO / MANUAL", icon: "✏️" }
+    { id: "PROYECTOR", label: "PROYECTOR", icon: Projector },
+    { id: "PUNTERO", label: "PUNTERO", icon: Target },
+    { id: "CABLE HDMI", label: "CABLE HDMI", icon: Cable },
+    { id: "ADAPTADOR", label: "ADAPTADOR", icon: Zap },
+    { id: "CUTTING", label: "CUTTING", icon: Scissors },
+    { id: "MOUSE", label: "MOUSE", icon: Mouse },
+    { id: "CAMARA WEB", label: "CÁMARA WEB", icon: Video },
+    { id: "CABLE DE RED", label: "CABLE DE RED", icon: Globe },
+    { id: "AUDIFONOS", label: "AUDÍFONOS", icon: Headphones },
+    { id: "ADAPTADOR VGA/HDMI", label: "ADAPTADOR VGA/HDMI", icon: Cpu },
+    { id: "CAMARA DIGITAL", label: "CÁMARA DIGITAL", icon: Camera },
+    { id: "MANUAL", label: "OTRO / MANUAL", icon: PenTool }
   ];
 
   // Official UPN Class Blocks matching SQLite CONTROL DOCENTE
@@ -3374,22 +3384,24 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     <button
                       type="button"
                       onClick={() => setQuickAttentionBeneficiary('DOCENTE')}
-                      className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 ${quickAttentionBeneficiary === 'DOCENTE'
+                      className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 ${quickAttentionBeneficiary === 'DOCENTE'
                         ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                      <span>👨‍🏫 Docente</span>
+                      <UserCheck className="w-3.5 h-3.5 stroke-[2.2]" />
+                      <span>Docente</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setQuickAttentionBeneficiary('ALUMNO')}
-                      className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 ${quickAttentionBeneficiary === 'ALUMNO'
+                      className={`h-7 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 ${quickAttentionBeneficiary === 'ALUMNO'
                         ? 'bg-[#FDBA30] text-slate-950 font-black shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                      <span>🎓 Alumno</span>
+                      <GraduationCap className="w-3.5 h-3.5 stroke-[2.2]" />
+                      <span>Alumno</span>
                     </button>
                   </div>
                 </div>
@@ -3417,7 +3429,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                             : 'bg-white/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700'
                             }`}
                         >
-                          <span className="truncate">{chip.icon} {chip.label}</span>
+                          <span className="truncate flex items-center gap-1.5">
+                            <chip.icon className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
+                            <span>{chip.label}</span>
+                          </span>
                           {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.8] shrink-0 text-slate-950" />}
                         </button>
                       );
