@@ -34,6 +34,33 @@ export function useFadeModal(isOpen, onClose, duration = 200) {
     };
   }, [isOpen, duration]);
 
+  // Sincroniza el estado global de ventana abierta para difuminar suavemente el fondo (#root)
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (shouldRender && !isClosing) {
+      document.documentElement.setAttribute('data-modal-open', 'true');
+    } else {
+      const timer = setTimeout(() => {
+        if (!document.querySelector('.animate-backdrop-fade, .apple-liquid-modal, [role="dialog"]')) {
+          document.documentElement.removeAttribute('data-modal-open');
+        }
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldRender, isClosing]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined') {
+        setTimeout(() => {
+          if (!document.querySelector('.animate-backdrop-fade, .apple-liquid-modal, [role="dialog"]')) {
+            document.documentElement.removeAttribute('data-modal-open');
+          }
+        }, 60);
+      }
+    };
+  }, []);
+
   const requestClose = useCallback((callback) => {
     if (isClosing) return;
     setIsClosing(true);

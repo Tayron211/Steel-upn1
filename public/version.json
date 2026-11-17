@@ -1,8 +1,8 @@
 {
-  "version": "1.0.85",
-  "versionCode": 86,
+  "version": "1.0.86",
+  "versionCode": 87,
   "releaseDate": "2026-11-17",
-  "notes": "Invertir orden Reservas a la izquierda y difuminado esmerilado en ventanas",
+  "notes": "Difuminar y desenfocar fondo de app al abrir ventanas modales",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

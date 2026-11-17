@@ -1279,8 +1279,26 @@ html:not(.dark) .apple-liquid-pill {
 
 /* =========================================================
    UNIVERSAL FROSTED GLASS FOR ALL APP MODALS / WINDOWS / DIALOGS
-   Mismo efecto Blur y cristal esmerilado que la Navbar en todas las ventanas
+   Desenfoca y difumina todo el fondo de la pantalla (#root) cuando se abre
+   cualquier ventana modal, diálogo o ficha flotante.
    ========================================================= */
+
+#root {
+  transition: filter 0.22s cubic-bezier(0.16, 1, 0.3, 1), -webkit-filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html[data-modal-open="true"] #root,
+html:has(.animate-backdrop-fade) #root,
+html:has(.apple-liquid-modal) #root,
+html:has([role="dialog"]) #root,
+body:has(.animate-backdrop-fade) #root,
+body:has(.apple-liquid-modal) #root,
+body:has([role="dialog"]) #root {
+  filter: blur(8px) saturate(120%) !important;
+  -webkit-filter: blur(8px) saturate(120%) !important;
+  pointer-events: none;
+  user-select: none;
+}
 
 /* 1. Telón de Fondo (Backdrop Overlay) - Efecto Blur Esmerilado que difumina el fondo al abrir cualquier ventana */
 .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
