@@ -78,10 +78,10 @@ export default function ConfirmModal({
     >
       <div
         style={{
-          backdropFilter: 'blur(36px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(36px) saturate(200%)',
+          backdropFilter: 'blur(28px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
         }}
-        className={`apple-liquid-modal rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/80 dark:border-zinc-800 ${fadeModal.modalClass} overflow-hidden transform-gpu`}
+        className={`apple-liquid-modal rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200/80 dark:border-zinc-800 ${fadeModal.modalClass} overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

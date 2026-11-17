@@ -1,8 +1,8 @@
 {
-  "version": "1.0.83",
-  "versionCode": 84,
+  "version": "1.0.84",
+  "versionCode": 85,
   "releaseDate": "2026-11-17",
-  "notes": "Efecto blur y cristal esmerilado universal para todas las ventanas, modales y dialogos de la app",
+  "notes": "Efecto blur esmerilado real desenfocado en todas las ventanas y modales",
   "features": [
     {
       "title": "Barra de Navegación Fija al Hacer Scroll",

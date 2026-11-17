@@ -302,48 +302,48 @@ html.dark .apple-liquid-modal {
 @keyframes appleModalFadeEnter {
   0% {
     opacity: 0;
-    transform: translate3d(0, 6px, 0) scale(0.978);
+    transform: translateY(6px) scale(0.98);
   }
 
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
   }
 }
 
 @keyframes appleModalFadeExit {
   0% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(0, 6px, 0) scale(0.978);
+    transform: translateY(6px) scale(0.98);
   }
 }
 
 @keyframes appleScaleUp {
   0% {
     opacity: 0;
-    transform: translate3d(0, 6px, 0) scale(0.96);
+    transform: translateY(6px) scale(0.96);
   }
 
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
   }
 }
 
 @keyframes appleScaleExit {
   0% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(0, 6px, 0) scale(0.96);
+    transform: translateY(6px) scale(0.96);
   }
 }
 
@@ -416,14 +416,10 @@ html.dark .apple-liquid-modal {
 
 .animate-backdrop-fade {
   animation: appleBackdropFade 0.22s ease-out forwards;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .animate-backdrop-fade-out {
   animation: appleBackdropFadeExit 0.18s ease-in forwards;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .animate-speed-dial {
@@ -1308,12 +1304,12 @@ html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
 .fixed.inset-0 > div[class*="rounded-3xl"],
 .fixed.inset-0 > div[class*="rounded-2xl"],
 [role="dialog"] {
-  backdrop-filter: blur(36px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
   transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Modo Claro en Ventanas Modales (Efecto Esmerilado Cristalino similar a la Navbar) */
+/* Modo Claro en Ventanas Modales (Efecto Esmerilado Puro - Desenfocado y No Transparente) */
 html:not(.dark) .apple-liquid-modal,
 html:not(.dark) .app-modal-window,
 html:not(.dark) .user-dropdown-window,
@@ -1321,7 +1317,7 @@ html:not(.dark) .fixed.inset-0 > div[class*="max-w-"],
 html:not(.dark) .fixed.inset-0 > div[class*="rounded-3xl"],
 html:not(.dark) .fixed.inset-0 > div[class*="rounded-2xl"],
 html:not(.dark) [role="dialog"] {
-  background-color: rgba(255, 255, 255, 0.80) !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
   box-shadow:
     0 24px 75px -12px rgba(15, 23, 42, 0.16),
@@ -1339,7 +1335,7 @@ html.dark .fixed.inset-0 > div[class*="max-w-"],
 html.dark .fixed.inset-0 > div[class*="rounded-3xl"],
 html.dark .fixed.inset-0 > div[class*="rounded-2xl"],
 html.dark [role="dialog"] {
-  background-color: rgba(12, 12, 14, 0.80) !important;
+  background-color: rgba(14, 14, 16, 0.88) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow:
     0 32px 90px -10px rgba(0, 0, 0, 0.90),
@@ -1368,14 +1364,14 @@ html.dark [role="dialog"] div[class*="border-t"] {
 .user-dropdown-window,
 div[class*="w-68"][class*="rounded-2xl"],
 .fab-floating-container button[class*="rounded-full"] {
-  backdrop-filter: blur(36px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
 }
 
 html:not(.dark) .user-dropdown-window,
 html:not(.dark) div[class*="w-68"][class*="rounded-2xl"],
 html:not(.dark) .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(255, 255, 255, 0.80) !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
   border-color: rgba(255, 255, 255, 0.90) !important;
   box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.18), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
@@ -1383,7 +1379,7 @@ html:not(.dark) .fab-floating-container button[class*="rounded-full"] {
 html.dark .user-dropdown-window,
 html.dark div[class*="w-68"][class*="rounded-2xl"],
 html.dark .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(12, 12, 14, 0.80) !important;
+  background-color: rgba(14, 14, 16, 0.88) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
   box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), inset 0 1px 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
