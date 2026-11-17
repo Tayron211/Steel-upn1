@@ -348,7 +348,7 @@ export default function TeacherSchedulesView() {
 
   const allAreExpanded = teachersGrouped.length > 0 && teachersGrouped.every(t => expandedTeachers[t.name]);
 
-  // Copia individual de clases de un docente en formato Tabla Excel con colores oficiales
+  // Copia grupal de todas las clases de un docente en formato Tabla Excel con colores oficiales
   const copyTeacherSchedule = async (teacher) => {
     try {
       const { html, plain, totalRows } = generateTeacherScheduleTable(teacher);
@@ -366,25 +366,23 @@ export default function TeacherSchedulesView() {
     }
   };
 
-  // Copia grupal de todos los docentes y clases actualmente filtrados en formato Tabla Excel con colores
-  const copyAllTeachersSchedule = async () => {
+  // Copia individual de una clase específica en formato Tabla Excel con colores oficiales
+  const copySingleClass = async (c, teacherName) => {
     try {
-      if (!teachersGrouped || teachersGrouped.length === 0) {
-        setToastMessage('⚠️ No hay docentes para copiar con los filtros actuales');
-        setTimeout(() => setToastMessage(''), 2500);
-        return;
-      }
-      const { html, plain, totalRows } = generateTeacherScheduleTable(teachersGrouped);
+      const { html, plain } = generateTeacherScheduleTable({
+        name: teacherName || c.docente || '',
+        classes: [c]
+      });
       const ok = await copyRichTableToClipboard(plain, html);
       if (ok) {
-        setToastMessage(`📋 Tabla Excel copiada: ${teachersGrouped.length} docentes (${totalRows} clases)`);
+        setToastMessage(`📋 Clase copiada para Excel: Aula ${c.aula} (${c.horaInicioProg} - ${c.horaFinalProg})`);
       } else {
-        setToastMessage('❌ No se pudo copiar la tabla al portapapeles');
+        setToastMessage('❌ No se pudo copiar la clase al portapapeles');
       }
       setTimeout(() => setToastMessage(''), 3000);
     } catch (err) {
-      console.error('Error al copiar tabla grupal:', err);
-      setToastMessage('❌ Error al copiar tabla grupal');
+      console.error('Error al copiar clase individual:', err);
+      setToastMessage('❌ Error al copiar clase individual');
       setTimeout(() => setToastMessage(''), 3000);
     }
   };
@@ -608,33 +606,22 @@ export default function TeacherSchedulesView() {
 
       {/* Barra de Control de Despliegue y Conteo */}
       {!loading && teachersGrouped.length > 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+        <div className="flex items-center justify-between gap-2 px-1">
           <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">
             Mostrando <span className="font-black text-slate-900 dark:text-white font-mono">{teachersGrouped.length}</span> docentes · <span className="font-mono text-amber-600 dark:text-amber-400 font-black">{stats.classesCount}</span> clases
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={copyAllTeachersSchedule}
-              className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 flex items-center gap-1.5 cursor-pointer shadow-2xs"
-              title="Copiar todas las clases de los docentes filtrados en tabla Excel con colores oficiales"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 stroke-[2.4] text-emerald-600 dark:text-emerald-400" />
-              <span>Copiar grupo (Excel)</span>
-            </button>
-            <button
-              type="button"
-              onClick={allAreExpanded ? collapseAll : expandAll}
-              className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            >
-              <ChevronsUpDown className="w-3.5 h-3.5 stroke-[2.4] text-amber-500" />
-              <span>{allAreExpanded ? 'Colapsar todas' : 'Desplegar todas'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={allAreExpanded ? collapseAll : expandAll}
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <ChevronsUpDown className="w-3.5 h-3.5 stroke-[2.4] text-amber-500" />
+            <span>{allAreExpanded ? 'Colapsar todas' : 'Desplegar todas'}</span>
+          </button>
         </div>
       )}
 
-      {/* Grid de Tarjetas de Docentes (Expandible a 4 y 5 columnas) */}
+      {/* Cuadrícula Masonry Fluida por Columnas (Elimina los vacíos al desplegar) */}
       {loading ? (
         <div className="p-12 text-center bg-white dark:bg-[#0c0c10] rounded-3xl border border-slate-200 dark:border-zinc-800">
           <RefreshCw className="w-8 h-8 text-[#FDBA30] animate-spin mx-auto mb-3" />
@@ -647,7 +634,7 @@ export default function TeacherSchedulesView() {
           <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Prueba seleccionando más días (incluyendo Domingo) o cambiando los filtros de búsqueda</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 items-start">
+        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 2xl:columns-5 gap-3 [column-fill:_balance]">
           {teachersGrouped.map((teacher) => {
             const isExpanded = Boolean(expandedTeachers[teacher.name]);
             const uniqueRooms = Array.from(new Set(teacher.classes.map(c => c.aula).filter(Boolean)));
@@ -656,7 +643,7 @@ export default function TeacherSchedulesView() {
             return (
               <div
                 key={teacher.name}
-                className={`bg-white dark:bg-[#0c0c10] rounded-2xl p-3 border transition-all duration-200 flex flex-col ${
+                className={`break-inside-avoid inline-block w-full mb-3 bg-white dark:bg-[#0c0c10] rounded-2xl p-3 border transition-all duration-200 flex flex-col ${
                   isExpanded
                     ? 'border-amber-400/80 dark:border-amber-500/60 shadow-md ring-1 ring-amber-400/20'
                     : 'h-[72px] justify-center border-slate-200/90 dark:border-zinc-800 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700'
@@ -751,10 +738,23 @@ export default function TeacherSchedulesView() {
                                 </span>
                               )}
                             </div>
-                            <span className="text-[10.5px] font-mono font-black text-slate-800 dark:text-zinc-200 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
-                              {c.horaInicioProg} - {c.horaFinalProg}
-                            </span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-[10.5px] font-mono font-black text-slate-800 dark:text-zinc-200 flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-500 stroke-[2.4]" />
+                                {c.horaInicioProg} - {c.horaFinalProg}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copySingleClass(c, teacher.name);
+                                }}
+                                title="Copiar esta clase en formato tabla Excel con colores"
+                                className="w-5.5 h-5.5 rounded-md bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-500 hover:text-amber-800 dark:text-zinc-400 dark:hover:text-amber-300 border border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-center transition active:scale-90"
+                              >
+                                <Copy className="w-2.8 h-2.8 stroke-[2.2]" />
+                              </button>
+                            </div>
                           </div>
 
                           <p className="text-[11.5px] font-extrabold text-slate-900 dark:text-zinc-100 truncate leading-snug">
