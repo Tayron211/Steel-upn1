@@ -152,8 +152,8 @@ export default function LoginScreen({ onLogin }) {
         <div
           className="login-form-panel"
           style={{
-            backdropFilter: 'blur(22px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(22px) saturate(180%)'
+            backdropFilter: 'blur(12px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(12px) saturate(150%)'
           }}
         >
           {/* Encabezado con Logotipo UPN */}

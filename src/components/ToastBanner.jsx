@@ -47,9 +47,9 @@ export default function ToastBanner({ message, type = 'info', onClose, duration 
       <div 
         className="pointer-events-auto text-white text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl border border-white/25 dark:border-amber-400/40 shadow-[0_12px_40px_rgba(0,0,0,0.35)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)] flex items-center justify-between gap-3 subpixel-antialiased"
         style={{
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(32px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(32px) saturate(200%)'
+          background: 'rgba(15, 23, 42, 0.88)',
+          backdropFilter: 'blur(12px) saturate(150%)',
+          WebkitBackdropFilter: 'blur(12px) saturate(150%)'
         }}
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">

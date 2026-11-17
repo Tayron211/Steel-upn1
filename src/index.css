@@ -272,29 +272,29 @@ html:not(.dark) {
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-/* Apple-style modals and bottom sheets con Frosted Glass y Desenfoque Suave 22px */
+/* Apple-style modals and bottom sheets con Frosted Glass y Desenfoque Suave y Limpio (12px) */
 .apple-liquid-modal {
-  background: rgba(255, 255, 255, 0.65) !important;
-  backdrop-filter: blur(22px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
   box-shadow:
-    0 24px 75px -12px rgba(15, 23, 42, 0.20),
-    0 8px 24px -4px rgba(15, 23, 42, 0.08),
-    0 0 35px rgba(253, 186, 48, 0.12),
+    0 24px 75px -12px rgba(15, 23, 42, 0.16),
+    0 8px 24px -4px rgba(15, 23, 42, 0.06),
+    0 0 35px rgba(253, 186, 48, 0.10),
     inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
 }
 
 .dark .apple-liquid-modal,
 html.dark .apple-liquid-modal {
-  background: rgba(12, 14, 20, 0.68) !important;
-  backdrop-filter: blur(22px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(16, 18, 27, 0.88) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.14) !important;
   box-shadow:
     0 32px 90px -10px rgba(0, 0, 0, 0.90),
-    0 0 45px rgba(253, 186, 48, 0.14),
+    0 0 45px rgba(253, 186, 48, 0.12),
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.16),
     inset 0 0 0 1px rgba(253, 186, 48, 0.18) !important;
 }
@@ -897,7 +897,7 @@ html:not(.dark) .login-visual-subtitle {
   text-align: center;
 }
 
-/* PANEL DERECHO: Formulario con Efecto Blur Traslúcido Cristal Pulido (SOLO LO MARCADO) */
+/* PANEL DERECHO: Formulario con Efecto Blur Traslúcido Suave (12px) */
 .login-form-panel {
   flex: 1;
   padding: 44px 38px;
@@ -908,22 +908,22 @@ html:not(.dark) .login-visual-subtitle {
   z-index: 2;
   box-sizing: border-box;
   border-radius: 0 28px 28px 0;
-  backdrop-filter: blur(22px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
   transition: all 0.3s ease;
 }
 
 html.dark .login-form-panel {
-  background-color: rgba(13, 16, 24, 0.50) !important;
-  backdrop-filter: blur(22px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+  background-color: rgba(16, 18, 27, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
   border-left: 1px solid rgba(253, 186, 48, 0.25);
 }
 
 html:not(.dark) .login-form-panel {
-  background-color: rgba(255, 255, 255, 0.38) !important;
-  backdrop-filter: blur(22px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+  background-color: rgba(255, 255, 255, 0.70) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow: inset 1px 0 0 0 rgba(255, 255, 255, 0.85);
 }
@@ -1283,24 +1283,24 @@ html:not(.dark) .apple-liquid-pill {
    Mismo efecto Blur y cristal esmerilado que la Navbar en todas las ventanas
    ========================================================= */
 
-/* 1. Backdrop Overlay Traslúcido con Desenfoque Cinemático Suave */
+/* 1. Backdrop Overlay Traslúcido con Desenfoque Suave y Limpio (5px) */
 .fixed.inset-0[class*="z-"],
 .fixed.inset-0[class*="backdrop-blur-"] {
-  backdrop-filter: blur(8px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(160%) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
 }
 
 html:not(.dark) .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
 html:not(.dark) .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
-  background-color: rgba(15, 23, 42, 0.32) !important;
+  background-color: rgba(15, 23, 42, 0.35) !important;
 }
 
 html.dark .fixed.inset-0[class*="z-"]:not(#upn-boot-splash),
 html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
-  background-color: rgba(0, 0, 0, 0.58) !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
-/* 2. Todas las Ventanas Modales Flotantes en la App (Cristal Pulido / Frosted Glass - Blur Suave 22px) */
+/* 2. Todas las Ventanas Modales Flotantes en la App (Efecto Cristal Equilibrado - Blur Moderado 12px) */
 .apple-liquid-modal,
 .app-modal-window,
 .fixed.inset-0 > div[class*="rounded-"],
@@ -1308,8 +1308,8 @@ html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
 .fixed.inset-0 > div[class*="max-w-"],
 [role="dialog"],
 [role="dialog"] > div[class*="rounded-"] {
-  backdrop-filter: blur(22px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -1321,12 +1321,12 @@ html:not(.dark) .fixed.inset-0 > div > div[class*="rounded-"],
 html:not(.dark) .fixed.inset-0 > div[class*="max-w-"],
 html:not(.dark) [role="dialog"],
 html:not(.dark) [role="dialog"] > div[class*="rounded-"] {
-  background-color: rgba(255, 255, 255, 0.58) !important;
+  background-color: rgba(255, 255, 255, 0.86) !important;
   border-color: rgba(255, 255, 255, 0.85) !important;
   box-shadow:
-    0 24px 75px -12px rgba(15, 23, 42, 0.20),
-    0 8px 24px -4px rgba(15, 23, 42, 0.08),
-    0 0 35px rgba(253, 186, 48, 0.12),
+    0 24px 75px -12px rgba(15, 23, 42, 0.16),
+    0 8px 24px -4px rgba(15, 23, 42, 0.06),
+    0 0 35px rgba(253, 186, 48, 0.10),
     inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
 }
@@ -1339,11 +1339,11 @@ html.dark .fixed.inset-0 > div > div[class*="rounded-"],
 html.dark .fixed.inset-0 > div[class*="max-w-"],
 html.dark [role="dialog"],
 html.dark [role="dialog"] > div[class*="rounded-"] {
-  background-color: rgba(12, 14, 20, 0.65) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(16, 18, 27, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
   box-shadow:
     0 32px 90px -10px rgba(0, 0, 0, 0.90),
-    0 0 45px rgba(253, 186, 48, 0.14),
+    0 0 45px rgba(253, 186, 48, 0.12),
     inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.16),
     inset 0 0 0 1px rgba(253, 186, 48, 0.18) !important;
 }
@@ -1353,7 +1353,7 @@ html:not(.dark) .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-b"]
 html:not(.dark) .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-t"],
 html:not(.dark) [role="dialog"] div[class*="border-b"],
 html:not(.dark) [role="dialog"] div[class*="border-t"] {
-  background-color: rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.50) !important;
   border-color: rgba(226, 232, 240, 0.8) !important;
 }
 
@@ -1361,27 +1361,27 @@ html.dark .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-b"],
 html.dark .fixed.inset-0 > div[class*="rounded-"] > div[class*="border-t"],
 html.dark [role="dialog"] div[class*="border-b"],
 html.dark [role="dialog"] div[class*="border-t"] {
-  background-color: rgba(18, 22, 32, 0.40) !important;
+  background-color: rgba(22, 26, 38, 0.55) !important;
   border-color: rgba(255, 255, 255, 0.10) !important;
 }
 
-/* 4. Menús desplegables y Popovers flotantes */
+/* 4. Menús desplegables y Popovers flotantes (Desenfoque Suave 12px) */
 div[class*="w-68"][class*="rounded-2xl"],
 .fab-floating-container button[class*="rounded-full"] {
-  backdrop-filter: blur(32px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
 }
 
 html:not(.dark) div[class*="w-68"][class*="rounded-2xl"],
 html:not(.dark) .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(255, 255, 255, 0.78) !important;
+  background-color: rgba(255, 255, 255, 0.90) !important;
   border-color: rgba(255, 255, 255, 0.85) !important;
   box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.18), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
 
 html.dark div[class*="w-68"][class*="rounded-2xl"],
 html.dark .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(14, 16, 24, 0.80) !important;
+  background-color: rgba(16, 18, 27, 0.92) !important;
   border-color: rgba(255, 255, 255, 0.14) !important;
   box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14) !important;
 }
