@@ -206,22 +206,6 @@ export default function TeacherSchedulesView() {
     });
   };
 
-  const selectToday = () => {
-    setSelectedDays([defaultDay]);
-  };
-
-  const selectWeekdays = () => {
-    setSelectedDays(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES']);
-  };
-
-  const selectWeekend = () => {
-    setSelectedDays(['SABADO', 'DOMINGO']);
-  };
-
-  const selectAllDays = () => {
-    setSelectedDays(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']);
-  };
-
   // Filtrado y agrupación de clases por docente
   const teachersGrouped = useMemo(() => {
     if (!Array.isArray(classes) || classes.length === 0) return [];
@@ -391,63 +375,17 @@ export default function TeacherSchedulesView() {
 
       {/* Header Panel con Selector Múltiple de Días */}
       <div className="bg-white dark:bg-[#0c0c10] rounded-3xl p-4 sm:p-6 border border-slate-200/90 dark:border-zinc-800 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs shrink-0">
-              <GraduationCap className="w-5 h-5 stroke-[2.3]" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                Horarios de Docentes por Día
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                Consulta los turnos, aulas asignadas y total de clases de cada docente
-              </p>
-            </div>
+        <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+          <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 flex items-center justify-center shadow-xs shrink-0">
+            <GraduationCap className="w-5 h-5 stroke-[2.3]" />
           </div>
-
-          {/* Presets Rápidos de Selección (Scrolleables en móvil) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
-            <button
-              type="button"
-              onClick={selectToday}
-              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${selectedDays.length === 1 && selectedDays[0] === defaultDay
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
-                  : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
-                }`}
-            >
-              Hoy ({DAYS_ORDER.find(d => d.id === defaultDay)?.label || defaultDay})
-            </button>
-            <button
-              type="button"
-              onClick={selectWeekdays}
-              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${selectedDays.length === 5 && !selectedDays.includes('SABADO') && !selectedDays.includes('DOMINGO')
-                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                  : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
-                }`}
-            >
-              Lun a Vie
-            </button>
-            <button
-              type="button"
-              onClick={selectWeekend}
-              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${selectedDays.length === 2 && selectedDays.includes('SABADO') && selectedDays.includes('DOMINGO')
-                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                  : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
-                }`}
-            >
-              Fin de Semana
-            </button>
-            <button
-              type="button"
-              onClick={selectAllDays}
-              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${selectedDays.length === 7
-                  ? 'bg-[#FDBA30] text-slate-950 font-black shadow-xs'
-                  : 'bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
-                }`}
-            >
-              Toda la Semana (7 Días)
-            </button>
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+              Horarios de Docentes por Día
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
+              Consulta los turnos, aulas asignadas y total de clases de cada docente
+            </p>
           </div>
         </div>
 
@@ -462,23 +400,36 @@ export default function TeacherSchedulesView() {
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {DAYS_ORDER.map(d => {
               const isSelected = selectedDays.includes(d.id);
+              const isToday = d.id === defaultDay;
+
               return (
                 <button
                   key={d.id}
                   type="button"
                   onClick={() => toggleDay(d.id)}
-                  className={`h-10 sm:h-11 rounded-xl sm:rounded-2xl text-xs font-black transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 active:scale-95 border cursor-pointer ${isSelected
+                  className={`h-11 sm:h-12 rounded-xl sm:rounded-2xl text-xs font-black transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 active:scale-95 border cursor-pointer ${
+                    isSelected
                       ? 'bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 border-[#FDBA30] shadow-[0_4px_16px_rgba(253,186,48,0.35)] scale-[1.02]'
                       : 'bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800'
-                    }`}
+                  }`}
                 >
-                  <span className="sm:hidden text-[10px] font-black tracking-tight">{d.short}</span>
-                  <span className="hidden sm:inline text-xs truncate">{d.label}</span>
-                  {isSelected && (
+                  <div className="flex items-center gap-1">
+                    <span className="sm:hidden text-[10px] font-black tracking-tight">{d.short}</span>
+                    <span className="hidden sm:inline text-xs truncate">{d.label}</span>
+                    {isToday && (
+                      <span className={`text-[7px] font-black uppercase px-1 py-0.2 rounded leading-none ${
+                        isSelected ? 'bg-slate-950 text-[#FDBA30]' : 'bg-emerald-600 text-white'
+                      }`}>
+                        HOY
+                      </span>
+                    )}
+                  </div>
+                  {isSelected && !isToday && (
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-950 sm:hidden" />
                   )}
-                  <div className={`hidden sm:flex w-4 h-4 rounded-full items-center justify-center shrink-0 ${isSelected ? 'bg-slate-950 text-[#FDBA30]' : 'border border-slate-300 dark:border-zinc-700'
-                    }`}>
+                  <div className={`hidden sm:flex w-4 h-4 rounded-full items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-slate-950 text-[#FDBA30]' : 'border border-slate-300 dark:border-zinc-700'
+                  }`}>
                     {isSelected && <Check className="w-2.5 h-2.5 stroke-[3.5]" />}
                   </div>
                 </button>
@@ -657,23 +608,12 @@ export default function TeacherSchedulesView() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyTeacherSchedule(teacher);
-                      }}
-                      title="Copiar horario en formato tabla de Excel con colores oficiales"
-                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-950/60 dark:hover:text-amber-300 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition active:scale-90"
-                    >
-                      <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
-                    </button>
+                  <div className="flex items-center shrink-0">
                     <div
-                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 group-hover:bg-amber-500 group-hover:text-slate-950 text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shrink-0"
+                      className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-zinc-800 group-hover:bg-[#FDBA30] group-hover:text-slate-950 text-slate-400 dark:text-zinc-500 flex items-center justify-center transition"
                       title="Ver horario completo en ventana flotante"
                     >
-                      <Eye className="w-3.5 h-3.5 stroke-[2.3]" />
+                      <Eye className="w-4 h-4 stroke-[2.3]" />
                     </div>
                   </div>
                 </div>
