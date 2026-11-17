@@ -218,7 +218,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
 
                 {/* Menú Desplegable: Acciones Rápidas + Descargas */}
                 {userMenuFade.shouldRender && (
-                  <div className={`absolute right-0 mt-2 w-68 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
+                  <div className={`user-dropdown-window absolute right-0 mt-2 w-68 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl p-2.5 z-50 ${userMenuFade.dropdownClass}`}>
                     {/* Cabecera del Usuario */}
                     <div className="px-1.5 pb-2 border-b border-slate-100 dark:border-zinc-800/80 mb-2">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate uppercase">
@@ -233,7 +233,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                       </div>
                     </div>
 
-                    {/* Botón Destacado Panel Admin si es Administrador */}
+                    {/* Botón Destacado Panel Admin si es Administrador (Sólido y Nítido) */}
                     {authUser?.role === 'admin' && (
                       <button
                         type="button"
@@ -241,14 +241,14 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           setUserMenuOpen(false);
                           setIsAdminControlOpen(true);
                         }}
-                        className="w-full mb-2 h-9 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-950 dark:text-amber-300 flex items-center justify-center gap-2 text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs"
+                        className="w-full mb-2 h-9 px-3 rounded-xl bg-amber-100 dark:bg-[#251d10] hover:bg-amber-200 dark:hover:bg-[#322714] border border-amber-400 dark:border-amber-500/60 text-amber-950 dark:text-amber-300 flex items-center justify-center gap-2 text-xs font-black transition active:scale-95 cursor-pointer shadow-xs"
                       >
-                        <ShieldCheck className="w-4 h-4 text-amber-500 stroke-[2.4]" />
+                        <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 stroke-[2.4]" />
                         <span>Panel de Control Admin</span>
                       </button>
                     )}
 
-                    {/* Fila de Iconos de Acciones */}
+                    {/* Fila de Iconos de Acciones (Botones Sólidos 100% Opacos) */}
                     <div className="grid grid-cols-3 gap-2">
                       {/* 1. Modo Claro / Oscuro */}
                       <button
@@ -256,7 +256,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                         onClick={() => {
                           onToggleDarkMode();
                         }}
-                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 border border-slate-200/80 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:border-amber-500/25 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-slate-100 dark:bg-[#1a1f2c] dark:hover:bg-[#22293a] border border-slate-300 dark:border-zinc-700 transition-all active:scale-95 cursor-pointer shadow-xs"
                         title={darkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro (AMOLED)'}
                       >
                         {darkMode ? (
@@ -273,7 +273,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           handleSyncOneDrive();
                         }}
                         disabled={isSyncing}
-                        className="h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 border border-slate-200/80 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 dark:border-sky-500/25 transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-2xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-slate-100 dark:bg-[#142032] dark:hover:bg-[#1c2c44] border border-slate-300 dark:border-sky-800/60 transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-xs"
                         title="Sincronizar OneDrive (Excel ↔ App)"
                       >
                         {isSyncing ? (
@@ -292,15 +292,15 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                           setUserMenuOpen(false);
                           onLogout();
                         }}
-                        className="h-10 rounded-xl flex items-center justify-center bg-rose-50 hover:bg-rose-100 border border-rose-200/80 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:border-rose-500/25 dark:text-rose-400 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        className="h-10 rounded-xl flex items-center justify-center bg-white hover:bg-rose-50 dark:bg-[#27151a] dark:hover:bg-[#351b22] border border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 transition-all active:scale-95 cursor-pointer shadow-xs"
                         title="Cerrar Sesión"
                       >
                         <LogOut className="w-4 h-4 stroke-[2.2]" />
                       </button>
                     </div>
 
-                    {/* Sección de Instalación & Descargas (Ultra-Compacto) */}
-                    <div className="mt-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-1.5">
+                    {/* Sección de Instalación & Descargas (Botones Sólidos 100% Opacos) */}
+                    <div className="mt-2 pt-2 border-t border-slate-200/80 dark:border-zinc-800/80 space-y-1.5">
                       <div className="grid grid-cols-2 gap-1.5">
                         {/* Descargar e Instalar APK Android */}
                         <button
@@ -309,7 +309,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                             setUserMenuOpen(false);
                             triggerDirectApkInstall();
                           }}
-                          className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs group cursor-pointer"
+                          className="h-8 px-2 rounded-xl bg-white hover:bg-emerald-50 dark:bg-[#13251c] dark:hover:bg-[#1b3426] border border-emerald-300 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-300 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-xs group cursor-pointer"
                           title="Descargar e Instalar APK Nativo para Android"
                         >
                           <AndroidIcon className="w-3.5 h-3.5 text-[#3DDC84] shrink-0 group-hover:scale-110 transition-transform" />
@@ -323,7 +323,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                             setUserMenuOpen(false);
                             handleInstallPwa();
                           }}
-                          className="h-8 px-2 rounded-xl bg-slate-100 hover:bg-slate-200/90 dark:bg-zinc-900/90 dark:hover:bg-zinc-800 border border-slate-200/90 dark:border-zinc-800 text-slate-900 dark:text-white flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-2xs cursor-pointer group"
+                          className="h-8 px-2 rounded-xl bg-white hover:bg-slate-100 dark:bg-[#1c202a] dark:hover:bg-[#252b38] border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-extrabold shadow-xs cursor-pointer group"
                           title="Instalar WebApp en Apple iOS (iPhone / iPad) o Safari"
                         >
                           <AppleIcon className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0 group-hover:scale-110 transition-transform" />

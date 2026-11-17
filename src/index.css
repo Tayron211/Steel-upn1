@@ -1300,27 +1300,25 @@ html.dark .fixed.inset-0[class*="backdrop-blur-"]:not(#upn-boot-splash) {
   background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
-/* 2. Todas las Ventanas Modales Flotantes en la App (Efecto Cristal Equilibrado - Blur Moderado 12px) */
+/* 2. Marco Exterior de Ventanas Modales Flotantes (Efecto Cristal Equilibrado - Blur Moderado 12px) */
 .apple-liquid-modal,
 .app-modal-window,
-.fixed.inset-0 > div[class*="rounded-"],
-.fixed.inset-0 > div > div[class*="rounded-"],
 .fixed.inset-0 > div[class*="max-w-"],
-[role="dialog"],
-[role="dialog"] > div[class*="rounded-"] {
+.fixed.inset-0 > div[class*="rounded-3xl"],
+.fixed.inset-0 > div[class*="rounded-2xl"],
+[role="dialog"] {
   backdrop-filter: blur(12px) saturate(150%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Modo Claro en Todas las Ventanas de la App */
+/* Modo Claro en Ventanas Modales */
 html:not(.dark) .apple-liquid-modal,
 html:not(.dark) .app-modal-window,
-html:not(.dark) .fixed.inset-0 > div[class*="rounded-"],
-html:not(.dark) .fixed.inset-0 > div > div[class*="rounded-"],
 html:not(.dark) .fixed.inset-0 > div[class*="max-w-"],
-html:not(.dark) [role="dialog"],
-html:not(.dark) [role="dialog"] > div[class*="rounded-"] {
+html:not(.dark) .fixed.inset-0 > div[class*="rounded-3xl"],
+html:not(.dark) .fixed.inset-0 > div[class*="rounded-2xl"],
+html:not(.dark) [role="dialog"] {
   background-color: rgba(255, 255, 255, 0.86) !important;
   border-color: rgba(255, 255, 255, 0.85) !important;
   box-shadow:
@@ -1331,14 +1329,13 @@ html:not(.dark) [role="dialog"] > div[class*="rounded-"] {
     inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
 }
 
-/* Modo Oscuro en Todas las Ventanas de la App */
+/* Modo Oscuro en Ventanas Modales */
 html.dark .apple-liquid-modal,
 html.dark .app-modal-window,
-html.dark .fixed.inset-0 > div[class*="rounded-"],
-html.dark .fixed.inset-0 > div > div[class*="rounded-"],
 html.dark .fixed.inset-0 > div[class*="max-w-"],
-html.dark [role="dialog"],
-html.dark [role="dialog"] > div[class*="rounded-"] {
+html.dark .fixed.inset-0 > div[class*="rounded-3xl"],
+html.dark .fixed.inset-0 > div[class*="rounded-2xl"],
+html.dark [role="dialog"] {
   background-color: rgba(16, 18, 27, 0.88) !important;
   border-color: rgba(255, 255, 255, 0.14) !important;
   box-shadow:
@@ -1365,23 +1362,97 @@ html.dark [role="dialog"] div[class*="border-t"] {
   border-color: rgba(255, 255, 255, 0.10) !important;
 }
 
-/* 4. Menús desplegables y Popovers flotantes (Desenfoque Suave 12px) */
+/* 4. Menú Desplegable Superior Derecho (Perfil de Usuario) y Botones Flotantes */
+.user-dropdown-window,
 div[class*="w-68"][class*="rounded-2xl"],
 .fab-floating-container button[class*="rounded-full"] {
-  backdrop-filter: blur(12px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+  backdrop-filter: blur(14px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
 }
 
+html:not(.dark) .user-dropdown-window,
 html:not(.dark) div[class*="w-68"][class*="rounded-2xl"],
 html:not(.dark) .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(255, 255, 255, 0.90) !important;
-  border-color: rgba(255, 255, 255, 0.85) !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.90) !important;
   box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.18), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
 
+html.dark .user-dropdown-window,
 html.dark div[class*="w-68"][class*="rounded-2xl"],
 html.dark .fab-floating-container button[class*="rounded-full"] {
-  background-color: rgba(16, 18, 27, 0.92) !important;
-  border-color: rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14) !important;
+  background-color: rgba(18, 20, 28, 0.90) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), inset 0 1px 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ==========================================================================
+   REGLA ESTRICTA: BOTONES Y CAMPOS DE FORMULARIO 100% SÓLIDOS Y SIN BLUR
+   En todas las ventanas, diálogos, modales, hojas flotantes y menús de la app:
+   - NINGÚN botón ni campo para llenar debe tener desenfoque, blur ni transparencia.
+   - Todo botón y campo de texto debe ser 100% nítido, opaco y legible.
+   ========================================================================== */
+
+/* A. Desactivación absoluta de blur en botones, inputs y campos */
+button,
+input,
+textarea,
+select,
+.login-input,
+.login-submit-btn,
+.user-dropdown-window button,
+.user-dropdown-window a,
+div[class*="w-68"] button,
+div[class*="w-68"] a,
+.apple-liquid-modal button,
+.apple-liquid-modal input,
+.apple-liquid-modal textarea,
+.apple-liquid-modal select,
+[role="dialog"] button,
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] select,
+.fixed.inset-0 button,
+.fixed.inset-0 input,
+.fixed.inset-0 textarea,
+.fixed.inset-0 select {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* B. Botones del menú de usuario: 100% opacos para evitar que se filtre texto del fondo */
+.user-dropdown-window button,
+div[class*="w-68"] button {
+  opacity: 1 !important;
+}
+
+/* C. Campos de texto y selección dentro de cualquier ventana o diálogo */
+html:not(.dark) .apple-liquid-modal input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) .apple-liquid-modal textarea,
+html:not(.dark) .apple-liquid-modal select,
+html:not(.dark) [role="dialog"] input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) [role="dialog"] textarea,
+html:not(.dark) [role="dialog"] select,
+html:not(.dark) .fixed.inset-0 input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) .fixed.inset-0 textarea,
+html:not(.dark) .fixed.inset-0 select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+html.dark .apple-liquid-modal input:not([type="checkbox"]):not([type="radio"]),
+html.dark .apple-liquid-modal textarea,
+html.dark .apple-liquid-modal select,
+html.dark [role="dialog"] input:not([type="checkbox"]):not([type="radio"]),
+html.dark [role="dialog"] textarea,
+html.dark [role="dialog"] select,
+html.dark .fixed.inset-0 input:not([type="checkbox"]):not([type="radio"]),
+html.dark .fixed.inset-0 textarea,
+html.dark .fixed.inset-0 select {
+  background-color: #141722 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
 }
