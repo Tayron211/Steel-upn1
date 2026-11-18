@@ -8,6 +8,7 @@ import {
   Search,
   BookOpen,
   Check,
+  CheckCheck,
   Copy,
   Layers,
   ChevronRight,
@@ -100,7 +101,7 @@ const generateTeacherScheduleTable = (teachers) => {
         <tr style="background-color:#FFFFFF;color:#000000;">
           <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;background-color:#F2F2F2;">${globalIndex}</td>
           <td style="border:1px solid #000000;padding:5px 8px;text-align:left;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;white-space:nowrap;">${docName}</td>
-          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;white-space:nowrap;">${dia}</td>
+          <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;white-space:nowrap;${getDayExcelStyle(dia)}">${dia}</td>
           <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;white-space:nowrap;">${inicio}</td>
           <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;white-space:nowrap;">${fin}</td>
           <td style="border:1px solid #000000;padding:5px 8px;text-align:center;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;background-color:#FFF2CC;color:#B25900;white-space:nowrap;">${aula}</td>
@@ -149,6 +150,42 @@ const normalizeDay = (d) => {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
+};
+
+const getDayBadgeStyle = (dayName) => {
+  const norm = normalizeDay(dayName);
+  switch (norm) {
+    case 'LUNES':
+      return 'bg-sky-100 text-sky-800 border-sky-200/90 dark:bg-sky-950/80 dark:text-sky-300 dark:border-sky-800/60';
+    case 'MARTES':
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200/90 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60';
+    case 'MIERCOLES':
+      return 'bg-amber-100 text-amber-900 border-amber-200/90 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800/60';
+    case 'JUEVES':
+      return 'bg-purple-100 text-purple-800 border-purple-200/90 dark:bg-purple-950/80 dark:text-purple-300 dark:border-purple-800/60';
+    case 'VIERNES':
+      return 'bg-rose-100 text-rose-800 border-rose-200/90 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800/60';
+    case 'SABADO':
+      return 'bg-blue-100 text-blue-800 border-blue-200/90 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-800/60';
+    case 'DOMINGO':
+      return 'bg-teal-100 text-teal-800 border-teal-200/90 dark:bg-teal-950/80 dark:text-teal-300 dark:border-teal-800/60';
+    default:
+      return 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700';
+  }
+};
+
+const getDayExcelStyle = (dayName) => {
+  const norm = normalizeDay(dayName);
+  switch (norm) {
+    case 'LUNES': return 'background-color:#E0F2FE;color:#0369A1;';
+    case 'MARTES': return 'background-color:#D1FAE5;color:#065F46;';
+    case 'MIERCOLES': return 'background-color:#FEF3C7;color:#92400E;';
+    case 'JUEVES': return 'background-color:#F3E8FF;color:#6B21A8;';
+    case 'VIERNES': return 'background-color:#FFE4E6;color:#9F1239;';
+    case 'SABADO': return 'background-color:#DBEAFE;color:#1E40AF;';
+    case 'DOMINGO': return 'background-color:#CCFBF1;color:#115E59;';
+    default: return 'background-color:#F3F4F6;color:#374151;';
+  }
 };
 
 const timeToMinutes = (t) => {
@@ -204,6 +241,16 @@ export default function TeacherSchedulesView() {
         return [...prev, dayId];
       }
     });
+  };
+
+  const allDaysSelected = selectedDays.length === DAYS_ORDER.length;
+
+  const toggleSelectAllDays = () => {
+    if (allDaysSelected) {
+      setSelectedDays([defaultDay]);
+    } else {
+      setSelectedDays(DAYS_ORDER.map(d => d.id));
+    }
   };
 
   // Filtrado y agrupación de clases por docente
@@ -391,9 +438,24 @@ export default function TeacherSchedulesView() {
 
         {/* Barra de Selección Múltiple de Días (7 Días en 1 sola fila responsiva) */}
         <div>
-          <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
-            Días Seleccionados ({selectedDays.length} activos)
-          </label>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+              Días Seleccionados ({selectedDays.length} activos)
+            </span>
+            <button
+              type="button"
+              onClick={toggleSelectAllDays}
+              className={`h-7 px-2.5 rounded-lg text-[11px] font-black transition active:scale-95 cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+                allDaysSelected
+                  ? 'bg-[#FDBA30] text-slate-950 border-[#FDBA30] shadow-xs hover:bg-[#ffc642]'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-[#FDBA30] hover:text-slate-950 dark:hover:bg-[#FDBA30] dark:hover:text-slate-950 border-slate-200 dark:border-zinc-700'
+              }`}
+              title={allDaysSelected ? 'Restablecer al día de hoy' : 'Marcar todos los días de la semana'}
+            >
+              <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>{allDaysSelected ? 'Desmarcar' : 'Marcar todos'}</span>
+            </button>
+          </div>
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {DAYS_ORDER.map(d => {
               const isSelected = selectedDays.includes(d.id);
@@ -713,7 +775,7 @@ export default function TeacherSchedulesView() {
                               NRC: {c.nrc}
                             </span>
                           )}
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300">
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border shadow-2xs ${getDayBadgeStyle(c.dia)}`}>
                             {c.dia}
                           </span>
                         </div>

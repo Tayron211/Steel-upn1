@@ -11,6 +11,7 @@ export default function OperationsHub({
   initialClassData,
   onClearInitialClass,
   defaultSubTab = 'manual',
+  onSubTabChange = null,
   openManualModalTrigger = null,
   openReservationModalTrigger = null,
   onConsumeManualModalTrigger = null,
@@ -45,12 +46,19 @@ export default function OperationsHub({
       if (hash === '#reservas' || hash === '#operaciones/reservas') {
         setSubTab('reservations');
         try { localStorage.setItem('steel:operations-subtab', 'reservations'); } catch (_) { }
+        if (onSubTabChange) onSubTabChange('reservations');
+      } else if (hash === '#docentes' || hash === '#horarios-docentes' || hash === '#operaciones/docentes') {
+        setSubTab('teachers');
+        try { localStorage.setItem('steel:operations-subtab', 'teachers'); } catch (_) { }
+        if (onSubTabChange) onSubTabChange('teachers');
       } else if (hash === '#ambientes' || hash === '#operaciones/ambientes') {
         setSubTab('rooms');
         try { localStorage.setItem('steel:operations-subtab', 'rooms'); } catch (_) { }
+        if (onSubTabChange) onSubTabChange('rooms');
       } else if (hash === '#operaciones' || hash === '#fichas') {
         setSubTab('manual');
         try { localStorage.setItem('steel:operations-subtab', 'manual'); } catch (_) { }
+        if (onSubTabChange) onSubTabChange('manual');
       }
     };
     window.addEventListener('popstate', handleHashSync);
@@ -59,7 +67,7 @@ export default function OperationsHub({
       window.removeEventListener('popstate', handleHashSync);
       window.removeEventListener('hashchange', handleHashSync);
     };
-  }, []);
+  }, [onSubTabChange]);
 
   useEffect(() => {
     if (initialClassData) {
@@ -91,7 +99,8 @@ export default function OperationsHub({
     if (onConsumeReservationModalTrigger) onConsumeReservationModalTrigger();
     setSubTab(target);
     try { localStorage.setItem('steel:operations-subtab', target); } catch (_) { }
-    const subHash = target === 'reservations' ? '#reservas' : '#operaciones';
+    if (onSubTabChange) onSubTabChange(target);
+    const subHash = target === 'reservations' ? '#reservas' : (target === 'teachers' ? '#docentes' : '#operaciones');
     if (window.location.hash.toLowerCase() !== subHash) {
       window.history.pushState({ tab: 'operations', subTab: target }, '', subHash);
     }

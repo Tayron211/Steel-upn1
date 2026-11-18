@@ -48,9 +48,12 @@ const HASH_TAB_MAP = {
   '#operaciones/manual': 'operations',
   '#operaciones/reservas': 'operations',
   '#operaciones/ambientes': 'operations',
+  '#operaciones/docentes': 'operations',
   '#fichas': 'operations',
   '#reservas': 'operations',
   '#ambientes': 'operations',
+  '#docentes': 'operations',
+  '#horarios-docentes': 'operations',
   '#prestamos': 'tickets',
   '#atenciones': 'tickets',
   '#tickets': 'tickets',
@@ -350,6 +353,7 @@ export default function App() {
     if (targetTab === 'operations') {
       if (operationsSubTab === 'reservations') targetHash = '#reservas';
       else if (operationsSubTab === 'rooms') targetHash = '#ambientes';
+      else if (operationsSubTab === 'teachers') targetHash = '#docentes';
       else targetHash = '#operaciones';
     }
 
@@ -389,6 +393,8 @@ export default function App() {
         initialSubTab = 'reservations';
       } else if (currentHash === '#ambientes' || currentHash === '#operaciones/ambientes') {
         initialSubTab = 'rooms';
+      } else if (currentHash === '#docentes' || currentHash === '#horarios-docentes' || currentHash === '#operaciones/docentes') {
+        initialSubTab = 'teachers';
       } else if (currentHash === '#operaciones' || currentHash === '#fichas') {
         initialSubTab = 'manual';
       } else {
@@ -404,7 +410,7 @@ export default function App() {
       let targetHash = currentHash;
       if (!targetHash || targetHash === '#') {
         if (initialTab === 'operations') {
-          targetHash = initialSubTab === 'reservations' ? '#reservas' : (initialSubTab === 'rooms' ? '#ambientes' : '#operaciones');
+          targetHash = initialSubTab === 'reservations' ? '#reservas' : (initialSubTab === 'rooms' ? '#ambientes' : (initialSubTab === 'teachers' ? '#docentes' : '#operaciones'));
         } else {
           targetHash = TAB_HASH_MAP[initialTab] || '#control';
         }
@@ -432,6 +438,8 @@ export default function App() {
         setOperationsSubTab('reservations');
       } else if (hash === '#ambientes' || hash === '#operaciones/ambientes') {
         setOperationsSubTab('rooms');
+      } else if (hash === '#docentes' || hash === '#horarios-docentes' || hash === '#operaciones/docentes') {
+        setOperationsSubTab('teachers');
       } else if (hash === '#operaciones' || hash === '#fichas') {
         setOperationsSubTab('manual');
       }
@@ -646,6 +654,7 @@ export default function App() {
                 onClearInitialClass={() => setManualSheetPrefill(null)}
                 onSelectRoomForSchedule={handleSelectRoomForSchedule}
                 defaultSubTab={operationsSubTab}
+                onSubTabChange={(st) => setOperationsSubTab(st)}
                 openManualModalTrigger={openManualModalTrigger}
                 openReservationModalTrigger={openReservationModalTrigger}
                 onConsumeManualModalTrigger={() => setOpenManualModalTrigger(null)}
