@@ -332,10 +332,6 @@ const generateAttendanceTableData = (items, selectedDia, explicitDateStr) => {
   const tdCenterStyle = 'border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#000000;text-align:center;background-color:#FFFFFF;white-space:nowrap;';
 
   const rowsHtml = list.map(item => {
-    const isPuntual = item.puntualidad === 'PUNTUAL';
-    const isTarde = item.puntualidad === 'TARDE';
-    const isFalta = item.asistencia === 'NO';
-
     const rawDia = String(item.dia || selectedDia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
 
@@ -349,12 +345,20 @@ const generateAttendanceTableData = (items, selectedDia, explicitDateStr) => {
     const curso = item.curso || '';
     const carrera = item.carrera || '';
 
+    const asisRaw = String(item.asistencia || '').trim().toUpperCase();
+    const puntRaw = String(item.puntualidad || '').trim().toUpperCase();
+
+    const isFalta = asisRaw === 'NO' || puntRaw === 'FALTA' || puntRaw === '-';
+    const isTarde = puntRaw === 'TARDE';
+    const isPuntual = puntRaw === 'PUNTUAL';
+    const isReemplazo = asisRaw.includes('REEMPLAZO');
+
     let hIniReal = '';
     let hFinReal = '';
-    let asistencia = 'SI';
-    let puntualidad = 'PUNTUAL';
-    let puntColorBg = '#C6EFCE';
-    let puntColorFg = '#006100';
+    let asistencia = '';
+    let puntualidad = '';
+    let puntColorBg = '#FFFFFF';
+    let puntColorFg = '#000000';
 
     if (isFalta) {
       hIniReal = '-';
@@ -370,13 +374,28 @@ const generateAttendanceTableData = (items, selectedDia, explicitDateStr) => {
       puntualidad = 'TARDE';
       puntColorBg = '#FFEB9C';
       puntColorFg = '#9C5700';
-    } else {
+    } else if (isPuntual) {
       hIniReal = item.horaInicioReal || hIniProg;
       hFinReal = item.horaFinalReal || hFinProg;
       asistencia = 'SI';
       puntualidad = 'PUNTUAL';
       puntColorBg = '#C6EFCE';
       puntColorFg = '#006100';
+    } else if (isReemplazo) {
+      hIniReal = item.horaInicioReal || hIniProg;
+      hFinReal = item.horaFinalReal || hFinProg;
+      asistencia = item.asistencia || 'REEMPLAZO';
+      puntualidad = puntRaw || 'PUNTUAL';
+      puntColorBg = '#E1D5E7';
+      puntColorFg = '#5C1D8D';
+    } else {
+      // SIN NADA (Pendiente de registrar)
+      hIniReal = item.horaInicioReal || '';
+      hFinReal = item.horaFinalReal || '';
+      asistencia = '';
+      puntualidad = '';
+      puntColorBg = '#FFFFFF';
+      puntColorFg = '#000000';
     }
 
     const tdPuntStyle = `border:1px solid #000000;padding:6px 8px;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;text-align:center;background-color:${puntColorBg};color:${puntColorFg};white-space:nowrap;`;
@@ -428,17 +447,51 @@ const generateAttendanceTableData = (items, selectedDia, explicitDateStr) => {
 <!--EndFragment-->`.trim();
 
   const plainRows = list.map(item => {
-    const isPuntual = item.puntualidad === 'PUNTUAL';
-    const isTarde = item.puntualidad === 'TARDE';
-    const isFalta = item.asistencia === 'NO';
     const rawDia = String(item.dia || selectedDia || 'LUNES').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const diasVal = rawDia.includes('/') ? rawDia : `${rawDia} ${dateStr}`;
     const hIniProg = item.horaInicioProg || '';
     const hFinProg = item.horaFinalProg || '';
-    let hIniReal = isFalta ? '-' : (item.horaInicioReal || hIniProg);
-    let hFinReal = isFalta ? '-' : (item.horaFinalReal || hFinProg);
-    let asistencia = isFalta ? 'NO' : 'SI';
-    let puntualidad = isFalta ? '-' : (isTarde ? 'TARDE' : 'PUNTUAL');
+
+    const asisRaw = String(item.asistencia || '').trim().toUpperCase();
+    const puntRaw = String(item.puntualidad || '').trim().toUpperCase();
+
+    const isFalta = asisRaw === 'NO' || puntRaw === 'FALTA' || puntRaw === '-';
+    const isTarde = puntRaw === 'TARDE';
+    const isPuntual = puntRaw === 'PUNTUAL';
+    const isReemplazo = asisRaw.includes('REEMPLAZO');
+
+    let hIniReal = '';
+    let hFinReal = '';
+    let asistencia = '';
+    let puntualidad = '';
+
+    if (isFalta) {
+      hIniReal = '-';
+      hFinReal = '-';
+      asistencia = 'NO';
+      puntualidad = '-';
+    } else if (isTarde) {
+      hIniReal = item.horaInicioReal || hIniProg;
+      hFinReal = item.horaFinalReal || hFinProg;
+      asistencia = 'SI';
+      puntualidad = 'TARDE';
+    } else if (isPuntual) {
+      hIniReal = item.horaInicioReal || hIniProg;
+      hFinReal = item.horaFinalReal || hFinProg;
+      asistencia = 'SI';
+      puntualidad = 'PUNTUAL';
+    } else if (isReemplazo) {
+      hIniReal = item.horaInicioReal || hIniProg;
+      hFinReal = item.horaFinalReal || hFinProg;
+      asistencia = item.asistencia || 'REEMPLAZO';
+      puntualidad = puntRaw || 'PUNTUAL';
+    } else {
+      // SIN NADA (Pendiente)
+      hIniReal = item.horaInicioReal || '';
+      hFinReal = item.horaFinalReal || '';
+      asistencia = '';
+      puntualidad = '';
+    }
 
     return [
       item.sede || 'Comas',
@@ -881,9 +934,27 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       const res = await fetch(`/api/attendance?${p.toString()}`);
       const json = await res.json();
       if (json.success && json.data) {
+        // Combinar con los datos en memoria por si el usuario acaba de marcar asistencia en la pantalla activa
+        const localMap = new Map((data || []).map(it => [String(it.id || it.nrc || `${it.aula}-${it.horaInicioProg}`), it]));
+        const mergedClasses = (json.data || []).map(raw => {
+          const item = sanitizeAttendanceItem(raw);
+          const key = String(item.id || item.nrc || `${item.aula}-${item.horaInicioProg}`);
+          const local = localMap.get(key);
+          if (local) {
+            return {
+              ...item,
+              asistencia: local.asistencia !== undefined ? local.asistencia : item.asistencia,
+              puntualidad: local.puntualidad !== undefined ? local.puntualidad : item.puntualidad,
+              horaInicioReal: local.horaInicioReal !== undefined ? local.horaInicioReal : item.horaInicioReal,
+              horaFinalReal: local.horaFinalReal !== undefined ? local.horaFinalReal : item.horaFinalReal,
+            };
+          }
+          return item;
+        });
+
         setTeacherDayModalData(prev => prev ? {
           ...prev,
-          classes: (json.data || []).map(sanitizeAttendanceItem),
+          classes: mergedClasses,
           loading: false
         } : null);
       } else {
