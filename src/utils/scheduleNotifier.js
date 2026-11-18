@@ -198,13 +198,27 @@ export function isClassAssignedToAssistant(item, assignment) {
  */
 export async function clearAllScheduledNotifications() {
   if (isCapacitorNative()) {
+    // 1. Bloquear de inmediato el receptor nativo (UpnAlarmReceiver) y limpiar notificaciones mostradas
     try {
-      const existing = await LocalNotifications.getPending();
-      if (existing.notifications && existing.notifications.length > 0) {
-        await LocalNotifications.cancel({ notifications: existing.notifications });
+      if (AppInstaller?.setSessionActive) {
+        await AppInstaller.setSessionActive({ active: false });
       }
     } catch (_) {}
 
+    // 2. Cancelar todas las notificaciones pendientes en Capacitor LocalNotifications
+    try {
+      const existing = await LocalNotifications.getPending();
+      if (existing.notifications && existing.notifications.length > 0) {
+        await LocalNotifications.cancel({
+          notifications: existing.notifications.map(n => ({ id: n.id }))
+        });
+      }
+      if (typeof LocalNotifications.removeAllDeliveredNotifications === 'function') {
+        await LocalNotifications.removeAllDeliveredNotifications();
+      }
+    } catch (_) {}
+
+    // 3. Cancelar alarmas exactas en AlarmManager
     try {
       if (AppInstaller?.cancelAllAlarms) {
         await AppInstaller.cancelAllAlarms();
@@ -420,6 +434,19 @@ export async function scheduleNativeAlarms() {
             isExactNotification: true
           });
         }
+      }
+    } catch (_) {}
+
+    // Re-verificar que la sesión siga iniciada después de las consultas de red (evita condiciones de carrera al cerrar sesión)
+    if (!getAuthUser()) {
+      await clearAllScheduledNotifications();
+      return;
+    }
+
+    // Habilitar bandera nativa en Android antes de programar las alarmas exactas
+    try {
+      if (AppInstaller?.setSessionActive) {
+        await AppInstaller.setSessionActive({ active: true });
       }
     } catch (_) {}
 
@@ -726,6 +753,7 @@ async function checkScheduleTick() {
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
   const data = await getTodayAttendanceData();
+  if (!getAuthUser()) return;
   if (!data || data.length === 0) return;
 
   const assignedClassesToday = data.filter(item => isClassAssignedToAssistant(item, assignment));
@@ -848,6 +876,7 @@ async function checkMidpointPendingAttendance() {
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
   const data = await getTodayAttendanceData();
+  if (!getAuthUser()) return;
   if (!data || data.length === 0) return;
 
   // Filtrar ÚNICAMENTE las aulas asignadas al asistente

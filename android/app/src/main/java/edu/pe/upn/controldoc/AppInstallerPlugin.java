@@ -2,9 +2,11 @@ package edu.pe.upn.controldoc;
 
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -23,7 +25,9 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -242,8 +246,18 @@ public class AppInstallerPlugin extends Plugin {
         }
     }
 
+    private static final String PREFS_NAME = "upn_session_prefs";
+    private static final String KEY_SESSION_ACTIVE = "is_session_active";
+    private static final String KEY_ALARM_IDS = "scheduled_alarm_ids";
+
     private boolean doScheduleExactAlarm(int notifId, String title, String body, long triggerAtMillis) {
         Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        if (!prefs.getBoolean(KEY_SESSION_ACTIVE, false)) {
+            Log.d(TAG, "Sesión no activa: se omite programación de alarma ID " + notifId);
+            return false;
+        }
+
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return false;
 
@@ -282,12 +296,34 @@ public class AppInstallerPlugin extends Plugin {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
 
+            // Registrar el ID programado para poder cancelarlo instantáneamente al cerrar sesión
+            Set<String> ids = new HashSet<>(prefs.getStringSet(KEY_ALARM_IDS, new HashSet<>()));
+            ids.add(String.valueOf(notifId));
+            prefs.edit().putStringSet(KEY_ALARM_IDS, ids).apply();
+
             Log.d(TAG, "Alarma nativa tipo AlarmClock programada ID " + notifId + " para: " + triggerAtMillis);
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Error programando alarma nativa", e);
             return false;
         }
+    }
+
+    @PluginMethod
+    public void setSessionActive(PluginCall call) {
+        boolean active = call.getBoolean("active", false);
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(KEY_SESSION_ACTIVE, active).commit();
+
+        if (!active) {
+            performCancelAllAlarms(context);
+        }
+
+        JSObject ret = new JSObject();
+        ret.put("success", true);
+        ret.put("active", active);
+        call.resolve(ret);
     }
 
     @PluginMethod
@@ -318,19 +354,55 @@ public class AppInstallerPlugin extends Plugin {
         Context context = getContext();
         int notifId = call.getInt("id", 1000);
         try {
-            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (alarmManager != null) {
-                Intent intent = new Intent(context, UpnAlarmReceiver.class);
-                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-                PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notifId, intent, flags);
-                alarmManager.cancel(pendingIntent);
-            }
+            cancelAlarmById(context, notifId);
             call.resolve();
         } catch (Exception e) {
             call.reject(e.getMessage());
+        }
+    }
+
+    private void cancelAlarmById(Context context, int notifId) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) return;
+        Intent intent = new Intent(context, UpnAlarmReceiver.class);
+        int flags = PendingIntent.FLAG_NO_CREATE;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notifId, intent, flags);
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent);
+            pendingIntent.cancel();
+        }
+    }
+
+    private void performCancelAllAlarms(Context context) {
+        try {
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            Set<String> trackedIds = new HashSet<>(prefs.getStringSet(KEY_ALARM_IDS, new HashSet<>()));
+            for (String idStr : trackedIds) {
+                try {
+                    cancelAlarmById(context, Integer.parseInt(idStr));
+                } catch (Exception ignored) {}
+            }
+            prefs.edit().remove(KEY_ALARM_IDS).apply();
+
+            // Cancelar también IDs heredados de versiones anteriores
+            for (int id = 1000; id <= 1025; id++) cancelAlarmById(context, id);
+            for (int id = 2000; id <= 2025; id++) cancelAlarmById(context, id);
+            for (int id = 5000; id <= 5025; id++) cancelAlarmById(context, id);
+            for (int id = 10101; id <= 10115; id++) cancelAlarmById(context, id);
+            for (int id = 20000; id <= 20025; id++) cancelAlarmById(context, id);
+            for (int id = 25000; id <= 25025; id++) cancelAlarmById(context, id);
+            cancelAlarmById(context, 9999);
+
+            // Limpiar cualquier notificación activa en la barra de estado
+            NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                nm.cancelAll();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error en performCancelAllAlarms", e);
         }
     }
 
@@ -338,22 +410,7 @@ public class AppInstallerPlugin extends Plugin {
     public void cancelAllAlarms(PluginCall call) {
         Context context = getContext();
         try {
-            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (alarmManager != null) {
-                // Cancelar cualquier alarma programada en el rango de notificaciones (1000 a 40000)
-                for (int id = 1000; id <= 35000; id++) {
-                    Intent intent = new Intent(context, UpnAlarmReceiver.class);
-                    int flags = PendingIntent.FLAG_NO_CREATE;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        flags |= PendingIntent.FLAG_IMMUTABLE;
-                    }
-                    PendingIntent pendingIntent = PendingIntent.getBroadcast(context, id, intent, flags);
-                    if (pendingIntent != null) {
-                        alarmManager.cancel(pendingIntent);
-                        pendingIntent.cancel();
-                    }
-                }
-            }
+            performCancelAllAlarms(context);
             JSObject ret = new JSObject();
             ret.put("success", true);
             call.resolve(ret);

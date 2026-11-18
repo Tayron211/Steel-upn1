@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -25,6 +26,14 @@ public class UpnAlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        // Verificar en SharedPreferences nativo si la sesión sigue iniciada
+        SharedPreferences prefs = context.getSharedPreferences("upn_session_prefs", Context.MODE_PRIVATE);
+        boolean isSessionActive = prefs.getBoolean("is_session_active", false);
+        if (!isSessionActive) {
+            Log.d(TAG, "Sesión cerrada en Android: alarma ignorada y descartada.");
+            return;
+        }
+
         Log.d(TAG, "Alarma recibida con la app en segundo plano o cerrada");
 
         PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
