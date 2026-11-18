@@ -450,11 +450,10 @@ export async function scheduleNativeAlarms() {
       }
     } catch (_) {}
 
-    // 7. Enviar programación a LocalNotifications y AlarmManager de Android
+    // 7. Ordenar cronológicamente dando prioridad a las alertas más próximas del asistente y programar exclusivamente en UpnAlarmReceiver (protegido por sesión nativa)
     if (notificationsToSchedule.length > 0) {
-      await LocalNotifications.schedule({ notifications: notificationsToSchedule });
+      notificationsToSchedule.sort((a, b) => a.schedule.at.getTime() - b.schedule.at.getTime());
 
-      // Doble garantía nativa: registrar en AlarmManager de Android vía AlarmClock
       if (AppInstaller?.scheduleExactAlarm) {
         for (const notif of notificationsToSchedule.slice(0, 20)) {
           if (notif.schedule?.at && notif.schedule.at instanceof Date) {
@@ -468,6 +467,8 @@ export async function scheduleNativeAlarms() {
             } catch (_) {}
           }
         }
+      } else {
+        await LocalNotifications.schedule({ notifications: notificationsToSchedule });
       }
     }
   } catch (err) {
