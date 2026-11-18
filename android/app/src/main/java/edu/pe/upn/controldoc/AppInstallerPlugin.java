@@ -335,6 +335,34 @@ public class AppInstallerPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void cancelAllAlarms(PluginCall call) {
+        Context context = getContext();
+        try {
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager != null) {
+                // Cancelar cualquier alarma programada en el rango de notificaciones (1000 a 40000)
+                for (int id = 1000; id <= 35000; id++) {
+                    Intent intent = new Intent(context, UpnAlarmReceiver.class);
+                    int flags = PendingIntent.FLAG_NO_CREATE;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        flags |= PendingIntent.FLAG_IMMUTABLE;
+                    }
+                    PendingIntent pendingIntent = PendingIntent.getBroadcast(context, id, intent, flags);
+                    if (pendingIntent != null) {
+                        alarmManager.cancel(pendingIntent);
+                        pendingIntent.cancel();
+                    }
+                }
+            }
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject(e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void testAlarmInSeconds(PluginCall call) {
         int seconds = call.getInt("seconds", 10);
         long target = System.currentTimeMillis() + (seconds * 1000L);

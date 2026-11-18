@@ -2,6 +2,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { App } from '@capacitor/app';
 import { isCapacitorNative } from './statusBarHelper';
 import { AppInstaller } from './appUpdateChecker';
+import { getAuthUser, getUserAssignments } from './auth';
 
 export const CLASS_BLOCKS = [
   { id: 1, start: '07:30', end: '09:10', startMins: 7 * 60 + 30, label: '07:30 - 09:10' },
@@ -111,20 +112,140 @@ export async function requestNotificationPermission() {
 }
 
 /**
+ * Obtiene la asignación activa del usuario (pabellón y pisos).
+ * Si no hay sesión activa (no autenticado), retorna null.
+ */
+export function getActiveAssistantAssignment() {
+  const user = getAuthUser();
+  if (!user) return null;
+  const assignments = getUserAssignments();
+  const cleanUser = String(user.username || '').toLowerCase();
+  const myAss = assignments[cleanUser] || {};
+  const pabellon = myAss.pabellon !== undefined ? myAss.pabellon : (user.assignedPabellon || '');
+  const pisos = (Array.isArray(myAss.pisos) && myAss.pisos.length > 0) ? myAss.pisos : (user.assignedPisos || []);
+  const isAdminUser = user.role === 'admin';
+  return {
+    user,
+    pabellon: String(pabellon || '').trim().toUpperCase(),
+    pisos: Array.isArray(pisos) ? pisos : [],
+    isAdmin: isAdminUser
+  };
+}
+
+/**
+ * Determina si una clase pertenece a las aulas / pabellón / pisos asignados al usuario.
+ */
+export function isClassAssignedToAssistant(item, assignment) {
+  if (!assignment || !assignment.user || !item) return false;
+
+  // Si es Administrador y NO tiene restricción de pabellón ni pisos, supervisa todo el campus
+  if (assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+    return true;
+  }
+
+  // Si es Asistente y NO tiene asignación configurada, NO tiene aulas asignadas
+  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+    return false;
+  }
+
+  const itemUbi = String(item.pisoPabellon || '').toUpperCase();
+  const itemAula = String(item.aula || '').toUpperCase();
+
+  // 1. Filtrado de Pabellón
+  if (assignment.pabellon) {
+    const p = assignment.pabellon;
+    const matchesPab = itemUbi.includes(`- ${p}`) ||
+      itemUbi.includes(`PABELLÓN ${p}`) ||
+      itemUbi.includes(`PABELLON ${p}`) ||
+      itemUbi.includes(`PAB. ${p}`) ||
+      itemAula.startsWith(p);
+    if (!matchesPab) return false;
+  }
+
+  // 2. Filtrado de Pisos
+  if (assignment.pisos && assignment.pisos.length > 0) {
+    const matchesPiso = assignment.pisos.some(p => {
+      const pUpper = String(p).toUpperCase();
+      const targetDigit = pUpper.includes('1') || pUpper.includes('PRIMER') ? '1' :
+        pUpper.includes('2') || pUpper.includes('SEGUNDO') ? '2' :
+          pUpper.includes('3') || pUpper.includes('TERCER') ? '3' :
+            pUpper.includes('4') || pUpper.includes('CUARTO') ? '4' :
+              pUpper.includes('5') || pUpper.includes('QUINTO') ? '5' : '';
+
+      if (targetDigit === '1' && (itemUbi.includes('1ER') || itemUbi.includes('PRIMER') || itemUbi.includes('PISO 1') || itemUbi.includes('1°'))) return true;
+      if (targetDigit === '2' && (itemUbi.includes('2DO') || itemUbi.includes('SEGUNDO') || itemUbi.includes('PISO 2') || itemUbi.includes('2°'))) return true;
+      if (targetDigit === '3' && (itemUbi.includes('3ER') || itemUbi.includes('TERCER') || itemUbi.includes('PISO 3') || itemUbi.includes('3°'))) return true;
+      if (targetDigit === '4' && (itemUbi.includes('4TO') || itemUbi.includes('CUARTO') || itemUbi.includes('PISO 4') || itemUbi.includes('4°'))) return true;
+      if (targetDigit === '5' && (itemUbi.includes('5TO') || itemUbi.includes('QUINTO') || itemUbi.includes('PISO 5') || itemUbi.includes('5°'))) return true;
+      if (pUpper.includes('SOT') && (itemUbi.includes('SOT') || itemUbi.includes('SÓT'))) return true;
+
+      // Si el piso_pabellon no tiene el texto, extraer dígito del aula (ej: A102 -> 1, B305 -> 3)
+      if (targetDigit && /^[A-Z]\d{2,4}/.test(itemAula)) {
+        const digitMatch = itemAula.match(/^[A-Z](\d)/);
+        if (digitMatch && digitMatch[1] === targetDigit) return true;
+      }
+
+      return itemUbi.includes(pUpper);
+    });
+    if (!matchesPiso) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Cancela todas las notificaciones locales y alarmas programadas en el APK / dispositivo.
+ */
+export async function clearAllScheduledNotifications() {
+  if (isCapacitorNative()) {
+    try {
+      const existing = await LocalNotifications.getPending();
+      if (existing.notifications && existing.notifications.length > 0) {
+        await LocalNotifications.cancel({ notifications: existing.notifications });
+      }
+    } catch (_) {}
+
+    try {
+      if (AppInstaller?.cancelAllAlarms) {
+        await AppInstaller.cancelAllAlarms();
+      }
+    } catch (_) {}
+  }
+}
+if (typeof window !== 'undefined') {
+  window.clearAllScheduledNotifications = clearAllScheduledNotifications;
+}
+
+/**
  * Programa las notificaciones locales en Android para los próximos cambios de horario
  * y recordatorios en la mitad de cada ronda docente de manera directa en el AlarmManager del sistema.
- * ESTO GARANTIZA QUE LLEGUEN CON LA APP CERRADA O MINIMIZADA.
+ * 
+ * REGLAS ESTRICTAS:
+ * 1. Solo se programan si la sesión está iniciada (getAuthUser() != null).
+ * 2. Solo se programan para las aulas/pabellón/pisos asignados al asistente.
  */
 export async function scheduleNativeAlarms() {
   if (!isCapacitorNative()) return;
 
-  try {
-    // 1. Eliminar canal antiguo si existe para asegurar que se aplique el sonido
-    try {
-      await LocalNotifications.deleteChannel({ id: 'upn_cambio_clases' });
-    } catch (_) {}
+  const assignment = getActiveAssistantAssignment();
 
-    // 2. Crear canal de máxima prioridad con sonido nativo y vibración
+  // 1. Si no hay sesión iniciada, cancelar de inmediato cualquier alarma previa y salir
+  if (!assignment) {
+    await clearAllScheduledNotifications();
+    return;
+  }
+
+  // 2. Si es asistente y no tiene aulas/pabellón asignado, cancelar alarmas y salir
+  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+    await clearAllScheduledNotifications();
+    return;
+  }
+
+  try {
+    // 3. Limpiar alarmas pendientes anteriores para sincronizar exactamente las del asistente
+    await clearAllScheduledNotifications();
+
+    // 4. Crear canal de máxima prioridad con sonido nativo y vibración
     await LocalNotifications.createChannel({
       id: UPN_NOTIF_CHANNEL_ID,
       name: 'Alarmas de Rondas y Cambio de Turno UPN',
@@ -137,24 +258,104 @@ export async function scheduleNativeAlarms() {
       lightColor: '#FDBA30'
     });
 
-    // 3. Limpiar alarmas pendientes anteriores para evitar acumulaciones o duplicados
-    try {
-      const existing = await LocalNotifications.getPending();
-      if (existing.notifications && existing.notifications.length > 0) {
-        await LocalNotifications.cancel({ notifications: existing.notifications });
-      }
-    } catch (_) {}
-
     const now = new Date();
     const notificationsToSchedule = [];
 
-    // 4. Obtener clases reales de hoy para programar las alertas exactas de los bloques activos
-    let todayBlocks = [];
+    // 5. Obtener clases de HOY y filtrar estrictamente por las aulas asignadas al asistente
+    let myClassesToday = [];
     try {
-      const data = await getTodayAttendanceData();
-      if (data && data.length > 0) {
-        const blockMap = new Map();
-        data.forEach(item => {
+      const dataToday = await getTodayAttendanceData();
+      if (dataToday && dataToday.length > 0) {
+        myClassesToday = dataToday.filter(it => isClassAssignedToAssistant(it, assignment));
+      }
+    } catch (_) {}
+
+    if (myClassesToday.length > 0) {
+      const blockMap = new Map();
+      myClassesToday.forEach(item => {
+        const ini = item.horaInicioProg;
+        const fin = item.horaFinalProg;
+        if (!ini || !fin) return;
+        const [hI, mI] = ini.split(':').map(Number);
+        const [hF, mF] = fin.split(':').map(Number);
+        if (isNaN(hI) || isNaN(mI) || isNaN(hF) || isNaN(mF)) return;
+        const iniMins = hI * 60 + mI;
+        const finMins = hF * 60 + mF;
+        const key = `${ini}-${fin}`;
+        if (!blockMap.has(key)) {
+          blockMap.set(key, { ini, fin, iniMins, finMins, aulas: new Set() });
+        }
+        if (item.aula) blockMap.get(key).aulas.add(item.aula);
+      });
+
+      let idx = 0;
+      for (const [key, b] of blockMap.entries()) {
+        idx++;
+        const aulasArr = Array.from(b.aulas);
+        const sampleAulas = aulasArr.slice(0, 4).join(', ');
+        const aulasText = aulasArr.length > 4 ? `${sampleAulas} y ${aulasArr.length - 4} más` : sampleAulas;
+
+        // Alerta 15 min antes de iniciar
+        const shiftMins = b.iniMins - 15;
+        const shiftDate = new Date();
+        shiftDate.setHours(Math.floor(shiftMins / 60), shiftMins % 60, 0, 0);
+
+        if (shiftDate.getTime() > now.getTime()) {
+          notificationsToSchedule.push({
+            id: 1000 + idx,
+            title: `🔔 Próximo Turno en 15 min (${b.ini})`,
+            body: `Bloque ${b.ini} - ${b.fin} inicia en 15 min. Aulas asignadas (${aulasArr.length}): ${aulasText}. Prepara la ronda.`,
+            schedule: {
+              at: shiftDate,
+              allowWhileIdle: true
+            },
+            channelId: UPN_NOTIF_CHANNEL_ID,
+            sound: 'default',
+            smallIcon: 'ic_stat_notify',
+            iconColor: '#FDBA30',
+            autoCancel: true,
+            isExactNotification: true
+          });
+        }
+
+        // Alerta a MITAD DE RONDA exacta de las aulas asignadas
+        const midMins = Math.floor((b.iniMins + b.finMins) / 2);
+        const midDate = new Date();
+        midDate.setHours(Math.floor(midMins / 60), midMins % 60, 0, 0);
+
+        if (midDate.getTime() > now.getTime()) {
+          notificationsToSchedule.push({
+            id: 5000 + idx,
+            title: `⚠️ Mitad de Ronda • Aulas Asignadas (${b.ini} - ${b.fin})`,
+            body: `Mitad de turno (${b.ini} - ${b.fin}). Ingresa a registrar la asistencia de tus aulas asignadas (${aulasText}).`,
+            schedule: {
+              at: midDate,
+              allowWhileIdle: true
+            },
+            channelId: UPN_NOTIF_CHANNEL_ID,
+            sound: 'default',
+            smallIcon: 'ic_stat_notify',
+            iconColor: '#FDBA30',
+            autoCancel: true,
+            isExactNotification: true
+          });
+        }
+      }
+    }
+
+    // 6. Obtener clases de MAÑANA y filtrar estrictamente por las aulas asignadas al asistente
+    try {
+      const DAYS_NAMES = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+      const tomorrowDay = DAYS_NAMES[(now.getDay() + 1) % 7];
+      const dataTomorrow = await getAttendanceDataForDay(tomorrowDay);
+      let myClassesTomorrow = [];
+      if (dataTomorrow && dataTomorrow.length > 0) {
+        myClassesTomorrow = dataTomorrow.filter(item => isClassAssignedToAssistant(item, assignment));
+      }
+
+      if (myClassesTomorrow.length > 0) {
+        const tomorrowBlockMap = new Map();
+        myClassesTomorrow.forEach(item => {
           const ini = item.horaInicioProg;
           const fin = item.horaFinalProg;
           if (!ini || !fin) return;
@@ -164,126 +365,71 @@ export async function scheduleNativeAlarms() {
           const iniMins = hI * 60 + mI;
           const finMins = hF * 60 + mF;
           const key = `${ini}-${fin}`;
-          if (!blockMap.has(key)) {
-            blockMap.set(key, { ini, fin, iniMins, finMins });
+          if (!tomorrowBlockMap.has(key)) {
+            tomorrowBlockMap.set(key, { ini, fin, iniMins, finMins, aulas: new Set() });
           }
+          if (item.aula) tomorrowBlockMap.get(key).aulas.add(item.aula);
         });
-        todayBlocks = Array.from(blockMap.values());
+
+        let idxT = 0;
+        for (const [key, b] of tomorrowBlockMap.entries()) {
+          idxT++;
+          const aulasArr = Array.from(b.aulas);
+          const sampleAulas = aulasArr.slice(0, 4).join(', ');
+          const aulasText = aulasArr.length > 4 ? `${sampleAulas} y ${aulasArr.length - 4} más` : sampleAulas;
+
+          const shiftMins = b.iniMins - 15;
+          const shiftDate = new Date();
+          shiftDate.setDate(now.getDate() + 1);
+          shiftDate.setHours(Math.floor(shiftMins / 60), shiftMins % 60, 0, 0);
+
+          notificationsToSchedule.push({
+            id: 20000 + idxT,
+            title: `🔔 Próximo Turno en 15 min (${b.ini})`,
+            body: `Bloque ${b.ini} - ${b.fin} inicia en 15 min. Aulas asignadas (${aulasArr.length}): ${aulasText}. Prepara la ronda.`,
+            schedule: {
+              at: shiftDate,
+              allowWhileIdle: true
+            },
+            channelId: UPN_NOTIF_CHANNEL_ID,
+            sound: 'default',
+            smallIcon: 'ic_stat_notify',
+            iconColor: '#FDBA30',
+            autoCancel: true,
+            isExactNotification: true
+          });
+
+          const midMins = Math.floor((b.iniMins + b.finMins) / 2);
+          const midDate = new Date();
+          midDate.setDate(now.getDate() + 1);
+          midDate.setHours(Math.floor(midMins / 60), midMins % 60, 0, 0);
+
+          notificationsToSchedule.push({
+            id: 25000 + idxT,
+            title: `⚠️ Mitad de Ronda • Aulas Asignadas (${b.ini} - ${b.fin})`,
+            body: `Mitad de turno (${b.ini} - ${b.fin}). Ingresa a registrar la asistencia de tus aulas asignadas (${aulasText}).`,
+            schedule: {
+              at: midDate,
+              allowWhileIdle: true
+            },
+            channelId: UPN_NOTIF_CHANNEL_ID,
+            sound: 'default',
+            smallIcon: 'ic_stat_notify',
+            iconColor: '#FDBA30',
+            autoCancel: true,
+            isExactNotification: true
+          });
+        }
       }
     } catch (_) {}
 
-    // Si no hay datos de hoy todavía, usar los bloques estándar
-    if (todayBlocks.length === 0) {
-      todayBlocks = CLASS_BLOCKS.map(b => ({
-        ini: b.start,
-        fin: b.end,
-        iniMins: b.startMins,
-        finMins: b.startMins + 100
-      }));
-    }
-
-    // 4.1 Programar alertas de HOY con horarios exactos
-    todayBlocks.forEach((b, idx) => {
-      // Alerta 15 min antes de iniciar
-      const shiftMins = b.iniMins - 15;
-      const shiftDate = new Date();
-      shiftDate.setHours(Math.floor(shiftMins / 60), shiftMins % 60, 0, 0);
-
-      if (shiftDate.getTime() > now.getTime()) {
-        notificationsToSchedule.push({
-          id: 1000 + idx,
-          title: `🔔 Próximo Turno en 15 min (${b.ini})`,
-          body: `El bloque ${b.ini} - ${b.fin} inicia en 15 minutos. Revisa las aulas asignadas y prepara la ronda.`,
-          schedule: {
-            at: shiftDate,
-            allowWhileIdle: true
-          },
-          channelId: UPN_NOTIF_CHANNEL_ID,
-          sound: 'default',
-          smallIcon: 'ic_stat_notify',
-          iconColor: '#FDBA30',
-          autoCancel: true,
-          isExactNotification: true
-        });
-      }
-
-      // Alerta a MITAD DE RONDA exacta (ej: 07:30 - 10:40 -> 09:05, 19:30 - 21:00 -> 20:15)
-      const midMins = Math.floor((b.iniMins + b.finMins) / 2);
-      const midDate = new Date();
-      midDate.setHours(Math.floor(midMins / 60), midMins % 60, 0, 0);
-
-      if (midDate.getTime() > now.getTime()) {
-        notificationsToSchedule.push({
-          id: 5000 + idx,
-          title: `⚠️ Mitad de Ronda • Aulas Pendientes (${b.ini} - ${b.fin})`,
-          body: `Mitad de turno (${b.ini} - ${b.fin}). Ingresa a registrar la asistencia (Puntual, Tarde o Falta) de tus aulas asignadas.`,
-          schedule: {
-            at: midDate,
-            allowWhileIdle: true
-          },
-          channelId: UPN_NOTIF_CHANNEL_ID,
-          sound: 'default',
-          smallIcon: 'ic_stat_notify',
-          iconColor: '#FDBA30',
-          autoCancel: true,
-          isExactNotification: true
-        });
-      }
-    });
-
-    // 4.2 Programar día de mañana (dayOffset = 1) con los bloques oficiales (evita exceder cuotas de alarmas del sistema)
-    for (let dayOffset = 1; dayOffset <= 1; dayOffset++) {
-      for (const block of CLASS_BLOCKS) {
-        const notifDate = new Date();
-        notifDate.setDate(now.getDate() + dayOffset);
-        notifDate.setHours(Math.floor(block.notifyMins / 60), block.notifyMins % 60, 0, 0);
-
-        notificationsToSchedule.push({
-          id: (dayOffset * 1000) + block.id,
-          title: `🔔 Próximo Turno en 15 min (${block.start})`,
-          body: `El bloque ${block.label} inicia en 15 minutos. Revisa las aulas asignadas y ronda docente.`,
-          schedule: {
-            at: notifDate,
-            allowWhileIdle: true
-          },
-          channelId: UPN_NOTIF_CHANNEL_ID,
-          sound: 'default',
-          smallIcon: 'ic_stat_notify',
-          iconColor: '#FDBA30',
-          autoCancel: true,
-          isExactNotification: true
-        });
-      }
-
-      for (const mid of MIDPOINT_REMINDERS) {
-        const midDate = new Date();
-        midDate.setDate(now.getDate() + dayOffset);
-        midDate.setHours(Math.floor(mid.mins / 60), mid.mins % 60, 0, 0);
-
-        notificationsToSchedule.push({
-          id: (dayOffset * 10000) + mid.id,
-          title: `⚠️ Recordatorio: Mitad de Ronda (${mid.time})`,
-          body: `Mitad del turno ${mid.label}. Recuerda registrar las aulas pendientes (Puntual, Tarde o Falta).`,
-          schedule: {
-            at: midDate,
-            allowWhileIdle: true
-          },
-          channelId: UPN_NOTIF_CHANNEL_ID,
-          sound: 'default',
-          smallIcon: 'ic_stat_notify',
-          iconColor: '#FDBA30',
-          autoCancel: true,
-          isExactNotification: true
-        });
-      }
-    }
-
+    // 7. Enviar programación a LocalNotifications y AlarmManager de Android
     if (notificationsToSchedule.length > 0) {
       await LocalNotifications.schedule({ notifications: notificationsToSchedule });
 
       // Doble garantía nativa: registrar en AlarmManager de Android vía AlarmClock
       if (AppInstaller?.scheduleExactAlarm) {
-        for (const notif of notificationsToSchedule.slice(0, 15)) {
+        for (const notif of notificationsToSchedule.slice(0, 20)) {
           if (notif.schedule?.at && notif.schedule.at instanceof Date) {
             try {
               await AppInstaller.scheduleExactAlarm({
@@ -564,16 +710,54 @@ export async function triggerTestAlarmClosed(seconds = 10) {
 
 /**
  * Revisa el reloj cada 20 segundos para verificar si estamos a 15 minutos del próximo bloque
+ * ESTRICTO: Solo notifica si la sesión está activa y si hay clases en las aulas asignadas al asistente.
  */
-function checkScheduleTick() {
+async function checkScheduleTick() {
+  const assignment = getActiveAssistantAssignment();
+  // 1. Si la sesión no está iniciada, no emitir ninguna notificación
+  if (!assignment) return;
+
+  // 2. Si es asistente y no tiene aulas asignadas, no emitir notificaciones de otras aulas
+  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+    return;
+  }
+
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
-  for (const block of CLASS_BLOCKS) {
-    // Si estamos en la ventana de 15 a 0 minutos antes del inicio y no se ha notificado hoy
-    const diff = block.startMins - currentMins;
-    if (diff > 0 && diff <= 15 && !hasBeenNotifiedToday(block.id)) {
-      markNotifiedToday(block.id);
+  const data = await getTodayAttendanceData();
+  if (!data || data.length === 0) return;
+
+  const assignedClassesToday = data.filter(item => isClassAssignedToAssistant(item, assignment));
+  if (assignedClassesToday.length === 0) return;
+
+  // Agrupar clases asignadas por bloque de horario
+  const assignedBlocksMap = new Map();
+  assignedClassesToday.forEach(item => {
+    const ini = item.horaInicioProg;
+    const fin = item.horaFinalProg;
+    if (!ini || !fin) return;
+    const [hI, mI] = ini.split(':').map(Number);
+    if (isNaN(hI) || isNaN(mI)) return;
+    const iniMins = hI * 60 + mI;
+    const key = `${ini}-${fin}`;
+    if (!assignedBlocksMap.has(key)) {
+      assignedBlocksMap.set(key, { ini, fin, iniMins, aulas: new Set() });
+    }
+    if (item.aula) assignedBlocksMap.get(key).aulas.add(item.aula);
+  });
+
+  for (const [key, b] of assignedBlocksMap.entries()) {
+    const diff = b.iniMins - currentMins;
+    if (diff > 0 && diff <= 15 && !hasBeenNotifiedToday(key)) {
+      markNotifiedToday(key);
+
+      const aulasList = Array.from(b.aulas);
+      const sampleAulas = aulasList.slice(0, 4).join(', ');
+      const aulasText = aulasList.length > 4 ? `${sampleAulas} y ${aulasList.length - 4} más` : sampleAulas;
+
+      const title = `🔔 Próximo Turno en ${diff} min (${b.ini})`;
+      const body = `El bloque ${b.ini} - ${b.fin} inicia en ${diff} min. Aulas asignadas (${aulasList.length}): ${aulasText}. Prepara la ronda.`;
 
       // Disparar en Android APK vía LocalNotifications
       if (isCapacitorNative()) {
@@ -581,9 +765,9 @@ function checkScheduleTick() {
           LocalNotifications.schedule({
             notifications: [
               {
-                id: 2000 + block.id,
-                title: `🔔 Próximo Turno en ${diff} min (${block.start})`,
-                body: `El bloque ${block.label} inicia en ${diff} minutos. Revisa las aulas asignadas y ronda docente.`,
+                id: 2000 + Math.floor(Math.random() * 800),
+                title,
+                body,
                 channelId: UPN_NOTIF_CHANNEL_ID,
                 sound: 'default',
                 smallIcon: 'ic_stat_notify',
@@ -598,7 +782,7 @@ function checkScheduleTick() {
           console.warn('Native schedule tick exception:', err);
         }
       } else {
-        fireWebNotification(block);
+        fireWebNotification({ label: `${b.ini} - ${b.fin}`, start: b.ini, id: key }, body);
       }
 
       playNotificationChime();
@@ -606,67 +790,74 @@ function checkScheduleTick() {
       // Despachar evento para Toast / Banner visual en la interfaz de la app
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('upn:class-block-warning', {
-          detail: { block, diff }
+          detail: { block: { start: b.ini, end: b.fin, label: `${b.ini} - ${b.fin}` }, diff, aulas: aulasText }
         }));
       }
     }
   }
 }
 
-// Cache de asistencia de hoy para verificación rápida de hora intermedia sin sobrecargar la API
-let cachedTodayAttendance = [];
-let lastAttendanceFetchTs = 0;
+// Cache de asistencia por día para verificación rápida sin sobrecargar la API
+const dayAttendanceCache = new Map();
+const DAYS_NAMES_LIST = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
 
-async function getTodayAttendanceData() {
+export async function getAttendanceDataForDay(dayName) {
+  if (!dayName) return [];
+  const key = dayName.toUpperCase();
+  const cached = dayAttendanceCache.get(key);
   const now = Date.now();
-  if (cachedTodayAttendance.length > 0 && (now - lastAttendanceFetchTs < 35000)) {
-    return cachedTodayAttendance;
+  if (cached && (now - cached.ts < 35000)) {
+    return cached.data;
   }
   try {
-    const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
-    const today = days[new Date().getDay()];
-    const res = await fetch(`/api/attendance?dia=${today}`);
+    const res = await fetch(`/api/attendance?dia=${encodeURIComponent(key)}`);
     if (res.ok) {
       const json = await res.json();
-      if (json?.data) {
-        cachedTodayAttendance = json.data;
-        lastAttendanceFetchTs = now;
-        return cachedTodayAttendance;
+      if (json && Array.isArray(json.data)) {
+        dayAttendanceCache.set(key, { ts: now, data: json.data });
+        return json.data;
       }
     }
   } catch (_) {}
-  return cachedTodayAttendance;
+  return cached?.data || [];
+}
+
+export async function getTodayAttendanceData() {
+  const todayName = DAYS_NAMES_LIST[new Date().getDay()];
+  return getAttendanceDataForDay(todayName);
 }
 
 /**
  * Chequeo de hora intermedia en cada ronda (ej: 07:30 a 10:30, mitad ~09:00).
  * Detecta si hay aulas que aún no han sido registradas (pendientes)
  * y emite una alerta sonora y notificación para recordar completarlas.
+ * 
+ * ESTRICTO: Solo evalúa las aulas asignadas al asistente y solo mientras la sesión esté activa.
  */
 async function checkMidpointPendingAttendance() {
+  const assignment = getActiveAssistantAssignment();
+  // 1. Si no hay sesión iniciada, salir inmediatamente
+  if (!assignment) return;
+
+  // 2. Si es asistente sin aulas asignadas, salir inmediatamente
+  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+    return;
+  }
+
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
   const data = await getTodayAttendanceData();
   if (!data || data.length === 0) return;
 
-  // Obtener usuario autenticado y su asignación de pabellón y pisos
-  let assignedPab = '';
-  let assignedPisos = [];
-  try {
-    const userRaw = localStorage.getItem('steel_auth_user');
-    const u = userRaw ? JSON.parse(userRaw) : null;
-    const assRaw = localStorage.getItem('steel_user_assignments');
-    const ass = assRaw ? JSON.parse(assRaw) : {};
-    const myAss = u?.username ? ass[u.username.toLowerCase()] : null;
-    assignedPab = myAss?.pabellon || u?.assignedPabellon || '';
-    assignedPisos = (myAss?.pisos && myAss.pisos.length > 0) ? myAss.pisos : (u?.assignedPisos || []);
-  } catch (_) {}
+  // Filtrar ÚNICAMENTE las aulas asignadas al asistente
+  const assignedItems = data.filter(item => isClassAssignedToAssistant(item, assignment));
+  if (assignedItems.length === 0) return;
 
   // Agrupar clases activas por bloque (hora_inicio_prog - hora_final_prog)
   const activeSchedules = new Map();
 
-  data.forEach(item => {
+  assignedItems.forEach(item => {
     const ini = item.horaInicioProg;
     const fin = item.horaFinalProg;
     if (!ini || !fin) return;
@@ -697,24 +888,8 @@ async function checkMidpointPendingAttendance() {
         continue; // Ya notificado para este bloque hoy
       }
 
-      // Filtrar aulas según la asignación del usuario (o todas si no tiene asignación)
-      let targetItems = group.items;
-      if (assignedPab) {
-        targetItems = targetItems.filter(it => {
-          const pp = (it.pisoPabellon || '').toUpperCase();
-          const aula = (it.aula || '').toUpperCase();
-          return pp.includes(`- ${assignedPab}`) || aula.startsWith(assignedPab);
-        });
-      }
-      if (assignedPisos.length > 0) {
-        targetItems = targetItems.filter(it => {
-          const pp = (it.pisoPabellon || '').toUpperCase();
-          return assignedPisos.some(p => pp.includes(p.toUpperCase()));
-        });
-      }
-
-      // Buscar clases que aún no tienen registro (pendientes de marcar puntual, tarde o falta)
-      const pendingItems = targetItems.filter(it => {
+      // Buscar clases que aún no tienen registro (pendientes de marcar puntual, tarde o falta) en sus aulas asignadas
+      const pendingItems = group.items.filter(it => {
         const asis = String(it.asistencia || '').trim().toUpperCase();
         return !asis || asis === 'PENDIENTE' || asis === 'NULL' || asis === '#N/D';
       });
@@ -726,8 +901,8 @@ async function checkMidpointPendingAttendance() {
         const sampleAulas = pendingItems.slice(0, 4).map(it => it.aula).join(', ');
         const aulasText = pendingCount > 4 ? `${sampleAulas} y ${pendingCount - 4} más` : sampleAulas;
 
-        const title = `⚠️ Aulas pendientes de registrar (${group.ini} - ${group.fin})`;
-        const body = `Mitad de turno: Tienes ${pendingCount} aula(s) pendientes de registrar (${aulasText}). ¡Recuerda marcar Puntual, Tarde o Falta!`;
+        const title = `⚠️ Aulas asignadas pendientes (${group.ini} - ${group.fin})`;
+        const body = `Mitad de turno: Tienes ${pendingCount} aula(s) asignadas pendientes (${aulasText}). ¡Recuerda marcar Puntual, Tarde o Falta!`;
 
         // 1. Android Nativo APK
         if (isCapacitorNative()) {
@@ -790,17 +965,29 @@ export function initScheduleNotifier() {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 
-  // 1. Pedir permisos si aún no se han concedido y programar alarmas nativas
-  requestNotificationPermission().then((granted) => {
-    if (granted && isCapacitorNative()) {
-      scheduleNativeAlarms();
-    }
-  });
+  // Si la sesión no está iniciada en el arranque, asegurar que no haya alarmas pendientes en el APK
+  if (!getAuthUser()) {
+    clearAllScheduledNotifications();
+  } else {
+    // 1. Pedir permisos si aún no se han concedido y programar alarmas nativas para el usuario
+    requestNotificationPermission().then((granted) => {
+      if (granted && isCapacitorNative()) {
+        scheduleNativeAlarms();
+      }
+    });
+  }
 
-  // Escuchar cuando el usuario inicia sesión o cambian datos para reprogramar inmediatamente
+  // Escuchar cuando el usuario inicia sesión, cierra sesión o cambian las asignaciones
   const handleAuthOrDataChange = () => {
-    if (isCapacitorNative()) {
+    const user = getAuthUser();
+    if (!user) {
+      // Sesión cerrada: cancelar de inmediato todas las alarmas
+      clearAllScheduledNotifications();
+    } else if (isCapacitorNative()) {
+      // Sesión iniciada: reprogramar alarmas filtradas exclusivamente para este usuario
       scheduleNativeAlarms();
+      checkScheduleTick();
+      checkMidpointPendingAttendance();
     }
   };
   window.addEventListener('steel:auth-changed', handleAuthOrDataChange);
@@ -812,9 +999,13 @@ export function initScheduleNotifier() {
     try {
       App.addListener('appStateChange', (state) => {
         if (state.isActive) {
-          scheduleNativeAlarms();
-          checkScheduleTick();
-          checkMidpointPendingAttendance();
+          if (!getAuthUser()) {
+            clearAllScheduledNotifications();
+          } else {
+            scheduleNativeAlarms();
+            checkScheduleTick();
+            checkMidpointPendingAttendance();
+          }
         }
       }).then(handle => { appStateListener = handle; }).catch(() => { });
     } catch (_) { }
@@ -822,9 +1013,13 @@ export function initScheduleNotifier() {
 
   const handleVisibility = () => {
     if (typeof document !== 'undefined' && !document.hidden && isCapacitorNative()) {
-      scheduleNativeAlarms();
-      checkScheduleTick();
-      checkMidpointPendingAttendance();
+      if (!getAuthUser()) {
+        clearAllScheduledNotifications();
+      } else {
+        scheduleNativeAlarms();
+        checkScheduleTick();
+        checkMidpointPendingAttendance();
+      }
     }
   };
   if (typeof document !== 'undefined') {
@@ -833,12 +1028,16 @@ export function initScheduleNotifier() {
 
   // 3. Programar chequeo periódico en primer plano (cada 20 segundos)
   const interval = setInterval(() => {
-    checkScheduleTick();
-    checkMidpointPendingAttendance();
+    if (getAuthUser()) {
+      checkScheduleTick();
+      checkMidpointPendingAttendance();
+    }
   }, 20000);
 
-  checkScheduleTick();
-  checkMidpointPendingAttendance();
+  if (getAuthUser()) {
+    checkScheduleTick();
+    checkMidpointPendingAttendance();
+  }
 
   return () => {
     clearInterval(interval);

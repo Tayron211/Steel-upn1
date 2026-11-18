@@ -504,6 +504,14 @@ export function logout(dueToInactivity = false) {
     } else {
       localStorage.removeItem(SESSION_EXPIRED_KEY);
     }
+
+    // Cancelar inmediatamente cualquier notificación o alarma pendiente en el APK
+    try {
+      if (typeof window !== 'undefined' && typeof window.clearAllScheduledNotifications === 'function') {
+        window.clearAllScheduledNotifications();
+      }
+    } catch (_) {}
+
     window.dispatchEvent(new Event('steel:auth-changed'));
   } catch (_) {}
 }
