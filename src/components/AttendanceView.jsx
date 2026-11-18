@@ -855,14 +855,17 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   // Estado para la ventana modal de todas las clases del docente en el día (independiente de piso y pabellón)
   const [teacherDayModalData, setTeacherDayModalData] = useState(null);
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
+  const [copiedTeacherClassId, setCopiedTeacherClassId] = useState(null);
   const teacherModalFade = useFadeModal(isTeacherModalOpen, () => {
     setIsTeacherModalOpen(false);
     setTeacherDayModalData(null);
+    setCopiedTeacherClassId(null);
   }, 200);
 
   const openTeacherDayClasses = async (docenteName) => {
     if (!docenteName || docenteName === 'Docente') return;
     setIsTeacherModalOpen(true);
+    setCopiedTeacherClassId(null);
     setTeacherDayModalData({
       docente: docenteName,
       dia: selectedDia || 'LUNES',
@@ -889,6 +892,60 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     } catch (e) {
       console.warn('Error fetching teacher day schedule:', e);
       setTeacherDayModalData(prev => prev ? { ...prev, classes: [], loading: false } : null);
+    }
+  };
+
+  // Copiar Fila Individual de una clase del Docente en Formato Oficial Excel (con colores y bordes)
+  const handleCopyTeacherClassRow = async (cls) => {
+    try {
+      const fullItem = {
+        ...cls,
+        docente: cls.docente || teacherDayModalData?.docente || ''
+      };
+      const diaToUse = teacherDayModalData?.dia || selectedDia;
+      const { html, plain } = generateAttendanceTableData(fullItem, diaToUse, selectedDayInfo?.dateStr);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setCopiedTeacherClassId(cls.id);
+        setTimeout(() => setCopiedTeacherClassId(null), 1500);
+        setToastMessage(`📋 Fila copiada (${fullItem.aula || 'S/A'} - ${fullItem.horaInicioProg})`);
+      } else {
+        setToastMessage('❌ No se pudo copiar la fila al portapapeles');
+      }
+      setTimeout(() => setToastMessage(''), 2500);
+    } catch (err) {
+      console.error('Error al copiar fila del docente:', err);
+      setToastMessage('❌ Error al copiar fila');
+      setTimeout(() => setToastMessage(''), 2500);
+    }
+  };
+
+  // Copiar Todo el Horario del Docente en Bloque (Excel con colores y cabecera oficial)
+  const handleCopyAllTeacherDayClasses = async () => {
+    try {
+      const classes = teacherDayModalData?.classes;
+      if (!classes || classes.length === 0) {
+        setToastMessage('⚠️ No hay clases para copiar');
+        setTimeout(() => setToastMessage(''), 2000);
+        return;
+      }
+      const fullItems = classes.map(c => ({
+        ...c,
+        docente: c.docente || teacherDayModalData?.docente || ''
+      }));
+      const diaToUse = teacherDayModalData?.dia || selectedDia;
+      const { html, plain } = generateAttendanceTableData(fullItems, diaToUse, selectedDayInfo?.dateStr);
+      const ok = await copyRichTableToClipboard(plain, html);
+      if (ok) {
+        setToastMessage(`📋 Horario copiado (${fullItems.length} clases en Excel)`);
+      } else {
+        setToastMessage('❌ No se pudo copiar');
+      }
+      setTimeout(() => setToastMessage(''), 2500);
+    } catch (err) {
+      console.error('Error copiando todas las clases del docente:', err);
+      setToastMessage('❌ Error al copiar');
+      setTimeout(() => setToastMessage(''), 2500);
     }
   };
 
@@ -4354,7 +4411,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-800">
                             <Clock className="w-3 h-3 text-amber-500 shrink-0" />
                             {cls.horaInicioProg} - {cls.horaFinalProg}
@@ -4384,6 +4441,27 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                               PENDIENTE
                             </span>
                           )}
+
+                          {/* Botón Copiar Fila Individual para Excel */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyTeacherClassRow(cls);
+                            }}
+                            title="Copiar fila en formato Excel con colores"
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition active:scale-90 border shadow-2xs cursor-pointer shrink-0 ${
+                              copiedTeacherClassId === cls.id
+                                ? 'bg-emerald-500 text-white border-emerald-600 dark:border-emerald-400 shadow-emerald-500/20'
+                                : 'bg-white hover:bg-[#FDBA30] text-slate-700 hover:text-slate-950 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-[#FDBA30] dark:hover:text-slate-950 border-slate-200 dark:border-zinc-700'
+                            }`}
+                          >
+                            {copiedTeacherClassId === cls.id ? (
+                              <Check className="w-3.5 h-3.5 stroke-[2.8]" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5 stroke-[2.2]" />
+                            )}
+                          </button>
                         </div>
                       </div>
 
@@ -4419,11 +4497,22 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
             </div>
 
             {/* Pie de modal */}
-            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-1 shrink-0">
+            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-1 shrink-0 flex items-center justify-between gap-2.5">
+              {teacherDayModalData?.classes && teacherDayModalData.classes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleCopyAllTeacherDayClasses}
+                  className="flex-1 h-9 px-3 rounded-xl bg-[#FDBA30] hover:bg-[#ffc642] active:scale-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                  title="Copiar todas las clases de hoy en formato tabla Excel con colores"
+                >
+                  <Copy className="w-3.5 h-3.5 stroke-[2.4]" />
+                  <span>Copiar todo en bloque</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => teacherModalFade.requestClose()}
-                className="w-full h-9 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-95 flex items-center justify-center text-center"
+                className={`${teacherDayModalData?.classes && teacherDayModalData.classes.length > 0 ? 'px-4' : 'w-full'} h-9 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition active:scale-95 flex items-center justify-center text-center shrink-0`}
               >
                 Cerrar
               </button>
