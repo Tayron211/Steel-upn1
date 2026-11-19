@@ -1,9 +1,21 @@
 {
-  "version": "1.0.132",
-  "versionCode": 133,
+  "version": "1.0.133",
+  "versionCode": 134,
   "releaseDate": "2026-11-19",
-  "notes": "Generar automaticamente novedades recientes en ventana de actualizacion al compilar.",
+  "notes": "Eliminar referencia a editingItem en ReservationsView.",
   "features": [
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Eliminar referencia a editingItem en ReservationsView."
+    },
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Validacion minuciosa de cruces de horario por reserva y clase en selector y backend."
+    },
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Alinear contador de alertas de Prestamos con tickets activos y publicar v1.0.132."
+    },
     {
       "title": "Nueva Funcionalidad",
       "desc": "Generar automaticamente novedades recientes en ventana de actualizacion al compilar."
@@ -15,18 +27,6 @@
     {
       "title": "Nueva Funcionalidad",
       "desc": "Actualizar enlace de OneDrive y resolucion directa por ruta/nombre para reemplazos automaticos de CONTROL DOCENTE - TEST.xlsx."
-    },
-    {
-      "title": "Mejora de Interfaz",
-      "desc": "Quitar etiqueta EXCEL y diferenciar color de tarjetas entre clases (indigo) y reservas (rojo/rosa)."
-    },
-    {
-      "title": "Nueva Funcionalidad",
-      "desc": "Mostrar aulas reservadas/en clase con horas, motivo y responsable en selector de aulas y bloquear doble reserva."
-    },
-    {
-      "title": "Mejora de Interfaz",
-      "desc": "Quitar selector Lunes a Domingo, eliminar redundancia con 'Un Dia / Rango de Fechas' y mantener seleccion multiple de aulas."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
