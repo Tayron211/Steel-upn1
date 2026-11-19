@@ -166,16 +166,22 @@ export async function onRequest(context) {
           try {
             const db = env.DB;
             await ensureTables(db);
-            const nowMs = String(Date.now());
+            const nowMsNum = Date.now();
+            const nowMs = String(nowMsNum);
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
-            // Disparar sincronización directa y rápida a OneDrive según el módulo afectado
-            let onlySheet = null;
-            if (p.includes('/attendance')) onlySheet = 'asistencia';
-            else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
-            else if (p.includes('/tickets') || p.includes('/atenciones')) onlySheet = 'tickets';
-            else if (p.includes('/manual-sheets')) onlySheet = 'manuales';
-            await pushToExcel(db, { onlySheet });
+            // Evitar ráfagas de lectura de tablas completas en rondas rápidas (mín. 15 s entre push)
+            const lastPushRow = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_push'").first();
+            const lastPushMs = lastPushRow ? Number(lastPushRow.v || 0) : 0;
+            if (nowMsNum - lastPushMs >= 15000) {
+              // Disparar sincronización directa y rápida a OneDrive según el módulo afectado
+              let onlySheet = null;
+              if (p.includes('/attendance')) onlySheet = 'asistencia';
+              else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
+              else if (p.includes('/tickets') || p.includes('/atenciones')) onlySheet = 'tickets';
+              else if (p.includes('/manual-sheets')) onlySheet = 'manuales';
+              await pushToExcel(db, { onlySheet });
+            }
           } catch (err) {
             console.error('Auto sync to OneDrive error:', err);
           }
@@ -972,10 +978,19 @@ async function handleApiRequest(context) {
         } catch (_) {}
       }
 
-      // Cargar todas las reservas y clases para validación minuciosa sin fallos de formato SQL
+      // Cargar reservas y únicamente las clases de los días solicitados (ahorra lecturas de D1)
+      const uniqueDias = Array.from(new Set(
+        datesToProcess.map(f => {
+          const dt = new Date(f + 'T12:00:00');
+          return normalizeDay(days[dt.getDay()] || 'LUNES');
+        })
+      ));
+      const diaPlaceholders = uniqueDias.map(() => '?').join(',');
       const [allResQuery, allClassQuery] = await Promise.all([
         db.prepare('SELECT id, fecha, dia, inicio, final, aula, docente, detalle, motivo, obs FROM reservas').all(),
-        db.prepare('SELECT aula, dia, hora_inicio_prog, hora_final_prog, curso, docente FROM asistencia').all()
+        uniqueDias.length > 0
+          ? db.prepare(`SELECT aula, dia, hora_inicio_prog, hora_final_prog, curso, docente FROM asistencia WHERE UPPER(TRIM(dia)) IN (${diaPlaceholders})`).bind(...uniqueDias).all()
+          : Promise.resolve({ results: [] })
       ]);
       const allExistingReservas = allResQuery?.results || [];
       const allScheduledClasses = allClassQuery?.results || [];
