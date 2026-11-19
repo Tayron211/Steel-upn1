@@ -551,43 +551,53 @@ export function playNotificationChime() {
 }
 
 /**
+ * Helper universal para mostrar notificación nativa en navegadores Web / Windows 11 / macOS / PWA
+ */
+function showBrowserNotification(title, body, tag) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  const options = {
+    body,
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: tag || 'upn-alert',
+    renotify: true,
+    requireInteraction: false,
+    silent: false
+  };
+
+  try {
+    // En Windows 11 (Chrome / Edge / Firefox / Brave), new Notification() dispara directo al Centro de Notificaciones nativo
+    const notif = new Notification(title, options);
+    notif.onclick = () => {
+      try { window.focus(); } catch (_) {}
+      notif.close();
+    };
+  } catch (_) {
+    // Fallback para entornos donde new Notification está restringido (ej. Android Chrome PWA -> requiere ServiceWorker)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg && typeof reg.showNotification === 'function') {
+          reg.showNotification(title, options);
+        }
+      }).catch(() => {});
+    }
+  }
+}
+
+/**
  * Disparador de notificación inmediata para Web / iOS WebApp / Desktop (Windows 10 y 11)
  */
-function fireWebNotification(block) {
+function fireWebNotification(block, customBody = null) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
 
   try {
     playNotificationChime();
-
-    const title = `🔔 Próximo Turno en 15 min (${block.start})`;
-    const options = {
-      body: `El bloque ${block.label} inicia en 15 minutos. Revisa las aulas asignadas y ronda docente.`,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: `upn_shift_${block.id}`,
-      renotify: true,
-      requireInteraction: true,
-      silent: false
-    };
-
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title, options);
-      }).catch(() => {
-        const notif = new Notification(title, options);
-        notif.onclick = () => {
-          window.focus();
-          notif.close();
-        };
-      });
-    } else {
-      const notif = new Notification(title, options);
-      notif.onclick = () => {
-        window.focus();
-        notif.close();
-      };
-    }
+    const title = `🔔 Próximo Turno (${block.start})`;
+    const body = customBody || `El bloque ${block.label} inicia pronto. Revisa las aulas asignadas y ronda docente.`;
+    showBrowserNotification(title, body, `upn_shift_${block.id || block.start}`);
   } catch (err) {
     console.warn('[Notifier] Error showing web notification:', err);
   }
@@ -955,17 +965,8 @@ async function checkMidpointPendingAttendance() {
             }).catch(() => {});
           } catch (_) {}
         } else {
-          // 2. Web Notification
-          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-            try {
-              new Notification(title, {
-                body,
-                icon: '/icon-192.png',
-                badge: '/icon-192.png',
-                tag: `upn_midpoint_${key}`
-              });
-            } catch (_) {}
-          }
+          // 2. Web / Windows 11 Notification
+          showBrowserNotification(title, body, `upn_midpoint_${key}`);
         }
 
         playNotificationChime();
@@ -995,14 +996,44 @@ export function initScheduleNotifier() {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 
+  // En navegadores de Windows 11 (Chrome/Edge), solicitar permiso de notificación requiere interacción previa del usuario
+  let permissionGestureHandled = false;
+  const requestWebPermissionOnGesture = () => {
+    if (isCapacitorNative() || typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'default') {
+      permissionGestureHandled = true;
+      return;
+    }
+    if (!getAuthUser() || permissionGestureHandled) return;
+    permissionGestureHandled = true;
+    Notification.requestPermission().then((perm) => {
+      if (perm === 'granted') {
+        checkScheduleTick();
+        checkMidpointPendingAttendance();
+      }
+    }).catch(() => {
+      permissionGestureHandled = false;
+    });
+  };
+
+  if (typeof window !== 'undefined' && !isCapacitorNative()) {
+    window.addEventListener('pointerdown', requestWebPermissionOnGesture, { passive: true });
+    window.addEventListener('keydown', requestWebPermissionOnGesture, { passive: true });
+  }
+
   // Si la sesión no está iniciada en el arranque, asegurar que no haya alarmas pendientes en el APK
   if (!getAuthUser()) {
     clearAllScheduledNotifications();
   } else {
     // 1. Pedir permisos si aún no se han concedido y programar alarmas nativas para el usuario
     requestNotificationPermission().then((granted) => {
-      if (granted && isCapacitorNative()) {
-        scheduleNativeAlarms();
+      if (granted) {
+        if (isCapacitorNative()) {
+          scheduleNativeAlarms();
+        } else {
+          checkScheduleTick();
+          checkMidpointPendingAttendance();
+        }
       }
     });
   }
@@ -1014,8 +1045,15 @@ export function initScheduleNotifier() {
       // Sesión cerrada: cancelar de inmediato todas las alarmas
       clearAllScheduledNotifications();
     } else if (isCapacitorNative()) {
-      // Sesión iniciada: reprogramar alarmas filtradas exclusivamente para este usuario
+      // Sesión iniciada en APK: reprogramar alarmas filtradas exclusivamente para este usuario
       scheduleNativeAlarms();
+      checkScheduleTick();
+      checkMidpointPendingAttendance();
+    } else {
+      // Sesión iniciada en Web / Windows 11: solicitar permiso (aprovechando el clic de login) y verificar alertas
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
       checkScheduleTick();
       checkMidpointPendingAttendance();
     }
@@ -1023,7 +1061,7 @@ export function initScheduleNotifier() {
   window.addEventListener('steel:auth-changed', handleAuthOrDataChange);
   window.addEventListener('steel:assignments-updated', handleAuthOrDataChange);
 
-  // 2. Re-verificar y re-programar automáticamente cada vez que el usuario regresa a la app
+  // 2. Re-verificar y re-programar automáticamente cada vez que el usuario regresa a la app o pestaña
   let appStateListener = null;
   if (isCapacitorNative()) {
     try {
@@ -1042,18 +1080,27 @@ export function initScheduleNotifier() {
   }
 
   const handleVisibility = () => {
-    if (typeof document !== 'undefined' && !document.hidden && isCapacitorNative()) {
+    if (typeof document !== 'undefined' && !document.hidden) {
       if (!getAuthUser()) {
-        clearAllScheduledNotifications();
+        if (isCapacitorNative()) clearAllScheduledNotifications();
       } else {
-        scheduleNativeAlarms();
+        if (isCapacitorNative()) scheduleNativeAlarms();
         checkScheduleTick();
         checkMidpointPendingAttendance();
       }
     }
   };
+  const handleFocus = () => {
+    if (getAuthUser()) {
+      checkScheduleTick();
+      checkMidpointPendingAttendance();
+    }
+  };
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', handleVisibility);
+  }
+  if (typeof window !== 'undefined' && !isCapacitorNative()) {
+    window.addEventListener('focus', handleFocus);
   }
 
   // 3. Programar chequeo periódico en primer plano (cada 20 segundos)
@@ -1073,6 +1120,11 @@ export function initScheduleNotifier() {
     clearInterval(interval);
     window.removeEventListener('steel:auth-changed', handleAuthOrDataChange);
     window.removeEventListener('steel:assignments-updated', handleAuthOrDataChange);
+    if (typeof window !== 'undefined' && !isCapacitorNative()) {
+      window.removeEventListener('pointerdown', requestWebPermissionOnGesture);
+      window.removeEventListener('keydown', requestWebPermissionOnGesture);
+      window.removeEventListener('focus', handleFocus);
+    }
     if (appStateListener?.remove) appStateListener.remove();
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibility);
