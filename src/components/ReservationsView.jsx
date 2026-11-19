@@ -1171,7 +1171,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           if (overlapClass) {
             conflictInfo = {
               type: 'CLASE',
-              badge: 'EN CLASE (EXCEL)',
+              badge: 'EN CLASE',
               hours: `${overlapClass.horaInicioProg} - ${overlapClass.horaFinalProg}`,
               reason: overlapClass.curso || 'Clase programada en horario oficial',
               owner: overlapClass.docente || '',
@@ -3768,6 +3768,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               ) : (
                 pickerFilteredRooms.map(rm => {
                   const isBlocked = Boolean(rm.isBlocked);
+                  const isClassConflict = isBlocked && rm.conflictInfo?.type === 'CLASE';
                   const isSelected = !isBlocked && selectedAulas.includes(rm.abrv);
                   const catBadge =
                     rm.categoria === 'LABORATORIO'
@@ -3785,8 +3786,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                       disabled={isBlocked}
                       onClick={() => !isBlocked && handleToggleRoomInPicker(rm.abrv)}
                       className={`p-3 rounded-2xl border text-left transition flex items-start justify-between gap-2.5 ${
-                        isBlocked
-                          ? 'bg-rose-50/70 dark:bg-rose-950/20 border-rose-200/90 dark:border-rose-900/60 cursor-not-allowed opacity-90'
+                        isClassConflict
+                          ? 'bg-indigo-50/75 dark:bg-indigo-950/25 border-indigo-300/90 dark:border-indigo-800/60 cursor-not-allowed opacity-90'
+                          : isBlocked
+                          ? 'bg-rose-50/75 dark:bg-rose-950/25 border-rose-300/90 dark:border-rose-800/60 cursor-not-allowed opacity-90'
                           : isSelected
                           ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-500/80 ring-2 ring-amber-400/40 active:scale-[0.98] cursor-pointer'
                           : 'bg-slate-50/70 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-800 active:scale-[0.98] cursor-pointer'
@@ -3795,7 +3798,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <span className={`px-2 py-0.5 rounded-lg font-mono text-xs font-black tracking-tight border ${
-                            isBlocked
+                            isClassConflict
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : isBlocked
                               ? 'bg-rose-600 text-white border-rose-600'
                               : isSelected
                               ? 'bg-[#FDBA30] text-slate-950 border-amber-400'
@@ -3842,21 +3847,31 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           )}
                         </div>
 
-                        {/* Detalle de Reserva o Clase Ocupada (Excel / BD) */}
+                        {/* Detalle de Reserva o Clase Ocupada */}
                         {isBlocked && rm.conflictInfo && (
-                          <div className="mt-2 p-2 rounded-xl bg-rose-100/80 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/70 text-[10.5px] space-y-0.5">
-                            <div className="flex items-center justify-between gap-1 font-black text-rose-800 dark:text-rose-200">
+                          <div className={`mt-2 p-2 rounded-xl border text-[10.5px] space-y-0.5 ${
+                            isClassConflict
+                              ? 'bg-indigo-100/80 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800/70'
+                              : 'bg-rose-100/80 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800/70'
+                          }`}>
+                            <div className={`flex items-center justify-between gap-1 font-black ${
+                              isClassConflict ? 'text-indigo-800 dark:text-indigo-200' : 'text-rose-800 dark:text-rose-200'
+                            }`}>
                               <span className="inline-flex items-center gap-1">
                                 <Lock className="w-3 h-3 shrink-0" />
                                 {rm.conflictInfo.badge}
                               </span>
                               <span className="font-mono">{rm.conflictInfo.hours}</span>
                             </div>
-                            <div className="font-bold text-rose-950 dark:text-rose-100 leading-snug line-clamp-2">
+                            <div className={`font-bold leading-snug line-clamp-2 ${
+                              isClassConflict ? 'text-indigo-950 dark:text-indigo-100' : 'text-rose-950 dark:text-rose-100'
+                            }`}>
                               Para: {rm.conflictInfo.reason}
                             </div>
                             {rm.conflictInfo.owner && (
-                              <div className="text-[10px] text-rose-700 dark:text-rose-300 truncate font-medium">
+                              <div className={`text-[10px] truncate font-medium ${
+                                isClassConflict ? 'text-indigo-700 dark:text-indigo-300' : 'text-rose-700 dark:text-rose-300'
+                              }`}>
                                 👤 {rm.conflictInfo.owner}
                               </div>
                             )}
@@ -3871,7 +3886,9 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         )}
                       </div>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                        isBlocked
+                        isClassConflict
+                          ? 'bg-indigo-200/80 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300'
+                          : isBlocked
                           ? 'bg-rose-200/80 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300'
                           : isSelected
                           ? 'bg-[#FDBA30] text-slate-950 shadow-xs ring-2 ring-amber-400/40'
