@@ -29,7 +29,8 @@ import {
   AlertTriangle,
   FlaskConical,
   Wrench,
-  Mic
+  Mic,
+  Lock
 } from 'lucide-react';
 import ToastBanner from './ToastBanner';
 import CustomDatePicker from './CustomDatePicker';
@@ -282,6 +283,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
   const [isMultiRoomMode, setIsMultiRoomMode] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerCategory, setPickerCategory] = useState('ALL'); // 'ALL' | 'AULA' | 'LABORATORIO' | 'TALLER' | 'ESPECIAL'
+  const [pickerStatusFilter, setPickerStatusFilter] = useState('ALL'); // 'ALL' | 'FREE' | 'BUSY'
   const [pickerPabellon, setPickerPabellon] = useState(''); // '' | 'A' | 'B'
   const [pickerPiso, setPickerPiso] = useState(''); // '' | 'SOT' | '1ER PISO' | ...
   const [toastMessage, setToastMessage] = useState('');
@@ -1103,10 +1105,112 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     }
   }, [isModalOpen, freeRoomsForModalTime]);
 
-  // Lista filtrada para el menú selector de Aula / Laboratorio dentro del modal (SOLO AULAS LIBRES)
+  // Estado detallado de TODAS las aulas para el selector (libres, reservadas y en clase según Excel/BD)
+  const pickerRoomsWithStatus = useMemo(() => {
+    const bStart = timeToMins(formData.inicio);
+    const bEnd = timeToMins(formData.final);
+    const datesToCheck = formData.isDateRange ? rangeDates : [formData.fecha];
+    const classPool = allScheduleClasses.length > 0 ? allScheduleClasses : modalDayClasses;
+
+    const list = allRooms.map(rm => {
+      const code = (rm.abrv || '').toUpperCase().trim();
+      let conflictInfo = null;
+      const otherDayReservas = [];
+
+      for (const curFecha of datesToCheck) {
+        if (!curFecha) continue;
+        const curDt = new Date(curFecha + 'T12:00:00');
+        const curDia = DAYS_OF_WEEK[curDt.getDay()] || formData.dia || 'LUNES';
+        const targetFecha = normalizeDateStr(curFecha);
+
+        // 1. Buscar reservas en esa fecha para esta aula
+        const dayReservas = reservas.filter(r => {
+          const rRooms = getReservationRooms(r);
+          if (!rRooms.includes(code)) return false;
+          const rFecha = normalizeDateStr(r.fecha);
+          if (rFecha && targetFecha) {
+            return rFecha === targetFecha;
+          }
+          return normalizeDay(r.dia) === normalizeDay(curDia);
+        });
+
+        for (const r of dayReservas) {
+          const rStartStr = r.inicio || r.hora_inicio || '';
+          const rEndStr = r.final || r.hora_fin || '';
+          const rStart = timeToMins(rStartStr);
+          const rEnd = timeToMins(rEndStr);
+          if (rStart < bEnd && rEnd > bStart) {
+            if (!conflictInfo) {
+              conflictInfo = {
+                type: 'RESERVA',
+                badge: 'RESERVADA',
+                hours: `${rStartStr} - ${rEndStr}`,
+                reason: r.motivo || r.detalle || 'Reserva registrada',
+                owner: r.docente || r.solicitante || r.usuario || '',
+                fecha: curFecha
+              };
+            }
+          } else {
+            otherDayReservas.push({
+              hours: `${rStartStr} - ${rEndStr}`,
+              reason: r.motivo || r.detalle || 'Reserva',
+              owner: r.docente || r.solicitante || ''
+            });
+          }
+        }
+
+        // 2. Buscar clases programadas (Excel) si aún no hay conflicto de reserva
+        if (!conflictInfo) {
+          const overlapClass = classPool.find(c => {
+            if ((c.aula || '').toUpperCase().trim() !== code) return false;
+            if (normalizeDay(c.dia) !== normalizeDay(curDia)) return false;
+            const cStart = timeToMins(c.horaInicioProg);
+            const cEnd = timeToMins(c.horaFinalProg);
+            return cStart < bEnd && cEnd > bStart;
+          });
+          if (overlapClass) {
+            conflictInfo = {
+              type: 'CLASE',
+              badge: 'EN CLASE (EXCEL)',
+              hours: `${overlapClass.horaInicioProg} - ${overlapClass.horaFinalProg}`,
+              reason: overlapClass.curso || 'Clase programada en horario oficial',
+              owner: overlapClass.docente || '',
+              fecha: curFecha
+            };
+          }
+        }
+      }
+
+      return {
+        ...rm,
+        isBlocked: Boolean(conflictInfo),
+        conflictInfo,
+        dayReservasSummary: otherDayReservas
+      };
+    });
+
+    // Ordenar: primero las aulas libres, luego las reservadas/ocupadas
+    return list.sort((a, b) => Number(a.isBlocked) - Number(b.isBlocked));
+  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
+
+  const pickerStatusCounts = useMemo(() => {
+    const base = pickerRoomsWithStatus.filter(rm => {
+      if (pickerCategory !== 'ALL' && rm.categoria !== pickerCategory) return false;
+      if (pickerPabellon && rm.pabellon !== pickerPabellon) return false;
+      if (pickerPiso && !matchesPiso(rm.piso, pickerPiso)) return false;
+      return true;
+    });
+    const freeCount = base.filter(r => !r.isBlocked).length;
+    const busyCount = base.filter(r => r.isBlocked).length;
+    return { all: base.length, free: freeCount, busy: busyCount };
+  }, [pickerRoomsWithStatus, pickerCategory, pickerPabellon, pickerPiso]);
+
+  // Lista filtrada para el menú selector de Aula / Laboratorio dentro del modal
   const pickerFilteredRooms = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
-    return freeRoomsForModalTime.filter(rm => {
+    return pickerRoomsWithStatus.filter(rm => {
+      if (pickerStatusFilter === 'FREE' && rm.isBlocked) return false;
+      if (pickerStatusFilter === 'BUSY' && !rm.isBlocked) return false;
       if (pickerCategory !== 'ALL' && rm.categoria !== pickerCategory) return false;
       if (pickerPabellon && rm.pabellon !== pickerPabellon) return false;
       if (pickerPiso && !matchesPiso(rm.piso, pickerPiso)) return false;
@@ -1115,16 +1219,18 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           (rm.abrv && rm.abrv.toLowerCase().includes(q)) ||
           (rm.nombre && rm.nombre.toLowerCase().includes(q)) ||
           (rm.tipo && rm.tipo.toLowerCase().includes(q)) ||
-          (rm.piso && rm.piso.toLowerCase().includes(q));
+          (rm.piso && rm.piso.toLowerCase().includes(q)) ||
+          (rm.conflictInfo?.reason && rm.conflictInfo.reason.toLowerCase().includes(q)) ||
+          (rm.conflictInfo?.owner && rm.conflictInfo.owner.toLowerCase().includes(q));
         if (!hit) return false;
       }
       return true;
     });
-  }, [freeRoomsForModalTime, pickerCategory, pickerPabellon, pickerPiso, pickerSearch]);
+  }, [pickerRoomsWithStatus, pickerStatusFilter, pickerCategory, pickerPabellon, pickerPiso, pickerSearch]);
 
   const handleToggleRoomInPicker = (rmAbrv) => {
-    const isFree = freeRoomsForModalTime.some(r => r.abrv === rmAbrv);
-    if (!isFree) return;
+    const targetRoom = pickerRoomsWithStatus.find(r => r.abrv === rmAbrv);
+    if (!targetRoom || targetRoom.isBlocked) return;
     setSelectedAulas(prev => {
       if (isMultiRoomMode) {
         if (prev.includes(rmAbrv)) {
@@ -3460,13 +3566,18 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   style={pickerCatSlide.pillStyle}
                   className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-[#FDBA30] shadow-2xs"
                 />
-                {[
-                  { id: 'ALL', label: 'Todos Libres', icon: Layers, count: freeRoomsForModalTime.length },
-                  { id: 'AULA', label: 'Aulas', icon: DoorOpen, count: freeRoomsForModalTime.filter(r => r.categoria === 'AULA').length },
-                  { id: 'LABORATORIO', label: 'Laboratorios', icon: FlaskConical, count: freeRoomsForModalTime.filter(r => r.categoria === 'LABORATORIO').length },
-                  { id: 'TALLER', label: 'Talleres', icon: Wrench, count: freeRoomsForModalTime.filter(r => r.categoria === 'TALLER').length },
-                  { id: 'ESPECIAL', label: 'Conferencias / Litigación', icon: Mic, count: freeRoomsForModalTime.filter(r => r.categoria === 'ESPECIAL').length }
-                ].map(cat => {
+                {(() => {
+                  const baseList = pickerRoomsWithStatus.filter(r =>
+                    pickerStatusFilter === 'ALL' ? true : pickerStatusFilter === 'FREE' ? !r.isBlocked : r.isBlocked
+                  );
+                  return [
+                    { id: 'ALL', label: 'Todos', icon: Layers, count: baseList.length },
+                    { id: 'AULA', label: 'Aulas', icon: DoorOpen, count: baseList.filter(r => r.categoria === 'AULA').length },
+                    { id: 'LABORATORIO', label: 'Laboratorios', icon: FlaskConical, count: baseList.filter(r => r.categoria === 'LABORATORIO').length },
+                    { id: 'TALLER', label: 'Talleres', icon: Wrench, count: baseList.filter(r => r.categoria === 'TALLER').length },
+                    { id: 'ESPECIAL', label: 'Conferencias / Litigación', icon: Mic, count: baseList.filter(r => r.categoria === 'ESPECIAL').length }
+                  ];
+                })().map(cat => {
                   const active = pickerCategory === cat.id;
                   const CatIcon = cat.icon;
                   return (
@@ -3554,6 +3665,35 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
               </div>
 
+              {/* Filtro de Estado: Todas vs Libres vs Reservadas/Ocupadas */}
+              <div className="grid grid-cols-3 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 gap-1">
+                {[
+                  { id: 'ALL', label: `Todas (${pickerStatusCounts.all})` },
+                  { id: 'FREE', label: `Libres (${pickerStatusCounts.free})` },
+                  { id: 'BUSY', label: `Reservadas (${pickerStatusCounts.busy})` }
+                ].map(st => {
+                  const isActive = pickerStatusFilter === st.id;
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setPickerStatusFilter(st.id)}
+                      className={`py-1.5 px-2 rounded-lg text-[10.5px] font-black transition cursor-pointer truncate ${
+                        isActive
+                          ? st.id === 'BUSY'
+                            ? 'bg-rose-500 text-white shadow-xs'
+                            : st.id === 'FREE'
+                            ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                            : 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs border border-slate-200/80 dark:border-zinc-700'
+                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Barra de Acciones Rápidas con Selector de Modo Única / Múltiple */}
               <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -3592,12 +3732,12 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <button
                       type="button"
                       onClick={() => {
-                        const allVisible = pickerFilteredRooms.map(rm => rm.abrv);
-                        setSelectedAulas(prev => Array.from(new Set([...prev, ...allVisible])));
+                        const allVisibleFree = pickerFilteredRooms.filter(rm => !rm.isBlocked).map(rm => rm.abrv);
+                        setSelectedAulas(prev => Array.from(new Set([...prev, ...allVisibleFree])));
                       }}
                       className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline px-1.5 py-0.5 rounded-md hover:bg-amber-500/10 transition cursor-pointer"
                     >
-                      + Todas ({pickerFilteredRooms.length})
+                      + Todas libres ({pickerFilteredRooms.filter(rm => !rm.isBlocked).length})
                     </button>
                   )}
 
@@ -3617,8 +3757,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               </div>
             </div>
 
-            {/* Grilla de Aulas y Laboratorios con Selección Múltiple */}
-            <div className="overflow-y-auto py-3 pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-h-[46vh]">
+            {/* Grilla de Aulas y Laboratorios con Estado en Vivo (Libres y Reservadas/En Clase) */}
+            <div className="overflow-y-auto py-3 pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-h-[44vh]">
               {pickerFilteredRooms.length === 0 ? (
                 <div className="col-span-full py-10 text-center">
                   <p className="text-xs font-bold text-slate-500 dark:text-zinc-400">
@@ -3627,7 +3767,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </div>
               ) : (
                 pickerFilteredRooms.map(rm => {
-                  const isSelected = selectedAulas.includes(rm.abrv);
+                  const isBlocked = Boolean(rm.isBlocked);
+                  const isSelected = !isBlocked && selectedAulas.includes(rm.abrv);
                   const catBadge =
                     rm.categoria === 'LABORATORIO'
                       ? 'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'
@@ -3641,17 +3782,22 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     <button
                       key={rm.abrv}
                       type="button"
-                      onClick={() => handleToggleRoomInPicker(rm.abrv)}
-                      className={`p-3 rounded-2xl border text-left transition flex items-start justify-between gap-2.5 active:scale-[0.98] cursor-pointer ${
-                        isSelected
-                          ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-500/80 ring-2 ring-amber-400/40'
-                          : 'bg-slate-50/70 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-800'
+                      disabled={isBlocked}
+                      onClick={() => !isBlocked && handleToggleRoomInPicker(rm.abrv)}
+                      className={`p-3 rounded-2xl border text-left transition flex items-start justify-between gap-2.5 ${
+                        isBlocked
+                          ? 'bg-rose-50/70 dark:bg-rose-950/20 border-rose-200/90 dark:border-rose-900/60 cursor-not-allowed opacity-90'
+                          : isSelected
+                          ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-500/80 ring-2 ring-amber-400/40 active:scale-[0.98] cursor-pointer'
+                          : 'bg-slate-50/70 dark:bg-zinc-900/70 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-800 active:scale-[0.98] cursor-pointer'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <span className={`px-2 py-0.5 rounded-lg font-mono text-xs font-black tracking-tight border ${
-                            isSelected
+                            isBlocked
+                              ? 'bg-rose-600 text-white border-rose-600'
+                              : isSelected
                               ? 'bg-[#FDBA30] text-slate-950 border-amber-400'
                               : 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border-slate-200 dark:border-zinc-700'
                           }`}>
@@ -3695,13 +3841,47 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                             </>
                           )}
                         </div>
+
+                        {/* Detalle de Reserva o Clase Ocupada (Excel / BD) */}
+                        {isBlocked && rm.conflictInfo && (
+                          <div className="mt-2 p-2 rounded-xl bg-rose-100/80 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/70 text-[10.5px] space-y-0.5">
+                            <div className="flex items-center justify-between gap-1 font-black text-rose-800 dark:text-rose-200">
+                              <span className="inline-flex items-center gap-1">
+                                <Lock className="w-3 h-3 shrink-0" />
+                                {rm.conflictInfo.badge}
+                              </span>
+                              <span className="font-mono">{rm.conflictInfo.hours}</span>
+                            </div>
+                            <div className="font-bold text-rose-950 dark:text-rose-100 leading-snug line-clamp-2">
+                              Para: {rm.conflictInfo.reason}
+                            </div>
+                            {rm.conflictInfo.owner && (
+                              <div className="text-[10px] text-rose-700 dark:text-rose-300 truncate font-medium">
+                                👤 {rm.conflictInfo.owner}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Aviso si el aula tiene reserva en OTRO horario distinto ese mismo día */}
+                        {!isBlocked && rm.dayReservasSummary && rm.dayReservasSummary.length > 0 && (
+                          <div className="mt-1.5 px-2 py-1 rounded-lg bg-amber-100/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 text-[10px] font-bold text-amber-900 dark:text-amber-200 truncate">
+                            📅 Reservada hoy: {rm.dayReservasSummary[0].hours} ({rm.dayReservasSummary[0].reason})
+                          </div>
+                        )}
                       </div>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                        isSelected
+                        isBlocked
+                          ? 'bg-rose-200/80 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300'
+                          : isSelected
                           ? 'bg-[#FDBA30] text-slate-950 shadow-xs ring-2 ring-amber-400/40'
                           : 'bg-slate-200/70 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600'
                       }`}>
-                        <Check className="w-3.5 h-3.5 stroke-[2.8]" />
+                        {isBlocked ? (
+                          <Lock className="w-3.5 h-3.5 stroke-[2.6]" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5 stroke-[2.8]" />
+                        )}
                       </div>
                     </button>
                   );
