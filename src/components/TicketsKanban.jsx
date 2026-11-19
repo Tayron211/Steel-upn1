@@ -1180,7 +1180,10 @@ export default function TicketsKanban({
 
   const activeLoans = useMemo(() => {
     return filteredTickets
-      .filter(t => t.estado === 'PENDIENTE' || t.estado === 'EN PROCESO')
+      .filter(t => {
+        const est = String(t.estado || '').trim();
+        return est === 'PENDIENTE' || est === 'EN PROCESO';
+      })
       .sort((a, b) => {
         const dateA = a.fecha || '';
         const dateB = b.fecha || '';

@@ -485,7 +485,7 @@ async function handleApiRequest(context) {
         let csql = "SELECT COUNT(*) AS c FROM tickets WHERE (periodo IS NULL OR periodo != '2026-1')";
         const cparams = [];
         if (activeOnly || estado === 'PENDIENTE') {
-          csql += " AND (estado = 'PENDIENTE' OR estado = 'EN PROCESO' OR (estado != 'ATENDIDO' AND estado != 'DEVUELTO' AND estado != 'RESUELTO'))";
+          csql += " AND TRIM(COALESCE(estado, '')) IN ('PENDIENTE', 'EN PROCESO')";
         } else if (estado) {
           csql += ' AND estado = ?';
           cparams.push(estado);

@@ -1,36 +1,32 @@
 {
-  "version": "1.0.131",
-  "versionCode": 132,
+  "version": "1.0.132",
+  "versionCode": 133,
   "releaseDate": "2026-11-19",
-  "notes": "Fix TDZ reference error en Horarios Docentes v1.0.101",
+  "notes": "Generar automaticamente novedades recientes en ventana de actualizacion al compilar.",
   "features": [
     {
-      "title": "Auditoría de Seguridad y Protección de Cabeceras",
-      "desc": "Implementación de cabeceras HTTP de seguridad estrictas (nosniff, sameorigin, políticas de permisos) y blindaje contra inyecciones y ataques."
+      "title": "Nueva Funcionalidad",
+      "desc": "Generar automaticamente novedades recientes en ventana de actualizacion al compilar."
     },
     {
-      "title": "Depuración y Optimización de Código",
-      "desc": "Limpieza de módulos obsoletos y archivos residuales sin alterar la funcionalidad, logrando una app más liviana y rápida."
+      "title": "Corrección y Estabilidad",
+      "desc": "Corregir ReferenceError extractBeneficiary is not defined en TicketsKanban (Prestamos)."
     },
     {
-      "title": "Autocompletado Inteligente de Docentes",
-      "desc": "Búsqueda y sugerencia en tiempo real de docentes al escribir, activo únicamente cuando se marca la opción 'Docente'."
+      "title": "Nueva Funcionalidad",
+      "desc": "Actualizar enlace de OneDrive y resolucion directa por ruta/nombre para reemplazos automaticos de CONTROL DOCENTE - TEST.xlsx."
     },
     {
-      "title": "Personal y Asistentes Oficiales Actualizados",
-      "desc": "Sincronización exacta con la nómina de 7 asistentes autorizados tanto en la APK como en la plataforma web."
+      "title": "Mejora de Interfaz",
+      "desc": "Quitar etiqueta EXCEL y diferenciar color de tarjetas entre clases (indigo) y reservas (rojo/rosa)."
     },
     {
-      "title": "Tarjetas de Reserva Simétricas con Desplegable",
-      "desc": "Horarios por aula compactados en un acordeón desplegable que elimina espacios en blanco y mantiene la simetría perfecta."
+      "title": "Nueva Funcionalidad",
+      "desc": "Mostrar aulas reservadas/en clase con horas, motivo y responsable en selector de aulas y bloquear doble reserva."
     },
     {
-      "title": "Desglose Completo en Historial de Reservas",
-      "desc": "Detalle cronológico por fecha, día y rango horario para cada ambiente en la ventana de historial anual."
-    },
-    {
-      "title": "Apertura y Cierre Fluido de Modales (120 FPS)",
-      "desc": "Animaciones fade perfeccionadas y aceleradas por hardware para ventanas y formularios sin parones."
+      "title": "Mejora de Interfaz",
+      "desc": "Quitar selector Lunes a Domingo, eliminar redundancia con 'Un Dia / Rango de Fechas' y mantener seleccion multiple de aulas."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
