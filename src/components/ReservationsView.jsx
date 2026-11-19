@@ -641,6 +641,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
   // Estado para horarios individuales por aula en reserva múltiple
   const [roomSchedules, setRoomSchedules] = useState({});
+  const [showCustomRoomSchedules, setShowCustomRoomSchedules] = useState(false);
 
   const updateRoomSchedule = (room, field, val) => {
     setRoomSchedules(prev => ({
@@ -1155,6 +1156,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         ubicacion: ''
       }));
       setRoomSchedules({});
+    setShowCustomRoomSchedules(false);
       roomPickerModalFade.requestClose(() => setIsRoomPickerOpen(false));
       return;
     }
@@ -1360,6 +1362,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     });
     setSelectedAulas([]);
     setRoomSchedules({});
+    setShowCustomRoomSchedules(false);
     setIsMultiRoomMode(false);
     setDocenteSuggestionsOpen(false);
   };
@@ -2889,74 +2892,71 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col">
               <div className="p-5 sm:p-6 space-y-3.5 flex-1">
-              {/* Fila 1: MODALIDAD DE FECHA (Día Único vs Rango de Días) */}
+              {/* Bloque Unificado: MODALIDAD, FECHAS (INICIO → FIN) Y HORARIO (INICIO → FIN) */}
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
-                    Modalidad de Reserva
-                  </label>
-                  <div className="inline-flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setFormData(p => ({ ...p, isDateRange: false }))}
-                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition inline-flex items-center gap-1.5 ${
-                        !formData.isDateRange
-                          ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
-                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <Calendar className="w-3.5 h-3.5 stroke-[2.3]" />
-                      <span>Día Único</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(p => ({ ...p, isDateRange: true }))}
-                      className={`px-3 py-1 rounded-lg font-bold text-[11px] transition inline-flex items-center gap-1.5 ${
-                        formData.isDateRange
-                          ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
-                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <CalendarDays className="w-3.5 h-3.5 stroke-[2.3]" />
-                      <span>Rango de Días (ej. Lun a Vie)</span>
-                    </button>
-                  </div>
+                {/* Switch de Modalidad (Ancho completo, limpio) */}
+                <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(p => ({ ...p, isDateRange: false }))}
+                    className={`py-2 px-3 rounded-lg font-bold text-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                      !formData.isDateRange
+                        ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs border border-slate-200/80 dark:border-zinc-700'
+                        : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5 stroke-[2.3]" />
+                    <span>Día Único</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(p => ({ ...p, isDateRange: true }))}
+                    className={`py-2 px-3 rounded-lg font-bold text-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                      formData.isDateRange
+                        ? 'bg-[#FDBA30] text-slate-950 shadow-xs font-black'
+                        : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <CalendarDays className="w-3.5 h-3.5 stroke-[2.3]" />
+                    <span>Reserva Múltiple</span>
+                  </button>
                 </div>
 
-                {!formData.isDateRange ? (
-                  <div>
-                    <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                      <span>{getReservationRooms(formData).length > 1 ? 'Fecha Base (Predeterminada)' : 'Fecha de Reserva'}</span>
-                      {getReservationRooms(formData).length > 1 && (
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                          Horario predeterminado
-                        </span>
-                      )}
-                    </label>
-                    <CustomDatePicker
-                      value={formData.fecha}
-                      minDate={todayIso}
-                      onChange={(val) => {
-                        if (!val) return;
-                        const dt = new Date(val + 'T12:00:00');
-                        const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
-                        const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
-                        setFormData(prev => ({
-                          ...prev,
-                          fecha: val,
-                          dia: computedDia,
-                          mes: computedMes
-                        }));
-                      }}
-                      required
-                    />
-                  </div>
-                ) : (
-                  <div className="p-3 sm:p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/50 space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Tarjeta Unificada de Fechas y Horarios (Inicio hasta Fin) */}
+                <div className={`p-3.5 rounded-2xl border space-y-3 transition-colors ${
+                  formData.isDateRange
+                    ? 'bg-amber-50/60 dark:bg-amber-950/15 border-amber-200/90 dark:border-amber-900/50'
+                    : 'bg-slate-50/70 dark:bg-zinc-900/50 border-slate-200/80 dark:border-zinc-800'
+                }`}>
+                  {/* 1. FECHAS: Única vs Inicio hasta Fin */}
+                  {!formData.isDateRange ? (
+                    <div>
+                      <label className="flex items-center justify-between text-[10.5px] font-bold text-slate-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                        <span>Fecha de Reserva</span>
+                      </label>
+                      <CustomDatePicker
+                        value={formData.fecha}
+                        minDate={todayIso}
+                        onChange={(val) => {
+                          if (!val) return;
+                          const dt = new Date(val + 'T12:00:00');
+                          const computedDia = DAYS_OF_WEEK[dt.getDay()] || formData.dia;
+                          const computedMes = MONTHS_UPPER[dt.getMonth()] || formData.mes;
+                          setFormData(prev => ({
+                            ...prev,
+                            fecha: val,
+                            dia: computedDia,
+                            mes: computedMes
+                          }));
+                        }}
+                        required
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                          Desde (Fecha Inicio)
+                        <label className="block text-[10px] font-black text-slate-600 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                          Fecha Inicio
                         </label>
                         <CustomDatePicker
                           value={formData.fechaInicio}
@@ -2973,8 +2973,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                          Hasta (Fecha Fin)
+                        <label className="block text-[10px] font-black text-slate-600 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                          Fecha Fin
                         </label>
                         <CustomDatePicker
                           value={formData.fechaFin}
@@ -2984,33 +2984,60 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         />
                       </div>
                     </div>
+                  )}
 
-                    {/* Días de la semana permitidos en el rango */}
-                    <div className="space-y-1.5 pt-1.5 border-t border-amber-200/60 dark:border-amber-900/40">
+                  {/* 2. HORARIO: Hora Inicio hasta Hora Fin */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-600 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                        Hora Inicio
+                      </label>
+                      <CustomSelect
+                        value={formData.inicio}
+                        onChange={(val) => setFormData({ ...formData, inicio: val })}
+                        options={TIME_OPTIONS}
+                        placeholder="Inicio"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-600 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                        Hora Fin
+                      </label>
+                      <CustomSelect
+                        value={formData.final}
+                        onChange={(val) => setFormData({ ...formData, final: val })}
+                        options={TIME_OPTIONS}
+                        placeholder="Fin"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 3. DÍAS A REPETIR (Solo en Reserva Múltiple) */}
+                  {formData.isDateRange && (
+                    <div className="space-y-2 pt-2 border-t border-amber-200/70 dark:border-amber-900/40">
                       <div className="flex items-center justify-between text-[10.5px]">
                         <span className="font-bold text-slate-700 dark:text-zinc-300">
                           Repetir en los días:
                         </span>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5] }))}
-                            className="text-[10.5px] font-black text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                            className="px-2 py-0.5 rounded-md bg-amber-100/80 dark:bg-amber-900/40 text-[10px] font-black text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/70 transition cursor-pointer"
                           >
-                            Lun a Vie
+                            Lun – Vie
                           </button>
-                          <span className="text-slate-300 dark:text-zinc-600">·</span>
                           <button
                             type="button"
                             onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5, 6, 0] }))}
-                            className="text-[10.5px] font-black text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                            className="px-2 py-0.5 rounded-md bg-amber-100/80 dark:bg-amber-900/40 text-[10px] font-black text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/70 transition cursor-pointer"
                           >
-                            Toda la Semana
+                            Todos
                           </button>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="grid grid-cols-7 gap-1">
                         {[
                           { id: 1, label: 'Lunes', short: 'LU' },
                           { id: 2, label: 'Martes', short: 'MA' },
@@ -3034,10 +3061,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                                   return { ...p, selectedWeekdays: next };
                                 });
                               }}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                              className={`h-8 rounded-lg text-[11px] font-black transition flex items-center justify-center cursor-pointer ${
                                 isSelected
-                                  ? 'bg-amber-500 text-slate-950 shadow-2xs ring-1 ring-amber-500'
-                                  : 'bg-white/90 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100'
+                                  ? 'bg-[#FDBA30] text-slate-950 shadow-2xs ring-1 ring-[#FDBA30]'
+                                  : 'bg-white/90 dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
                               }`}
                               title={day.label}
                             >
@@ -3047,43 +3074,23 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         })}
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-[11px] text-amber-900 dark:text-amber-200 font-bold pt-0.5">
-                        <Calendar className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                        <span>
-                          {rangeDates.length === 0
-                            ? 'Ningún día coincide en este rango'
-                            : `${rangeDates.length} fecha(s) en total coinciden con la selección`}
+                      <div className="flex items-center justify-between text-[11px] bg-white/70 dark:bg-zinc-900/70 px-2.5 py-1.5 rounded-xl border border-amber-200/70 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 font-bold">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            {rangeDates.length === 0
+                              ? 'Ningún día coincide en este rango'
+                              : `${rangeDates.length} fecha${rangeDates.length === 1 ? '' : 's'} seleccionada${rangeDates.length === 1 ? '' : 's'}`}
+                          </span>
                         </span>
+                        {rangeDates.length > 0 && (
+                          <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400">
+                            {formData.inicio} - {formData.final}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Fila 2: HORARIO (Columnas INICIO y FINAL) */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    {getReservationRooms(formData).length > 1 ? 'Hora Inicio Base' : 'Hora Inicio'}
-                  </label>
-                  <CustomSelect
-                    value={formData.inicio}
-                    onChange={(val) => setFormData({ ...formData, inicio: val })}
-                    options={TIME_OPTIONS}
-                    placeholder="Hora Inicio"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    {getReservationRooms(formData).length > 1 ? 'Hora Fin Base' : 'Hora Fin'}
-                  </label>
-                  <CustomSelect
-                    value={formData.final}
-                    onChange={(val) => setFormData({ ...formData, final: val })}
-                    options={TIME_OPTIONS}
-                    placeholder="Hora Final"
-                  />
+                  )}
                 </div>
               </div>
 
@@ -3172,99 +3179,107 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 </button>
               </div>
 
-              {/* Horarios Individuales para cada Ambiente en Reserva Múltiple */}
+              {/* Horarios Individuales para cada Ambiente en Reserva Múltiple (Colapsable y limpio) */}
               {(() => {
                 const rooms = getReservationRooms(formData);
                 if (rooms.length <= 1) return null;
                 return (
-                  <div className="space-y-2.5 p-3 sm:p-3.5 rounded-2xl bg-amber-50/70 dark:bg-zinc-900/90 border border-amber-200 dark:border-zinc-800 animate-in fade-in duration-200">
+                  <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 space-y-2.5 animate-in fade-in duration-200">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-[#d99000] dark:text-[#FDBA30]" />
-                        <span className="text-xs font-black uppercase text-slate-900 dark:text-white">
-                          Fecha y Horario Individual ({rooms.length} ambientes)
+                        <Clock className="w-4 h-4 text-[#d99000] dark:text-[#FDBA30] shrink-0" />
+                        <span className="text-[11px] font-black text-slate-800 dark:text-zinc-200">
+                          {showCustomRoomSchedules
+                            ? `Horario individual (${rooms.length} aulas)`
+                            : `Mismo horario para las ${rooms.length} aulas (${formData.inicio} - ${formData.final})`}
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={applyBaseScheduleToAll}
-                        className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white border border-slate-200 dark:border-zinc-700 transition flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
-                        title="Copiar la fecha y horario base a todos los ambientes"
+                        onClick={() => {
+                          if (showCustomRoomSchedules) {
+                            applyBaseScheduleToAll();
+                            setShowCustomRoomSchedules(false);
+                          } else {
+                            setShowCustomRoomSchedules(true);
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-zinc-700 border border-amber-300/70 dark:border-amber-700/60 transition flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
                       >
-                        <Copy className="w-3 h-3 text-[#d99000] dark:text-[#FDBA30]" />
-                        <span>Copiar horario base a todas</span>
+                        {showCustomRoomSchedules ? 'Usar mismo horario' : 'Personalizar por aula'}
                       </button>
                     </div>
-                    <p className="text-[10.5px] text-slate-500 dark:text-zinc-400 leading-tight">
-                      Cada ambiente seleccionado puede tener su propia fecha, hora de inicio y hora final de manera individual.
-                    </p>
 
-                    <div className="space-y-2 pt-1">
-                      {rooms.map(aulaCode => {
-                        const rm = roomMap[aulaCode];
-                        const sched = roomSchedules[aulaCode] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
-                        return (
-                          <div
-                            key={aulaCode}
-                            className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-2"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0 shadow-2xs">
-                                  {aulaCode}
-                                </span>
-                                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate">
-                                  {rm?.tipo || rm?.nombre || 'Ambiente'} · <span className="font-medium text-slate-500 dark:text-zinc-400">{rm?.piso || deducePisoFromAula(aulaCode)}</span>
-                                </span>
+                    {showCustomRoomSchedules && (
+                      <div className="space-y-2 pt-1 border-t border-slate-200/80 dark:border-zinc-800">
+                        {rooms.map(aulaCode => {
+                          const rm = roomMap[aulaCode];
+                          const sched = roomSchedules[aulaCode] || { fecha: formData.fecha, inicio: formData.inicio, final: formData.final };
+                          return (
+                            <div
+                              key={aulaCode}
+                              className="p-2.5 rounded-xl bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-2"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="px-2 py-0.5 rounded-md bg-[#FDBA30] text-slate-950 font-mono font-black text-xs shrink-0 shadow-2xs">
+                                    {aulaCode}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate">
+                                    {rm?.tipo || rm?.nombre || 'Ambiente'} · <span className="font-medium text-slate-500 dark:text-zinc-400">{rm?.piso || deducePisoFromAula(aulaCode)}</span>
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSelectedRoom(aulaCode)}
+                                  className="w-6 h-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition shrink-0 cursor-pointer"
+                                  title={`Quitar ${aulaCode}`}
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSelectedRoom(aulaCode)}
-                                className="w-6 h-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition shrink-0 cursor-pointer"
-                                title={`Quitar ${aulaCode}`}
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
-                                  Fecha
-                                </label>
-                                <CustomDatePicker
-                                  value={sched.fecha}
-                                  minDate={todayIso}
-                                  onChange={(val) => updateRoomSchedule(aulaCode, 'fecha', val)}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
-                                  Hora Inicio
-                                </label>
-                                <CustomSelect
-                                  value={sched.inicio}
-                                  onChange={(val) => updateRoomSchedule(aulaCode, 'inicio', val)}
-                                  options={TIME_OPTIONS}
-                                  placeholder="Inicio"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
-                                  Hora Fin
-                                </label>
-                                <CustomSelect
-                                  value={sched.final}
-                                  onChange={(val) => updateRoomSchedule(aulaCode, 'final', val)}
-                                  options={TIME_OPTIONS}
-                                  placeholder="Fin"
-                                />
+                              <div className={`grid gap-2 ${formData.isDateRange ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                                {!formData.isDateRange && (
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
+                                      Fecha
+                                    </label>
+                                    <CustomDatePicker
+                                      value={sched.fecha}
+                                      minDate={todayIso}
+                                      onChange={(val) => updateRoomSchedule(aulaCode, 'fecha', val)}
+                                    />
+                                  </div>
+                                )}
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
+                                    Hora Inicio
+                                  </label>
+                                  <CustomSelect
+                                    value={sched.inicio}
+                                    onChange={(val) => updateRoomSchedule(aulaCode, 'inicio', val)}
+                                    options={TIME_OPTIONS}
+                                    placeholder="Inicio"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
+                                    Hora Fin
+                                  </label>
+                                  <CustomSelect
+                                    value={sched.final}
+                                    onChange={(val) => updateRoomSchedule(aulaCode, 'final', val)}
+                                    options={TIME_OPTIONS}
+                                    placeholder="Fin"
+                                  />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
