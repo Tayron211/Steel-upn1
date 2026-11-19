@@ -275,11 +275,35 @@ export default function TicketsKanban({
       .catch(() => {});
   }, []);
 
+  const parseBeneficiary = (desc = '') => {
+    const raw = String(desc || '');
+    const matchAlumno = raw.match(/\[🎓?\s*ALUMNO(?::\s*([^\]]+))?\]/i);
+    if (matchAlumno) {
+      return {
+        type: 'ALUMNO',
+        label: 'Alumno',
+        name: matchAlumno[1] ? matchAlumno[1].trim() : ''
+      };
+    }
+    const matchDocente = raw.match(/\[👨‍🏫?\s*DOCENTE(?::\s*([^\]]+))?\]/i);
+    if (matchDocente) {
+      return {
+        type: 'DOCENTE',
+        label: 'Docente',
+        name: matchDocente[1] ? matchDocente[1].trim() : ''
+      };
+    }
+    if (raw.toUpperCase().includes('ALUMNO')) {
+      return { type: 'ALUMNO', label: 'Alumno', name: '' };
+    }
+    return { type: 'DOCENTE', label: 'Docente', name: '' };
+  };
+
   const allKnownDocentes = useMemo(() => {
     const rawList = [];
     docentesList.forEach(d => { if (d) rawList.push(d); });
     tickets.forEach(t => {
-      const ben = extractBeneficiary(t);
+      const ben = parseBeneficiary(t.descripcionSolucion);
       if (ben && ben.type === 'DOCENTE' && ben.name) {
         rawList.push(ben.name);
       }
@@ -512,30 +536,6 @@ export default function TicketsKanban({
     }
     return deduceFloor(roomInput) || '';
   }, [currentRoomInfo, roomInput]);
-
-  const parseBeneficiary = (desc = '') => {
-    const raw = String(desc || '');
-    const matchAlumno = raw.match(/\[🎓?\s*ALUMNO(?::\s*([^\]]+))?\]/i);
-    if (matchAlumno) {
-      return {
-        type: 'ALUMNO',
-        label: 'Alumno',
-        name: matchAlumno[1] ? matchAlumno[1].trim() : ''
-      };
-    }
-    const matchDocente = raw.match(/\[👨‍🏫?\s*DOCENTE(?::\s*([^\]]+))?\]/i);
-    if (matchDocente) {
-      return {
-        type: 'DOCENTE',
-        label: 'Docente',
-        name: matchDocente[1] ? matchDocente[1].trim() : ''
-      };
-    }
-    if (raw.toUpperCase().includes('ALUMNO')) {
-      return { type: 'ALUMNO', label: 'Alumno', name: '' };
-    }
-    return { type: 'DOCENTE', label: 'Docente', name: '' };
-  };
 
   const mergeWithLocalSignatures = (serverTickets) => {
     if (!Array.isArray(serverTickets)) return [];
