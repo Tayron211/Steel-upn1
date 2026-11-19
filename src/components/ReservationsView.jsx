@@ -1981,14 +1981,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         if (freeMins > 0 || freeHours === 0) exactParts.push(`${freeMins}m`);
         const exactDur = exactParts.join(' ');
 
-        let freeDurationStr = '';
-        if (isRestOfDay) {
-          freeDurationStr = `Resto del día (${exactDur} libres)`;
-        } else {
-          freeDurationStr = `${exactDur} libres`;
-        }
-
-        const freeTimeRange = `${freeStartStr} - ${freeUntil}`;
+        const freeDurationStr = `${exactDur} libres`;
+        const freeTimeRange = isLiveMode ? `Libre hasta ${freeUntil}` : `${freeStartStr} - ${freeUntil}`;
 
         return {
           ...room,
@@ -2001,6 +1995,8 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           freeUntil,
           freeTimeRange,
           freeDurationStr,
+          freeExactDur: exactDur,
+          isLiveMode,
           isRestOfDay,
           nextEvent,
           dayReservations: reservasInRoom
@@ -2483,13 +2479,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                       </div>
 
                       {/* Horario y Tiempo Disponible */}
-                      <div className="mb-2 p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/70 space-y-1.5 shadow-2xs">
-                        <div className="flex items-center justify-between text-xs font-black text-emerald-950 dark:text-emerald-200">
-                          <span className="inline-flex items-center gap-1.5 font-mono">
-                            <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.4]" />
+                      <div
+                        className="mb-2 p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/70 space-y-1.5 shadow-2xs"
+                        title={`Disponible desde las ${room.freeFrom} hasta las ${room.freeUntil}`}
+                      >
+                        <div className="flex items-center justify-between gap-2 text-xs font-black text-emerald-950 dark:text-emerald-200">
+                          <span className="inline-flex items-center gap-1.5 font-mono whitespace-nowrap">
+                            <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2.4] shrink-0" />
                             <span>{room.freeTimeRange}</span>
                           </span>
-                          <span className="text-[10px] uppercase tracking-tight px-2 py-0.5 rounded-md bg-emerald-200/80 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-100 font-extrabold shadow-2xs">
+                          <span className="text-[10px] uppercase tracking-tight px-2 py-0.5 rounded-md bg-emerald-200/80 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-100 font-extrabold shadow-2xs whitespace-nowrap shrink-0">
                             {room.freeDurationStr}
                           </span>
                         </div>
@@ -2505,10 +2504,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                               title="Toca para ver qué clase está programada"
                             >
                               <span className="font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1 group-hover:text-emerald-800 dark:group-hover:text-emerald-300">
-                                <span>Próx. {room.nextEvent.isReserva ? 'reserva' : 'clase'}:</span>
+                                <span>
+                                  Próx. {room.nextEvent.isReserva ? 'reserva' : 'clase'}
+                                  {room.freeExactDur ? ` (en ${room.freeExactDur})` : ''}:
+                                </span>
                                 <ChevronDown className={`w-3 h-3 text-emerald-600 dark:text-emerald-400 transition-transform duration-200 ${expandedNextEvents[room.abrv] ? 'rotate-180' : ''}`} />
                               </span>
-                              <strong className="text-slate-900 dark:text-zinc-100 font-mono text-[11px] bg-emerald-100/70 dark:bg-emerald-900/60 px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800/60 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800 transition">
+                              <strong className="text-slate-900 dark:text-zinc-100 font-mono text-[11px] bg-emerald-100/70 dark:bg-emerald-900/60 px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800/60 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800 transition whitespace-nowrap">
                                 {room.nextEvent.start} hrs
                               </strong>
                             </button>
