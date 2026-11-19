@@ -169,44 +169,86 @@ async function getAccess(db) {
       .run();
   }
 
-  // Auto-resolver y asegurar que apunte a CONTROL DOCENTE - TEST.xlsx
+  // Auto-resolver y asegurar que apunte siempre al archivo actual "CONTROL DOCENTE - TEST.xlsx"
   try {
     const targets = await findTargets(token, row);
     if (targets.length > 0 && targets[0].id && (targets[0].id !== row.item_id || !row.item_id)) {
+      const changed = Boolean(row.item_id && targets[0].id !== row.item_id);
       await db
         .prepare("UPDATE onedrive_auth SET item_id = ?, file_name = ? WHERE id = 'primary'")
         .bind(targets[0].id, targets[0].name)
         .run();
       row.item_id = targets[0].id;
       row.file_name = targets[0].name;
+      // Si el archivo fue reemplazado en OneDrive por uno nuevo con el mismo nombre, limpiar caché de timestamps
+      if (changed) {
+        await setState(db, 'last_pulled_mod', '');
+        await setState(db, 'last_pushed_mod', '');
+      }
     }
   } catch (_) { }
 
   return { token, row };
 }
 
+const TARGET_EXCEL_FILENAME = 'CONTROL DOCENTE - TEST.xlsx';
+
 export async function findTargets(token, row) {
   const targets = [];
-  const r = await gfetch(token, `${G}/me/drive/root/search(q='CONTROL DOCENTE')`);
-  if (r.ok) {
-    for (const f of r.json?.value || []) {
-      const nm = String(f.name || '');
-      if (nm.toUpperCase().includes('CONTROL DOCENTE') && nm.toLowerCase().endsWith('.xlsx')) {
-        targets.push({ id: f.id, name: nm, lastModifiedDateTime: f.lastModifiedDateTime });
+
+  // 1. Búsqueda directa por ruta/nombre exacto en la raíz de OneDrive (instantánea al reemplazar el archivo)
+  try {
+    const direct = await gfetch(
+      token,
+      `${G}/me/drive/root:/${enc(TARGET_EXCEL_FILENAME)}?$select=id,name,lastModifiedDateTime`
+    );
+    if (direct.ok && direct.json?.id) {
+      targets.push({
+        id: direct.json.id,
+        name: direct.json.name || TARGET_EXCEL_FILENAME,
+        lastModifiedDateTime: direct.json.lastModifiedDateTime || ''
+      });
+    }
+  } catch (_) {}
+
+  // 2. Fallback por búsqueda en subcarpetas de OneDrive si no estuviera en la raíz
+  if (targets.length === 0) {
+    const r = await gfetch(token, `${G}/me/drive/root/search(q='CONTROL DOCENTE - TEST.xlsx')`);
+    if (r.ok) {
+      for (const f of r.json?.value || []) {
+        const nm = String(f.name || '');
+        if (nm.toUpperCase().includes('CONTROL DOCENTE') && nm.toLowerCase().endsWith('.xlsx')) {
+          targets.push({ id: f.id, name: nm, lastModifiedDateTime: f.lastModifiedDateTime });
+        }
       }
     }
+
+    if (targets.length === 0) {
+      const r2 = await gfetch(token, `${G}/me/drive/root/search(q='CONTROL DOCENTE')`);
+      if (r2.ok) {
+        for (const f of r2.json?.value || []) {
+          const nm = String(f.name || '');
+          if (nm.toUpperCase().includes('CONTROL DOCENTE') && nm.toLowerCase().endsWith('.xlsx')) {
+            targets.push({ id: f.id, name: nm, lastModifiedDateTime: f.lastModifiedDateTime });
+          }
+        }
+      }
+    }
+
+    // Ordenar priorizando coincidencia exacta con "CONTROL DOCENTE - TEST.xlsx" y fecha más reciente
+    targets.sort((a, b) => {
+      const aExact = a.name.trim().toUpperCase() === TARGET_EXCEL_FILENAME.toUpperCase() ? 1 : 0;
+      const bExact = b.name.trim().toUpperCase() === TARGET_EXCEL_FILENAME.toUpperCase() ? 1 : 0;
+      if (aExact !== bExact) return bExact - aExact;
+      const aTest = a.name.toUpperCase().includes('TEST') ? 1 : 0;
+      const bTest = b.name.toUpperCase().includes('TEST') ? 1 : 0;
+      if (aTest !== bTest) return bTest - aTest;
+      return String(b.lastModifiedDateTime || '').localeCompare(String(a.lastModifiedDateTime || ''));
+    });
   }
 
-  // Ordenar priorizando estrictamente "CONTROL DOCENTE - TEST.xlsx"
-  targets.sort((a, b) => {
-    const aTest = a.name.toUpperCase().includes('TEST') ? 1 : 0;
-    const bTest = b.name.toUpperCase().includes('TEST') ? 1 : 0;
-    if (aTest !== bTest) return bTest - aTest;
-    return String(b.lastModifiedDateTime || '').localeCompare(String(a.lastModifiedDateTime || ''));
-  });
-
   if (targets.length === 0 && row?.item_id) {
-    targets.push({ id: row.item_id, name: row.file_name || 'CONTROL DOCENTE - TEST.xlsx' });
+    targets.push({ id: row.item_id, name: row.file_name || TARGET_EXCEL_FILENAME });
   }
   return targets;
 }

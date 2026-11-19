@@ -1490,17 +1490,32 @@ async function handleApiRequest(context) {
       let itemId = null;
       let fileName = 'CONTROL DOCENTE - TEST.xlsx';
       try {
-        const searchRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='CONTROL DOCENTE')", {
+        // 1. Buscar directamente por ruta/nombre exacto en la raíz de OneDrive
+        const directRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root:/CONTROL%20DOCENTE%20-%20TEST.xlsx?$select=id,name", {
           headers: { Authorization: `Bearer ${tkJson.access_token}` }
         });
-        if (searchRes.ok) {
-          const sJson = await searchRes.json();
-          const match = (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('TEST')) ||
-                        (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('COPIA')) ||
-                        (sJson.value || [])[0];
-          if (match) {
-            itemId = match.id;
-            fileName = match.name;
+        if (directRes.ok) {
+          const dJson = await directRes.json();
+          if (dJson?.id) {
+            itemId = dJson.id;
+            fileName = dJson.name || fileName;
+          }
+        }
+        // 2. Fallback por búsqueda si está en una subcarpeta
+        if (!itemId) {
+          const searchRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='CONTROL DOCENTE')", {
+            headers: { Authorization: `Bearer ${tkJson.access_token}` }
+          });
+          if (searchRes.ok) {
+            const sJson = await searchRes.json();
+            const match = (sJson.value || []).find(f => String(f.name || '').trim().toUpperCase() === 'CONTROL DOCENTE - TEST.xlsx'.toUpperCase()) ||
+                          (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('TEST')) ||
+                          (sJson.value || []).find(f => String(f.name || '').toUpperCase().includes('COPIA')) ||
+                          (sJson.value || [])[0];
+            if (match) {
+              itemId = match.id;
+              fileName = match.name;
+            }
           }
         }
       } catch (_) {}

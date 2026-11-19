@@ -5,7 +5,7 @@ import { getLiveExcelState } from '../utils/liveExcelSync';
 import { useFadeModal } from '../utils/useFadeModal';
 
 export const USER_ONEDRIVE_EXCEL_URL =
-  'https://educorpperu-my.sharepoint.com/:x:/r/personal/tayron_salinas_upn_edu_pe/_layouts/15/Doc.aspx?sourcedoc=%7BE0144669-9D3C-4D3D-9586-73791364FE6B%7D&file=CONTROL%20DOCENTE%20-%20TEST.xlsx&action=default&mobileredirect=true&share=cQppRhTgPJ09TZWGc3kTZP5rEgUBQSp4dZ3Plu5UzXwYu-yFNw&wdslf=myfiles-c';
+  'https://educorpperu-my.sharepoint.com/:x:/r/personal/tayron_salinas_upn_edu_pe/_layouts/15/Doc.aspx?sourcedoc=%7BE370C384-BFEA-4AF7-8F02-72A47CCE091C%7D&file=CONTROL%20DOCENTE%20-%20TEST.xlsx&action=default&mobileredirect=true&share=cQqEw3Dj6r_3So8CcqR8zgkcEgUB3JwbON3jodNyrSFRvTJ8Og';
 
 export default function OneDriveSyncModal({ isOpen, onClose, liveExcel, onStatusMessage }) {
   const fadeModal = useFadeModal(isOpen, onClose, 200, { isModal: true });
