@@ -122,7 +122,7 @@ export function getActiveAssistantAssignment() {
   const cleanUser = String(user.username || '').toLowerCase();
   const myAss = assignments[cleanUser] || {};
   const pabellon = myAss.pabellon !== undefined ? myAss.pabellon : (user.assignedPabellon || '');
-  const pisos = (Array.isArray(myAss.pisos) && myAss.pisos.length > 0) ? myAss.pisos : (user.assignedPisos || []);
+  const pisos = Array.isArray(myAss.pisos) ? myAss.pisos : (Array.isArray(user.assignedPisos) ? user.assignedPisos : []);
   const isAdminUser = user.role === 'admin';
   return {
     user,
@@ -177,11 +177,11 @@ export function isClassAssignedToAssistant(item, assignment) {
       if (targetDigit === '3' && (itemUbi.includes('3ER') || itemUbi.includes('TERCER') || itemUbi.includes('PISO 3') || itemUbi.includes('3°'))) return true;
       if (targetDigit === '4' && (itemUbi.includes('4TO') || itemUbi.includes('CUARTO') || itemUbi.includes('PISO 4') || itemUbi.includes('4°'))) return true;
       if (targetDigit === '5' && (itemUbi.includes('5TO') || itemUbi.includes('QUINTO') || itemUbi.includes('PISO 5') || itemUbi.includes('5°'))) return true;
-      if (pUpper.includes('SOT') && (itemUbi.includes('SOT') || itemUbi.includes('SÓT'))) return true;
+      if (pUpper.includes('SOT') && (itemUbi.includes('SOT') || itemUbi.includes('SÓT') || /^[A-Z]+-?S\d+/i.test(itemAula))) return true;
 
-      // Si el piso_pabellon no tiene el texto, extraer dígito del aula (ej: A102 -> 1, B305 -> 3)
-      if (targetDigit && /^[A-Z]\d{2,4}/.test(itemAula)) {
-        const digitMatch = itemAula.match(/^[A-Z](\d)/);
+      // Si el piso_pabellon no tiene el texto, extraer dígito del aula (ej: A102 -> 1, B-305 -> 3)
+      if (targetDigit && /^[A-Z]+-?\d{2,4}/.test(itemAula)) {
+        const digitMatch = itemAula.match(/^[A-Z]+-?(\d)/);
         if (digitMatch && digitMatch[1] === targetDigit) return true;
       }
 
@@ -456,6 +456,10 @@ export async function scheduleNativeAlarms() {
 
       if (AppInstaller?.scheduleExactAlarm) {
         for (const notif of notificationsToSchedule.slice(0, 20)) {
+          if (!getAuthUser()) {
+            await clearAllScheduledNotifications();
+            return;
+          }
           if (notif.schedule?.at && notif.schedule.at instanceof Date) {
             try {
               await AppInstaller.scheduleExactAlarm({
@@ -799,6 +803,7 @@ async function checkScheduleTick() {
       const body = `El bloque ${b.ini} - ${b.fin} inicia en ${diff} min. Aulas asignadas (${aulasList.length}): ${aulasText}. Prepara la ronda.`;
 
       // Disparar en Android APK vía LocalNotifications
+      if (!getAuthUser()) return;
       if (isCapacitorNative()) {
         try {
           LocalNotifications.schedule({
@@ -945,6 +950,7 @@ async function checkMidpointPendingAttendance() {
         const body = `Mitad de turno: Tienes ${pendingCount} aula(s) asignadas pendientes (${aulasText}). ¡Recuerda marcar Puntual, Tarde o Falta!`;
 
         // 1. Android Nativo APK
+        if (!getAuthUser()) return;
         if (isCapacitorNative()) {
           try {
             LocalNotifications.schedule({
