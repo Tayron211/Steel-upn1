@@ -135,25 +135,70 @@ const getCurrentHourBlock = () => {
   return '19:30';
 };
 
+const normalizeRoomCode = (code) =>
+  String(code || '').toUpperCase().replace(/[\s\-_]+/g, '').trim();
+
 const timeToMins = (tStr) => {
-  if (!tStr) return 0;
-  const [h, m] = String(tStr).split(':').map(Number);
-  return (h || 0) * 60 + (m || 0);
+  if (tStr == null || tStr === '') return 0;
+  const s = String(tStr).trim().toLowerCase();
+  const m = s.match(/(\d{1,2})\s*[:.]\s*(\d{2})/);
+  if (!m) return 0;
+  let h = Number(m[1]);
+  const mins = Number(m[2]);
+  if (!Number.isFinite(h) || !Number.isFinite(mins)) return 0;
+  const isPM = /\b(p\.?\s*m\.?)\b/.test(s) || (s.includes('pm') && !s.includes('am'));
+  const isAM = /\b(a\.?\s*m\.?)\b/.test(s) || s.includes('am');
+  if (isPM && h < 12) h += 12;
+  if (isAM && h === 12) h = 0;
+  return h * 60 + mins;
+};
+
+const parseStrictTimeMins = (tStr) => {
+  if (tStr == null || tStr === '') return null;
+  const s = String(tStr).trim().toLowerCase();
+  const m = s.match(/(\d{1,2})\s*[:.]\s*(\d{2})/);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const mins = Number(m[2]);
+  if (!Number.isFinite(h) || !Number.isFinite(mins) || h > 24 || mins > 59) return null;
+  const isPM = /\b(p\.?\s*m\.?)\b/.test(s) || (s.includes('pm') && !s.includes('am'));
+  const isAM = /\b(a\.?\s*m\.?)\b/.test(s) || s.includes('am');
+  if (isPM && h < 12) h += 12;
+  if (isAM && h === 12) h = 0;
+  return h * 60 + mins;
+};
+
+const extractRecordTimeRange = (startRaw, endRaw) => {
+  let sStr = String(startRaw || '').trim();
+  let eStr = String(endRaw || '').trim();
+  if (sStr && !eStr && /[-–—]/.test(sStr)) {
+    const parts = sStr.split(/[-–—]/).map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      sStr = parts[0];
+      eStr = parts[1];
+    }
+  }
+  return {
+    startStr: sStr,
+    endStr: eStr,
+    startMins: parseStrictTimeMins(sStr),
+    endMins: parseStrictTimeMins(eStr)
+  };
 };
 
 const normalizeDateStr = (d) => {
   if (!d) return '';
   const str = String(d).trim();
-  if (/^\d{5}$/.test(str)) {
-    const num = Number(str);
+  if (/^\d{5}(?:\.\d+)?$/.test(str)) {
+    const num = Math.floor(Number(str));
     const dt = new Date(Math.round((num - 25569) * 86400000));
     if (!Number.isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
   }
-  const ymd = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  const ymd = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if (ymd) {
     return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
   }
-  const dmy = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  const dmy = str.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
   if (dmy) {
     return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
   }
@@ -483,9 +528,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     }
     if (!r.aula) return [];
     return String(r.aula)
-      .split(',')
+      .split(/[,;/|]+/)
       .map(s => s.trim().toUpperCase())
       .filter(Boolean);
+  };
+
+  const isSameReservationRecord = (r, editing) => {
+    if (!r || !editing) return false;
+    if (editing.id && r.id === editing.id) return true;
+    if (Array.isArray(editing.ids) && editing.ids.includes(r.id)) return true;
+    return false;
   };
 
   // Obtener horario específico para un aula dentro de una reserva múltiple
@@ -724,7 +776,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     setLoading(true);
     try {
       const [resReservas, resRooms] = await Promise.all([
-        fetch(selectedMes ? `/api/reservations?mes=${encodeURIComponent(selectedMes)}` : '/api/reservations'),
+        fetch('/api/reservations'),
         fetch('/api/rooms')
       ]);
       const [jsonReservas, jsonRooms] = await Promise.all([
@@ -971,6 +1023,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
     return allRooms.filter(rm => {
       const code = (rm.abrv || '').toUpperCase().trim();
+      const normCode = normalizeRoomCode(code);
 
       for (const curFecha of datesToCheck) {
         if (!curFecha) continue;
@@ -980,26 +1033,28 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // Conflicto con clases académicas programadas ese día
         const classConflict = classPool.some(c => {
-          if ((c.aula || '').toUpperCase().trim() !== code) return false;
+          if (normalizeRoomCode(c.aula) !== normCode) return false;
           if (normalizeDay(c.dia) !== normalizeDay(curDia)) return false;
-          const cStart = timeToMins(c.horaInicioProg);
-          const cEnd = timeToMins(c.horaFinalProg);
+          const { startMins: cStart, endMins: cEnd } = extractRecordTimeRange(c.horaInicioProg, c.horaFinalProg);
+          if (cStart === null || cEnd === null) return false;
           return cStart < bEnd && cEnd > bStart;
         });
         if (classConflict) return false;
 
         // Conflicto con otras reservas en esa misma fecha (evitar cualquier aula ocupada)
         const resConflict = reservas.some(r => {
-          const rRooms = getReservationRooms(r);
-          if (!rRooms.includes(code)) return false;
-          const rFecha = normalizeDateStr(r.fecha);
+          if (isSameReservationRecord(r, editingItem)) return false;
+          const rRooms = getReservationRooms(r).map(normalizeRoomCode);
+          if (!rRooms.includes(normCode)) return false;
+          const rSched = getRoomSchedule(r, code);
+          const rFecha = normalizeDateStr(rSched.fecha || r.fecha);
           if (rFecha && targetFecha) {
             if (rFecha !== targetFecha) return false;
           } else if (normalizeDay(r.dia) !== normalizeDay(curDia)) {
             return false;
           }
-          const rStart = timeToMins(r.inicio || r.hora_inicio);
-          const rEnd = timeToMins(r.final || r.hora_fin);
+          const { startMins: rStart, endMins: rEnd } = extractRecordTimeRange(rSched.inicio || r.inicio || r.hora_inicio, rSched.final || r.final || r.hora_fin);
+          if (rStart === null || rEnd === null) return true; // Fail-closed si la reserva no tiene horario legible
           return rStart < bEnd && rEnd > bStart;
         });
         if (resConflict) return false;
@@ -1007,7 +1062,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
       return true;
     });
-  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
+  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, editingItem, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
 
   // Detección estricta y en tiempo real de cruces con clases académicas y otras reservas
   const activeConflicts = useMemo(() => {
@@ -1018,6 +1073,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const classPool = allScheduleClasses.length > 0 ? allScheduleClasses : modalDayClasses;
 
     selectedRooms.forEach(aulaCode => {
+      const normCode = normalizeRoomCode(aulaCode);
       const sched = roomSchedules[aulaCode] || {
         fecha: formData.fecha,
         inicio: formData.inicio,
@@ -1036,10 +1092,10 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // 1. Cruce con clases programadas en el horario semanal oficial
         classPool.forEach(c => {
-          if ((c.aula || '').toUpperCase().trim() !== aulaCode) return;
+          if (normalizeRoomCode(c.aula) !== normCode) return;
           if (normalizeDay(c.dia) !== normalizeDay(curDia)) return;
-          const cStart = timeToMins(c.horaInicioProg);
-          const cEnd = timeToMins(c.horaFinalProg);
+          const { startMins: cStart, endMins: cEnd } = extractRecordTimeRange(c.horaInicioProg, c.horaFinalProg);
+          if (cStart === null || cEnd === null) return;
           if (cStart < reqEnd && cEnd > reqStart) {
             conflicts.push({
               type: 'CLASE',
@@ -1056,24 +1112,28 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // 2. Cruce con reservas existentes registradas en la app / base de datos
         reservas.forEach(r => {
-          const rRooms = getReservationRooms(r);
-          if (!rRooms.includes(aulaCode)) return;
-          const rFecha = normalizeDateStr(r.fecha);
+          if (isSameReservationRecord(r, editingItem)) return;
+          const rRooms = getReservationRooms(r).map(normalizeRoomCode);
+          if (!rRooms.includes(normCode)) return;
+          const rSched = getRoomSchedule(r, aulaCode);
+          const rFecha = normalizeDateStr(rSched.fecha || r.fecha);
           const isSameDay = rFecha && targetFecha
             ? (rFecha === targetFecha)
             : (normalizeDay(r.dia) === normalizeDay(curDia));
           if (!isSameDay) return;
 
-          const rStart = timeToMins(r.inicio || r.hora_inicio);
-          const rEnd = timeToMins(r.final || r.hora_fin);
-          if (rStart < reqEnd && rEnd > reqStart) {
+          const { startStr, endStr, startMins: rStart, endMins: rEnd } = extractRecordTimeRange(
+            rSched.inicio || r.inicio || r.hora_inicio,
+            rSched.final || r.final || r.hora_fin
+          );
+          if (rStart === null || rEnd === null || (rStart < reqEnd && rEnd > reqStart)) {
             conflicts.push({
               type: 'RESERVA',
               aula: aulaCode,
               fecha: curDate,
               dia: curDia,
-              inicio: r.inicio || r.hora_inicio,
-              final: r.final || r.hora_fin,
+              inicio: startStr || r.inicio || r.hora_inicio || '--:--',
+              final: endStr || r.final || r.hora_fin || '--:--',
               titulo: r.detalle || r.motivo || 'Reserva Registrada',
               responsable: r.docente || r.usuario || 'Otro usuario'
             });
@@ -1083,7 +1143,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     });
 
     return conflicts;
-  }, [formData, roomSchedules, rangeDates, allScheduleClasses, modalDayClasses, reservas]);
+  }, [formData, roomSchedules, rangeDates, allScheduleClasses, modalDayClasses, reservas, editingItem]);
 
   // Si las aulas previamente seleccionadas por el usuario pasan a estar ocupadas al cambiar horario/fecha, mantener solo las que sigan libres
   useEffect(() => {
@@ -1105,7 +1165,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     }
   }, [isModalOpen, freeRoomsForModalTime]);
 
-  // Estado detallado de TODAS las aulas para el selector (libres, reservadas y en clase según Excel/BD)
+  // Estado detallado de TODAS las aulas para el selector (libres, reservadas y en clase según horario/BD)
   const pickerRoomsWithStatus = useMemo(() => {
     const bStart = timeToMins(formData.inicio);
     const bEnd = timeToMins(formData.final);
@@ -1114,6 +1174,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
     const list = allRooms.map(rm => {
       const code = (rm.abrv || '').toUpperCase().trim();
+      const normCode = normalizeRoomCode(code);
       let conflictInfo = null;
       const otherDayReservas = [];
 
@@ -1125,9 +1186,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // 1. Buscar reservas en esa fecha para esta aula
         const dayReservas = reservas.filter(r => {
-          const rRooms = getReservationRooms(r);
-          if (!rRooms.includes(code)) return false;
-          const rFecha = normalizeDateStr(r.fecha);
+          if (isSameReservationRecord(r, editingItem)) return false;
+          const rRooms = getReservationRooms(r).map(normalizeRoomCode);
+          if (!rRooms.includes(normCode)) return false;
+          const rSched = getRoomSchedule(r, code);
+          const rFecha = normalizeDateStr(rSched.fecha || r.fecha);
           if (rFecha && targetFecha) {
             return rFecha === targetFecha;
           }
@@ -1135,16 +1198,18 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
         });
 
         for (const r of dayReservas) {
-          const rStartStr = r.inicio || r.hora_inicio || '';
-          const rEndStr = r.final || r.hora_fin || '';
-          const rStart = timeToMins(rStartStr);
-          const rEnd = timeToMins(rEndStr);
-          if (rStart < bEnd && rEnd > bStart) {
+          const rSched = getRoomSchedule(r, code);
+          const { startStr: rStartStr, endStr: rEndStr, startMins: rStart, endMins: rEnd } = extractRecordTimeRange(
+            rSched.inicio || r.inicio || r.hora_inicio,
+            rSched.final || r.final || r.hora_fin
+          );
+          const overlaps = rStart === null || rEnd === null || (rStart < bEnd && rEnd > bStart);
+          if (overlaps) {
             if (!conflictInfo) {
               conflictInfo = {
                 type: 'RESERVA',
                 badge: 'RESERVADA',
-                hours: `${rStartStr} - ${rEndStr}`,
+                hours: (rStartStr && rEndStr) ? `${rStartStr} - ${rEndStr}` : (rStartStr || 'Horario reservado'),
                 reason: r.motivo || r.detalle || 'Reserva registrada',
                 owner: r.docente || r.solicitante || r.usuario || '',
                 fecha: curFecha
@@ -1159,13 +1224,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           }
         }
 
-        // 2. Buscar clases programadas (Excel) si aún no hay conflicto de reserva
+        // 2. Buscar clases programadas si aún no hay conflicto de reserva
         if (!conflictInfo) {
           const overlapClass = classPool.find(c => {
-            if ((c.aula || '').toUpperCase().trim() !== code) return false;
+            if (normalizeRoomCode(c.aula) !== normCode) return false;
             if (normalizeDay(c.dia) !== normalizeDay(curDia)) return false;
-            const cStart = timeToMins(c.horaInicioProg);
-            const cEnd = timeToMins(c.horaFinalProg);
+            const { startMins: cStart, endMins: cEnd } = extractRecordTimeRange(c.horaInicioProg, c.horaFinalProg);
+            if (cStart === null || cEnd === null) return false;
             return cStart < bEnd && cEnd > bStart;
           });
           if (overlapClass) {
@@ -1191,7 +1256,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
     // Ordenar: primero las aulas libres, luego las reservadas/ocupadas
     return list.sort((a, b) => Number(a.isBlocked) - Number(b.isBlocked));
-  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
+  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, editingItem, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
 
   const pickerStatusCounts = useMemo(() => {
     const base = pickerRoomsWithStatus.filter(rm => {
@@ -3881,7 +3946,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                         {/* Aviso si el aula tiene reserva en OTRO horario distinto ese mismo día */}
                         {!isBlocked && rm.dayReservasSummary && rm.dayReservasSummary.length > 0 && (
                           <div className="mt-1.5 px-2 py-1 rounded-lg bg-amber-100/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 text-[10px] font-bold text-amber-900 dark:text-amber-200 truncate">
-                            📅 Reservada hoy: {rm.dayReservasSummary[0].hours} ({rm.dayReservasSummary[0].reason})
+                            📅 Libre en tu horario · Reservada de {rm.dayReservasSummary[0].hours} ({rm.dayReservasSummary[0].reason})
                           </div>
                         )}
                       </div>

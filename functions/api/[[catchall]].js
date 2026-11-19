@@ -935,34 +935,113 @@ async function handleApiRequest(context) {
         ? body.dates
         : [body.fecha || new Date().toISOString().split('T')[0]];
 
+      const normRoom = (c) => String(c || '').toUpperCase().replace(/[\s\-_]+/g, '').trim();
+      const normDate = (d) => {
+        if (!d) return '';
+        const str = String(d).trim();
+        if (/^\d{5}(?:\.\d+)?$/.test(str)) {
+          const dtSerial = new Date(Math.round((Math.floor(Number(str)) - 25569) * 86400000));
+          if (!Number.isNaN(dtSerial.getTime())) return dtSerial.toISOString().slice(0, 10);
+        }
+        const ymd = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+        if (ymd) return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
+        const dmy = str.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+        return str.slice(0, 10);
+      };
+      const toMins = (tStr) => {
+        if (tStr == null || tStr === '') return null;
+        const s = String(tStr).trim().toLowerCase();
+        const m = s.match(/(\d{1,2})\s*[:.]\s*(\d{2})/);
+        if (!m) return null;
+        let h = Number(m[1]);
+        const mins = Number(m[2]);
+        if (!Number.isFinite(h) || !Number.isFinite(mins) || h > 24 || mins > 59) return null;
+        const isPM = /\b(p\.?\s*m\.?)\b/.test(s) || (s.includes('pm') && !s.includes('am'));
+        const isAM = /\b(a\.?\s*m\.?)\b/.test(s) || s.includes('am');
+        if (isPM && h < 12) h += 12;
+        if (isAM && h === 12) h = 0;
+        return h * 60 + mins;
+      };
+
+      let customRoomSchedules = null;
+      if (obs && obs.startsWith('{')) {
+        try {
+          const parsedObs = JSON.parse(obs);
+          if (parsedObs && parsedObs.schedules) customRoomSchedules = parsedObs.schedules;
+        } catch (_) {}
+      }
+
+      // Cargar todas las reservas y clases para validación minuciosa sin fallos de formato SQL
+      const [allResQuery, allClassQuery] = await Promise.all([
+        db.prepare('SELECT id, fecha, dia, inicio, final, aula, docente, detalle, motivo, obs FROM reservas').all(),
+        db.prepare('SELECT aula, dia, hora_inicio_prog, hora_final_prog, curso, docente FROM asistencia').all()
+      ]);
+      const allExistingReservas = allResQuery?.results || [];
+      const allScheduledClasses = allClassQuery?.results || [];
+
       // PASO 1: Validación estricta de cruce de horario para CADA fecha y CADA aula solicitada
       for (const curFecha of datesToProcess) {
         const dt = new Date(curFecha + 'T12:00:00');
         const dia = days[dt.getDay()] || 'LUNES';
-        const targetIso = (curFecha || '').slice(0, 10);
-        let targetAlt = targetIso;
-        const ymdMatch = targetIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if (ymdMatch) {
-          targetAlt = `${ymdMatch[3]}/${ymdMatch[2]}/${ymdMatch[1]}`;
-        }
+        const targetIso = normDate(curFecha);
 
-        const existingReservas = await db.prepare(`
-          SELECT * FROM reservas
-          WHERE (fecha = ? OR fecha = ? OR (fecha IS NULL AND UPPER(TRIM(dia)) = UPPER(TRIM(?))))
-          AND inicio < ? AND final > ?
-        `).bind(targetIso, targetAlt, dia, final, inicio).all();
+        for (const reqRoom of requestedRooms) {
+          const normReqRoom = normRoom(reqRoom);
+          const roomSched = (customRoomSchedules && (customRoomSchedules[reqRoom] || customRoomSchedules[normReqRoom])) || null;
+          const reqStartStr = (roomSched && roomSched.inicio) || inicio;
+          const reqEndStr = (roomSched && roomSched.final) || final;
+          const reqStartM = toMins(reqStartStr);
+          const reqEndM = toMins(reqEndStr);
+          if (reqStartM === null || reqEndM === null) continue;
 
-        if (existingReservas && Array.isArray(existingReservas.results)) {
-          for (const existing of existingReservas.results) {
-            const existingRooms = (existing.aula || '')
-              .split(',')
-              .map(s => s.trim().toUpperCase())
+          // 1A. Cruce con reservas existentes
+          for (const existing of allExistingReservas) {
+            const existingRooms = String(existing.aula || '')
+              .split(/[,;/|]+/)
+              .map(s => normRoom(s))
               .filter(Boolean);
-            const common = requestedRooms.find(r => existingRooms.includes(r));
-            if (common) {
+            if (!existingRooms.includes(normReqRoom)) continue;
+
+            let exSched = null;
+            if (existing.obs && typeof existing.obs === 'string' && existing.obs.startsWith('{')) {
+              try {
+                const parsedEx = JSON.parse(existing.obs);
+                if (parsedEx?.schedules) {
+                  exSched = parsedEx.schedules[reqRoom] || parsedEx.schedules[normReqRoom] || null;
+                }
+              } catch (_) {}
+            }
+
+            const exFecha = normDate((exSched && exSched.fecha) || existing.fecha);
+            const sameDay = exFecha && targetIso
+              ? (exFecha === targetIso)
+              : (normalizeDay(existing.dia) === normalizeDay(dia));
+            if (!sameDay) continue;
+
+            const exStartStr = (exSched && exSched.inicio) || existing.inicio || '';
+            const exEndStr = (exSched && exSched.final) || existing.final || '';
+            const exStartM = toMins(exStartStr);
+            const exEndM = toMins(exEndStr);
+            const overlaps = exStartM === null || exEndM === null || (exStartM < reqEndM && exEndM > reqStartM);
+            if (overlaps) {
               return json({
                 success: false,
-                error: `Cruce detectado: El aula ${common} ya se encuentra reservada el día ${targetIso} (${dia}) por ${existing.docente || 'otro usuario'} de ${existing.inicio} a ${existing.final}.`
+                error: `Cruce detectado (Reserva): El aula ${reqRoom} ya se encuentra reservada el día ${targetIso} (${dia}) por ${existing.docente || 'otro usuario'} de ${exStartStr || '--:--'} a ${exEndStr || '--:--'}.`
+              }, 400);
+            }
+          }
+
+          // 1B. Cruce con clases académicas programadas
+          for (const cls of allScheduledClasses) {
+            if (normRoom(cls.aula) !== normReqRoom) continue;
+            if (normalizeDay(cls.dia) !== normalizeDay(dia)) continue;
+            const cStartM = toMins(cls.hora_inicio_prog);
+            const cEndM = toMins(cls.hora_final_prog);
+            if (cStartM !== null && cEndM !== null && cStartM < reqEndM && cEndM > reqStartM) {
+              return json({
+                success: false,
+                error: `Cruce detectado (Clase): El aula ${reqRoom} tiene clase programada (${cls.curso || 'Curso'}) el ${dia} de ${cls.hora_inicio_prog} a ${cls.hora_final_prog}.`
               }, 400);
             }
           }
