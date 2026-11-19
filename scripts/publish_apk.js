@@ -11,6 +11,42 @@ function run(cmd, cwd = rootDir) {
   execSync(cmd, { cwd, stdio: 'inherit' });
 }
 
+function buildRecentFeaturesFromGit() {
+  try {
+    const rawLog = execSync('git log -n 30 --pretty=format:"%s"', { cwd: rootDir, encoding: 'utf8' });
+    const lines = rawLog
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .filter(s => !/^chore:/i.test(s) && !/^merge /i.test(s));
+
+    const unique = [];
+    const seen = new Set();
+    for (const line of lines) {
+      const clean = line.replace(/^(feat|fix|ui|perf|refactor|style|docs)(\([^)]+\))?:\s*/i, '').trim();
+      const key = clean.toLowerCase();
+      if (!clean || seen.has(key)) continue;
+      seen.add(key);
+
+      let category = 'Actualización y Mejora';
+      if (/^feat/i.test(line)) category = 'Nueva Funcionalidad';
+      else if (/^fix/i.test(line)) category = 'Corrección y Estabilidad';
+      else if (/^ui/i.test(line)) category = 'Mejora de Interfaz';
+      else if (/^perf/i.test(line)) category = 'Optimización';
+
+      const formattedDesc = clean.charAt(0).toUpperCase() + clean.slice(1) + (clean.endsWith('.') ? '' : '.');
+      unique.push({
+        title: category,
+        desc: formattedDesc
+      });
+      if (unique.length >= 6) break;
+    }
+    return unique;
+  } catch (_) {
+    return [];
+  }
+}
+
 try {
   console.log('=== PUBLICANDO NUEVA VERSION DE APK CONTROL DOCENTE ===');
 
@@ -24,13 +60,16 @@ try {
   parts[2] = (parts[2] || 0) + 1;
   const nextVersion = parts.join('.');
 
-  const notesArg = process.argv[2] || versionData.notes || 'Mejoras de rendimiento, estabilidad y nuevas funciones.';
+  const recentFeatures = buildRecentFeaturesFromGit();
+  const notesArg = process.argv[2] || (recentFeatures[0]?.desc) || 'Mejoras recientes de rendimiento, estabilidad y nuevas funciones.';
 
   versionData.version = nextVersion;
   versionData.versionCode = nextBuild;
   versionData.releaseDate = new Date().toISOString().split('T')[0];
   versionData.notes = notesArg;
-  if (!versionData.features) {
+  if (recentFeatures.length > 0) {
+    versionData.features = recentFeatures;
+  } else if (!versionData.features) {
     versionData.features = [];
   }
 
