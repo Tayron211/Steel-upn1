@@ -2235,7 +2235,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       const cAula = (c.aula || '').toUpperCase().trim();
       if (!cAula) continue;
       const cStart = (c.horaInicioProg || '').trim();
-      const cEnd = (c.horaFinProg || '').trim();
+      const cEnd = (c.horaFinalProg || c.horaFinProg || '').trim();
       const cStartM = timeToMins(cStart);
       const cEndM = cEnd ? timeToMins(cEnd) : (cStartM + 100);
 
@@ -2335,24 +2335,39 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
           isRestOfDay = false;
         }
 
-        const freeStartM = currentBlockDef.startM;
+        const now = new Date();
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        const isCurrentToday = selectedDia === DAYS_OF_WEEK[now.getDay()];
+        const isLiveMode = isCurrentToday && (blockMode === 'CURRENT' || currentBlockDef.start === getCurrentHourBlock());
+
+        // Si es hoy y estamos viendo el bloque en curso, usar la hora exacta actual (nowMins) para mostrar exactamente cuánto queda libre
+        const freeStartM = isLiveMode
+          ? Math.min(Math.max(currentBlockDef.startM, nowMins), 22 * 60 + 50)
+          : currentBlockDef.startM;
+        const freeStartStr = `${String(Math.floor(freeStartM / 60)).padStart(2, '0')}:${String(freeStartM % 60).padStart(2, '0')}`;
+
         const freeEndM = timeToMins(freeUntil);
         const freeDiffM = Math.max(0, freeEndM - freeStartM);
         const freeHours = Math.floor(freeDiffM / 60);
         const freeMins = freeDiffM % 60;
 
+        const exactParts = [];
+        if (freeHours > 0) exactParts.push(`${freeHours}h`);
+        if (freeMins > 0 || freeHours === 0) exactParts.push(`${freeMins}m`);
+        const exactDur = exactParts.join(' ');
+
         let freeDurationStr = '';
         if (isRestOfDay) {
-          freeDurationStr = `Resto del día (${freeHours}h libres)`;
+          freeDurationStr = `Resto del día (${exactDur} libres)`;
         } else {
-          freeDurationStr = `${freeHours > 0 ? `${freeHours}h ` : ''}${freeMins > 0 ? `${freeMins}m` : ''} libres`.trim();
+          freeDurationStr = `${exactDur} libres`;
         }
 
-        const freeTimeRange = `${currentBlockDef.start} - ${freeUntil}`;
+        const freeTimeRange = `${freeStartStr} - ${freeUntil}`;
 
         return {
           ...r,
-          freeFrom: currentBlockDef.start,
+          freeFrom: freeStartStr,
           freeUntil,
           freeTimeRange,
           freeDurationStr,

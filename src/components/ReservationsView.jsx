@@ -934,7 +934,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     };
   }, [formData.fecha, activeDayInfo.diaName, dayClasses]);
 
-  // Cálculo de todas las fechas individuales en un Rango de Días (todos los días entre fechaInicio y fechaFin)
+  // Cálculo de todas las fechas individuales en un Rango de Días (ej. Lun a Vie entre fechaInicio y fechaFin)
   const rangeDates = useMemo(() => {
     if (!formData.isDateRange) {
       return formData.fecha ? [formData.fecha] : [];
@@ -946,16 +946,20 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const result = [];
     const curr = new Date(startStr + 'T12:00:00');
     const end = new Date(endStr + 'T12:00:00');
+    const selectedWk = new Set(formData.selectedWeekdays || [1, 2, 3, 4, 5]);
 
     let count = 0;
     while (curr <= end && count < 60) {
-      const iso = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
-      result.push(iso);
+      const dayOfWeek = curr.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+      if (selectedWk.has(dayOfWeek)) {
+        const iso = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
+        result.push(iso);
+      }
       curr.setDate(curr.getDate() + 1);
       count++;
     }
     return result;
-  }, [formData.isDateRange, formData.fecha, formData.fechaInicio, formData.fechaFin, todayIso]);
+  }, [formData.isDateRange, formData.fecha, formData.fechaInicio, formData.fechaFin, formData.selectedWeekdays, todayIso]);
 
   // Solo aulas que estén 100% LIBRES en la fecha (o en TODOS los días del rango) y rango horario de la Nueva Reserva
   const freeRoomsForModalTime = useMemo(() => {
@@ -1957,20 +1961,34 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           isRestOfDay = false;
         }
 
-        const freeStartM = currentBlockDef.startM;
+        const now = new Date();
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        const isLiveMode = target.offset === 0 && (!selectedHoraBlock || currentBlockDef.start === getCurrentHourBlock());
+
+        // Si es hoy y estamos viendo el bloque actual o todo el día, calcular desde la hora exacta actual (nowMins)
+        const freeStartM = isLiveMode
+          ? Math.min(Math.max(currentBlockDef.startM, nowMins), 22 * 60 + 50)
+          : currentBlockDef.startM;
+        const freeStartStr = `${String(Math.floor(freeStartM / 60)).padStart(2, '0')}:${String(freeStartM % 60).padStart(2, '0')}`;
+
         const freeEndM = timeToMins(freeUntil);
         const freeDiffM = Math.max(0, freeEndM - freeStartM);
         const freeHours = Math.floor(freeDiffM / 60);
         const freeMins = freeDiffM % 60;
 
+        const exactParts = [];
+        if (freeHours > 0) exactParts.push(`${freeHours}h`);
+        if (freeMins > 0 || freeHours === 0) exactParts.push(`${freeMins}m`);
+        const exactDur = exactParts.join(' ');
+
         let freeDurationStr = '';
         if (isRestOfDay) {
-          freeDurationStr = `Resto del día (${freeHours}h libres)`;
+          freeDurationStr = `Resto del día (${exactDur} libres)`;
         } else {
-          freeDurationStr = `${freeHours > 0 ? `${freeHours}h ` : ''}${freeMins > 0 ? `${freeMins}m` : ''} libres`.trim();
+          freeDurationStr = `${exactDur} libres`;
         }
 
-        const freeTimeRange = `${currentBlockDef.start} - ${freeUntil}`;
+        const freeTimeRange = `${freeStartStr} - ${freeUntil}`;
 
         return {
           ...room,
@@ -1979,7 +1997,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
           freeBlocksList,
           classesCount: classesInRoom.length,
           reservasCount: reservasInRoom.length,
-          freeFrom: currentBlockDef.start,
+          freeFrom: freeStartStr,
           freeUntil,
           freeTimeRange,
           freeDurationStr,
@@ -2962,6 +2980,78 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                           onChange={(val) => val && setFormData(p => ({ ...p, fechaFin: val }))}
                           required
                         />
+                      </div>
+                    </div>
+
+                    {/* Días de la semana permitidos en el rango */}
+                    <div className="space-y-1.5 pt-1.5 border-t border-amber-200/60 dark:border-amber-900/40">
+                      <div className="flex items-center justify-between text-[10.5px]">
+                        <span className="font-bold text-slate-700 dark:text-zinc-300">
+                          Repetir en los días:
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5] }))}
+                            className="text-[10.5px] font-black text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                          >
+                            Lun a Vie
+                          </button>
+                          <span className="text-slate-300 dark:text-zinc-600">·</span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5, 6, 0] }))}
+                            className="text-[10.5px] font-black text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                          >
+                            Toda la Semana
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { id: 1, label: 'Lunes', short: 'LU' },
+                          { id: 2, label: 'Martes', short: 'MA' },
+                          { id: 3, label: 'Miércoles', short: 'MI' },
+                          { id: 4, label: 'Jueves', short: 'JU' },
+                          { id: 5, label: 'Viernes', short: 'VI' },
+                          { id: 6, label: 'Sábado', short: 'SÁ' },
+                          { id: 0, label: 'Domingo', short: 'DO' }
+                        ].map(day => {
+                          const isSelected = (formData.selectedWeekdays || []).includes(day.id);
+                          return (
+                            <button
+                              key={day.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData(p => {
+                                  const current = p.selectedWeekdays || [];
+                                  const next = isSelected
+                                    ? (current.length > 1 ? current.filter(x => x !== day.id) : current)
+                                    : [...current, day.id];
+                                  return { ...p, selectedWeekdays: next };
+                                });
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                                isSelected
+                                  ? 'bg-amber-500 text-slate-950 shadow-2xs ring-1 ring-amber-500'
+                                  : 'bg-white/90 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100'
+                              }`}
+                              title={day.label}
+                            >
+                              {day.short}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px] text-amber-900 dark:text-amber-200 font-bold pt-0.5">
+                        <Calendar className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span>
+                          {rangeDates.length === 0
+                            ? 'Ningún día coincide en este rango'
+                            : `${rangeDates.length} fecha(s) en total coinciden con la selección`}
+                        </span>
                       </div>
                     </div>
                   </div>
