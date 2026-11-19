@@ -533,13 +533,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
       .filter(Boolean);
   };
 
-  const isSameReservationRecord = (r, editing) => {
-    if (!r || !editing) return false;
-    if (editing.id && r.id === editing.id) return true;
-    if (Array.isArray(editing.ids) && editing.ids.includes(r.id)) return true;
-    return false;
-  };
-
   // Obtener horario específico para un aula dentro de una reserva múltiple
   const getRoomSchedule = (r, roomCode) => {
     if (!r) return { fecha: '', inicio: '', final: '' };
@@ -1043,7 +1036,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // Conflicto con otras reservas en esa misma fecha (evitar cualquier aula ocupada)
         const resConflict = reservas.some(r => {
-          if (isSameReservationRecord(r, editingItem)) return false;
           const rRooms = getReservationRooms(r).map(normalizeRoomCode);
           if (!rRooms.includes(normCode)) return false;
           const rSched = getRoomSchedule(r, code);
@@ -1062,7 +1054,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
       return true;
     });
-  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, editingItem, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
+  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
 
   // Detección estricta y en tiempo real de cruces con clases académicas y otras reservas
   const activeConflicts = useMemo(() => {
@@ -1112,7 +1104,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // 2. Cruce con reservas existentes registradas en la app / base de datos
         reservas.forEach(r => {
-          if (isSameReservationRecord(r, editingItem)) return;
           const rRooms = getReservationRooms(r).map(normalizeRoomCode);
           if (!rRooms.includes(normCode)) return;
           const rSched = getRoomSchedule(r, aulaCode);
@@ -1143,7 +1134,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     });
 
     return conflicts;
-  }, [formData, roomSchedules, rangeDates, allScheduleClasses, modalDayClasses, reservas, editingItem]);
+  }, [formData, roomSchedules, rangeDates, allScheduleClasses, modalDayClasses, reservas]);
 
   // Si las aulas previamente seleccionadas por el usuario pasan a estar ocupadas al cambiar horario/fecha, mantener solo las que sigan libres
   useEffect(() => {
@@ -1186,7 +1177,6 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
         // 1. Buscar reservas en esa fecha para esta aula
         const dayReservas = reservas.filter(r => {
-          if (isSameReservationRecord(r, editingItem)) return false;
           const rRooms = getReservationRooms(r).map(normalizeRoomCode);
           if (!rRooms.includes(normCode)) return false;
           const rSched = getRoomSchedule(r, code);
@@ -1256,7 +1246,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
 
     // Ordenar: primero las aulas libres, luego las reservadas/ocupadas
     return list.sort((a, b) => Number(a.isBlocked) - Number(b.isBlocked));
-  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, editingItem, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
+  }, [allRooms, allScheduleClasses, modalDayClasses, reservas, formData.isDateRange, formData.fecha, formData.dia, formData.inicio, formData.final, rangeDates]);
 
   const pickerStatusCounts = useMemo(() => {
     const base = pickerRoomsWithStatus.filter(rm => {
