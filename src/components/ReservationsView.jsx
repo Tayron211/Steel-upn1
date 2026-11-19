@@ -935,7 +935,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     };
   }, [formData.fecha, activeDayInfo.diaName, dayClasses]);
 
-  // Cálculo de todas las fechas individuales en un Rango de Días (ej. Lun a Vie entre fechaInicio y fechaFin)
+  // Cálculo de todas las fechas individuales en un Rango de Días (todos los días entre fechaInicio y fechaFin)
   const rangeDates = useMemo(() => {
     if (!formData.isDateRange) {
       return formData.fecha ? [formData.fecha] : [];
@@ -947,20 +947,16 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
     const result = [];
     const curr = new Date(startStr + 'T12:00:00');
     const end = new Date(endStr + 'T12:00:00');
-    const selectedWk = new Set(formData.selectedWeekdays || [1, 2, 3, 4, 5]);
 
     let count = 0;
     while (curr <= end && count < 60) {
-      const dayOfWeek = curr.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
-      if (selectedWk.has(dayOfWeek)) {
-        const iso = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
-        result.push(iso);
-      }
+      const iso = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
+      result.push(iso);
       curr.setDate(curr.getDate() + 1);
       count++;
     }
     return result;
-  }, [formData.isDateRange, formData.fecha, formData.fechaInicio, formData.fechaFin, formData.selectedWeekdays, todayIso]);
+  }, [formData.isDateRange, formData.fecha, formData.fechaInicio, formData.fechaFin, todayIso]);
 
   // Solo aulas que estén 100% LIBRES en la fecha (o en TODOS los días del rango) y rango horario de la Nueva Reserva
   const freeRoomsForModalTime = useMemo(() => {
@@ -2894,7 +2890,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
               <div className="p-5 sm:p-6 space-y-3.5 flex-1">
               {/* Bloque Unificado: MODALIDAD, FECHAS (INICIO → FIN) Y HORARIO (INICIO → FIN) */}
               <div className="space-y-2.5">
-                {/* Switch de Modalidad (Ancho completo, limpio) */}
+                {/* Switch de Modalidad de Fechas (Ancho completo, sin redundancia) */}
                 <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 gap-1">
                   <button
                     type="button"
@@ -2906,7 +2902,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     }`}
                   >
                     <Calendar className="w-3.5 h-3.5 stroke-[2.3]" />
-                    <span>Día Único</span>
+                    <span>Un Día</span>
                   </button>
                   <button
                     type="button"
@@ -2918,7 +2914,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     }`}
                   >
                     <CalendarDays className="w-3.5 h-3.5 stroke-[2.3]" />
-                    <span>Reserva Múltiple</span>
+                    <span>Rango de Fechas</span>
                   </button>
                 </div>
 
@@ -3012,83 +3008,22 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                     </div>
                   </div>
 
-                  {/* 3. DÍAS A REPETIR (Solo en Reserva Múltiple) */}
+                  {/* Resumen de Rango de Fechas (sin selector Lunes-Domingo) */}
                   {formData.isDateRange && (
-                    <div className="space-y-2 pt-2 border-t border-amber-200/70 dark:border-amber-900/40">
-                      <div className="flex items-center justify-between text-[10.5px]">
-                        <span className="font-bold text-slate-700 dark:text-zinc-300">
-                          Repetir en los días:
+                    <div className="flex items-center justify-between text-[11px] bg-white/75 dark:bg-zinc-900/75 px-3 py-1.5 rounded-xl border border-amber-200/70 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 font-bold">
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarDays className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span>
+                          {rangeDates.length === 0
+                            ? 'Rango de fechas inválido'
+                            : `${rangeDates.length} día${rangeDates.length === 1 ? '' : 's'} en el rango`}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5] }))}
-                            className="px-2 py-0.5 rounded-md bg-amber-100/80 dark:bg-amber-900/40 text-[10px] font-black text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/70 transition cursor-pointer"
-                          >
-                            Lun – Vie
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFormData(p => ({ ...p, selectedWeekdays: [1, 2, 3, 4, 5, 6, 0] }))}
-                            className="px-2 py-0.5 rounded-md bg-amber-100/80 dark:bg-amber-900/40 text-[10px] font-black text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/70 transition cursor-pointer"
-                          >
-                            Todos
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1">
-                        {[
-                          { id: 1, label: 'Lunes', short: 'LU' },
-                          { id: 2, label: 'Martes', short: 'MA' },
-                          { id: 3, label: 'Miércoles', short: 'MI' },
-                          { id: 4, label: 'Jueves', short: 'JU' },
-                          { id: 5, label: 'Viernes', short: 'VI' },
-                          { id: 6, label: 'Sábado', short: 'SÁ' },
-                          { id: 0, label: 'Domingo', short: 'DO' }
-                        ].map(day => {
-                          const isSelected = (formData.selectedWeekdays || []).includes(day.id);
-                          return (
-                            <button
-                              key={day.id}
-                              type="button"
-                              onClick={() => {
-                                setFormData(p => {
-                                  const current = p.selectedWeekdays || [];
-                                  const next = isSelected
-                                    ? (current.length > 1 ? current.filter(x => x !== day.id) : current)
-                                    : [...current, day.id];
-                                  return { ...p, selectedWeekdays: next };
-                                });
-                              }}
-                              className={`h-8 rounded-lg text-[11px] font-black transition flex items-center justify-center cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#FDBA30] text-slate-950 shadow-2xs ring-1 ring-[#FDBA30]'
-                                  : 'bg-white/90 dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                              }`}
-                              title={day.label}
-                            >
-                              {day.short}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] bg-white/70 dark:bg-zinc-900/70 px-2.5 py-1.5 rounded-xl border border-amber-200/70 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 font-bold">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                          <span>
-                            {rangeDates.length === 0
-                              ? 'Ningún día coincide en este rango'
-                              : `${rangeDates.length} fecha${rangeDates.length === 1 ? '' : 's'} seleccionada${rangeDates.length === 1 ? '' : 's'}`}
-                          </span>
+                      </span>
+                      {rangeDates.length > 0 && (
+                        <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400">
+                          {formData.inicio} - {formData.final}
                         </span>
-                        {rangeDates.length > 0 && (
-                          <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400">
-                            {formData.inicio} - {formData.final}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
