@@ -248,13 +248,19 @@ public class AppInstallerPlugin extends Plugin {
 
     private static final String PREFS_NAME = "upn_session_prefs";
     private static final String KEY_SESSION_ACTIVE = "is_session_active";
+    private static final String KEY_SESSION_USER = "active_username";
     private static final String KEY_ALARM_IDS = "scheduled_alarm_ids";
 
-    private boolean doScheduleExactAlarm(int notifId, String title, String body, long triggerAtMillis) {
+    private boolean doScheduleExactAlarm(int notifId, String title, String body, String username, long triggerAtMillis) {
         Context context = getContext();
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         if (!prefs.getBoolean(KEY_SESSION_ACTIVE, false)) {
             Log.d(TAG, "Sesión no activa: se omite programación de alarma ID " + notifId);
+            return false;
+        }
+        String activeUser = prefs.getString(KEY_SESSION_USER, "");
+        if (username != null && !username.isEmpty() && !activeUser.isEmpty() && !username.equalsIgnoreCase(activeUser)) {
+            Log.d(TAG, "Usuario distinto al activo: se omite alarma ID " + notifId);
             return false;
         }
 
@@ -266,6 +272,7 @@ public class AppInstallerPlugin extends Plugin {
             intent.putExtra("notif_id", notifId);
             intent.putExtra("notif_title", title);
             intent.putExtra("notif_body", body);
+            intent.putExtra("notif_username", username != null ? username : activeUser);
 
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -312,9 +319,16 @@ public class AppInstallerPlugin extends Plugin {
     @PluginMethod
     public void setSessionActive(PluginCall call) {
         boolean active = call.getBoolean("active", false);
+        String username = call.getString("username", "");
         Context context = getContext();
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putBoolean(KEY_SESSION_ACTIVE, active).commit();
+        SharedPreferences.Editor editor = prefs.edit().putBoolean(KEY_SESSION_ACTIVE, active);
+        if (active && username != null && !username.isEmpty()) {
+            editor.putString(KEY_SESSION_USER, username.trim().toLowerCase());
+        } else if (!active) {
+            editor.remove(KEY_SESSION_USER);
+        }
+        editor.commit();
 
         if (!active) {
             performCancelAllAlarms(context);
@@ -331,6 +345,7 @@ public class AppInstallerPlugin extends Plugin {
         int notifId = call.getInt("id", 1000);
         String title = call.getString("title", "🔔 UPN Control Docente");
         String body = call.getString("body", "Alerta de ronda docente");
+        String username = call.getString("username", "");
         Long triggerAtMillis = call.getLong("timestamp");
 
         if (triggerAtMillis == null || triggerAtMillis <= System.currentTimeMillis()) {
@@ -338,7 +353,7 @@ public class AppInstallerPlugin extends Plugin {
             return;
         }
 
-        boolean ok = doScheduleExactAlarm(notifId, title, body, triggerAtMillis);
+        boolean ok = doScheduleExactAlarm(notifId, title, body, username, triggerAtMillis);
         if (ok) {
             JSObject ret = new JSObject();
             ret.put("success", true);
@@ -427,7 +442,7 @@ public class AppInstallerPlugin extends Plugin {
         String title = "🔔 Alarma UPN (App Cerrada / Segundo Plano)";
         String body = "¡Excelente! Las alarmas y notificaciones funcionan con la app cerrada o minimizada.";
         
-        boolean ok = doScheduleExactAlarm(notifId, title, body, target);
+        boolean ok = doScheduleExactAlarm(notifId, title, body, "", target);
         JSObject ret = new JSObject();
         ret.put("success", ok);
         ret.put("seconds", seconds);

@@ -2,7 +2,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { App } from '@capacitor/app';
 import { isCapacitorNative } from './statusBarHelper';
 import { AppInstaller } from './appUpdateChecker';
-import { getAuthUser, getUserAssignments } from './auth';
+import { getAuthUser, getUserAssignments, syncUsersWithServer } from './auth';
 
 export const CLASS_BLOCKS = [
   { id: 1, start: '07:30', end: '09:10', startMins: 7 * 60 + 30, label: '07:30 - 09:10' },
@@ -252,8 +252,20 @@ if (typeof window !== 'undefined') {
  * 1. Solo se programan si la sesión está iniciada (getAuthUser() != null).
  * 2. Solo se programan para las aulas/pabellón/pisos asignados al asistente.
  */
+let nativeScheduleSeq = 0;
+
 export async function scheduleNativeAlarms() {
   if (!isCapacitorNative()) return;
+  const mySeq = ++nativeScheduleSeq;
+
+  // Sincronizar asignaciones recientes desde el servidor (máx 2.5 s) antes de programar alarmas
+  try {
+    await Promise.race([
+      syncUsersWithServer().catch(() => {}),
+      new Promise(resolve => setTimeout(resolve, 2500))
+    ]);
+  } catch (_) {}
+  if (mySeq !== nativeScheduleSeq) return;
 
   const assignment = getActiveAssistantAssignment();
 
@@ -451,16 +463,19 @@ export async function scheduleNativeAlarms() {
       }
     } catch (_) {}
 
-    // Re-verificar que la sesión siga iniciada después de las consultas de red (evita condiciones de carrera al cerrar sesión)
+    // Re-verificar secuencia y que la sesión siga iniciada después de las consultas de red
+    if (mySeq !== nativeScheduleSeq) return;
     if (!getAuthUser()) {
       await clearAllScheduledNotifications();
       return;
     }
 
-    // Habilitar bandera nativa en Android antes de programar las alarmas exactas
+    const activeUsername = String(assignment.user?.username || '').trim().toLowerCase();
+
+    // Habilitar bandera nativa en Android con el usuario activo antes de programar las alarmas exactas
     try {
       if (AppInstaller?.setSessionActive) {
-        await AppInstaller.setSessionActive({ active: true });
+        await AppInstaller.setSessionActive({ active: true, username: activeUsername });
       }
     } catch (_) {}
 
@@ -470,8 +485,8 @@ export async function scheduleNativeAlarms() {
 
       if (AppInstaller?.scheduleExactAlarm) {
         for (const notif of notificationsToSchedule.slice(0, 20)) {
-          if (!getAuthUser()) {
-            await clearAllScheduledNotifications();
+          if (mySeq !== nativeScheduleSeq || !getAuthUser()) {
+            if (!getAuthUser()) await clearAllScheduledNotifications();
             return;
           }
           if (notif.schedule?.at && notif.schedule.at instanceof Date) {
@@ -480,6 +495,7 @@ export async function scheduleNativeAlarms() {
                 id: notif.id,
                 title: notif.title,
                 body: notif.body,
+                username: activeUsername,
                 timestamp: notif.schedule.at.getTime()
               });
             } catch (_) {}

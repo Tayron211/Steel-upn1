@@ -26,11 +26,17 @@ public class UpnAlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        // Verificar en SharedPreferences nativo si la sesión sigue iniciada
+        // Verificar en SharedPreferences nativo si la sesión sigue iniciada y corresponde al mismo usuario
         SharedPreferences prefs = context.getSharedPreferences("upn_session_prefs", Context.MODE_PRIVATE);
         boolean isSessionActive = prefs.getBoolean("is_session_active", false);
+        String activeUser = prefs.getString("active_username", "");
+        String notifUser = intent.getStringExtra("notif_username");
         if (!isSessionActive) {
             Log.d(TAG, "Sesión cerrada en Android: alarma ignorada y descartada.");
+            return;
+        }
+        if (notifUser != null && !notifUser.isEmpty() && !activeUser.isEmpty() && !notifUser.equalsIgnoreCase(activeUser)) {
+            Log.d(TAG, "Alarma pertenece a otro usuario (" + notifUser + " vs " + activeUser + "): descartada.");
             return;
         }
 
