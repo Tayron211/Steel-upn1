@@ -1,32 +1,32 @@
 {
-  "version": "1.0.133",
-  "versionCode": 134,
-  "releaseDate": "2026-11-19",
-  "notes": "Eliminar referencia a editingItem en ReservationsView.",
+  "version": "1.0.134",
+  "versionCode": 135,
+  "releaseDate": "2026-11-20",
+  "notes": "Bloqueo estricto de notificaciones Android sin sesion y filtro estricto por pisos asignados.",
   "features": [
     {
       "title": "Corrección y Estabilidad",
+      "desc": "Bloqueo estricto de notificaciones Android sin sesion y filtro estricto por pisos asignados."
+    },
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Vaciar cambios pendientes a OneDrive en pull y sincronizar al volver a la pestana 24/7."
+    },
+    {
+      "title": "Optimización",
+      "desc": "Reducir lecturas de D1 con throttle de 15s en push a OneDrive y filtro por dia."
+    },
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Reforzar filtro de pisos asignados y bloqueo de notificaciones sin sesion en Android."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.133 (Build 134) y anunciar cambios."
+    },
+    {
+      "title": "Corrección y Estabilidad",
       "desc": "Eliminar referencia a editingItem en ReservationsView."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Validacion minuciosa de cruces de horario por reserva y clase en selector y backend."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Alinear contador de alertas de Prestamos con tickets activos y publicar v1.0.132."
-    },
-    {
-      "title": "Nueva Funcionalidad",
-      "desc": "Generar automaticamente novedades recientes en ventana de actualizacion al compilar."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Corregir ReferenceError extractBeneficiary is not defined en TicketsKanban (Prestamos)."
-    },
-    {
-      "title": "Nueva Funcionalidad",
-      "desc": "Actualizar enlace de OneDrive y resolucion directa por ruta/nombre para reemplazos automaticos de CONTROL DOCENTE - TEST.xlsx."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
