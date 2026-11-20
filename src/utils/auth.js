@@ -288,8 +288,9 @@ export async function syncUsersWithServer() {
       if (active && assignments[active.username.toLowerCase()]) {
         const myAssign = assignments[active.username.toLowerCase()];
         active.assignedPabellon = myAssign.pabellon;
-        active.assignedPisos = myAssign.pisos;
+        active.assignedPisos = Array.isArray(myAssign.pisos) ? myAssign.pisos : [];
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(active));
+        window.dispatchEvent(new Event('steel:assignments-updated'));
       }
 
       window.dispatchEvent(new Event('steel:users-updated'));
@@ -470,7 +471,7 @@ export function authenticate(username, password) {
     role: found.role,
     displayName: found.name,
     assignedPabellon: myAssign.pabellon !== undefined ? myAssign.pabellon : (found.pabellon || ''),
-    assignedPisos: (Array.isArray(myAssign.pisos) && myAssign.pisos.length > 0) ? myAssign.pisos : (found.pisos || []),
+    assignedPisos: Array.isArray(myAssign.pisos) ? myAssign.pisos : (found.pisos || []),
     loginAt: new Date().toISOString()
   };
 

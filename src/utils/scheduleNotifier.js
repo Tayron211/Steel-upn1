@@ -143,15 +143,15 @@ export function isClassAssignedToAssistant(item, assignment) {
     return true;
   }
 
-  // Si es Asistente y NO tiene asignación configurada, NO tiene aulas asignadas
-  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // ESTRICTO: Si es Asistente y NO tiene pisos asignados, NO recibe notificaciones de ningún aula
+  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
     return false;
   }
 
-  const itemUbi = String(item.pisoPabellon || '').toUpperCase();
-  const itemAula = String(item.aula || '').toUpperCase();
+  const itemUbi = String(item.pisoPabellon || '').toUpperCase().trim();
+  const itemAula = String(item.aula || '').toUpperCase().trim();
 
-  // 1. Filtrado de Pabellón
+  // 1. Filtrado de Pabellón (si está asignado)
   if (assignment.pabellon) {
     const p = assignment.pabellon;
     const matchesPab = itemUbi.includes(`- ${p}`) ||
@@ -162,30 +162,44 @@ export function isClassAssignedToAssistant(item, assignment) {
     if (!matchesPab) return false;
   }
 
-  // 2. Filtrado de Pisos
+  // 2. Filtrado estricto de Pisos
   if (assignment.pisos && assignment.pisos.length > 0) {
+    // Determinar el piso real de la clase (prioridad: texto explícito en pisoPabellon; si no existe, código de aula)
+    const getExplicitFloorKey = (ubi) => {
+      if (!ubi) return '';
+      if (ubi.includes('SOT') || ubi.includes('SÓT')) return 'SOT';
+      if (ubi.includes('1ER') || ubi.includes('PRIMER') || ubi.includes('PISO 1') || ubi.includes('1°')) return '1';
+      if (ubi.includes('2DO') || ubi.includes('SEGUNDO') || ubi.includes('PISO 2') || ubi.includes('2°')) return '2';
+      if (ubi.includes('3ER') || ubi.includes('TERCER') || ubi.includes('PISO 3') || ubi.includes('3°')) return '3';
+      if (ubi.includes('4TO') || ubi.includes('CUARTO') || ubi.includes('PISO 4') || ubi.includes('4°')) return '4';
+      if (ubi.includes('5TO') || ubi.includes('QUINTO') || ubi.includes('PISO 5') || ubi.includes('5°')) return '5';
+      return '';
+    };
+
+    let itemFloorKey = getExplicitFloorKey(itemUbi);
+    if (!itemFloorKey && itemAula) {
+      if (/^[A-Z]+-?S\d+/i.test(itemAula)) {
+        itemFloorKey = 'SOT';
+      } else {
+        const digitMatch = itemAula.match(/^[A-Z]+-?(\d)/);
+        if (digitMatch && ['1', '2', '3', '4', '5'].includes(digitMatch[1])) {
+          itemFloorKey = digitMatch[1];
+        }
+      }
+    }
+
+    if (!itemFloorKey) return false;
+
     const matchesPiso = assignment.pisos.some(p => {
-      const pUpper = String(p).toUpperCase();
+      const pUpper = String(p || '').toUpperCase().trim();
+      if (!pUpper) return false;
+      if (pUpper.includes('SOT') || pUpper.includes('SÓT')) return itemFloorKey === 'SOT';
       const targetDigit = pUpper.includes('1') || pUpper.includes('PRIMER') ? '1' :
         pUpper.includes('2') || pUpper.includes('SEGUNDO') ? '2' :
           pUpper.includes('3') || pUpper.includes('TERCER') ? '3' :
             pUpper.includes('4') || pUpper.includes('CUARTO') ? '4' :
               pUpper.includes('5') || pUpper.includes('QUINTO') ? '5' : '';
-
-      if (targetDigit === '1' && (itemUbi.includes('1ER') || itemUbi.includes('PRIMER') || itemUbi.includes('PISO 1') || itemUbi.includes('1°'))) return true;
-      if (targetDigit === '2' && (itemUbi.includes('2DO') || itemUbi.includes('SEGUNDO') || itemUbi.includes('PISO 2') || itemUbi.includes('2°'))) return true;
-      if (targetDigit === '3' && (itemUbi.includes('3ER') || itemUbi.includes('TERCER') || itemUbi.includes('PISO 3') || itemUbi.includes('3°'))) return true;
-      if (targetDigit === '4' && (itemUbi.includes('4TO') || itemUbi.includes('CUARTO') || itemUbi.includes('PISO 4') || itemUbi.includes('4°'))) return true;
-      if (targetDigit === '5' && (itemUbi.includes('5TO') || itemUbi.includes('QUINTO') || itemUbi.includes('PISO 5') || itemUbi.includes('5°'))) return true;
-      if (pUpper.includes('SOT') && (itemUbi.includes('SOT') || itemUbi.includes('SÓT') || /^[A-Z]+-?S\d+/i.test(itemAula))) return true;
-
-      // Si el piso_pabellon no tiene el texto, extraer dígito del aula (ej: A102 -> 1, B-305 -> 3)
-      if (targetDigit && /^[A-Z]+-?\d{2,4}/.test(itemAula)) {
-        const digitMatch = itemAula.match(/^[A-Z]+-?(\d)/);
-        if (digitMatch && digitMatch[1] === targetDigit) return true;
-      }
-
-      return itemUbi.includes(pUpper);
+      return Boolean(targetDigit) && itemFloorKey === targetDigit;
     });
     if (!matchesPiso) return false;
   }
@@ -249,8 +263,8 @@ export async function scheduleNativeAlarms() {
     return;
   }
 
-  // 2. Si es asistente y no tiene aulas/pabellón asignado, cancelar alarmas y salir
-  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // 2. ESTRICTO: Si es asistente y no tiene pisos asignados, cancelar alarmas y salir
+  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
     await clearAllScheduledNotifications();
     return;
   }
@@ -759,8 +773,8 @@ async function checkScheduleTick() {
   // 1. Si la sesión no está iniciada, no emitir ninguna notificación
   if (!assignment) return;
 
-  // 2. Si es asistente y no tiene aulas asignadas, no emitir notificaciones de otras aulas
-  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // 2. ESTRICTO: Si es asistente y no tiene pisos asignados, no emitir notificaciones
+  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
     return;
   }
 
@@ -883,8 +897,8 @@ async function checkMidpointPendingAttendance() {
   // 1. Si no hay sesión iniciada, salir inmediatamente
   if (!assignment) return;
 
-  // 2. Si es asistente sin aulas asignadas, salir inmediatamente
-  if (!assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // 2. ESTRICTO: Si es asistente sin pisos asignados, salir inmediatamente
+  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
     return;
   }
 
