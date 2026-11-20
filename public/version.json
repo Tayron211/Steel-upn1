@@ -1,9 +1,17 @@
 {
-  "version": "1.0.134",
-  "versionCode": 135,
+  "version": "1.0.135",
+  "versionCode": 136,
   "releaseDate": "2026-11-20",
-  "notes": "Bloqueo estricto de notificaciones Android sin sesion y filtro estricto por pisos asignados.",
+  "notes": "Evitar condicion de carrera en alarmas Android y validar usuario activo en UpnAlarmReceiver.",
   "features": [
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Evitar condicion de carrera en alarmas Android y validar usuario activo en UpnAlarmReceiver."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.134 (Build 135) con bloqueo estricto de notificaciones Android."
+    },
     {
       "title": "Corrección y Estabilidad",
       "desc": "Bloqueo estricto de notificaciones Android sin sesion y filtro estricto por pisos asignados."
@@ -19,14 +27,6 @@
     {
       "title": "Corrección y Estabilidad",
       "desc": "Reforzar filtro de pisos asignados y bloqueo de notificaciones sin sesion en Android."
-    },
-    {
-      "title": "Actualización y Mejora",
-      "desc": "Release: publicar v1.0.133 (Build 134) y anunciar cambios."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Eliminar referencia a editingItem en ReservationsView."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
