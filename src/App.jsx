@@ -484,7 +484,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Excel de OneDrive -> App: consulta cada 30 s si el Excel fue editado directamente
+  // Excel de OneDrive -> App: consulta cada 30 s (y al volver a la pestaña) para sincronización 24/7
   useEffect(() => {
     let stopped = false;
     const pullExcel = async () => {
@@ -497,12 +497,17 @@ export default function App() {
         }
       } catch (_) { }
     };
+    const handleVisibility = () => {
+      if (!document.hidden) pullExcel();
+    };
     const first = setTimeout(pullExcel, 3000);
     const interval = setInterval(pullExcel, 30000);
+    document.addEventListener('visibilitychange', handleVisibility);
     return () => {
       stopped = true;
       clearTimeout(first);
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 

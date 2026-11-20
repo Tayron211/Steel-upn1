@@ -985,14 +985,21 @@ export async function pullIfExcelChanged(db) {
   const controlId = row.item_id;
   if (!controlId) return { success: false, connected: false };
 
-  // 1) Si la app tiene escrituras locales pendientes (dirty) o muy recientes (últimos 45 s),
-  // NO hacer pull para evitar pisar los datos de la app con un Excel que aún se está sincronizando.
+  // 1) Si la app tiene escrituras locales pendientes (dirty), vaciarlas hacia OneDrive
+  // en cuanto pasen al menos 10 s desde el último push/escritura para garantizar sync 24/7 sin pérdidas.
   const dirty = await getState(db, 'dirty');
+  const lastWriteTs = Number((await getState(db, 'last_write_ts')) || 0);
+  const lastPushTs = Number((await getState(db, 'last_push')) || 0);
   if (dirty === '1') {
+    const sinceLastPush = Date.now() - lastPushTs;
+    const sinceLastWrite = Date.now() - lastWriteTs;
+    if (sinceLastPush >= 10000 || sinceLastWrite >= 10000) {
+      const pushed = await pushToExcel(db);
+      return { success: true, pulled: false, flushedPendingPush: true, pushed };
+    }
     return { success: true, pulled: false, skipped: 'dirty_pending' };
   }
-  const lastWriteTs = await getState(db, 'last_write_ts');
-  if (lastWriteTs && Date.now() - Number(lastWriteTs) < 45000) {
+  if (lastWriteTs && Date.now() - lastWriteTs < 15000) {
     return { success: true, pulled: false, skipped: 'cooldown_recent_write' };
   }
 
