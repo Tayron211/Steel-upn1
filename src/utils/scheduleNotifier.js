@@ -138,13 +138,8 @@ export function getActiveAssistantAssignment() {
 export function isClassAssignedToAssistant(item, assignment) {
   if (!assignment || !assignment.user || !item) return false;
 
-  // Si es Administrador y NO tiene restricción de pabellón ni pisos, supervisa todo el campus
-  if (assignment.isAdmin && !assignment.pabellon && (!assignment.pisos || assignment.pisos.length === 0)) {
-    return true;
-  }
-
-  // ESTRICTO: Si es Asistente y NO tiene pisos asignados, NO recibe notificaciones de ningún aula
-  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // ESTRICTO PARA TODOS (Admin y Asistente): Si NO tiene pisos asignados, NO recibe notificaciones de ningún aula
+  if (!assignment.pisos || assignment.pisos.length === 0) {
     return false;
   }
 
@@ -275,8 +270,8 @@ export async function scheduleNativeAlarms() {
     return;
   }
 
-  // 2. ESTRICTO: Si es asistente y no tiene pisos asignados, cancelar alarmas y salir
-  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // 2. ESTRICTO PARA TODOS: Si el usuario no tiene pisos asignados, cancelar alarmas y salir
+  if (!assignment.pisos || assignment.pisos.length === 0) {
     await clearAllScheduledNotifications();
     return;
   }
@@ -789,8 +784,8 @@ async function checkScheduleTick() {
   // 1. Si la sesión no está iniciada, no emitir ninguna notificación
   if (!assignment) return;
 
-  // 2. ESTRICTO: Si es asistente y no tiene pisos asignados, no emitir notificaciones
-  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // 2. ESTRICTO PARA TODOS: Si el usuario no tiene pisos asignados, no emitir notificaciones
+  if (!assignment.pisos || assignment.pisos.length === 0) {
     return;
   }
 
@@ -913,8 +908,8 @@ async function checkMidpointPendingAttendance() {
   // 1. Si no hay sesión iniciada, salir inmediatamente
   if (!assignment) return;
 
-  // 2. ESTRICTO: Si es asistente sin pisos asignados, salir inmediatamente
-  if (!assignment.isAdmin && (!assignment.pisos || assignment.pisos.length === 0)) {
+  // 2. ESTRICTO PARA TODOS: Si el usuario sin pisos asignados, salir inmediatamente
+  if (!assignment.pisos || assignment.pisos.length === 0) {
     return;
   }
 
