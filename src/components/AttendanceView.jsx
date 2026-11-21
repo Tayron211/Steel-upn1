@@ -1434,10 +1434,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
     const upperObs = obsType.toUpperCase().trim();
     const updates = {
-      asistencia: 'NO',
+      asistencia: '',
       puntualidad: '-',
-      horaInicioReal: '-',
-      horaFinalReal: '-',
+      horaInicioReal: '',
+      horaFinalReal: '',
       observacion: upperObs
     };
 
@@ -1883,12 +1883,13 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
     const isCurrentlyActive =
       (targetStatus === 'PUNTUAL' && item.puntualidad === 'PUNTUAL') ||
       (targetStatus === 'TARDE' && item.puntualidad === 'TARDE') ||
-      (targetStatus === 'FALTA' && item.asistencia === 'NO');
+      (targetStatus === 'FALTA' && (item.asistencia === 'NO' || item.puntualidad === '-'));
 
+    const SPECIAL_FALTA_OBS = ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO LE CORRESPONDE EN LA SEMANA'];
     let updates = {};
 
     if (isCurrentlyActive) {
-      // Toggle off -> Reset back to PENDIENTE y limpiar observación (quita CLASE REMOTA / CLASE ADELANTADA)
+      // Toggle off -> Reset back to PENDIENTE y limpiar observación
       updates = {
         asistencia: 'PENDIENTE',
         puntualidad: '',
@@ -1903,7 +1904,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         horaInicioReal: item.horaInicioProg || getCurrentTimeStr(),
         horaFinalReal: item.horaFinalProg || item.horaFinalReal || ''
       };
-      if (item.observacion === 'CLASE REMOTA' || item.observacion === 'CLASE ADELANTADA') {
+      if (SPECIAL_FALTA_OBS.includes(item.observacion)) {
         updates.observacion = '';
       }
     } else if (targetStatus === 'TARDE') {
@@ -1913,7 +1914,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         horaInicioReal: getCurrentTimeStr(),
         horaFinalReal: item.horaFinalProg || item.horaFinalReal || ''
       };
-      if (item.observacion === 'CLASE REMOTA' || item.observacion === 'CLASE ADELANTADA') {
+      if (SPECIAL_FALTA_OBS.includes(item.observacion)) {
         updates.observacion = '';
       }
     } else if (targetStatus === 'FALTA') {
@@ -1923,8 +1924,8 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
         horaInicioReal: '-',
         horaFinalReal: '-'
       };
-      // Si se presiona el botón normal de Falta, no debe conservar CLASE REMOTA previa
-      if (item.observacion === 'CLASE REMOTA' || item.observacion === 'CLASE ADELANTADA') {
+      // Si se presiona el botón normal de Falta, no debe conservar observación especial previa
+      if (SPECIAL_FALTA_OBS.includes(item.observacion)) {
         updates.observacion = '';
       }
     }
@@ -2095,7 +2096,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   const countTotal = data.length;
   const countPuntual = data.filter(c => c.puntualidad === 'PUNTUAL').length;
   const countTarde = data.filter(c => c.puntualidad === 'TARDE').length;
-  const countFalta = data.filter(c => c.asistencia === 'NO').length;
+  const countFalta = data.filter(c => c.asistencia === 'NO' || c.puntualidad === '-').length;
   const countReemplazo = data.filter(c => c.asistencia && c.asistencia.includes('REEMPLAZO')).length;
   const countPendientes = data.filter(c => c.asistencia === 'PENDIENTE' || (!c.asistencia && !c.puntualidad)).length;
   const countPendiente = countPendientes;
@@ -2160,7 +2161,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
       }
       if (statusFilter === 'PUNTUAL') return c.puntualidad === 'PUNTUAL';
       if (statusFilter === 'TARDE') return c.puntualidad === 'TARDE';
-      if (statusFilter === 'FALTA') return c.asistencia === 'NO';
+      if (statusFilter === 'FALTA') return c.asistencia === 'NO' || c.puntualidad === '-';
       return true;
     });
   }, [data, selectedPabellon, selectedPisos, statusFilter, selectedCarrera, blockMode, selectedHora]);
@@ -3103,7 +3104,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
               {displayedItems.map(item => {
                 const isPuntual = item.puntualidad === 'PUNTUAL';
                 const isTarde = item.puntualidad === 'TARDE';
-                const isFalta = item.asistencia === 'NO';
+                const isFalta = item.asistencia === 'NO' || item.puntualidad === '-';
                 const isReemplazo = item.asistencia && item.asistencia.includes('REEMPLAZO');
                 const isPendiente = !isPuntual && !isTarde && !isFalta && !isReemplazo;
 
@@ -4256,6 +4257,25 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                       </div>
                     </div>
                   </button>
+
+                  {/* 3. NO LE CORRESPONDE EN LA SEMANA */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectFaltaOption('NO LE CORRESPONDE EN LA SEMANA')}
+                    className="w-full p-3 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 text-left flex items-center gap-3 transition active:scale-98 group"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/70 text-indigo-800 dark:text-indigo-200 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-wide">
+                        No le corresponde en la semana
+                      </div>
+                      <div className="text-[11px] text-indigo-700/80 dark:text-indigo-300/70 mt-0.5">
+                        Sesión no programada para esta semana
+                      </div>
+                    </div>
+                  </button>
                 </div>
 
                 <button
@@ -4469,7 +4489,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                 teacherDayModalData.classes.map((cls) => {
                   const isPuntual = cls.puntualidad === 'PUNTUAL';
                   const isTarde = cls.puntualidad === 'TARDE';
-                  const isFalta = cls.asistencia === 'NO';
+                  const isFalta = cls.asistencia === 'NO' || cls.puntualidad === '-';
                   const isReemplazo = cls.asistencia && cls.asistencia.includes('REEMPLAZO');
                   const isPendiente = !isPuntual && !isTarde && !isFalta && !isReemplazo;
                   const pLabel = formatPeriodoDisplay(cls.periodo);
