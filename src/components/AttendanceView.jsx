@@ -1880,7 +1880,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
 
   // 1-Tap Toggle Status Handler (If already active, resets to PENDIENTE for instant undo!)
   const handleQuickStatus = async (item, targetStatus) => {
-    const SPECIAL_FALTA_OBS = ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO LE CORRESPONDE EN LA SEMANA'];
+    const SPECIAL_FALTA_OBS = ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO CORRESPONDE A LA SEMANA', 'NO LE CORRESPONDE EN LA SEMANA'];
     const isSpecialObs = SPECIAL_FALTA_OBS.includes(String(item.observacion || '').trim().toUpperCase());
     const isCurrentlyActive =
       (targetStatus === 'PUNTUAL' && item.puntualidad === 'PUNTUAL') ||
@@ -2097,7 +2097,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
   const countTotal = data.length;
   const countPuntual = data.filter(c => c.puntualidad === 'PUNTUAL').length;
   const countTarde = data.filter(c => c.puntualidad === 'TARDE').length;
-  const isSpecialFaltaItem = (c) => ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO LE CORRESPONDE EN LA SEMANA'].includes(String(c?.observacion || '').trim().toUpperCase());
+  const isSpecialFaltaItem = (c) => ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO CORRESPONDE A LA SEMANA', 'NO LE CORRESPONDE EN LA SEMANA'].includes(String(c?.observacion || '').trim().toUpperCase());
   const countFalta = data.filter(c => c.asistencia === 'NO' || isSpecialFaltaItem(c)).length;
   const countReemplazo = data.filter(c => c.asistencia && c.asistencia.includes('REEMPLAZO')).length;
   const countPendientes = data.filter(c => c.asistencia === 'PENDIENTE' || (!c.asistencia && !c.puntualidad)).length;
@@ -4260,10 +4260,10 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     </div>
                   </button>
 
-                  {/* 3. NO LE CORRESPONDE EN LA SEMANA */}
+                  {/* 3. NO CORRESPONDE A LA SEMANA */}
                   <button
                     type="button"
-                    onClick={() => handleSelectFaltaOption('NO LE CORRESPONDE EN LA SEMANA')}
+                    onClick={() => handleSelectFaltaOption('NO CORRESPONDE A LA SEMANA')}
                     className="w-full p-3 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 text-left flex items-center gap-3 transition active:scale-98 group"
                   >
                     <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/70 text-indigo-800 dark:text-indigo-200 flex items-center justify-center shrink-0">
@@ -4271,7 +4271,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-wide">
-                        No le corresponde en la semana
+                        No corresponde a la semana
                       </div>
                       <div className="text-[11px] text-indigo-700/80 dark:text-indigo-300/70 mt-0.5">
                         Sesión no programada para esta semana
