@@ -2196,11 +2196,11 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
             </h1>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
             {/* Conmutador entre Reservas Programadas y Aulas Libres */}
             <div
               ref={viewModeSlide.containerRef}
-              className="relative flex items-center bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800"
+              className="relative flex items-center max-w-full bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800"
             >
               <span
                 aria-hidden="true"
@@ -2213,13 +2213,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 type="button"
                 data-slide-active={viewMode === 'RESERVAS' ? 'true' : undefined}
                 onClick={() => setViewMode('RESERVAS')}
-                className={`relative z-10 h-8 px-3 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 ${
+                className={`relative z-10 h-8 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold transition-colors duration-200 inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap active:scale-95 ${
                   viewMode === 'RESERVAS'
                     ? 'text-slate-950 dark:text-white font-black'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Calendar className="w-3.5 h-3.5 text-amber-500 stroke-[2.3]" />
+                <Calendar className="w-3.5 h-3.5 text-amber-500 stroke-[2.3] shrink-0" />
                 <span>Reservas ({filtered.length})</span>
               </button>
 
@@ -2230,13 +2230,13 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                   setViewMode('FREE_ROOMS');
                   if (selectedDayOffset === null) setSelectedDayOffset(0);
                 }}
-                className={`relative z-10 h-8 px-3 rounded-lg text-xs font-bold transition-colors duration-200 inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 ${
+                className={`relative z-10 h-8 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold transition-colors duration-200 inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap active:scale-95 ${
                   viewMode === 'FREE_ROOMS'
                     ? 'text-white font-black'
                     : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-200'
                 }`}
               >
-                <DoorOpen className="w-3.5 h-3.5 stroke-[2.3]" />
+                <DoorOpen className="w-3.5 h-3.5 stroke-[2.3] shrink-0" />
                 <span>Aulas Libres ({freeRooms.length})</span>
               </button>
             </div>
@@ -2247,7 +2247,7 @@ export default function ReservationsView({ initialOpenTrigger = null, onConsumeT
                 resetForm();
                 setIsModalOpen(true);
               }}
-              className="h-9 px-3.5 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0 ml-auto sm:ml-0"
+              className="h-9 px-3 sm:px-3.5 rounded-xl text-xs font-black bg-[#FDBA30] hover:bg-[#ffc642] text-slate-950 shadow-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap shrink-0 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
               <span>Nueva Reserva</span>

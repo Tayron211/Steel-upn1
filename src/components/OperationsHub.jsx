@@ -125,7 +125,7 @@ export default function OperationsHub({
         <button
           onClick={() => switchSubTab('reservations')}
           data-slide-active={subTab === 'reservations' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-2.5 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'reservations'
+          className={`relative z-10 flex-1 py-2 px-1.5 sm:px-4 rounded-[14px] text-[11px] sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'reservations'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
@@ -137,7 +137,7 @@ export default function OperationsHub({
         <button
           onClick={() => switchSubTab('manual')}
           data-slide-active={subTab === 'manual' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-2.5 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'manual'
+          className={`relative z-10 flex-1 py-2 px-1.5 sm:px-4 rounded-[14px] text-[11px] sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'manual'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
@@ -149,7 +149,7 @@ export default function OperationsHub({
         <button
           onClick={() => switchSubTab('teachers')}
           data-slide-active={subTab === 'teachers' ? 'true' : undefined}
-          className={`relative z-10 flex-1 py-2 px-2.5 sm:px-4 rounded-[14px] text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'teachers'
+          className={`relative z-10 flex-1 py-2 px-1.5 sm:px-4 rounded-[14px] text-[11px] sm:text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-1 sm:gap-2 active:scale-95 min-w-0 whitespace-nowrap ${subTab === 'teachers'
               ? 'text-slate-950 font-black'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
