@@ -1,9 +1,21 @@
 {
-  "version": "1.0.138",
-  "versionCode": 139,
+  "version": "1.0.139",
+  "versionCode": 140,
   "releaseDate": "2026-11-21",
-  "notes": "Mostrar solo el primer nombre en la barra superior para ganar espacio.",
+  "notes": "Agregar opcion NO LE CORRESPONDE EN LA SEMANA y dejar vacias asistencia y horas reales en opciones especiales.",
   "features": [
+    {
+      "title": "Nueva Funcionalidad",
+      "desc": "Agregar opcion NO LE CORRESPONDE EN LA SEMANA y dejar vacias asistencia y horas reales en opciones especiales."
+    },
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Sincronizacion inmediata de asistencias con OneDrive y adaptacion de botones sin cortes en moviles."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.138 (Build 139)."
+    },
     {
       "title": "Mejora de Interfaz",
       "desc": "Mostrar solo el primer nombre en la barra superior para ganar espacio."
@@ -15,18 +27,6 @@
     {
       "title": "Corrección y Estabilidad",
       "desc": "Fallback de alarmas en segundo plano sin SecurityException en Android 12+ y programacion de 3 dias."
-    },
-    {
-      "title": "Actualización y Mejora",
-      "desc": "Release: publicar v1.0.136 (Build 137) con filtro estricto de pisos para todos."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Bloquear notificaciones de aulas sin pisos asignados incluso para administradores."
-    },
-    {
-      "title": "Actualización y Mejora",
-      "desc": "Release: publicar v1.0.135 (Build 136) con validacion nativa por usuario y pisos."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
