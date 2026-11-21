@@ -1,9 +1,25 @@
 {
-  "version": "1.0.140",
-  "versionCode": 141,
+  "version": "1.0.141",
+  "versionCode": 142,
   "releaseDate": "2026-11-21",
-  "notes": "Evitar marcar en rojo clases pendientes con guion en puntualidad.",
+  "notes": "Corregir texto a NO CORRESPONDE A LA SEMANA.",
   "features": [
+    {
+      "title": "Mejora de Interfaz",
+      "desc": "Corregir texto a NO CORRESPONDE A LA SEMANA."
+    },
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Eliminar redeclaracion de minC y maxC en pushAsistencia."
+    },
+    {
+      "title": "Optimización",
+      "desc": "Actualizacion quirurgica de 1 fila en Excel OneDrive para sync ultra-rapido y minimo consumo D1."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.140 (Build 141)."
+    },
     {
       "title": "Corrección y Estabilidad",
       "desc": "Evitar marcar en rojo clases pendientes con guion en puntualidad."
@@ -11,22 +27,6 @@
     {
       "title": "Actualización y Mejora",
       "desc": "Release: publicar v1.0.139 (Build 140)."
-    },
-    {
-      "title": "Nueva Funcionalidad",
-      "desc": "Agregar opcion NO LE CORRESPONDE EN LA SEMANA y dejar vacias asistencia y horas reales en opciones especiales."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Sincronizacion inmediata de asistencias con OneDrive y adaptacion de botones sin cortes en moviles."
-    },
-    {
-      "title": "Actualización y Mejora",
-      "desc": "Release: publicar v1.0.138 (Build 139)."
-    },
-    {
-      "title": "Mejora de Interfaz",
-      "desc": "Mostrar solo el primer nombre en la barra superior para ganar espacio."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
