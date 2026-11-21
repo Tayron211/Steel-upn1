@@ -378,82 +378,79 @@ export async function scheduleNativeAlarms() {
       }
     }
 
-    // 6. Obtener clases de MAÑANA y filtrar estrictamente por las aulas asignadas al asistente
+    // 6. Obtener clases de los próximos días (mañana y pasado mañana) filtradas estrictamente por los pisos asignados
     try {
       const DAYS_NAMES = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
-      const tomorrowDay = DAYS_NAMES[(now.getDay() + 1) % 7];
-      const dataTomorrow = await getAttendanceDataForDay(tomorrowDay);
-      let myClassesTomorrow = [];
-      if (dataTomorrow && dataTomorrow.length > 0) {
-        myClassesTomorrow = dataTomorrow.filter(item => isClassAssignedToAssistant(item, assignment));
-      }
+      for (const offset of [1, 2]) {
+        const targetDay = DAYS_NAMES[(now.getDay() + offset) % 7];
+        const dataDay = await getAttendanceDataForDay(targetDay);
+        let myClassesDay = [];
+        if (dataDay && dataDay.length > 0) {
+          myClassesDay = dataDay.filter(item => isClassAssignedToAssistant(item, assignment));
+        }
 
-      if (myClassesTomorrow.length > 0) {
-        const tomorrowBlockMap = new Map();
-        myClassesTomorrow.forEach(item => {
-          const ini = item.horaInicioProg;
-          const fin = item.horaFinalProg;
-          if (!ini || !fin) return;
-          const [hI, mI] = ini.split(':').map(Number);
-          const [hF, mF] = fin.split(':').map(Number);
-          if (isNaN(hI) || isNaN(mI) || isNaN(hF) || isNaN(mF)) return;
-          const iniMins = hI * 60 + mI;
-          const finMins = hF * 60 + mF;
-          const key = `${ini}-${fin}`;
-          if (!tomorrowBlockMap.has(key)) {
-            tomorrowBlockMap.set(key, { ini, fin, iniMins, finMins, aulas: new Set() });
+        if (myClassesDay.length > 0) {
+          const dayBlockMap = new Map();
+          myClassesDay.forEach(item => {
+            const ini = item.horaInicioProg;
+            const fin = item.horaFinalProg;
+            if (!ini || !fin) return;
+            const [hI, mI] = ini.split(':').map(Number);
+            const [hF, mF] = fin.split(':').map(Number);
+            if (isNaN(hI) || isNaN(mI) || isNaN(hF) || isNaN(mF)) return;
+            const iniMins = hI * 60 + mI;
+            const finMins = hF * 60 + mF;
+            const key = `${ini}-${fin}`;
+            if (!dayBlockMap.has(key)) {
+              dayBlockMap.set(key, { ini, fin, iniMins, finMins, aulas: new Set() });
+            }
+            if (item.aula) dayBlockMap.get(key).aulas.add(item.aula);
+          });
+
+          const baseId = offset === 1 ? 20000 : 30000;
+          let idxT = 0;
+          for (const [key, b] of dayBlockMap.entries()) {
+            idxT++;
+            const aulasArr = Array.from(b.aulas);
+            const sampleAulas = aulasArr.slice(0, 4).join(', ');
+            const aulasText = aulasArr.length > 4 ? `${sampleAulas} y ${aulasArr.length - 4} más` : sampleAulas;
+
+            const shiftMins = b.iniMins - 15;
+            const shiftDate = new Date();
+            shiftDate.setDate(now.getDate() + offset);
+            shiftDate.setHours(Math.floor(shiftMins / 60), shiftMins % 60, 0, 0);
+
+            notificationsToSchedule.push({
+              id: baseId + idxT,
+              title: `🔔 Próximo Turno en 15 min (${b.ini})`,
+              body: `Bloque ${b.ini} - ${b.fin} inicia en 15 min. Aulas asignadas (${aulasArr.length}): ${aulasText}. Prepara la ronda.`,
+              schedule: { at: shiftDate, allowWhileIdle: true },
+              channelId: UPN_NOTIF_CHANNEL_ID,
+              sound: 'default',
+              smallIcon: 'ic_stat_notify',
+              iconColor: '#FDBA30',
+              autoCancel: true,
+              isExactNotification: true
+            });
+
+            const midMins = Math.floor((b.iniMins + b.finMins) / 2);
+            const midDate = new Date();
+            midDate.setDate(now.getDate() + offset);
+            midDate.setHours(Math.floor(midMins / 60), midMins % 60, 0, 0);
+
+            notificationsToSchedule.push({
+              id: baseId + 5000 + idxT,
+              title: `⚠️ Mitad de Ronda • Aulas Asignadas (${b.ini} - ${b.fin})`,
+              body: `Mitad de turno (${b.ini} - ${b.fin}). Ingresa a registrar la asistencia de tus aulas asignadas (${aulasText}).`,
+              schedule: { at: midDate, allowWhileIdle: true },
+              channelId: UPN_NOTIF_CHANNEL_ID,
+              sound: 'default',
+              smallIcon: 'ic_stat_notify',
+              iconColor: '#FDBA30',
+              autoCancel: true,
+              isExactNotification: true
+            });
           }
-          if (item.aula) tomorrowBlockMap.get(key).aulas.add(item.aula);
-        });
-
-        let idxT = 0;
-        for (const [key, b] of tomorrowBlockMap.entries()) {
-          idxT++;
-          const aulasArr = Array.from(b.aulas);
-          const sampleAulas = aulasArr.slice(0, 4).join(', ');
-          const aulasText = aulasArr.length > 4 ? `${sampleAulas} y ${aulasArr.length - 4} más` : sampleAulas;
-
-          const shiftMins = b.iniMins - 15;
-          const shiftDate = new Date();
-          shiftDate.setDate(now.getDate() + 1);
-          shiftDate.setHours(Math.floor(shiftMins / 60), shiftMins % 60, 0, 0);
-
-          notificationsToSchedule.push({
-            id: 20000 + idxT,
-            title: `🔔 Próximo Turno en 15 min (${b.ini})`,
-            body: `Bloque ${b.ini} - ${b.fin} inicia en 15 min. Aulas asignadas (${aulasArr.length}): ${aulasText}. Prepara la ronda.`,
-            schedule: {
-              at: shiftDate,
-              allowWhileIdle: true
-            },
-            channelId: UPN_NOTIF_CHANNEL_ID,
-            sound: 'default',
-            smallIcon: 'ic_stat_notify',
-            iconColor: '#FDBA30',
-            autoCancel: true,
-            isExactNotification: true
-          });
-
-          const midMins = Math.floor((b.iniMins + b.finMins) / 2);
-          const midDate = new Date();
-          midDate.setDate(now.getDate() + 1);
-          midDate.setHours(Math.floor(midMins / 60), midMins % 60, 0, 0);
-
-          notificationsToSchedule.push({
-            id: 25000 + idxT,
-            title: `⚠️ Mitad de Ronda • Aulas Asignadas (${b.ini} - ${b.fin})`,
-            body: `Mitad de turno (${b.ini} - ${b.fin}). Ingresa a registrar la asistencia de tus aulas asignadas (${aulasText}).`,
-            schedule: {
-              at: midDate,
-              allowWhileIdle: true
-            },
-            channelId: UPN_NOTIF_CHANNEL_ID,
-            sound: 'default',
-            smallIcon: 'ic_stat_notify',
-            iconColor: '#FDBA30',
-            autoCancel: true,
-            isExactNotification: true
-          });
         }
       }
     } catch (_) {}
@@ -479,7 +476,7 @@ export async function scheduleNativeAlarms() {
       notificationsToSchedule.sort((a, b) => a.schedule.at.getTime() - b.schedule.at.getTime());
 
       if (AppInstaller?.scheduleExactAlarm) {
-        for (const notif of notificationsToSchedule.slice(0, 20)) {
+        for (const notif of notificationsToSchedule.slice(0, 30)) {
           if (mySeq !== nativeScheduleSeq || !getAuthUser()) {
             if (!getAuthUser()) await clearAllScheduledNotifications();
             return;

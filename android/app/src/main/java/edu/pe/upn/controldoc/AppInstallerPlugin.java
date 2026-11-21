@@ -294,13 +294,14 @@ public class AppInstallerPlugin extends Plugin {
                 flags
             );
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            boolean canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms();
+            if (canExact && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 AlarmManager.AlarmClockInfo clockInfo = new AlarmManager.AlarmClockInfo(triggerAtMillis, showPendingIntent);
                 alarmManager.setAlarmClock(clockInfo, pendingIntent);
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
 
             // Registrar el ID programado para poder cancelarlo instantáneamente al cerrar sesión
@@ -403,12 +404,14 @@ public class AppInstallerPlugin extends Plugin {
             prefs.edit().remove(KEY_ALARM_IDS).apply();
 
             // Cancelar también IDs heredados de versiones anteriores
-            for (int id = 1000; id <= 1025; id++) cancelAlarmById(context, id);
-            for (int id = 2000; id <= 2025; id++) cancelAlarmById(context, id);
-            for (int id = 5000; id <= 5025; id++) cancelAlarmById(context, id);
+            for (int id = 1000; id <= 1040; id++) cancelAlarmById(context, id);
+            for (int id = 2000; id <= 2040; id++) cancelAlarmById(context, id);
+            for (int id = 5000; id <= 5040; id++) cancelAlarmById(context, id);
             for (int id = 10101; id <= 10115; id++) cancelAlarmById(context, id);
-            for (int id = 20000; id <= 20025; id++) cancelAlarmById(context, id);
-            for (int id = 25000; id <= 25025; id++) cancelAlarmById(context, id);
+            for (int id = 20000; id <= 20040; id++) cancelAlarmById(context, id);
+            for (int id = 25000; id <= 25040; id++) cancelAlarmById(context, id);
+            for (int id = 30000; id <= 30040; id++) cancelAlarmById(context, id);
+            for (int id = 35000; id <= 35040; id++) cancelAlarmById(context, id);
             cancelAlarmById(context, 9999);
 
             // Limpiar cualquier notificación activa en la barra de estado
