@@ -230,8 +230,8 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   <span className={`w-2 h-2 rounded-full animate-pulse shrink-0 ${
                     authUser?.role === 'admin' ? 'bg-amber-500' : 'bg-sky-500'
                   }`} />
-                  <span className="text-xs font-bold font-mono tracking-tight max-w-[100px] sm:max-w-[150px] truncate uppercase">
-                    {authUser?.name || authUser?.displayName || 'Asistente'}
+                  <span className="text-xs font-bold font-mono tracking-tight max-w-[100px] sm:max-w-[140px] truncate uppercase">
+                    {String(authUser?.name || authUser?.displayName || 'Asistente').trim().split(/\s+/)[0]}
                   </span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
                     authUser?.role === 'admin'
