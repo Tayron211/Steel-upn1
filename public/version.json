@@ -1,9 +1,17 @@
 {
-  "version": "1.0.141",
-  "versionCode": 142,
+  "version": "1.0.142",
+  "versionCode": 143,
   "releaseDate": "2026-11-21",
-  "notes": "Corregir texto a NO CORRESPONDE A LA SEMANA.",
+  "notes": "Corregir botones y contenido cortado en moviles en Reservas y Hojas Manuales.",
   "features": [
+    {
+      "title": "Mejora de Interfaz",
+      "desc": "Corregir botones y contenido cortado en moviles en Reservas y Hojas Manuales."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.141 (Build 142)."
+    },
     {
       "title": "Mejora de Interfaz",
       "desc": "Corregir texto a NO CORRESPONDE A LA SEMANA."
@@ -19,14 +27,6 @@
     {
       "title": "Actualización y Mejora",
       "desc": "Release: publicar v1.0.140 (Build 141)."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Evitar marcar en rojo clases pendientes con guion en puntualidad."
-    },
-    {
-      "title": "Actualización y Mejora",
-      "desc": "Release: publicar v1.0.139 (Build 140)."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
