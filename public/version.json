@@ -1,9 +1,17 @@
 {
-  "version": "1.0.135",
-  "versionCode": 136,
-  "releaseDate": "2026-11-20",
-  "notes": "Evitar condicion de carrera en alarmas Android y validar usuario activo en UpnAlarmReceiver.",
+  "version": "1.0.136",
+  "versionCode": 137,
+  "releaseDate": "2026-11-21",
+  "notes": "Bloquear notificaciones de aulas sin pisos asignados incluso para administradores.",
   "features": [
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Bloquear notificaciones de aulas sin pisos asignados incluso para administradores."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.135 (Build 136) con validacion nativa por usuario y pisos."
+    },
     {
       "title": "Corrección y Estabilidad",
       "desc": "Evitar condicion de carrera en alarmas Android y validar usuario activo en UpnAlarmReceiver."
@@ -19,14 +27,6 @@
     {
       "title": "Corrección y Estabilidad",
       "desc": "Vaciar cambios pendientes a OneDrive en pull y sincronizar al volver a la pestana 24/7."
-    },
-    {
-      "title": "Optimización",
-      "desc": "Reducir lecturas de D1 con throttle de 15s en push a OneDrive y filtro por dia."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Reforzar filtro de pisos asignados y bloqueo de notificaciones sin sesion en Android."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
