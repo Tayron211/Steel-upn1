@@ -167,15 +167,25 @@ export async function onRequest(context) {
             const db = env.DB;
             await ensureTables(db);
             const nowMs = String(Date.now());
+            const prevDirtyRow = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'dirty'").first();
+            const wasClean = !prevDirtyRow || prevDirtyRow.v !== '1';
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
             // Disparar sincronización inmediata a OneDrive según el módulo afectado (protegida por withLock en pushToExcel)
             let onlySheet = null;
-            if (p.includes('/attendance')) onlySheet = 'asistencia';
-            else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
+            let changedAttendanceRow = null;
+            if (p.includes('/attendance')) {
+              onlySheet = 'asistencia';
+              const attMatch = p.match(/^\/api\/attendance\/([^/]+)$/);
+              if (attMatch && m === 'PUT' && wasClean) {
+                changedAttendanceRow = await db.prepare(
+                  'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion FROM asistencia WHERE id = ?'
+                ).bind(attMatch[1]).first();
+              }
+            } else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
             else if (p.includes('/tickets') || p.includes('/atenciones')) onlySheet = 'tickets';
             else if (p.includes('/manual-sheets')) onlySheet = 'manuales';
-            await pushToExcel(db, { onlySheet });
+            await pushToExcel(db, { onlySheet, changedAttendanceRow });
           } catch (err) {
             console.error('Auto sync to OneDrive error:', err);
           }

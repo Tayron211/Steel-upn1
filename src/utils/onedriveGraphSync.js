@@ -847,7 +847,7 @@ async function pushRecords(db, token, itemId, specName, ctx, saveSnapshot, preRo
   return { updated: rows.length, status: res.status };
 }
 
-async function pushAsistencia(db, token, itemId, preRows) {
+async function pushAsistencia(db, token, itemId, preRows, singleRow = null) {
   const used = await loadUsed(token, itemId, 'CONTROL ASISTENCIA');
   if (!used) return { skipped: 'sin hoja' };
   const hdr = findHeader(used, ['AULA', 'NRC']);
@@ -876,6 +876,47 @@ async function pushAsistencia(db, token, itemId, preRows) {
     { idx: colOf(c, ['OBSERVACION', 'OBSERVACIÓN', 'OBS', 'OBSER']), get: (d) => d.observacion || '' }
   ].filter((m) => m.idx >= 0);
   if (managed.length === 0) return { skipped: 'sin columnas' };
+
+  const minC = Math.min(...managed.map((m) => m.idx));
+  const maxC = Math.max(...managed.map((m) => m.idx));
+
+  // Camino ultra-rápido: actualizar únicamente la fila modificada (1 sola fila en D1 y en Excel)
+  if (singleRow) {
+    const sNrc = String(singleRow.nrc || '').trim();
+    const sNrcUnpad = sNrc.replace(/^0+/, '');
+    const sDia = mapDay(singleRow.dia);
+    const sAula = String(singleRow.aula || '').trim().toUpperCase();
+
+    for (let r = hdr.row + 1; r < used.values.length; r++) {
+      const row = used.values[r];
+      const rowNrc = String(row[iNrc] ?? '').trim();
+      const rowDia = mapDay(row[iDia]);
+      const rowAula = String(row[iAula] ?? '').trim().toUpperCase();
+      const sameNrc = rowNrc === sNrc || (sNrcUnpad && rowNrc.replace(/^0+/, '') === sNrcUnpad);
+      if (sameNrc && rowDia === sDia && rowAula === sAula) {
+        const f = used.formulas[r] || [];
+        const line = [];
+        let changed = 0;
+        for (let k = minC; k <= maxC; k++) {
+          const m = managed.find((x) => x.idx === k);
+          const base = f[k] !== undefined ? f[k] : '';
+          const isF = typeof base === 'string' && base.startsWith('=');
+          if (m && !isF) {
+            const nv = m.get(singleRow);
+            if (String(nv) !== String(base)) changed++;
+            line.push(nv);
+          } else {
+            line.push(base);
+          }
+        }
+        if (changed === 0) return { updated: 0, mode: 'single-row' };
+        const absRow = used.rowIndex + r + 1;
+        const address = `${colLetter(used.columnIndex + minC)}${absRow}:${colLetter(used.columnIndex + maxC)}${absRow}`;
+        const res = await patchFormulas(token, itemId, 'CONTROL ASISTENCIA', address, [line]);
+        return { updated: changed, status: res.status, mode: 'single-row' };
+      }
+    }
+  }
 
   const dbRows = preRows || ((await db.prepare('SELECT * FROM asistencia').all()).results || []);
   const byKey = new Map();
@@ -1051,17 +1092,22 @@ export async function pullIfExcelChanged(db) {
   });
 }
 
-async function doPushInternal(db, token, targetFile, onlySheet) {
+async function doPushInternal(db, token, targetFile, onlySheet, changedAttendanceRow = null) {
   const report = [];
 
-  // 1) Asistencia (ultra-rápido: solo actualiza CONTROL ASISTENCIA si fue lo que cambió)
+  // 1) Asistencia (ultra-rápido: si hay 1 sola fila modificada y no es sync completo, evita leer toda la tabla)
   if (!onlySheet || onlySheet === 'asistencia') {
-    const asRes = await db.prepare(
-      'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
-    ).all();
-    const asRows = asRes.results || [];
-    const asReport = await pushAsistencia(db, token, targetFile.id, asRows);
-    report.push({ file: targetFile.name, asistencia: asReport });
+    if (changedAttendanceRow && onlySheet === 'asistencia') {
+      const asReport = await pushAsistencia(db, token, targetFile.id, null, changedAttendanceRow);
+      report.push({ file: targetFile.name, asistencia: asReport });
+    } else {
+      const asRes = await db.prepare(
+        'SELECT nrc, dia, aula, hora_inicio_real, hora_final_real, asistencia, puntualidad, observacion, docente, curso, carrera FROM asistencia'
+      ).all();
+      const asRows = asRes.results || [];
+      const asReport = await pushAsistencia(db, token, targetFile.id, asRows);
+      report.push({ file: targetFile.name, asistencia: asReport });
+    }
   }
 
   // 2) Otras hojas (tickets, manuales, reservas)
@@ -1136,6 +1182,7 @@ export async function pushToExcel(db, opts = {}) {
   if (!acc) return { success: false, connected: false, message: 'OneDrive aún no vinculado' };
   const { token, row } = acc;
   const onlySheet = opts?.onlySheet || null;
+  const changedAttendanceRow = opts?.changedAttendanceRow || null;
 
   let targetFile = (row.item_id && row.file_name) ? { id: row.item_id, name: row.file_name } : null;
   if (!targetFile) {
@@ -1151,7 +1198,7 @@ export async function pushToExcel(db, opts = {}) {
     let out;
     for (let n = 0; n < 4; n++) {
       await setState(db, 'dirty', '0');
-      out = await doPushInternal(db, token, targetFile, onlySheet);
+      out = await doPushInternal(db, token, targetFile, onlySheet, n === 0 ? changedAttendanceRow : null);
       if ((await getState(db, 'dirty')) !== '1') break;
     }
     return out;
