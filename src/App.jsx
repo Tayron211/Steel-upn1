@@ -500,8 +500,8 @@ export default function App() {
     const handleVisibility = () => {
       if (!document.hidden) pullExcel();
     };
-    const first = setTimeout(pullExcel, 3000);
-    const interval = setInterval(pullExcel, 30000);
+    const first = setTimeout(pullExcel, 2500);
+    const interval = setInterval(pullExcel, 15000);
     document.addEventListener('visibilitychange', handleVisibility);
     return () => {
       stopped = true;

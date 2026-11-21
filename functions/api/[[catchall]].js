@@ -169,9 +169,6 @@ export async function onRequest(context) {
             const nowMs = String(Date.now());
             const prevDirtyRow = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'dirty'").first();
             const wasClean = !prevDirtyRow || prevDirtyRow.v !== '1';
-            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
-            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
-            // Disparar sincronización inmediata a OneDrive según el módulo afectado (protegida por withLock en pushToExcel)
             let onlySheet = null;
             let changedAttendanceRow = null;
             if (p.includes('/attendance')) {
@@ -185,6 +182,15 @@ export async function onRequest(context) {
             } else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
             else if (p.includes('/tickets') || p.includes('/atenciones')) onlySheet = 'tickets';
             else if (p.includes('/manual-sheets')) onlySheet = 'manuales';
+
+            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
+            await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
+            if (onlySheet) {
+              const prevSheetsRow = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'dirty_sheets'").first();
+              const sheetSet = new Set(String(prevSheetsRow?.v || '').split(',').map(s => s.trim()).filter(Boolean));
+              sheetSet.add(onlySheet);
+              await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty_sheets', ?)").bind(Array.from(sheetSet).join(',')).run();
+            }
             await pushToExcel(db, { onlySheet, changedAttendanceRow });
           } catch (err) {
             console.error('Auto sync to OneDrive error:', err);

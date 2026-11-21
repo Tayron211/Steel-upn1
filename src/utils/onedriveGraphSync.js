@@ -108,20 +108,29 @@ function toCell(type, v) {
 }
 
 /* ------------------------------- Graph / auth ------------------------------- */
-async function gfetch(token, url, init = {}) {
-  const res = await fetch(url, {
-    ...init,
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(init.headers || {}) }
-  });
-  let json = null;
-  try {
-    json = await res.json();
-  } catch (_) { }
-  return { ok: res.ok, status: res.status, json };
+async function gfetch(token, url, init = {}, retries = 2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch(url, {
+      ...init,
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(init.headers || {}) }
+    });
+    if ((res.status === 423 || res.status === 429 || res.status >= 502) && attempt < retries) {
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      continue;
+    }
+    let json = null;
+    try {
+      json = await res.json();
+    } catch (_) { }
+    return { ok: res.ok, status: res.status, json };
+  }
 }
 
+let _tablesEnsured = false;
 // Tablas e índices para Cloudflare D1
 export async function ensureTables(db) {
+  if (_tablesEnsured) return;
+  _tablesEnsured = true;
   try { await db.prepare('ALTER TABLE reservas ADD COLUMN motivo TEXT').run(); } catch (_) { }
   try { await db.prepare('ALTER TABLE reservas ADD COLUMN obs TEXT').run(); } catch (_) { }
   try { await db.prepare('ALTER TABLE reservas ADD COLUMN hoja TEXT').run(); } catch (_) { }
@@ -1195,14 +1204,36 @@ export async function pushToExcel(db, opts = {}) {
   const result = await withLock(db, 'sync', async () => {
     let out;
     for (let n = 0; n < 4; n++) {
+      const pendingRaw = await getState(db, 'dirty_sheets');
+      const pendingList = String(pendingRaw || '').split(',').map(s => s.trim()).filter(Boolean);
+      const effectiveOnlySheet = (pendingList.length > 1 || (pendingList.length === 1 && onlySheet && pendingList[0] !== onlySheet))
+        ? null
+        : onlySheet;
+
       await setState(db, 'dirty', '0');
-      out = await doPushInternal(db, token, targetFile, onlySheet, n === 0 ? changedAttendanceRow : null);
+      await setState(db, 'dirty_sheets', '');
+      out = await doPushInternal(db, token, targetFile, effectiveOnlySheet, (n === 0 && !effectiveOnlySheet || (n === 0 && effectiveOnlySheet === 'asistencia')) ? changedAttendanceRow : null);
+
+      const hasHttpError = Array.isArray(out?.filesUpdated) && out.filesUpdated.some((f) =>
+        Object.values(f || {}).some((v) => v && typeof v === 'object' && typeof v.status === 'number' && v.status >= 400)
+      );
+      if (hasHttpError) {
+        await setState(db, 'dirty', '1');
+        if (onlySheet) await setState(db, 'dirty_sheets', onlySheet);
+        break;
+      }
       if ((await getState(db, 'dirty')) !== '1') break;
     }
     return out;
   });
   if (result && result.busy) {
     await setState(db, 'dirty', '1');
+    if (onlySheet) {
+      const prevRaw = await getState(db, 'dirty_sheets');
+      const set = new Set(String(prevRaw || '').split(',').map(s => s.trim()).filter(Boolean));
+      set.add(onlySheet);
+      await setState(db, 'dirty_sheets', Array.from(set).join(','));
+    }
     return { success: true, queued: true };
   }
   return result;
