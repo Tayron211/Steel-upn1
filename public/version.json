@@ -1,9 +1,17 @@
 {
-  "version": "1.0.139",
-  "versionCode": 140,
+  "version": "1.0.140",
+  "versionCode": 141,
   "releaseDate": "2026-11-21",
-  "notes": "Agregar opcion NO LE CORRESPONDE EN LA SEMANA y dejar vacias asistencia y horas reales en opciones especiales.",
+  "notes": "Evitar marcar en rojo clases pendientes con guion en puntualidad.",
   "features": [
+    {
+      "title": "Corrección y Estabilidad",
+      "desc": "Evitar marcar en rojo clases pendientes con guion en puntualidad."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.139 (Build 140)."
+    },
     {
       "title": "Nueva Funcionalidad",
       "desc": "Agregar opcion NO LE CORRESPONDE EN LA SEMANA y dejar vacias asistencia y horas reales en opciones especiales."
@@ -19,14 +27,6 @@
     {
       "title": "Mejora de Interfaz",
       "desc": "Mostrar solo el primer nombre en la barra superior para ganar espacio."
-    },
-    {
-      "title": "Actualización y Mejora",
-      "desc": "Release: publicar v1.0.137 (Build 138) con alarmas en segundo plano/app cerrada."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Fallback de alarmas en segundo plano sin SecurityException en Android 12+ y programacion de 3 dias."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
