@@ -2665,7 +2665,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
           {viewMode === 'CLASSES' && (
             <div
               ref={statusSlide.containerRef}
-              className="relative flex items-center gap-1 text-[11px] shrink-0"
+              className="relative flex items-center gap-1 text-[11px] max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5"
             >
               <span
                 aria-hidden="true"
@@ -3292,17 +3292,17 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                     </div>
 
                     {/* Fila Única y Simétrica de Toma de Asistencia (100% Adaptada a Modo Claro y Oscuro AMOLED) */}
-                    <div data-wa-hide="true" className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <div data-wa-hide="true" className="grid grid-cols-3 gap-1 sm:gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
                       <button
                         onClick={() => handleQuickStatus(item, 'PUNTUAL')}
-                        className={`min-h-[44px] h-11 py-1 px-1 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 ${isPuntual
+                        className={`min-h-[44px] h-11 py-1 px-1 sm:px-1.5 min-w-0 rounded-2xl font-bold text-[11px] sm:text-xs transition inline-flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 ${isPuntual
                           ? 'bg-[#00875A] text-white border border-[#00875A] shadow-md font-black'
                           : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 dark:bg-[#061d15] dark:text-[#10b981] dark:border-[#059669]/60 dark:hover:bg-[#059669]/20'
                           }`}
                         title={isPuntual ? 'Toca para desmarcar' : 'Marcar puntual'}
                       >
                         <CheckCircle2 className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isPuntual ? 'text-white' : 'text-emerald-700 dark:text-[#10b981]'}`} />
-                        <span>Puntual</span>
+                        <span className="truncate">Puntual</span>
                       </button>
 
                       <button
@@ -3315,7 +3315,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         onTouchMove={handlePressMove}
                         onContextMenu={(e) => e.preventDefault()}
                         onClick={(e) => handlePressClick(e, item, () => handleQuickStatus(item, 'TARDE'))}
-                        className={`min-h-[44px] h-11 py-1 px-1 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isTarde
+                        className={`min-h-[44px] h-11 py-1 px-1 sm:px-1.5 min-w-0 rounded-2xl font-bold text-[11px] sm:text-xs transition inline-flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 select-none ${isTarde
                           ? 'bg-[#FDBA30] text-slate-950 border border-[#FDBA30] font-black shadow-md'
                           : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 dark:bg-[#1c1204] dark:text-[#f59e0b] dark:border-[#d97706] dark:hover:bg-[#d97706]/20'
                           }`}
@@ -3323,14 +3323,14 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                       >
                         <Clock className={`w-3.5 h-3.5 stroke-[2.4] shrink-0 ${isTarde ? 'text-slate-950' : 'text-amber-800 dark:text-[#f59e0b]'}`} />
                         {isTarde && item.horaInicioReal ? (
-                          <div className="flex flex-col items-center justify-center leading-none text-center">
-                            <span className="text-[11px] font-bold leading-tight">Tarde</span>
-                            <span className="text-[10px] font-mono font-black leading-none mt-0.5 opacity-90">
+                          <div className="flex flex-col items-center justify-center leading-none text-center min-w-0">
+                            <span className="text-[10.5px] sm:text-[11px] font-bold leading-tight truncate">Tarde</span>
+                            <span className="text-[9.5px] sm:text-[10px] font-mono font-black leading-none mt-0.5 opacity-90 truncate">
                               {item.horaInicioReal}
                             </span>
                           </div>
                         ) : (
-                          <span>Tarde</span>
+                          <span className="truncate">Tarde</span>
                         )}
                       </button>
 
@@ -3344,7 +3344,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         onTouchMove={handlePressMove}
                         onContextMenu={(e) => e.preventDefault()}
                         onClick={(e) => handlePressClick(e, item, () => handleQuickStatus(item, 'FALTA'))}
-                        className={`min-h-[44px] h-11 py-1 px-1 rounded-2xl font-bold text-xs transition inline-flex items-center justify-center gap-1.5 active:scale-95 select-none ${isFalta
+                        className={`min-h-[44px] h-11 py-1 px-1 sm:px-1.5 min-w-0 rounded-2xl font-bold text-[11px] sm:text-xs transition inline-flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 select-none ${isFalta
                           ? 'bg-rose-600 text-white border border-rose-600 font-black shadow-md'
                           : 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 dark:bg-[#1e0810] dark:text-[#fda4af] dark:border-[#9f1239] dark:hover:bg-[#9f1239]/20'
                           }`}
@@ -3355,7 +3355,7 @@ export default function AttendanceView({ authUser, onOpenNewTicket, onEmitManual
                         ) : (
                           <>
                             <XCircle className="w-3.5 h-3.5 stroke-[2.4] shrink-0 text-rose-700 dark:text-[#fda4af]" />
-                            <span>Falta</span>
+                            <span className="truncate">Falta</span>
                           </>
                         )}
                       </button>

@@ -879,7 +879,14 @@ async function pushAsistencia(db, token, itemId, preRows) {
 
   const dbRows = preRows || ((await db.prepare('SELECT * FROM asistencia').all()).results || []);
   const byKey = new Map();
-  for (const r of dbRows) byKey.set(`${String(r.nrc || '').trim()}|${mapDay(r.dia)}|${String(r.aula || '').trim().toUpperCase()}`, r);
+  for (const r of dbRows) {
+    const nrcStr = String(r.nrc || '').trim();
+    const nrcUnpad = nrcStr.replace(/^0+/, '');
+    const diaK = mapDay(r.dia);
+    const aulaK = String(r.aula || '').trim().toUpperCase();
+    byKey.set(`${nrcStr}|${diaK}|${aulaK}`, r);
+    if (nrcUnpad && nrcUnpad !== nrcStr) byKey.set(`${nrcUnpad}|${diaK}|${aulaK}`, r);
+  }
 
   const minC = Math.min(...managed.map((m) => m.idx));
   const maxC = Math.max(...managed.map((m) => m.idx));
@@ -888,7 +895,10 @@ async function pushAsistencia(db, token, itemId, preRows) {
   for (let r = hdr.row + 1; r < used.values.length; r++) {
     const row = used.values[r];
     const f = used.formulas[r] || [];
-    const d = byKey.get(`${String(row[iNrc] ?? '').trim()}|${mapDay(row[iDia])}|${String(row[iAula] ?? '').trim().toUpperCase()}`);
+    const rowNrc = String(row[iNrc] ?? '').trim();
+    const rowDia = mapDay(row[iDia]);
+    const rowAula = String(row[iAula] ?? '').trim().toUpperCase();
+    const d = byKey.get(`${rowNrc}|${rowDia}|${rowAula}`) || byKey.get(`${rowNrc.replace(/^0+/, '')}|${rowDia}|${rowAula}`);
     const line = [];
     for (let k = minC; k <= maxC; k++) {
       const m = managed.find((x) => x.idx === k);
@@ -1139,7 +1149,7 @@ export async function pushToExcel(db, opts = {}) {
 
   const result = await withLock(db, 'sync', async () => {
     let out;
-    for (let n = 0; n < 2; n++) {
+    for (let n = 0; n < 4; n++) {
       await setState(db, 'dirty', '0');
       out = await doPushInternal(db, token, targetFile, onlySheet);
       if ((await getState(db, 'dirty')) !== '1') break;

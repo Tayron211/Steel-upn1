@@ -166,22 +166,16 @@ export async function onRequest(context) {
           try {
             const db = env.DB;
             await ensureTables(db);
-            const nowMsNum = Date.now();
-            const nowMs = String(nowMsNum);
+            const nowMs = String(Date.now());
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('dirty', '1')").run();
             await db.prepare("INSERT OR REPLACE INTO onedrive_state (k, v) VALUES ('last_write_ts', ?)").bind(nowMs).run();
-            // Evitar ráfagas de lectura de tablas completas en rondas rápidas (mín. 15 s entre push)
-            const lastPushRow = await db.prepare("SELECT v FROM onedrive_state WHERE k = 'last_push'").first();
-            const lastPushMs = lastPushRow ? Number(lastPushRow.v || 0) : 0;
-            if (nowMsNum - lastPushMs >= 15000) {
-              // Disparar sincronización directa y rápida a OneDrive según el módulo afectado
-              let onlySheet = null;
-              if (p.includes('/attendance')) onlySheet = 'asistencia';
-              else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
-              else if (p.includes('/tickets') || p.includes('/atenciones')) onlySheet = 'tickets';
-              else if (p.includes('/manual-sheets')) onlySheet = 'manuales';
-              await pushToExcel(db, { onlySheet });
-            }
+            // Disparar sincronización inmediata a OneDrive según el módulo afectado (protegida por withLock en pushToExcel)
+            let onlySheet = null;
+            if (p.includes('/attendance')) onlySheet = 'asistencia';
+            else if (p.includes('/reservations') || p.includes('/reservas')) onlySheet = 'reservas';
+            else if (p.includes('/tickets') || p.includes('/atenciones')) onlySheet = 'tickets';
+            else if (p.includes('/manual-sheets')) onlySheet = 'manuales';
+            await pushToExcel(db, { onlySheet });
           } catch (err) {
             console.error('Auto sync to OneDrive error:', err);
           }

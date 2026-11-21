@@ -216,7 +216,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className={`h-9 px-3 sm:px-3.5 rounded-full flex items-center gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${
+                  className={`h-9 px-2.5 sm:px-3.5 rounded-full flex items-center gap-1.5 sm:gap-2 transition-all active:scale-95 border shadow-2xs select-none cursor-pointer ${
                     authUser?.role === 'admin'
                       ? userMenuOpen
                         ? 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-2 ring-amber-400/30'
@@ -230,7 +230,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                   <span className={`w-2 h-2 rounded-full animate-pulse shrink-0 ${
                     authUser?.role === 'admin' ? 'bg-amber-500' : 'bg-sky-500'
                   }`} />
-                  <span className="text-xs font-bold font-mono tracking-tight max-w-[100px] sm:max-w-[140px] truncate uppercase">
+                  <span className="text-xs font-bold font-mono tracking-tight max-w-[88px] sm:max-w-[140px] truncate uppercase">
                     {String(authUser?.name || authUser?.displayName || 'Asistente').trim().split(/\s+/)[0]}
                   </span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
@@ -454,7 +454,7 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
       </header>
 
       {/* Floating Bottom App Dock con efecto Blur de Cristal Esmerilado Ultra Traslúcido (Móvil/APK) */}
-      <div className="md:hidden fixed bottom-4 sm:bottom-6 inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
+      <div className="md:hidden fixed bottom-3 sm:bottom-6 inset-x-2.5 sm:inset-x-4 z-[9990] max-w-sm sm:max-w-md mx-auto pointer-events-none safe-bottom">
         <div
           className="relative pointer-events-auto rounded-[28px] bg-white/20 dark:bg-black/25 supports-[backdrop-filter]:bg-white/15 dark:supports-[backdrop-filter]:bg-black/20 backdrop-blur-3xl backdrop-saturate-200 border border-white/40 dark:border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.14)] dark:shadow-[0_12px_44px_rgba(0,0,0,0.6)]"
           style={{
@@ -496,16 +496,16 @@ export default function Navbar({ activeTab, setActiveTab, pendingTicketsCount, d
                     const main = document.querySelector('main');
                     if (main) main.scrollTop = 0;
                   }}
-                  className="relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-[22px] transition-all duration-200 active:scale-95"
+                  className="relative z-10 flex flex-col items-center justify-center py-2 px-0.5 sm:px-1 min-w-0 rounded-[22px] transition-all duration-200 active:scale-95"
                 >
                   <Icon
-                    className={`w-5 h-5 transition-transform duration-200 ${isActive
+                    className={`w-4.5 h-4.5 sm:w-5 sm:h-5 transition-transform duration-200 ${isActive
                       ? 'text-slate-950 stroke-[2.6] scale-110 drop-shadow-xs'
                       : 'text-slate-800 dark:text-zinc-100 hover:text-slate-950 dark:hover:text-white stroke-[2.2]'
                       }`}
                   />
                   <span
-                    className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${isActive
+                    className={`text-[9.5px] sm:text-[10px] mt-0.5 tracking-tight max-w-full truncate px-0.5 transition-all duration-200 ${isActive
                       ? 'font-black text-slate-950'
                       : 'font-bold text-slate-800 dark:text-zinc-100 hover:text-slate-950 dark:hover:text-white'
                       }`}
