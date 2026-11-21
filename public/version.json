@@ -1,9 +1,21 @@
 {
-  "version": "1.0.142",
-  "versionCode": 143,
+  "version": "1.0.143",
+  "versionCode": 144,
   "releaseDate": "2026-11-21",
-  "notes": "Corregir botones y contenido cortado en moviles en Reservas y Hojas Manuales.",
+  "notes": "Mostrar observaciones en faltas y tardanzas del Dashboard y contar faltas especiales.",
   "features": [
+    {
+      "title": "Nueva Funcionalidad",
+      "desc": "Mostrar observaciones en faltas y tardanzas del Dashboard y contar faltas especiales."
+    },
+    {
+      "title": "Optimización",
+      "desc": "Blindaje 24/7 con retry Graph, cola dirty_sheets y pull cada 15s con minimo consumo D1."
+    },
+    {
+      "title": "Actualización y Mejora",
+      "desc": "Release: publicar v1.0.142 (Build 143)."
+    },
     {
       "title": "Mejora de Interfaz",
       "desc": "Corregir botones y contenido cortado en moviles en Reservas y Hojas Manuales."
@@ -15,18 +27,6 @@
     {
       "title": "Mejora de Interfaz",
       "desc": "Corregir texto a NO CORRESPONDE A LA SEMANA."
-    },
-    {
-      "title": "Corrección y Estabilidad",
-      "desc": "Eliminar redeclaracion de minC y maxC en pushAsistencia."
-    },
-    {
-      "title": "Optimización",
-      "desc": "Actualizacion quirurgica de 1 fila en Excel OneDrive para sync ultra-rapido y minimo consumo D1."
-    },
-    {
-      "title": "Actualización y Mejora",
-      "desc": "Release: publicar v1.0.140 (Build 141)."
     }
   ],
   "apkUrl": "https://control-doc.pages.dev/control-doc.apk",
