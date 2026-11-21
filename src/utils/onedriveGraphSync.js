@@ -929,8 +929,6 @@ async function pushAsistencia(db, token, itemId, preRows, singleRow = null) {
     if (nrcUnpad && nrcUnpad !== nrcStr) byKey.set(`${nrcUnpad}|${diaK}|${aulaK}`, r);
   }
 
-  const minC = Math.min(...managed.map((m) => m.idx));
-  const maxC = Math.max(...managed.map((m) => m.idx));
   const matrix = [];
   let changed = 0;
   for (let r = hdr.row + 1; r < used.values.length; r++) {
