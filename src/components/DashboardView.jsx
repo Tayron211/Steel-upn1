@@ -761,14 +761,16 @@ export default function DashboardView() {
         const text = `${item.pisoPabellon || ''} ${item.aula || ''}`.toUpperCase();
         if (!text.includes('PABELLON B') && !text.includes('PABELLÓN B') && !item.aula?.startsWith('B')) return false;
       }
+      const obsUpper = String(item.observacion || '').trim().toUpperCase();
+      const isSpecialFalta = ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO CORRESPONDE A LA SEMANA', 'NO LE CORRESPONDE EN LA SEMANA'].includes(obsUpper);
       if (docenteStatusFilter === 'PUNTUAL' && (item.puntualidad || '').toUpperCase() !== 'PUNTUAL') return false;
       if (docenteStatusFilter === 'TARDE' && (item.puntualidad || '').toUpperCase() !== 'TARDE') return false;
-      if (docenteStatusFilter === 'FALTA' && (item.asistencia || '').toUpperCase() !== 'NO') return false;
+      if (docenteStatusFilter === 'FALTA' && (item.asistencia || '').toUpperCase() !== 'NO' && !isSpecialFalta) return false;
       if (docenteStatusFilter === 'SUPLENTE' && !(item.asistencia || '').toUpperCase().includes('REEMPLAZO')) return false;
       if (docenteStatusFilter === 'PENDIENTE') {
         const p = (item.puntualidad || '').toUpperCase();
         const a = (item.asistencia || '').toUpperCase();
-        if (p === 'PUNTUAL' || p === 'TARDE' || a === 'NO' || a.includes('REEMPLAZO')) return false;
+        if (p === 'PUNTUAL' || p === 'TARDE' || a === 'NO' || isSpecialFalta || a.includes('REEMPLAZO')) return false;
       }
       if (docenteSearch.trim()) {
         const q = docenteSearch.toLowerCase();
@@ -795,9 +797,11 @@ export default function DashboardView() {
     for (const item of base) {
       const p = (item.puntualidad || '').toUpperCase();
       const a = (item.asistencia || '').toUpperCase();
+      const obsU = String(item.observacion || '').trim().toUpperCase();
+      const isSpFalta = ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO CORRESPONDE A LA SEMANA', 'NO LE CORRESPONDE EN LA SEMANA'].includes(obsU);
       if (p === 'PUNTUAL') puntual++;
       else if (p === 'TARDE') tarde++;
-      else if (a === 'NO') falta++;
+      else if (a === 'NO' || isSpFalta) falta++;
       else if (a.includes('REEMPLAZO')) suplente++;
       else pendientes++;
 
@@ -1437,14 +1441,16 @@ export default function DashboardView() {
               {filteredAttendance.slice(0, 30).map(item => {
                 const p = (item.puntualidad || '').toUpperCase();
                 const a = (item.asistencia || '').toUpperCase();
+                const obsClean = cleanCell(item.observacion);
+                const isSpFalta = ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO CORRESPONDE A LA SEMANA', 'NO LE CORRESPONDE EN LA SEMANA'].includes(obsClean.toUpperCase());
                 const isPuntual = p === 'PUNTUAL';
                 const isTarde = p === 'TARDE';
-                const isFalta = a === 'NO';
+                const isFalta = a === 'NO' || isSpFalta;
                 const isSuplente = a.includes('REEMPLAZO');
 
                 return (
-                  <div key={item.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                  <div key={item.id} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 text-xs">
+                    <div className="flex items-start sm:items-center gap-2.5 min-w-0">
                       <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 font-mono font-black text-slate-900 dark:text-white shrink-0">
                         {item.aula}
                       </span>
@@ -1455,10 +1461,21 @@ export default function DashboardView() {
                         <div className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
                           {[cleanCell(item.curso), cleanCell(item.carrera)].filter(Boolean).join(' · ')}
                         </div>
+                        {obsClean && (
+                          <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${
+                            isFalta
+                              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border-rose-200/80 dark:border-rose-800/60'
+                              : isTarde
+                              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-200/80 dark:border-amber-800/60'
+                              : 'bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                          }`}>
+                            <span>Obs: {obsClean}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pl-11 sm:pl-0">
                       <span className="font-mono text-[11px] text-slate-600 dark:text-zinc-400">
                         {item.horaInicioProg} {item.horaInicioReal ? `(Real: ${item.horaInicioReal})` : ''}
                       </span>

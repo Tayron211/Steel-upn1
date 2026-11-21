@@ -1312,7 +1312,7 @@ async function handleApiRequest(context) {
       const diaParam = url.searchParams.get('dia');
       const dia = diaParam ? normalizeDay(diaParam) : todayName;
 
-      const classesRes = await db.prepare('SELECT puntualidad, asistencia FROM asistencia WHERE dia = ? OR dia LIKE ?').bind(dia, `${dia}%`).all();
+      const classesRes = await db.prepare('SELECT puntualidad, asistencia, observacion FROM asistencia WHERE dia = ? OR dia LIKE ?').bind(dia, `${dia}%`).all();
       const classes = classesRes?.results || [];
 
       const totalClasses = classes.length;
@@ -1321,10 +1321,12 @@ async function handleApiRequest(context) {
       for (const c of classes) {
         const p = (c.puntualidad || '').toUpperCase();
         const a = (c.asistencia || '').toUpperCase();
+        const obs = String(c.observacion || '').trim().toUpperCase();
+        const isSpFalta = ['CLASE REMOTA', 'CLASE ADELANTADA', 'NO CORRESPONDE A LA SEMANA', 'NO LE CORRESPONDE EN LA SEMANA'].includes(obs);
 
         if (p === 'PUNTUAL') puntual++;
         else if (p === 'TARDE') tarde++;
-        else if (a === 'NO') falta++;
+        else if (a === 'NO' || isSpFalta) falta++;
         else if (a.includes('REEMPLAZO')) reemplazo++;
         else pendientes++;
       }
